@@ -1,1 +1,1 @@
-Banana Republic’s submission for the 2026 USAII High School Hackathon
+A tool for climate action
