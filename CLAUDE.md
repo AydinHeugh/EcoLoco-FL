@@ -1,5 +1,12 @@
 @AGENTS.md
 
+## README
+
+When a change affects what the app takes in or gives back, what happens in between, how to run
+it, or where things live in the repo, update `README.md` in the same change. Keep the edit small
+and limited to the affected section; the owner reviews README changes. Write in plain, everyday
+wording for people new to the repo: no function or variable names, no marketing language.
+
 ## Architecture docs
 
 After any significant change (new/renamed/removed screen, API client function, Flask route,
