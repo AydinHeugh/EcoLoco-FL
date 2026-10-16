@@ -39,15 +39,17 @@
   .gl { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 10px; font-size: 13.5px; }
   .gl .sw { flex: none; margin-top: 3px; }
   .gl-where { font-size: 12px; color: var(--muted); }
-  .tools { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .tools { margin-left: auto; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-width: 0; }
   input[type=search] { font: inherit; padding: 5px 9px; border: 1px solid var(--line); border-radius: 6px;
-    background: var(--bg); color: var(--ink); width: 210px; }
+    background: var(--bg); color: var(--ink); width: 210px; max-width: 100%; }
   label.toggle { font-size: 12px; color: var(--muted); display: inline-flex; gap: 5px; align-items: center; white-space: nowrap; }
 
   .main { position: relative; flex: 1; min-height: 0; }
   .react-flow { --xy-background-color: var(--bg); }
   .react-flow__edge-textbg { fill: var(--card); }
-  .react-flow__edge-text { fill: var(--ink); }
+  .elabel { position: absolute; box-sizing: border-box; max-width: 180px; padding: 3px 5px; border-radius: 3px;
+    font: 11px/14px system-ui, -apple-system, "Segoe UI", sans-serif; text-align: center; color: var(--ink);
+    background: color-mix(in srgb, var(--card) 92%, transparent); pointer-events: none; overflow-wrap: break-word; }
   .react-flow__controls button { background: var(--card); color: var(--ink); border-color: var(--line); }
   .react-flow__controls button svg { fill: var(--ink); }
   .react-flow__minimap { background: var(--card); }
@@ -101,7 +103,7 @@
   .hint { position: absolute; left: 50%; transform: translateX(-50%); bottom: 14px; white-space: nowrap; z-index: 4; font-size: 12px; color: var(--muted);
     background: var(--card); border: 1px solid var(--line); padding: 5px 9px; border-radius: 6px; }
   #err { padding: 24px; color: #b00020; white-space: pre-wrap; }
-  @media (max-width: 700px) { .panel { top: 40%; width: 100%; border-left: 0; border-top: 1px solid var(--line); } .tools { margin-left: 0; } }
+  @media (max-width: 700px) { .panel { top: 40%; width: 100%; border-left: 0; border-top: 1px solid var(--line); } .tools { margin-left: 0; } .react-flow__minimap { display: none; } }
 </style>
 <script type="importmap">
 {
@@ -1001,7 +1003,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ReactFlow, ReactFlowProvider, Background, Controls, MiniMap, Handle, Position, MarkerType,
-         useNodesState, useReactFlow } from '@xyflow/react';
+         useNodesState, useReactFlow, BaseEdge, EdgeLabelRenderer, getBezierPath } from '@xyflow/react';
 import htm from 'htm';
 const html = htm.bind(React.createElement);
 
@@ -1066,6 +1068,71 @@ function CodeNode({ data }) {
     </div>`;
 }
 const nodeTypes = { code: CodeNode };
+
+// Same control points as React Flow's getBezierPath for a Right → Left edge,
+// so a label placed at parameter t sits exactly on the drawn curve.
+function bezierPoint(sx, sy, tx, ty, t) {
+  const d = tx - sx, c = d >= 0 ? 0.5 * d : 0.25 * 25 * Math.sqrt(-d);
+  const c1x = sx + c, c2x = tx - c, u = 1 - t;
+  return {
+    x: u * u * u * sx + 3 * u * u * t * c1x + 3 * u * t * t * c2x + t * t * t * tx,
+    y: u * u * u * sy + 3 * u * u * t * sy + 3 * u * t * t * ty + t * t * t * ty,
+  };
+}
+
+const LABEL_MAX_W = 180;
+const measure = document.createElement('canvas').getContext('2d');
+function labelSize(text) {
+  measure.font = '11px system-ui, -apple-system, "Segoe UI", sans-serif';
+  const w = measure.measureText(text).width;
+  const lines = Math.ceil((w * 1.1) / (LABEL_MAX_W - 10));
+  return { w: Math.min(w + 10, LABEL_MAX_W), h: lines * 14 + 6 };
+}
+
+const T_CANDIDATES = [0.5, ...Array.from({ length: 14 }, (_, i) => [0.5 - (i + 1) * 0.03, 0.5 + (i + 1) * 0.03]).flat()];
+const overlap = (a, b) => Math.max(0, Math.min(a.x2, b.x2) - Math.max(a.x1, b.x1)) * Math.max(0, Math.min(a.y2, b.y2) - Math.max(a.y1, b.y1));
+
+// Midpoint labels land on nodes when an edge skips a column or stays in one, so
+// slide each label along its curve to the free spot nearest the middle.
+function placeLabels(nodes, edges) {
+  const byId = Object.fromEntries(nodes.map(n => [n.id, n]));
+  const size = n => ({ w: n.measured?.width ?? 240, h: n.measured?.height ?? 80 });
+  const taken = nodes.map(n => {
+    const { w, h } = size(n);
+    return { x1: n.position.x - 6, y1: n.position.y - 6, x2: n.position.x + w + 6, y2: n.position.y + h + 6 };
+  });
+  const placed = {};
+  for (const e of edges) {
+    const s = byId[e.source], t = byId[e.target];
+    const sx = s.position.x + size(s).w + 3, sy = s.position.y + size(s).h / 2;
+    const tx = t.position.x - 3, ty = t.position.y + size(t).h / 2;
+    const { w, h } = labelSize(e.text);
+    let best;
+    for (const tt of T_CANDIDATES) {
+      const p = bezierPoint(sx, sy, tx, ty, tt);
+      const box = { x1: p.x - w / 2, y1: p.y - h / 2, x2: p.x + w / 2, y2: p.y + h / 2 };
+      const cost = taken.reduce((sum, b) => sum + overlap(box, b), 0);
+      if (!best || cost < best.cost) best = { t: tt, cost, box };
+      if (cost === 0) break;
+    }
+    taken.push(best.box);
+    placed[e.id] = best.t;
+  }
+  return placed;
+}
+
+function LabelledEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style, markerEnd, data }) {
+  const [path] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
+  const p = data.text && bezierPoint(sourceX, sourceY, targetX, targetY, data.t ?? 0.5);
+  return html`
+    <${React.Fragment}>
+      <${BaseEdge} id=${id} path=${path} style=${style} markerEnd=${markerEnd} />
+      ${p && html`<${EdgeLabelRenderer}>
+        <div class="elabel" style=${{ transform: `translate(-50%, -50%) translate(${p.x}px, ${p.y}px)`, zIndex: data.front ? 10 : 0 }}>${data.text.replace(/\(/g, '(​')}</div>
+      <//>`}
+    <//>`;
+}
+const edgeTypes = { labelled: LabelledEdge };
 
 const initialNodes = G.nodes.map(n => ({
   id: n.id, type: 'code', data: n, position: { x: n.col * COL_W, y: n.row * ROW_H },
@@ -1160,20 +1227,25 @@ function App() {
     });
   }, [nodes, sel, out, inc]);
 
+  const visibleLabels = useMemo(() => (showLabels ? G.edges : [])
+    .filter(e => !sel || e.from === sel || e.to === sel)
+    .map(e => ({ id: `${e.from}->${e.to}`, source: e.from, target: e.to, text: e.label })), [sel, showLabels]);
+  const labelT = useMemo(() => placeLabels(nodes, visibleLabels), [nodes, visibleLabels]);
+
   const viewEdges = useMemo(() => G.edges.map(e => {
+    const id = `${e.from}->${e.to}`;
     const isOut = sel === e.from, isIn = sel === e.to, faded = sel && !isOut && !isIn;
     const color = isOut ? 'var(--callee)' : isIn ? 'var(--caller)' : e.status === 'dead' ? '#9ca3af' : 'var(--edge)';
     return {
-      id: `${e.from}->${e.to}`, source: e.from, target: e.to,
-      label: showLabels && !faded ? e.label : undefined,
+      id, source: e.from, target: e.to, type: 'labelled',
+      data: { text: id in labelT ? e.label : null, t: labelT[id], front: isOut || isIn },
       animated: !!(isOut || isIn),
       zIndex: isOut || isIn ? 10 : 0,
       style: { stroke: color, strokeWidth: isOut || isIn ? 2.2 : 1.3, opacity: faded ? 0.1 : 1,
                strokeDasharray: e.status === 'planned' ? '6 4' : e.status === 'dead' ? '2 4' : undefined },
       markerEnd: { type: MarkerType.ArrowClosed, color, width: 16, height: 16 },
-      labelStyle: { fontSize: 11 }, labelBgPadding: [4, 2], labelBgBorderRadius: 3, labelBgStyle: { fillOpacity: 0.92 },
     };
-  }), [sel, showLabels]);
+  }), [sel, labelT]);
 
   function onSearch(ev) {
     if (ev.key !== 'Enter') return;
@@ -1198,7 +1270,7 @@ function App() {
       </header>
       <div class="main">
         <${ReactFlow}
-          nodes=${viewNodes} edges=${viewEdges} nodeTypes=${nodeTypes}
+          nodes=${viewNodes} edges=${viewEdges} nodeTypes=${nodeTypes} edgeTypes=${edgeTypes}
           onNodesChange=${onNodesChange}
           onNodeClick=${(_, n) => select(n.id, rf.getZoom() < 0.6)}
           onPaneClick=${() => select(null)}
