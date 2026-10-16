@@ -1033,6 +1033,11 @@ const MARKERS = [
 ];
 const COL_W = 450, ROW_H = 118;
 
+// GitHub Pages serves only docs/, so source files must link to github.com instead.
+const SOURCE_BASE = location.hostname.endsWith('.github.io')
+  ? `https://github.com/${location.hostname.split('.')[0]}/${location.pathname.split('/')[1]}/blob/master/`
+  : '../';
+
 // Centre a node in the part of the canvas the side panel doesn't cover.
 const PANEL_W = 420;
 function centerOn(inst, id, zoom) {
@@ -1095,7 +1100,7 @@ function Panel({ node, out, inc, onPick, onClose }) {
       <h2>${node.label}</h2>
       <div class="where">
         ${node.file
-          ? html`<a href=${'../' + node.file} target="_blank" rel="noopener">${node.file}</a>`
+          ? html`<a href=${SOURCE_BASE + node.file} target="_blank" rel="noopener">${node.file}</a>`
           : 'no file yet'}
         ${node.symbol && html` · <code>${node.symbol}</code>`}
       </div>

@@ -2,8 +2,8 @@
 
 Map of the whole app: Expo screens → API client → Flask routes → services → bundled data and external APIs.
 
-**Interactive version:** open [`docs/architecture.html`](docs/architecture.html) in a browser (it needs
-internet for the React Flow CDN). Drag nodes, pan and zoom, and click any node for a side panel
+**Interactive version:** https://aydinheugh.github.io/EcoLoco-FL/ (or open
+[`docs/architecture.html`](docs/architecture.html) locally; it needs internet for the React Flow CDN). Drag nodes, pan and zoom, and click any node for a side panel
 explaining what that file or function does, the steps it runs, what it calls, and what calls it.
 
 ## Keeping this in sync
