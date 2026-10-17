@@ -25,6 +25,7 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 - A note when the AI part was unavailable, in which case wildlife value and actions show as unknown but the plant and its native/invasive verdict still come back
 
 **After you scan a whole campus (the EcoScan tab):**
+- Every plant you scan stays in the list. Ones the app isn't sure about are marked so you can double-check them or remove them with ✕.
 - A biodiversity score from 0 to 100, plus a list of the plants helping and hurting it
 - A projected score showing how much planting the top recommendations would raise it
 - Native plants to add for your ZIP code
@@ -101,4 +102,4 @@ You'll need Node.js, Python 3, an OpenAI API key, and a free PlantNet API key fr
 ## Where things stand
 
 - Done: Florida plant lists drive the native/invasive verdict, every verdict comes with its source and a "why it matters" line, plants are identified by PlantNet with OpenAI as a backup, the full FISC invasive list and a USDA check are in place, scans keep working when OpenAI is down, results credit Pl@ntNet, and the backend has automated tests.
-- Next: let the app send several photos and ask the user to confirm unsure identifications, show the source and "why it matters" in the app, show "unknown" wildlife value and an AI-unavailable notice properly (the scan screen currently shows unknown values as Medium), double-check the plant lists against official sources, and put the backend online so the app works away from our computers.
+- Next: let the app send several photos and ask the user to confirm unsure identifications, show the source and "why it matters" in the app, show a notice when the AI part was unavailable, replace the remaining pop-up error messages that don't appear in the web version, double-check the plant lists against official sources, and put the backend online so the app works away from our computers.

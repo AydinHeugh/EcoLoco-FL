@@ -30,8 +30,9 @@ function StatusBadge({ status }) {
     native:        { bg: '#eaf2e8', color: SOFT_GREEN,    label: 'Native' },
     'non-native':  { bg: '#faf3e0', color: AMBER,          label: 'Non-Native' },
     invasive:      { bg: '#fdf0ec', color: TERRACOTTA,     label: 'Invasive' },
+    unknown:       { bg: LIGHT_BG,  color: TEXT_MUTED,     label: 'Status unknown' },
   };
-  const c = cfg[status?.toLowerCase()] ?? cfg['non-native'];
+  const c = cfg[status?.toLowerCase()] ?? cfg.unknown;
   return (
     <View style={[sb.wrap, { backgroundColor: c.bg }]}>
       <Text style={[sb.text, { color: c.color }]}>{c.label}</Text>
@@ -48,7 +49,7 @@ const sb = StyleSheet.create({
 function SupportPill({ level }) {
   const labels = { high: '↑ High', medium: '→ Medium', low: '↓ Low' };
   return (
-    <Text style={sp.text}>{labels[level?.toLowerCase()] ?? '→ Medium'} wildlife support</Text>
+    <Text style={sp.text}>{labels[level?.toLowerCase()] ?? '? Unknown'} wildlife support</Text>
   );
 }
 
@@ -118,7 +119,7 @@ function PlantCard({ plant, onDelete }) {
         </View>
         <SupportPill level={plant.wildlife_support} />
         <ConfidenceBadge confidence={plant.confidence} />
-        {(plant.confidence ?? 1) < 0.80 && (
+        {((plant.confidence ?? 1) < 0.80 || plant.needs_confirmation) && (
           <Text style={styles.expertWarning}>⚠ Low confidence — consult an expert before acting</Text>
         )}
       </View>
@@ -135,6 +136,7 @@ export default function AuditScreen({ navigation }) {
   const [zipCode, setZipCode] = useState(_savedZip);
   const [plants,  setPlants]  = useState(_savedPlants);
   const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState(null);
 
   // Keep module vars in sync so state is restored on remount
   useEffect(() => { _savedPlants = plants; }, [plants]);
@@ -151,19 +153,20 @@ export default function AuditScreen({ navigation }) {
   const canFinish  = identified.length > 0 && !scanning;
 
   async function scanPlant(source) {
+    setScanError(null);
     if (!zipValid) {
-      Alert.alert('ZIP Required', 'Enter a 5-digit ZIP code before scanning.');
+      setScanError('Enter a 5-digit ZIP code before scanning.');
       return;
     }
 
     let res;
     if (source === 'camera') {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') { Alert.alert('Permission needed', 'Camera access is required.'); return; }
+      if (status !== 'granted') { setScanError('Camera access is required to scan a plant.'); return; }
       res = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.8 });
     } else {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') { Alert.alert('Permission needed', 'Photo library access is required.'); return; }
+      if (status !== 'granted') { setScanError('Photo library access is required to upload a photo.'); return; }
       res = await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.8 });
     }
 
@@ -179,30 +182,12 @@ export default function AuditScreen({ navigation }) {
     try {
       const data   = await identifyPlant(photo.base64, zipCode);
       const result = data.result;
-      const pct    = Math.round((result.confidence ?? 1) * 100);
-
-      const addPlant = () => setPlants(prev => prev.map(p =>
+      setPlants(prev => prev.map(p =>
         p._id === tempId ? { ...result, _id: tempId, photo_uri: photo.uri, loading: false } : p
       ));
-      const discard  = () => setPlants(prev => prev.filter(p => p._id !== tempId));
-
-      if (pct < 70) {
-        // remove loading card first, then prompt
-        discard();
-        Alert.alert(
-          `Low confidence (${pct}%)`,
-          `We're not sure this is a plant. The AI identified "${result.plant_name}" but with low confidence — this photo may not contain a plant, or the image is unclear.`,
-          [
-            { text: 'Add anyway', onPress: () => setPlants(prev => [...prev, { ...result, _id: tempId, photo_uri: photo.uri, loading: false }]) },
-            { text: 'Discard', style: 'destructive' },
-          ]
-        );
-      } else {
-        addPlant();
-      }
     } catch {
       setPlants(prev => prev.filter(p => p._id !== tempId));
-      Alert.alert('Error', 'Could not identify this plant. Try again.');
+      setScanError('Could not identify this plant. Check your connection and try again.');
     } finally {
       setScanning(false);
     }
@@ -213,9 +198,14 @@ export default function AuditScreen({ navigation }) {
   }
 
   function handleNewAudit() {
+    const clear = () => { setPlants([]); setScanError(null); };
+    if (Platform.OS === 'web') {
+      if (window.confirm('Start a new scan? This will clear all scanned plants.')) clear();
+      return;
+    }
     Alert.alert('Start New Audit', 'This will clear all scanned plants.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Clear', style: 'destructive', onPress: () => setPlants([]) },
+      { text: 'Clear', style: 'destructive', onPress: clear },
     ]);
   }
 
@@ -298,6 +288,8 @@ export default function AuditScreen({ navigation }) {
             <Text style={styles.emptySubtitle}>Enter your ZIP code and start scanning plants around campus.</Text>
           </View>
         )}
+
+        {scanError && <Text style={styles.scanError}>{scanError}</Text>}
 
         {/* ── Action Buttons ── */}
         <View style={styles.actions}>
@@ -410,4 +402,5 @@ const styles = StyleSheet.create({
   finishBtnText: { fontSize: 15, fontFamily: 'DMSans_700Bold', color: CREAM },
   btnDisabled: { opacity: 0.35 },
   expertWarning: { fontSize: 11, fontFamily: 'DMSans_400Regular', color: '#C97D5D', marginTop: 4, lineHeight: 15 },
+  scanError: { marginHorizontal: 20, marginBottom: 10, fontSize: 13, fontFamily: 'DMSans_400Regular', color: TERRACOTTA, textAlign: 'center' },
 });

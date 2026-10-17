@@ -47,8 +47,9 @@ function SupportPill({ level }) {
     high:   { bg: '#eaf2e8', color: SOFT_GREEN,  label: '↑ High' },
     medium: { bg: '#faf3e0', color: '#c49a3a',   label: '→ Medium' },
     low:    { bg: '#f5efec', color: '#C97D5D',   label: '↓ Low' },
+    unknown:{ bg: '#eeeeea', color: '#7a7a6a',   label: '? Unknown' },
   };
-  const c = cfg[level?.toLowerCase()] ?? cfg.medium;
+  const c = cfg[level?.toLowerCase()] ?? cfg.unknown;
   return (
     <View style={[sp.wrap, { backgroundColor: c.bg }]}>
       <Text style={[sp.text, { color: c.color }]}>{c.label} Wildlife</Text>

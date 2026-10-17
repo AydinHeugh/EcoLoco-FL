@@ -19,6 +19,13 @@ const TEXT_MUTED = '#7a7a6a';
 const BORDER     = '#d4cfc4';
 const AMBER      = '#c49a3a';
 const TERRACOTTA = '#C97D5D';
+
+const SUPPORT_STYLES = {
+  high:    { bg: '#eaf2e8', color: SOFT_GREEN, label: '↑ High' },
+  medium:  { bg: '#faf3e0', color: AMBER,      label: '→ Medium' },
+  low:     { bg: '#f5efec', color: TERRACOTTA, label: '↓ Low' },
+  unknown: { bg: '#eeeeea', color: TEXT_MUTED, label: '? Unknown' },
+};
 const CARD_BG    = '#fefcf8';
 const EASE_OUT   = Easing.bezier(0.22, 1, 0.36, 1);
 
@@ -597,15 +604,16 @@ export default function AuditResultsScreen({ route, navigation }) {
                                   ? <Text style={styles.viewAllBenefit}>{rec.benefit}</Text>
                                   : null}
                               </View>
-                              <View style={[styles.supportPill, {
-                                backgroundColor: rec.wildlife_support === 'high' ? '#eaf2e8' : rec.wildlife_support === 'medium' ? '#faf3e0' : '#f5efec'
-                              }]}>
-                                <Text style={[styles.supportPillText, {
-                                  color: rec.wildlife_support === 'high' ? SOFT_GREEN : rec.wildlife_support === 'medium' ? AMBER : TERRACOTTA
-                                }]}>
-                                  {rec.wildlife_support === 'high' ? '↑ High' : rec.wildlife_support === 'medium' ? '→ Medium' : '↓ Low'} Wildlife
-                                </Text>
-                              </View>
+                              {(() => {
+                                const support = SUPPORT_STYLES[rec.wildlife_support] ?? SUPPORT_STYLES.unknown;
+                                return (
+                                  <View style={[styles.supportPill, { backgroundColor: support.bg }]}>
+                                    <Text style={[styles.supportPillText, { color: support.color }]}>
+                                      {support.label} Wildlife
+                                    </Text>
+                                  </View>
+                                );
+                              })()}
                             </View>
                           ))}
 

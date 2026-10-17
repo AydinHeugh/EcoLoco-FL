@@ -64,7 +64,7 @@ and the answer comes back the same way.
 | `fisc_list.json` (backend/data/fisc_list.json) | change planned | Verify the 22 curated "why" lines against FISC / UF-IFAS before the demo. |
 | `fl_natives.json` (backend/data/fl_natives.json) | change planned | Verify every entry against UF/IFAS and the Atlas of Florida Plants before the demo. |
 | `Multi-photo picker + confirm step` | PLANNED | Let users send 1–5 photos of one plant, and when `needs_confirmation` is true, ask them to pick from the candidates. The backend already accepts this. |
-| `Show "unknown" + AI-unavailable notice` | PLANNED | When `ai_unavailable` is true, show wildlife value as unknown and a short notice. Today the EcoScan cards show any unrecognised wildlife value as "Medium". |
+| `AI-unavailable notice` | PLANNED | Show a short notice when a scan, recommendation list or letter has `ai_unavailable: true`. Unknown wildlife values and statuses are already labelled "Unknown". |
 <!-- /GENERATED:planned -->
 
 ## Diagram
@@ -85,7 +85,7 @@ flowchart LR
     ui_jump["Before → after score jump<br/>PLANNED — goal: Make score → projected_score the headline jump. Mostly built already (toggle + BeforeAfterPill); remaining: lead with it, and use one source of truth for projected_score (the screen recomputes it today)."]
     letter["LetterGenerator"]
     ui_multiphoto["Multi-photo picker + confirm step<br/>PLANNED — goal: Let users send 1–5 photos of one plant, and when `needs_confirmation` is true, ask them to pick from the candidates. The backend already accepts this."]
-    ui_ai_unknown["Show #quot;unknown#quot; + AI-unavailable notice<br/>PLANNED — goal: When `ai_unavailable` is true, show wildlife value as unknown and a short notice. Today the EcoScan cards show any unrecognised wildlife value as #quot;Medium#quot;."]
+    ui_ai_unknown["AI-unavailable notice<br/>PLANNED — goal: Show a short notice when a scan, recommendation list or letter has `ai_unavailable: true`. Unknown wildlife values and statuses are already labelled #quot;Unknown#quot;."]
   end
   subgraph L_device["Device"]
     direction TB

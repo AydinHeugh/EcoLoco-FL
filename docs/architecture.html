@@ -207,7 +207,7 @@
         "`handleRecommend(zip)` rejects anything that isn't exactly 5 digits.",
         "Calls `getPlantRecommendations(zip)` and shows skeleton cards while waiting.",
         "The top 3 come back with problem / action / impact text and are shown as large cards; the other 8 have a one-line benefit and sit behind 'View all'.",
-        "Network errors show an alert."
+        "Network errors show an alert, which does not appear on the web build. Unrecognised wildlife values show as \"? Unknown\"."
       ]
     },
     {
@@ -222,11 +222,12 @@
       "what": "The campus audit: scan many plants one after another, then score the whole schoolyard.",
       "how": [
         "Requires a 5-digit ZIP before scanning. The ZIP and the scanned plants live in module-level variables so they survive switching tabs.",
-        "`scanPlant(source)` asks for camera or photo-library permission, then opens expo-image-picker.",
+        "`scanPlant(source)` asks for camera or photo-library permission, then opens expo-image-picker (on the web both buttons open a file picker).",
         "Adds a loading card right away, then calls `identifyPlant(photo.base64, zipCode)`.",
-        "If confidence is under 70%, it removes the card and asks 'Add anyway' or 'Discard'; otherwise it fills the card in.",
-        "Each card shows a status badge, wildlife-support pill and confidence; cards can be deleted.",
-        "Finish → `navigate('AuditResults', {plants: identified, zipCode})`. 'New audit' clears the list after a confirm."
+        "Every result is kept as a card. Unsure ones (confidence under 80% or `needs_confirmation`) show a \"Low confidence\" warning, and any card can be removed with ✕.",
+        "Problems (missing ZIP, permissions, network errors) appear as a message on the screen instead of a popup, since popups don't show on the web build.",
+        "Each card shows a status badge, wildlife-support pill and confidence; unrecognised values show as \"Status unknown\" / \"Unknown\" instead of a made-up level.",
+        "Finish → `navigate('AuditResults', {plants: identified, zipCode})`. \"New Scan\" clears the list after a confirm (browser confirm dialog on the web)."
       ]
     },
     {
@@ -247,7 +248,8 @@
         "Projected score: the screen recomputes it itself as score + a boost per top-3 recommendation (high 8, medium 6, low 5, max 100). It only uses the backend's `projected_score` while recommendations are still loading.",
         "Hovering an action card previews that one card's boost; a Current/Projected toggle swaps the ring and shows the `BeforeAfterPill` (old → new, +N pts).",
         "Renders `LetterGenerator` with the recommendations, score and ZIP.",
-        "'See all recommendations' → Recommend tab with `prefillZip`."
+        "'See all recommendations' → Recommend tab with `prefillZip`.",
+        "Recommendation pills show \"? Unknown\" for wildlife values other than high/medium/low."
       ]
     },
     {
@@ -878,18 +880,18 @@
     },
     {
       "id": "ui_ai_unknown",
-      "label": "Show \"unknown\" + AI-unavailable notice",
+      "label": "AI-unavailable notice",
       "layer": "ui",
       "status": "planned",
       "file": null,
       "symbol": null,
       "col": 2,
       "row": 8.8,
-      "goal": "When `ai_unavailable` is true, show wildlife value as unknown and a short notice. Today the EcoScan cards show any unrecognised wildlife value as \"Medium\".",
-      "what": "Makes degraded results honest in the app.",
+      "goal": "Show a short notice when a scan, recommendation list or letter has `ai_unavailable: true`. Unknown wildlife values and statuses are already labelled \"Unknown\".",
+      "what": "Tells users when part of a result came without AI.",
       "how": [
-        "Handle `wildlife_support: \"unknown\"` in the support pill instead of defaulting to Medium.",
-        "Show a one-line notice when a scan, recommendation list or letter has `ai_unavailable: true`."
+        "Show a one-line notice when a scan, recommendation list or letter has `ai_unavailable: true`.",
+        "Also replace the remaining popup-based error messages on the Recommend and results screens, which don't show on the web build."
       ]
     }
   ],
@@ -1004,7 +1006,7 @@
       "from": "audit",
       "to": "c_identify",
       "label": "identifyPlant(photo.base64, zipCode) per scan",
-      "detail": "Result under 70% confidence → 'Add anyway' / 'Discard' prompt."
+      "detail": "Every result becomes a card; unsure ones are flagged instead of discarded."
     },
     {
       "from": "rec",
