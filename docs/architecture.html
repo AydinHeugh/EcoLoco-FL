@@ -186,10 +186,12 @@
         "You type a 5-digit ZIP and pick a photo: Take Photo (camera) or Upload Photo (library) via expo-image-picker with `base64: true`. On web you can also drag-and-drop an image; a `FileReader` turns it into base64.",
         "The Identify button only enables when there's a photo and a 5-digit ZIP.",
         "`handleIdentify()` calls `identifyPlant(photo.base64, zipCode)` and shows loading dots.",
-        "Renders the result: name, scientific name, native/invasive badge, wildlife support, confidence, and suggested actions. (It still shows `inat_note` if present, but the backend no longer sends one.)",
-        "'Get native plant recommendations for ZIP' → `navigate('Recommend', {prefillZip})`.",
-        "Under the result, a \"Plant identification powered by Pl@ntNet\" credit with the official logo links to plantnet.org (opened with `expo-linking`).",
-        "Errors show inline under the photo."
+        "`identified`: shows the name, the shared `StatusBadge`, and PlantNet's match percentage.",
+        "`confirm`: shows `CandidatePicker` (\"Which one is it?\") with every option's status and PlantNet %, the AI's suggestion marked \"Best guess\", and \"None of these\".",
+        "`unidentified` or \"None of these\": shows \"Couldn't identify this. Try a close-up of one leaf, or a flower\" and no name.",
+        "Plants with no wildlife facts in our data say \"We don't have wildlife info for this plant yet\".",
+        "'Get native plant recommendations for ZIP' → `navigate('Recommend', {prefillZip})`. A \"Plant identification powered by Pl@ntNet\" credit links to plantnet.org.",
+        "Colors and fonts come from `frontend/theme.js`."
       ]
     },
     {
@@ -224,10 +226,10 @@
         "Requires a 5-digit ZIP before scanning. The ZIP and the scanned plants live in module-level variables so they survive switching tabs.",
         "`scanPlant(source)` asks for camera or photo-library permission, then opens expo-image-picker (on the web both buttons open a file picker).",
         "Adds a loading card right away, then calls `identifyPlant(photo.base64, zipCode)`.",
-        "Every result is kept as a card. Unsure ones (confidence under 80% or `needs_confirmation`) show a \"Low confidence\" warning, and any card can be removed with ✕.",
-        "Problems (missing ZIP, permissions, network errors) appear as a message on the screen instead of a popup, since popups don't show on the web build.",
-        "Each card shows a status badge, wildlife-support pill and confidence; unrecognised values show as \"Status unknown\" / \"Unknown\" instead of a made-up level.",
-        "Finish → `navigate('AuditResults', {plants: identified, zipCode})`. \"New Scan\" clears the list after a confirm (browser confirm dialog on the web)."
+        "Every result is kept as a card. `confirm` cards show the `CandidatePicker` under the photo; `unidentified` cards say \"Not identified\" with the retake tip. Any card can be removed with ✕.",
+        "Problems (missing ZIP, permissions, network errors) appear as a message on the screen instead of a popup.",
+        "Finish sends every card: picked or identified plants as they are, unconfirmed or unidentified ones as \"Unidentified plant\" with status `unknown`.",
+        "\"New Scan\" clears the list after a confirm (browser confirm dialog on the web)."
       ]
     },
     {
@@ -242,9 +244,9 @@
       "what": "Turns the scanned plants into a biodiversity score, the top fixes, and a letter to the principal.",
       "how": [
         "Receives `plants[]` and `zipCode` from AuditScreen via route params.",
-        "`fetchAll()` maps each plant to `{name, invasive_status, wildlife_support}` (missing values default to 'non-native' / 'low') and calls `getScore()`.",
+        "`fetchAll()` maps each plant to `{name, status, wildlife_support}` and calls `getScore()`.",
         "Then, if there's a ZIP, calls `getPlantRecommendations(zipCode)`.",
-        "Shows a score ring that counts up, the helping / hurting / unidentified breakdown, and the insight sentence.",
+        "Shows a score ring that counts up, the plants grouped as Native, Non-native (not harmful), Invasive and Unknown, and the insight sentence.",
         "Projected score: the screen recomputes it itself as score + a boost per top-3 recommendation (high 8, medium 6, low 5, max 100). It only uses the backend's `projected_score` while recommendations are still loading.",
         "Hovering an action card previews that one card's boost; a Current/Projected toggle swaps the ring and shows the `BeforeAfterPill` (old → new, +N pts).",
         "Renders `LetterGenerator` with the recommendations, score and ZIP.",
@@ -521,7 +523,7 @@
       "status": "dead",
       "file": "backend/services/inat_service.py",
       "symbol": "def get_plant_requests(",
-      "col": 5,
+      "col": 4,
       "row": 8,
       "goal": "Nothing calls it since the confidence nudge was removed. Repurpose it (e.g. a 'seen near you' count) or delete inat_service.py.",
       "what": "Fetches recent iNaturalist sightings of a plant so we can see if it's found near the user.",
@@ -540,15 +542,14 @@
       "symbol": "def identify_plant(",
       "col": 5,
       "row": 1.5,
-      "what": "The identification pipeline: works out what the plant is, whether it is native or invasive (from Florida data), and what to do about it.",
+      "what": "The identification pipeline: works out what the plant is, its Florida status from our data, and how sure the app is.",
       "how": [
-        "`identify_species(images, location)` returns the species, confidence, other candidates, which service identified it, and whether the user should confirm it.",
-        "`get_status(scientific_name, zip)` checks the FISC list, the bundled natives, then USDA PLANTS.",
-        "`assess_plant(species, status, zip)` asks OpenAI for wildlife support + reason, conservation status, two actions, and its own native/invasive guess. When the status is known, the prompt tells the model to treat it as fact.",
-        "If OpenAI is unavailable (`AIUnavailable`: no credits, network error, or a malformed reply), the scan still returns: wildlife support, conservation status and reason become `unknown`, actions are empty (invasives still get the two fixed removal actions), and `ai_unavailable` is true.",
-        "Status: if our data knows the plant (FISC, fl_natives or USDA), that answer wins: invasive, native, or non-native. Only when `source` is `unknown` does it use the model's guess, or `unknown` if OpenAI is down.",
-        "Cleans model values to the allowed lists (e.g. `HIGH` → `high`).",
-        "Returns `plant_name, scientific_name, is_native, invasive_status, endangered_status, wildlife_support, wildlife_support_reason, confidence, candidates, id_source, needs_confirmation, source, why, actions, ai_unavailable`."
+        "`identify_species(images, location)` returns the state (`identified`, `confirm` or `unidentified`), the ranked options and the suggested one.",
+        "`unidentified` returns the message \"Couldn't identify this. Try a close-up of one leaf, or a flower\" with no options, and makes no AI call.",
+        "Otherwise each option goes through `plant_option()` in parallel, so every option in the picker shows its own Florida status.",
+        "Status comes only from our lists and USDA. `assess_plant()` still asks OpenAI for wildlife support, conservation status and two actions for the top option (removed in Priority 3).",
+        "If OpenAI is unavailable, wildlife values become unknown, actions are empty (invasives still get the fixed removal actions) and `ai_unavailable` is true.",
+        "Returns the top option's fields plus `state, options, suggested, message, id_source, wildlife_support, wildlife_support_reason, endangered_status, actions, ai_unavailable`."
       ]
     },
     {
@@ -632,8 +633,8 @@
       "goal": "Add ZIP-specific regional lists behind the same get_status().",
       "what": "The status seam: answers \"is this plant native or invasive in South Florida, and says who.\"",
       "how": [
-        "Loads `fisc_list.json` and `fl_natives.json` once (cached), indexed by lower-cased scientific name and synonyms.",
-        "Normalises the name: trims, collapses whitespace, ignores case; retries with just the first two words so author names or varieties still match.",
+        "Looks the name up with `resolve()`, so synonyms and common names reach the same species, then checks that species in `fisc_list.json` and `fl_natives.json` (loaded once, cached).",
+        "Names `resolve()` doesn't know go straight to USDA unchanged.",
         "FISC first → `{native: false, invasive: true, source: 'FISC', why}` (`why` is null for species without a curated line).",
         "Then the bundled natives → `{native: true, invasive: false, source: 'fl_natives', why}`.",
         "Then USDA PLANTS (`usda_service.florida_status`): native → `{native: true, invasive: false, source: 'USDA'}`; introduced → `{native: false, invasive: false, source: 'USDA'}`.",
@@ -666,7 +667,7 @@
       "file": "backend/data/fisc_list.json",
       "symbol": null,
       "col": 7,
-      "row": 2.7,
+      "row": 2.5,
       "goal": "Verify the 22 curated \"why\" lines against FISC / UF-IFAS before the demo.",
       "what": "The complete official Florida Invasive Species Council 2026 list: 179 species (85 Category I, 94 Category II).",
       "how": [
@@ -683,7 +684,7 @@
       "file": "backend/data/fl_natives.json",
       "symbol": null,
       "col": 7,
-      "row": 3.7,
+      "row": 3.9,
       "goal": "Verify every entry against UF/IFAS and the Atlas of Florida Plants before the demo.",
       "what": "Bundled list of 22 South Florida native plants with their wildlife payoff, shipped with the backend.",
       "how": [
@@ -721,12 +722,13 @@
       "what": "Turns 1–5 photos of one plant into a species: PlantNet first, OpenAI to break ties or as a backup, always in the same shape.",
       "how": [
         "Accepts one photo or a list of 1–5; anything else raises an error (the route rejects it first).",
-        "Asks PlantNet via `identify_with_plantnet(images)` for a ranked list of species with scores.",
-        "Confident = top score ≥ 0.80 and more than 0.15 ahead of the runner-up. If PlantNet is confident, its answer is used (`source: plantnet`).",
-        "If PlantNet is unsure, OpenAI sees the photos, the ZIP and PlantNet's top 5 and must pick one of them (`source: openai_adjudicated`, `needs_confirmation: true`). An answer outside the list, or an OpenAI error, keeps PlantNet's top match instead.",
-        "If PlantNet fails or finds nothing, OpenAI vision identifies the photos on its own (`source: openai_fallback`), and the same confidence rule sets `needs_confirmation`.",
-        "If everything fails it returns empty names with `source: none` instead of crashing. Failures are logged by error type only, never the raw message (PlantNet's URL contains the API key).",
-        "Returns `{scientific_name, common_name, confidence, candidates, source, needs_confirmation}`; `candidates` are the other possibilities with their scores."
+        "Asks PlantNet via `identify_with_plantnet(images)` for a ranked list of species with scores. A 404 from PlantNet means \"no plant found\" and returns an empty list.",
+        "Merges names of the same species with `resolve()` and adds their scores (capped at 1.0). PlantNet often splits coontie between Zamia integrifolia and Zamia pumila.",
+        "Sets `state` from PlantNet's own top score: under 0.20 → `unidentified`; under 0.80, or 0.15 or less ahead of the runner-up → `confirm`; otherwise `identified`.",
+        "Only for `confirm`, OpenAI sees the photos, ZIP and the options and names its best guess; that only sets `suggested`, never the scores or order (`source: openai_adjudicated`). Errors or off-list answers keep PlantNet's order (`source: plantnet`).",
+        "If PlantNet itself fails, OpenAI vision identifies the photos on its own (`source: openai_fallback`) with the same thresholds. If that fails too: `unidentified`, `source: none`.",
+        "Failures are logged by error type only, never the raw message (PlantNet's URL contains the API key).",
+        "Returns `{state, ranked, suggested, source}`; `ranked` is empty when unidentified."
       ]
     },
     {
@@ -738,10 +740,10 @@
       "symbol": "def assess_plant(",
       "col": 6,
       "row": 1.9,
-      "what": "Asks the model for the parts our data doesn't cover: wildlife value, conservation status and actions.",
+      "what": "Asks OpenAI for wildlife support, conservation status and two actions for the top match. It no longer guesses native/invasive status (Priority 3 removes it entirely).",
       "how": [
-        "Builds a prompt with the plant's names and ZIP. If `get_status` knew the plant, adds \"Florida records (FISC/fl_natives) list it as invasive/native here; treat that as fact.\"",
-        "Asks for `wildlife_support`, a one-sentence reason, `endangered_status`, `is_native` + `invasive_status` (used only as a fallback), and two actions.",
+        "Builds a prompt with the plant's names and ZIP. If `get_status` knew the plant, adds \"Florida records (FISC/fl_natives/USDA) list it as invasive/native/non-native here; treat that as fact.\"",
+        "Asks for `wildlife_support`, a one-sentence reason, `endangered_status` and two actions. It is no longer asked for a native/invasive guess.",
         "Returns the parsed JSON; `identify_plant` cleans and merges it.",
         "A reply that isn't a JSON object raises `AIUnavailable`, so `identify_plant` degrades instead of crashing."
       ]
@@ -781,19 +783,18 @@
     },
     {
       "id": "ui_multiphoto",
-      "label": "Multi-photo picker + confirm step",
+      "label": "Multi-photo upload",
       "layer": "ui",
       "status": "planned",
       "file": null,
       "symbol": null,
       "col": 2,
-      "row": -0.4,
-      "goal": "Let users send 1–5 photos of one plant, and when `needs_confirmation` is true, ask them to pick from the candidates. The backend already accepts this.",
-      "what": "Lets the user add several photos of the same plant and confirm unsure identifications.",
+      "row": -1.4,
+      "goal": "Let users send 1–5 photos of one plant as `images` (Priority 6). The confirm picker already shipped.",
+      "what": "Lets the user add several photos of the same plant for a surer match.",
       "how": [
         "Allow up to 5 photos per plant (leaf, flower, bark…) and send them as `images` to /identify.",
-        "If the result has `needs_confirmation: true`, show the top match and the `candidates` and let the user pick.",
-        "Show which service identified it (`id_source`)."
+        "When the state is `confirm`, suggest which part to photograph next."
       ]
     },
     {
@@ -892,6 +893,75 @@
       "how": [
         "Show a one-line notice when a scan, recommendation list or letter has `ai_unavailable: true`.",
         "Also replace the remaining popup-based error messages on the Recommend and results screens, which don't show on the web build."
+      ]
+    },
+    {
+      "id": "s_resolve",
+      "label": "resolve()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/species_service.py",
+      "symbol": "def resolve(",
+      "col": 6,
+      "row": 4.3,
+      "what": "Turns any name for a plant (scientific name, older synonym, or common name) into one scientific name, so every spelling of a species gets the same answer.",
+      "how": [
+        "Builds one index from `fisc_list.json` and `fl_natives.json`: each entry's scientific name, `synonyms`, `common_name` and `common_names`.",
+        "Ignores case and extra spaces; retries with just the first two words so author names (\"Zamia integrifolia L.\") still match.",
+        "A name shared by two different species is dropped from the index rather than guessed.",
+        "Returns the canonical scientific name, or `None` when no list knows the name.",
+        "`common_name(scientific_name)` gives our list's common name for a species."
+      ]
+    },
+    {
+      "id": "s_option",
+      "label": "plant_option()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/fl_plants_service.py",
+      "symbol": "def plant_option(",
+      "col": 6,
+      "row": 2.55,
+      "what": "Builds one ready-to-show answer for a candidate plant: its name, Florida status in plain words, and where that came from.",
+      "how": [
+        "Resolves the name with `resolve()` and looks it up with `get_status()`.",
+        "`status_key()` turns the lookup into one of `native`, `non-native`, `invasive` or `unknown`. Unknown means no Florida list or USDA knows it; the AI never fills it in.",
+        "Adds `status_label` (`Native`, `Non-native`, `Invasive`, `Unknown: not on Florida lists`) and `source_label` (for example `Florida Invasive Species Council 2026 list`).",
+        "Uses our list's common name first, then PlantNet's, then the scientific name, so a name is never blank.",
+        "Non-native plants from USDA with no curated line get `why`: \"Not from Florida, and not on Florida's invasive list.\"",
+        "Returns `{plant_name, scientific_name, confidence, status, status_label, source, source_label, why}`."
+      ]
+    },
+    {
+      "id": "ui_picker",
+      "label": "CandidatePicker + StatusBadge",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/CandidatePicker.js",
+      "symbol": "export default function CandidatePicker",
+      "col": 2,
+      "row": -0.4,
+      "what": "Shared pieces used by Identify and EcoScan: the \"Which one is it?\" list and the four status labels.",
+      "how": [
+        "Lists every option with its name, PlantNet match % and status badge; adds the scientific name only when two options share a common name.",
+        "Marks the AI's suggestion \"Best guess\" and always offers \"None of these\".",
+        "`StatusBadge` (frontend/components/StatusBadge.js) shows the backend's `status_label` with the color for its status, so the four labels look the same on every screen.",
+        "Colors and fonts come from `frontend/theme.js`, the one file a redesign needs to change."
+      ]
+    },
+    {
+      "id": "s_common_name",
+      "label": "common_name()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/species_service.py",
+      "symbol": "def common_name(",
+      "col": 7,
+      "row": 4.6,
+      "what": "Gives our list's everyday name for a species, so the same plant is called the same thing on every screen.",
+      "how": [
+        "Resolves the name with `resolve()`.",
+        "Returns the first `common_name` our lists have for that species, or `None`."
       ]
     }
   ],
@@ -1121,12 +1191,7 @@
     {
       "from": "s_identify",
       "to": "s_species",
-      "label": "identify_species(images, location) → names, confidence, candidates, source, needs_confirmation"
-    },
-    {
-      "from": "s_identify",
-      "to": "s_fl",
-      "label": "get_status(scientific_name, zip) → native, invasive, source, why"
+      "label": "identify_species(images, location) → state, ranked options, suggested"
     },
     {
       "from": "s_identify",
@@ -1217,6 +1282,61 @@
       "from": "fisc_builder",
       "to": "d_fisc",
       "label": "writes 179 species from the official PDF"
+    },
+    {
+      "from": "s_identify",
+      "to": "s_option",
+      "label": "plant_option(name, common_name, confidence, zip) per option → status, labels, why"
+    },
+    {
+      "from": "s_option",
+      "to": "s_fl",
+      "label": "get_status(name, zip) → native, invasive, source, why"
+    },
+    {
+      "from": "s_option",
+      "to": "s_resolve",
+      "label": "resolve(name) → one scientific name"
+    },
+    {
+      "from": "s_fl",
+      "to": "s_resolve",
+      "label": "resolve(name) before any list lookup"
+    },
+    {
+      "from": "s_species",
+      "to": "s_resolve",
+      "label": "resolve(name) to merge names of the same species"
+    },
+    {
+      "from": "s_resolve",
+      "to": "d_fisc",
+      "label": "names, synonyms, common names"
+    },
+    {
+      "from": "s_resolve",
+      "to": "d_natives",
+      "label": "names, synonyms, common names"
+    },
+    {
+      "from": "ident",
+      "to": "ui_picker",
+      "label": "unsure match → pick one or \"None of these\""
+    },
+    {
+      "from": "audit",
+      "to": "ui_picker",
+      "label": "unsure card → pick one or \"None of these\""
+    },
+    {
+      "from": "s_option",
+      "to": "s_common_name",
+      "label": "common_name(scientific_name) → our name for it"
+    },
+    {
+      "from": "s_common_name",
+      "to": "s_resolve",
+      "label": "resolve(name)"
     }
   ]
 }

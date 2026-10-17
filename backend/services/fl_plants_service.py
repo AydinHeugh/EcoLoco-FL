@@ -1,21 +1,15 @@
 import json
 import logging
 from functools import cache
-from pathlib import Path
 
 from services import usda_service
+from services.species_service import DATA_DIR, resolve, common_name as species_common_name
 
 log = logging.getLogger(__name__)
-
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 
 def _unknown():
     return {"native": None, "invasive": None, "source": "unknown", "why": None}
-
-
-def _normalize(name):
-    return " ".join(str(name).split()).lower()
 
 
 @cache
@@ -24,33 +18,22 @@ def _species(filename):
 
 
 @cache
-def _index(filename):
-    return {
-        _normalize(name): entry
-        for entry in _species(filename)
-        for name in [entry["scientific_name"], *entry.get("synonyms", [])]
-    }
+def _by_name(filename):
+    return {entry["scientific_name"]: entry for entry in _species(filename)}
 
 
 def bundled_natives():
     return list(_species("fl_natives.json"))
 
 
-def _find(filename, key):
-    index = _index(filename)
-    # Fall back to the bare binomial so "Zamia integrifolia L." or
-    # "Asclepias tuberosa subsp. rolfsii" still match.
-    return index.get(key) or index.get(" ".join(key.split()[:2]))
-
-
 def get_status(scientific_name, zip_code):
     # zip_code is unused until there are regional lists; both lists cover South Florida.
     if not scientific_name or not str(scientific_name).strip():
         return _unknown()
-    key = _normalize(scientific_name)
-    if entry := _find("fisc_list.json", key):
+    canonical = resolve(scientific_name)
+    if entry := _by_name("fisc_list.json").get(canonical):
         return {"native": False, "invasive": True, "source": "FISC", "why": entry["why"]}
-    if entry := _find("fl_natives.json", key):
+    if entry := _by_name("fl_natives.json").get(canonical):
         return {"native": True, "invasive": False, "source": "fl_natives", "why": entry["why"]}
     try:
         florida = usda_service.florida_status(scientific_name)
@@ -60,3 +43,44 @@ def get_status(scientific_name, zip_code):
     if florida is None:
         return _unknown()
     return {"native": florida == "native", "invasive": False, "source": "USDA", "why": None}
+
+
+STATUS_LABELS = {
+    "native": "Native",
+    "non-native": "Non-native",
+    "invasive": "Invasive",
+    "unknown": "Unknown: not on Florida lists",
+}
+SOURCE_LABELS = {
+    "FISC": "Florida Invasive Species Council 2026 list",
+    "fl_natives": "EcoLoco South Florida native list",
+    "USDA": "USDA PLANTS database",
+}
+NON_NATIVE_WHY = "Not from Florida, and not on Florida's invasive list."
+
+
+def _status_key(status):
+    if status["source"] == "unknown":
+        return "unknown"
+    if status["invasive"]:
+        return "invasive"
+    return "native" if status["native"] else "non-native"
+
+
+def plant_option(scientific_name, common_name, confidence, zip_code):
+    canonical = resolve(scientific_name) or scientific_name
+    status = get_status(canonical, zip_code)
+    key = _status_key(status)
+    why = status["why"]
+    if key == "non-native" and not why:
+        why = NON_NATIVE_WHY
+    return {
+        "plant_name": species_common_name(canonical) or common_name or canonical,
+        "scientific_name": canonical,
+        "confidence": confidence,
+        "status": key,
+        "status_label": STATUS_LABELS[key],
+        "source": status["source"],
+        "source_label": SOURCE_LABELS.get(status["source"]),
+        "why": why,
+    }

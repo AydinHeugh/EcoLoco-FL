@@ -6,35 +6,31 @@ import {
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useFonts } from 'expo-font';
-import { Fraunces_700Bold } from '@expo-google-fonts/fraunces';
-import { DMSans_400Regular, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
 import { getScore, getPlantRecommendations, generateLetter } from '../services/geminiService';
+import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS } from '../theme';
 
-const CREAM      = '#f5f0e8';
-const DARK_GREEN = '#1e3a1e';
-const SOFT_GREEN = '#4a7a3a';
-const LIGHT_BG   = '#eaeee6';
-const TEXT_BODY  = '#4a4a3a';
-const TEXT_MUTED = '#7a7a6a';
-const BORDER     = '#d4cfc4';
-const AMBER      = '#c49a3a';
-const TERRACOTTA = '#C97D5D';
 
 const SUPPORT_STYLES = {
-  high:    { bg: '#eaf2e8', color: SOFT_GREEN, label: '↑ High' },
-  medium:  { bg: '#faf3e0', color: AMBER,      label: '→ Medium' },
-  low:     { bg: '#f5efec', color: TERRACOTTA, label: '↓ Low' },
-  unknown: { bg: '#eeeeea', color: TEXT_MUTED, label: '? Unknown' },
+  high:    { bg: STATUS_COLORS.native.bg, color: COLORS.softGreen, label: '↑ High' },
+  medium:  { bg: STATUS_COLORS['non-native'].bg, color: COLORS.amber,      label: '→ Medium' },
+  low:     { bg: STATUS_COLORS.invasive.bg, color: COLORS.terracotta, label: '↓ Low' },
+  unknown: { bg: STATUS_COLORS.unknown.bg, color: COLORS.textMuted, label: '? Unknown' },
 };
-const CARD_BG    = '#fefcf8';
 const EASE_OUT   = Easing.bezier(0.22, 1, 0.36, 1);
 
 const LOGO = require('../../assets/EcoLoco_logo.png');
 
+const BUCKETS = [
+  { key: 'native',     status: 'native',     label: 'Native' },
+  { key: 'non_native', status: 'non-native', label: 'Non-native (not harmful)' },
+  { key: 'invasive',   status: 'invasive',   label: 'Invasive (hurting wildlife)' },
+  { key: 'unknown',    status: 'unknown',    label: 'Unknown: not on Florida lists' },
+];
+
 function scoreColor(s) {
-  if (s >= 66) return SOFT_GREEN;
-  if (s >= 41) return AMBER;
-  return TERRACOTTA;
+  if (s >= 66) return COLORS.softGreen;
+  if (s >= 41) return COLORS.amber;
+  return COLORS.terracotta;
 }
 
 function scoreLabel(s) {
@@ -72,7 +68,7 @@ function ScoreRing({ targetScore, label, size = 190 }) {
     ]}>
       <Text style={[ring.num, { color, fontSize: size * 0.3 }]}>{shown}</Text>
       {label
-        ? <Text style={[ring.sub, { color, fontFamily: 'DMSans_700Bold' }]}>{label}</Text>
+        ? <Text style={[ring.sub, { color, fontFamily: FONTS.bodyBold }]}>{label}</Text>
         : <Text style={ring.sub}>out of 100</Text>
       }
     </View>
@@ -80,9 +76,9 @@ function ScoreRing({ targetScore, label, size = 190 }) {
 }
 
 const ring = StyleSheet.create({
-  wrap: { borderWidth: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: CREAM },
-  num:  { fontFamily: 'Fraunces_700Bold' },
-  sub:  { fontSize: 11, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, marginTop: 2 },
+  wrap: { borderWidth: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.cream },
+  num:  { fontFamily: FONTS.heading },
+  sub:  { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 2 },
 });
 
 // ─── Highlight plant name in green inside a text block ───────────────────────
@@ -97,7 +93,7 @@ function HighlightedText({ text, plantName, style }) {
         <React.Fragment key={i}>
           {part}
           {i < parts.length - 1 && (
-            <Text style={{ color: SOFT_GREEN, fontFamily: 'DMSans_700Bold' }}>{plantName}</Text>
+            <Text style={{ color: COLORS.softGreen, fontFamily: FONTS.bodyBold }}>{plantName}</Text>
           )}
         </React.Fragment>
       ))}
@@ -143,10 +139,10 @@ function BeforeAfterPill({ fromScore, toScore, visible }) {
 }
 
 const ba = StyleSheet.create({
-  wrap:  { flexDirection: 'row', alignItems: 'center', backgroundColor: '#eaf2e8', borderRadius: 14, paddingHorizontal: 20, paddingVertical: 11, marginTop: 16 },
-  score: { fontSize: 22, fontFamily: 'Fraunces_700Bold' },
-  arrow: { fontSize: 16, color: TEXT_MUTED },
-  delta: { fontSize: 14, fontFamily: 'DMSans_700Bold', color: SOFT_GREEN },
+  wrap:  { flexDirection: 'row', alignItems: 'center', backgroundColor: STATUS_COLORS.native.bg, borderRadius: 14, paddingHorizontal: 20, paddingVertical: 11, marginTop: 16 },
+  score: { fontSize: 22, fontFamily: FONTS.heading },
+  arrow: { fontSize: 16, color: COLORS.textMuted },
+  delta: { fontSize: 14, fontFamily: FONTS.bodyBold, color: COLORS.softGreen },
 });
 
 // ─── Pressable action card ────────────────────────────────────────────────────
@@ -196,21 +192,21 @@ function ActionCard({ rec, index, onHoverIn, onHoverOut, boost }) {
 
 const ac = StyleSheet.create({
   card: {
-    backgroundColor: CARD_BG, borderRadius: 16,
-    borderWidth: 1, borderColor: BORDER,
+    backgroundColor: COLORS.cardBg, borderRadius: 16,
+    borderWidth: 1, borderColor: COLORS.border,
     padding: 18, marginBottom: 14,
   },
   topRow:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  num:       { fontSize: 12, fontFamily: 'DMSans_700Bold', color: TEXT_MUTED, letterSpacing: 1 },
+  num:       { fontSize: 12, fontFamily: FONTS.bodyBold, color: COLORS.textMuted, letterSpacing: 1 },
   badgeRow:  { flexDirection: 'row', gap: 6, alignItems: 'center' },
-  boostBadge:{ backgroundColor: DARK_GREEN, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-  boostText: { fontSize: 11, fontFamily: 'DMSans_700Bold', color: CREAM },
-  badge:     { backgroundColor: '#eaf2e8', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-  badgeText: { fontSize: 11, fontFamily: 'DMSans_700Bold', color: SOFT_GREEN },
-  problem:  { fontSize: 17, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, lineHeight: 24, marginBottom: 14 },
-  divider:  { height: 1, backgroundColor: BORDER, marginVertical: 12 },
-  label:    { fontSize: 10, fontFamily: 'DMSans_700Bold', color: TEXT_MUTED, letterSpacing: 1.2, marginBottom: 5 },
-  body:     { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_BODY, lineHeight: 21 },
+  boostBadge:{ backgroundColor: COLORS.darkGreen, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+  boostText: { fontSize: 11, fontFamily: FONTS.bodyBold, color: COLORS.cream },
+  badge:     { backgroundColor: STATUS_COLORS.native.bg, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+  badgeText: { fontSize: 11, fontFamily: FONTS.bodyBold, color: COLORS.softGreen },
+  problem:  { fontSize: 17, fontFamily: FONTS.heading, color: COLORS.darkGreen, lineHeight: 24, marginBottom: 14 },
+  divider:  { height: 1, backgroundColor: COLORS.border, marginVertical: 12 },
+  label:    { fontSize: 10, fontFamily: FONTS.bodyBold, color: COLORS.textMuted, letterSpacing: 1.2, marginBottom: 5 },
+  body:     { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: 21 },
 });
 
 // ─── Letter Generator ────────────────────────────────────────────────────────
@@ -272,7 +268,7 @@ function LetterGenerator({ recs, score, zipCode }) {
         disabled={!anySelected || letterLoading}
       >
         {letterLoading
-          ? <ActivityIndicator color={CREAM} size="small" />
+          ? <ActivityIndicator color={COLORS.cream} size="small" />
           : <Text style={styles.letterBtnText}>Generate Letter for Administration</Text>
         }
       </TouchableOpacity>
@@ -322,14 +318,14 @@ export default function AuditResultsScreen({ route, navigation }) {
   const { width } = useWindowDimensions();
   const maxWidth   = Math.min(width, 960);
 
-  const [fontsLoaded] = useFonts({ Fraunces_700Bold, DMSans_400Regular, DMSans_700Bold });
+  const [fontsLoaded] = useFonts(FONT_ASSETS);
 
   useEffect(() => {
     async function fetchAll() {
       try {
         const plantsPayload = plants.map(p => ({
           name:             p.plant_name,
-          invasive_status:  p.invasive_status  ?? 'non-native',
+          status:           p.status,
           wildlife_support: p.wildlife_support ?? 'low',
         }));
         const data = await getScore(plantsPayload);
@@ -408,7 +404,7 @@ export default function AuditResultsScreen({ route, navigation }) {
         {/* ── Loading ── */}
         {loading && (
           <View style={styles.centerSection}>
-            <ActivityIndicator color={SOFT_GREEN} size="large" />
+            <ActivityIndicator color={COLORS.softGreen} size="large" />
             <Text style={styles.loadingText}>Calculating your biodiversity score…</Text>
           </View>
         )}
@@ -472,43 +468,18 @@ export default function AuditResultsScreen({ route, navigation }) {
 
                   <Text style={styles.sectionTitle}>What's on campus</Text>
 
-                  {scoreData.breakdown.helping.length > 0 && (
-                    <View style={styles.bCard}>
+                  {BUCKETS.map(({ key, status, label }) => scoreData.breakdown[key].length > 0 && (
+                    <View key={key} style={styles.bCard}>
                       <View style={styles.bHeader}>
-                        <View style={[styles.dot, { backgroundColor: SOFT_GREEN }]} />
-                        <Text style={styles.bLabel}>Helping your ecosystem</Text>
-                        <View style={styles.bBadge}><Text style={styles.bBadgeText}>{scoreData.breakdown.helping.length}</Text></View>
+                        <View style={[styles.dot, { backgroundColor: STATUS_COLORS[status].color }]} />
+                        <Text style={styles.bLabel}>{label}</Text>
+                        <View style={styles.bBadge}><Text style={styles.bBadgeText}>{scoreData.breakdown[key].length}</Text></View>
                       </View>
-                      {scoreData.breakdown.helping.map((name, i) => (
+                      {scoreData.breakdown[key].map((name, i) => (
                         <Text key={i} style={styles.bItem}>· {name}</Text>
                       ))}
                     </View>
-                  )}
-
-                  {scoreData.breakdown.hurting.length > 0 && (
-                    <View style={styles.bCard}>
-                      <View style={styles.bHeader}>
-                        <View style={[styles.dot, { backgroundColor: TERRACOTTA }]} />
-                        <Text style={styles.bLabel}>Hurting your ecosystem</Text>
-                        <View style={styles.bBadge}><Text style={styles.bBadgeText}>{scoreData.breakdown.hurting.length}</Text></View>
-                      </View>
-                      {scoreData.breakdown.hurting.map((name, i) => (
-                        <Text key={i} style={styles.bItem}>· {name}</Text>
-                      ))}
-                    </View>
-                  )}
-
-                  {scoreData.breakdown.helping.length === 0 && scoreData.breakdown.hurting.length === 0 && (
-                    <View style={styles.bCard}>
-                      <View style={styles.bHeader}>
-                        <View style={[styles.dot, { backgroundColor: AMBER }]} />
-                        <Text style={styles.bLabel}>Neutral plants — not actively helping or hurting</Text>
-                      </View>
-                      {plants.map((p, i) => (
-                        <Text key={i} style={styles.bItem}>· {p.plant_name}</Text>
-                      ))}
-                    </View>
-                  )}
+                  ))}
 
                   {delta > 0 && (
                     <TouchableOpacity
@@ -531,15 +502,15 @@ export default function AuditResultsScreen({ route, navigation }) {
                   <Text style={styles.sectionTitle}>Your 3-Action Plan</Text>
                   <Text style={styles.sectionSubtitle}>
                     All 3 actions together could raise your score from{' '}
-                    <Text style={{ fontFamily: 'DMSans_700Bold', color: scoreColor(scoreData.score) }}>{scoreData.score}</Text>
+                    <Text style={{ fontFamily: FONTS.bodyBold, color: scoreColor(scoreData.score) }}>{scoreData.score}</Text>
                     {' → '}
-                    <Text style={{ fontFamily: 'DMSans_700Bold', color: scoreColor(projectedScore) }}>{projectedScore}</Text>
+                    <Text style={{ fontFamily: FONTS.bodyBold, color: scoreColor(projectedScore) }}>{projectedScore}</Text>
                     {' '}(+{delta} pts). Hold any card to preview.
                   </Text>
 
                   {recsLoading && (
                     <View style={[styles.centerSection, { paddingVertical: 32 }]}>
-                      <ActivityIndicator color={SOFT_GREEN} />
+                      <ActivityIndicator color={COLORS.softGreen} />
                       <Text style={styles.loadingText}>Finding native plants for your area…</Text>
                     </View>
                   )}
@@ -570,7 +541,7 @@ export default function AuditResultsScreen({ route, navigation }) {
                       onPressOut={() => setHovering(null)}
                     >
                       <View style={[styles.allBtn, hovering === 'all' && styles.allBtnActive]}>
-                        <Text style={[styles.allBtnText, hovering === 'all' && { color: CREAM }]}>
+                        <Text style={[styles.allBtnText, hovering === 'all' && { color: COLORS.cream }]}>
                           {hovering === 'all'
                             ? `All 3 together: ${scoreData.score} → ${projectedScore}  (+${delta} pts)`
                             : `Hold to preview all 3 combined  (+${delta} pts)`}
@@ -675,7 +646,7 @@ export default function AuditResultsScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: CREAM },
+  container:    { flex: 1, backgroundColor: COLORS.cream },
   scrollContent:{ alignItems: 'center' },
   inner:        { alignSelf: 'center', width: '100%' },
 
@@ -685,105 +656,105 @@ const styles = StyleSheet.create({
   },
   logoRow:  { flexDirection: 'row', alignItems: 'center', gap: 8 },
   logoImg:  { width: 40, height: 40, resizeMode: 'contain' },
-  logoText: { fontSize: 20, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, letterSpacing: 0.3 },
-  backBtn:  { fontSize: 12, fontFamily: 'DMSans_400Regular', color: TEXT_BODY },
+  logoText: { fontSize: 20, fontFamily: FONTS.heading, color: COLORS.darkGreen, letterSpacing: 0.3 },
+  backBtn:  { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textBody },
 
-  divider: { height: 1, backgroundColor: BORDER },
+  divider: { height: 1, backgroundColor: COLORS.border },
 
   centerSection: { alignItems: 'center', paddingVertical: 60, gap: 14, paddingHorizontal: 24 },
-  loadingText:   { fontSize: 14, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, textAlign: 'center' },
+  loadingText:   { fontSize: 14, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
 
   scoreSection:    { alignItems: 'center', paddingTop: 32, paddingHorizontal: 24, paddingBottom: 28 },
-  pageTitle:       { fontSize: 34, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, marginBottom: 4 },
-  plantCountLabel: { fontSize: 12, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, marginBottom: 28 },
+  pageTitle:       { fontSize: 34, fontFamily: FONTS.heading, color: COLORS.darkGreen, marginBottom: 4 },
+  plantCountLabel: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textMuted, marginBottom: 28 },
   ringWrap:        { alignItems: 'center', gap: 14, marginBottom: 8 },
-  scoreLabel:      { fontSize: 22, fontFamily: 'Fraunces_700Bold' },
+  scoreLabel:      { fontSize: 22, fontFamily: FONTS.heading },
 
   toggle: {
-    flexDirection: 'row', backgroundColor: LIGHT_BG,
+    flexDirection: 'row', backgroundColor: COLORS.lightBg,
     borderRadius: 12, padding: 4, gap: 4, marginTop: 24,
   },
   toggleBtn:        { paddingHorizontal: 22, paddingVertical: 10, borderRadius: 10 },
-  toggleActive:     { backgroundColor: CREAM, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
-  toggleText:       { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED },
-  toggleTextActive: { fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
+  toggleActive:     { backgroundColor: COLORS.cream, shadowColor: COLORS.shadow, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
+  toggleText:       { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted },
+  toggleTextActive: { fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
 
   section:         { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 8 },
-  sectionTitle:    { fontSize: 22, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, marginBottom: 6 },
-  sectionSubtitle: { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, lineHeight: 19, marginBottom: 20 },
+  sectionTitle:    { fontSize: 22, fontFamily: FONTS.heading, color: COLORS.darkGreen, marginBottom: 6 },
+  sectionSubtitle: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted, lineHeight: 19, marginBottom: 20 },
 
   insightCard: {
-    backgroundColor: CARD_BG, borderRadius: 14,
-    borderWidth: 1, borderColor: BORDER,
+    backgroundColor: COLORS.cardBg, borderRadius: 14,
+    borderWidth: 1, borderColor: COLORS.border,
     padding: 18, marginBottom: 20,
   },
-  insightText: { fontSize: 14, fontFamily: 'DMSans_400Regular', color: TEXT_BODY, lineHeight: 22, textAlign: 'center' },
+  insightText: { fontSize: 14, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: 22, textAlign: 'center' },
 
   bCard: {
-    backgroundColor: CARD_BG, borderRadius: 14,
-    borderWidth: 1, borderColor: BORDER,
+    backgroundColor: COLORS.cardBg, borderRadius: 14,
+    borderWidth: 1, borderColor: COLORS.border,
     padding: 16, marginBottom: 12,
   },
   bHeader:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
   dot:        { width: 8, height: 8, borderRadius: 4 },
-  bLabel:     { flex: 1, fontSize: 13, fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
-  bBadge:     { backgroundColor: LIGHT_BG, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 },
-  bBadgeText: { fontSize: 11, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED },
-  bItem:      { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_BODY, lineHeight: 22, paddingLeft: 4 },
+  bLabel:     { flex: 1, fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
+  bBadge:     { backgroundColor: COLORS.lightBg, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 },
+  bBadgeText: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textMuted },
+  bItem:      { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: 22, paddingLeft: 4 },
 
   afterHint: { alignItems: 'center', marginTop: 8, paddingVertical: 12 },
-  afterHintText: { fontSize: 13, fontFamily: 'DMSans_700Bold', color: SOFT_GREEN },
+  afterHintText: { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.softGreen },
 
   allBtn: {
-    borderRadius: 12, borderWidth: 1.5, borderColor: DARK_GREEN,
+    borderRadius: 12, borderWidth: 1.5, borderColor: COLORS.darkGreen,
     paddingVertical: 15, alignItems: 'center', marginBottom: 4,
   },
-  allBtnActive: { backgroundColor: DARK_GREEN },
-  allBtnText: { fontSize: 13, fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
+  allBtnActive: { backgroundColor: COLORS.darkGreen },
+  allBtnText: { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
 
   viewAllSection: { marginTop: 8, marginBottom: 4 },
   viewAllToggle:  { paddingVertical: 14, alignItems: 'center' },
-  viewAllToggleText: { fontSize: 13, fontFamily: 'DMSans_700Bold', color: SOFT_GREEN },
+  viewAllToggleText: { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.softGreen },
   viewAllItem: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: CARD_BG, borderRadius: 10,
-    borderWidth: 1, borderColor: BORDER,
+    backgroundColor: COLORS.cardBg, borderRadius: 10,
+    borderWidth: 1, borderColor: COLORS.border,
     paddingHorizontal: 14, paddingVertical: 12, marginBottom: 8,
   },
-  viewAllName:    { fontSize: 14, fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
-  viewAllSci:     { fontSize: 11, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, fontStyle: 'italic', marginTop: 2 },
-  viewAllBenefit: { fontSize: 12, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, lineHeight: 18, marginTop: 4 },
+  viewAllName:    { fontSize: 14, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
+  viewAllSci:     { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textMuted, fontStyle: 'italic', marginTop: 2 },
+  viewAllBenefit: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textMuted, lineHeight: 18, marginTop: 4 },
   supportPill:     { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
-  supportPillText: { fontSize: 11, fontFamily: 'DMSans_700Bold' },
+  supportPillText: { fontSize: 11, fontFamily: FONTS.bodyBold },
 
   nwfLink: {
     marginTop: 8, marginBottom: 16, paddingVertical: 14,
     paddingHorizontal: 16, borderRadius: 10,
-    backgroundColor: '#eaf2e8', borderWidth: 1, borderColor: BORDER,
+    backgroundColor: STATUS_COLORS.native.bg, borderWidth: 1, borderColor: COLORS.border,
     alignItems: 'center',
   },
   nwfLinkText: {
-    fontSize: 12, fontFamily: 'DMSans_400Regular', color: SOFT_GREEN,
+    fontSize: 12, fontFamily: FONTS.body, color: COLORS.softGreen,
     textAlign: 'center', lineHeight: 18,
   },
 
   ctaSection: { padding: 24, paddingBottom: 52, alignItems: 'center', gap: 10 },
   ctaBtn: {
-    backgroundColor: DARK_GREEN, borderRadius: 10,
+    backgroundColor: COLORS.darkGreen, borderRadius: 10,
     paddingVertical: 15, alignItems: 'center', width: '100%',
   },
-  ctaBtnText:       { fontSize: 15, fontFamily: 'DMSans_700Bold', color: CREAM },
+  ctaBtnText:       { fontSize: 15, fontFamily: FONTS.bodyBold, color: COLORS.cream },
   ctaSecondary:     { paddingVertical: 10 },
-  ctaSecondaryText: { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED },
+  ctaSecondaryText: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted },
 
   letterSection: {
-    marginTop: 28, paddingTop: 24, borderTopWidth: 1, borderTopColor: BORDER,
+    marginTop: 28, paddingTop: 24, borderTopWidth: 1, borderTopColor: COLORS.border,
   },
   letterTitle: {
-    fontSize: 20, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, marginBottom: 6,
+    fontSize: 20, fontFamily: FONTS.heading, color: COLORS.darkGreen, marginBottom: 6,
   },
   letterSubtitle: {
-    fontSize: 12, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED,
+    fontSize: 12, fontFamily: FONTS.body, color: COLORS.textMuted,
     lineHeight: 18, marginBottom: 16,
   },
   checkRow: {
@@ -791,38 +762,38 @@ const styles = StyleSheet.create({
   },
   checkbox: {
     width: 22, height: 22, borderRadius: 6,
-    borderWidth: 1.5, borderColor: BORDER,
-    backgroundColor: CREAM, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1.5, borderColor: COLORS.border,
+    backgroundColor: COLORS.cream, alignItems: 'center', justifyContent: 'center',
   },
-  checkboxChecked:  { backgroundColor: SOFT_GREEN, borderColor: SOFT_GREEN },
-  checkmark:        { fontSize: 13, color: CREAM, fontFamily: 'DMSans_700Bold' },
-  checkLabel:       { flex: 1, fontSize: 14, fontFamily: 'DMSans_400Regular', color: DARK_GREEN },
+  checkboxChecked:  { backgroundColor: COLORS.softGreen, borderColor: COLORS.softGreen },
+  checkmark:        { fontSize: 13, color: COLORS.cream, fontFamily: FONTS.bodyBold },
+  checkLabel:       { flex: 1, fontSize: 14, fontFamily: FONTS.body, color: COLORS.darkGreen },
   letterBtn: {
-    marginTop: 12, backgroundColor: DARK_GREEN, borderRadius: 10,
+    marginTop: 12, backgroundColor: COLORS.darkGreen, borderRadius: 10,
     paddingVertical: 15, alignItems: 'center',
   },
   letterBtnDisabled: { opacity: 0.45 },
-  letterBtnText:     { fontSize: 15, fontFamily: 'DMSans_700Bold', color: CREAM },
+  letterBtnText:     { fontSize: 15, fontFamily: FONTS.bodyBold, color: COLORS.cream },
   letterCard: {
-    marginTop: 16, backgroundColor: CARD_BG, borderRadius: 14,
-    borderWidth: 1, borderColor: BORDER, padding: 20,
+    marginTop: 16, backgroundColor: COLORS.cardBg, borderRadius: 14,
+    borderWidth: 1, borderColor: COLORS.border, padding: 20,
   },
   letterEditHint: {
-    fontSize: 11, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED,
+    fontSize: 11, fontFamily: FONTS.body, color: COLORS.textMuted,
     fontStyle: 'italic', marginBottom: 10,
   },
   letterInput: {
-    fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_BODY,
-    lineHeight: 22, backgroundColor: LIGHT_BG,
+    fontSize: 13, fontFamily: FONTS.body, color: COLORS.textBody,
+    lineHeight: 22, backgroundColor: COLORS.lightBg,
     borderRadius: 8, padding: 12, minHeight: 520,
   },
   copyBtn: {
-    marginTop: 16, borderWidth: 1.5, borderColor: DARK_GREEN,
+    marginTop: 16, borderWidth: 1.5, borderColor: COLORS.darkGreen,
     borderRadius: 10, paddingVertical: 12, alignItems: 'center',
   },
-  copyBtnText: { fontSize: 13, fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
+  copyBtnText: { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
   letterNote: {
-    marginTop: 10, fontSize: 11, fontFamily: 'DMSans_400Regular',
-    color: TEXT_MUTED, textAlign: 'center', fontStyle: 'italic',
+    marginTop: 10, fontSize: 11, fontFamily: FONTS.body,
+    color: COLORS.textMuted, textAlign: 'center', fontStyle: 'italic',
   },
 });

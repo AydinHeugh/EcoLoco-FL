@@ -1,10 +1,9 @@
 from concurrent.futures import ThreadPoolExecutor
 
 from services import openai_client
-from services.fl_plants_service import bundled_natives, get_status
+from services.fl_plants_service import STATUS_LABELS, bundled_natives, get_status, plant_option
 from services.identification_service import identify_species
 
-STATUSES = ("native", "non-native", "invasive")
 SUPPORT_LEVELS = ("high", "medium", "low")
 ENDANGERED = ("not_threatened", "threatened", "endangered", "critically_endangered", "unknown")
 GENERIC_BENEFIT = "These native plants provide food and shelter for local pollinators, birds and other wildlife."
@@ -18,14 +17,13 @@ Determine:
    - low: minimal wildlife value, ornamental only, or actively harmful
 2. a one-sentence reason for that wildlife support level
 3. conservation status: "not_threatened", "threatened", "endangered", "critically_endangered" or "unknown"
-4. whether it is native to the area of ZIP {location} (true/false), and its status there: "native", "non-native" or "invasive"
-5. 2 specific, practical actions a person can take involving planting or caring for this or companion plants
+4. 2 specific, practical actions a person can take involving planting or caring for this or companion plants
    to benefit the local ecosystem. Each names a specific plant or technique and gives the direct
    environmental benefit in one sentence.
 
 Respond only in JSON, no markdown:
 {{"wildlife_support": "...", "wildlife_support_reason": "...", "endangered_status": "...",
-  "is_native": true, "invasive_status": "...", "actions": [{{"action": "...", "impact": "..."}}]}}"""
+  "actions": [{{"action": "...", "impact": "..."}}]}}"""
 
 RECOMMEND_PROMPT = """For ZIP code {location}, return a JSON array of 11 native plants ranked from highest to lowest ecological impact.
 
@@ -55,12 +53,6 @@ Entries 4–11 are additional high-impact natives — compact format:
 Rank all 11 highest wildlife_support first. No markdown, no backticks, return only the JSON array."""
 
 
-def _status_label(status):
-    if status["invasive"]:
-        return "invasive"
-    return "native" if status["native"] else "non-native"
-
-
 def _pick(value, allowed, default):
     value = str(value or "").strip().lower()
     return value if value in allowed else default
@@ -83,7 +75,7 @@ def assess_plant(species, status, location):
     if status["source"] == "unknown":
         status_line = ""
     else:
-        label = _status_label(status)
+        label = "invasive" if status["invasive"] else "native" if status["native"] else "non-native"
         status_line = f"Florida records ({status['source']}) list it as {label} here; treat that as fact.\n"
     assessment = openai_client.chat(ASSESS_PROMPT.format(
         common_name=species["common_name"] or "unknown",
@@ -96,42 +88,48 @@ def assess_plant(species, status, location):
     return assessment
 
 
+UNIDENTIFIED_MESSAGE = "Couldn't identify this. Try a close-up of one leaf, or a flower"
+
+
+def _options(ranked, location):
+    with ThreadPoolExecutor(max_workers=5) as pool:
+        return list(pool.map(
+            lambda c: plant_option(c["scientific_name"], c["common_name"], c["confidence"], location), ranked))
+
+
 def identify_plant(images, location):
     species = identify_species(images, location)
-    status = get_status(species["scientific_name"], location)
+    base = {"state": species["state"], "suggested": species["suggested"], "id_source": species["source"]}
+    if species["state"] == "unidentified":
+        return {
+            **base, "options": [], "message": UNIDENTIFIED_MESSAGE, "ai_unavailable": False,
+            "plant_name": "", "scientific_name": "", "confidence": 0.0, "status": "unknown",
+            "status_label": STATUS_LABELS["unknown"], "source": "unknown", "source_label": None, "why": None,
+            "wildlife_support": "unknown", "wildlife_support_reason": "", "endangered_status": "unknown", "actions": [],
+        }
+
+    options = _options(species["ranked"], location)
+    option = options[0]
+    status = get_status(option["scientific_name"], location)
+    top = species["ranked"][0]
     try:
-        assessment, ai_unavailable = assess_plant(species, status, location), False
+        assessment, ai_unavailable = assess_plant(top, status, location), False
     except openai_client.AIUnavailable:
         assessment, ai_unavailable = {}, True
 
-    if status["source"] != "unknown":
-        invasive_status = _status_label(status)
-        is_native = status["native"]
-    elif ai_unavailable:
-        invasive_status, is_native = "unknown", None
-    else:
-        invasive_status = _pick(assessment.get("invasive_status"), STATUSES, "non-native")
-        is_native = bool(assessment.get("is_native"))
-
-    if invasive_status == "invasive":
+    if option["status"] == "invasive":
         actions = _invasive_actions(location)
     else:
         actions = assessment.get("actions") or []
 
     return {
-        "plant_name": species["common_name"],
-        "scientific_name": species["scientific_name"],
-        "is_native": is_native,
-        "invasive_status": invasive_status,
+        **option,
+        **base,
+        "options": options,
+        "message": None,
         "endangered_status": _pick(assessment.get("endangered_status"), ENDANGERED, "unknown"),
         "wildlife_support": _pick(assessment.get("wildlife_support"), SUPPORT_LEVELS, "unknown" if ai_unavailable else "low"),
         "wildlife_support_reason": assessment.get("wildlife_support_reason", ""),
-        "confidence": species["confidence"],
-        "candidates": species["candidates"],
-        "id_source": species["source"],
-        "needs_confirmation": species["needs_confirmation"],
-        "source": status["source"],
-        "why": status["why"],
         "actions": actions,
         "ai_unavailable": ai_unavailable,
     }

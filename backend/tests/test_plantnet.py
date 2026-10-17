@@ -112,3 +112,8 @@ def test_plantnet_http_error_raises(plantnet):
     plantnet["response"] = FakeResponse(status_code=401, body={"statusCode": 401, "message": "Bad token"})
     with pytest.raises(requests.HTTPError):
         identify_with_plantnet([b64(JPEG)])
+
+
+def test_plantnet_404_means_no_match(plantnet):
+    plantnet["response"] = FakeResponse(status_code=404, body={"statusCode": 404, "message": "Species not found"})
+    assert identify_with_plantnet([b64(JPEG)]) == []

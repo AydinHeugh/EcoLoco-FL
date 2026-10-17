@@ -6,72 +6,42 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useFonts } from 'expo-font';
-import { Fraunces_700Bold } from '@expo-google-fonts/fraunces';
-import { DMSans_400Regular, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
 import { identifyPlant } from '../services/geminiService';
+import { COLORS, FONTS, FONT_ASSETS } from '../theme';
+import StatusBadge from '../components/StatusBadge';
+import CandidatePicker, { NO_MATCH_TEXT } from '../components/CandidatePicker';
 
-const CREAM      = '#f5f0e8';
-const DARK_GREEN = '#1e3a1e';
-const SOFT_GREEN = '#4a7a3a';
-const LIGHT_BG   = '#eaeee6';
-const TEXT_BODY  = '#4a4a3a';
-const TEXT_MUTED = '#7a7a6a';
-const BORDER     = '#d4cfc4';
-const AMBER      = '#c49a3a';
-const TERRACOTTA = '#C97D5D';
-const CARD_BG    = '#fefcf8';
 const EASE_OUT   = Easing.bezier(0.22, 1, 0.36, 1);
 
 const LOGO = require('../../assets/EcoLoco_logo.png');
 
-// ─── Status badge ─────────────────────────────────────────────────────────────
-function StatusBadge({ status }) {
-  const cfg = {
-    native:        { bg: '#eaf2e8', color: SOFT_GREEN,    label: 'Native' },
-    'non-native':  { bg: '#faf3e0', color: AMBER,          label: 'Non-Native' },
-    invasive:      { bg: '#fdf0ec', color: TERRACOTTA,     label: 'Invasive' },
-    unknown:       { bg: LIGHT_BG,  color: TEXT_MUTED,     label: 'Status unknown' },
-  };
-  const c = cfg[status?.toLowerCase()] ?? cfg.unknown;
-  return (
-    <View style={[sb.wrap, { backgroundColor: c.bg }]}>
-      <Text style={[sb.text, { color: c.color }]}>{c.label}</Text>
-    </View>
-  );
-}
-
-const sb = StyleSheet.create({
-  wrap: { alignSelf: 'flex-start', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
-  text: { fontSize: 11, fontFamily: 'DMSans_700Bold' },
-});
-
 // ─── Wildlife support pill ────────────────────────────────────────────────────
 function SupportPill({ level }) {
   const labels = { high: '↑ High', medium: '→ Medium', low: '↓ Low' };
-  return (
-    <Text style={sp.text}>{labels[level?.toLowerCase()] ?? '? Unknown'} wildlife support</Text>
-  );
+  const label = labels[level?.toLowerCase()];
+  if (!label) return null;
+  return <Text style={sp.text}>{label} wildlife support</Text>;
 }
 
 const sp = StyleSheet.create({
-  text: { fontSize: 11, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, marginTop: 4 },
+  text: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 4 },
 });
 
 // ─── Confidence badge ─────────────────────────────────────────────────────────
 function ConfidenceBadge({ confidence }) {
   const pct = Math.round((confidence ?? 0) * 100);
-  const color = pct >= 85 ? SOFT_GREEN : pct >= 75 ? AMBER : TERRACOTTA;
+  const color = pct >= 85 ? COLORS.softGreen : pct >= 75 ? COLORS.amber : COLORS.terracotta;
   return (
-    <Text style={[cb.text, { color }]}>{pct}% confident</Text>
+    <Text style={[cb.text, { color }]}>PlantNet: {pct}% match</Text>
   );
 }
 
 const cb = StyleSheet.create({
-  text: { fontSize: 11, fontFamily: 'DMSans_400Regular', marginTop: 4 },
+  text: { fontSize: 11, fontFamily: FONTS.body, marginTop: 4 },
 });
 
 // ─── Animated plant card ──────────────────────────────────────────────────────
-function PlantCard({ plant, onDelete }) {
+function PlantCard({ plant, onDelete, onPick, onNone }) {
   const opacity    = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(14)).current;
 
@@ -82,11 +52,15 @@ function PlantCard({ plant, onDelete }) {
     ]).start();
   }, []);
 
+  const noMatch  = plant.state === 'unidentified' || plant.picked === -1;
+  const choosing = plant.state === 'confirm' && plant.picked == null;
+  const settled  = !noMatch && !choosing;
+
   if (plant.loading) {
     return (
-      <Animated.View style={[styles.plantCard, { opacity, transform: [{ translateY }] }]}>
+      <Animated.View style={[styles.plantCard, styles.cardRow, { opacity, transform: [{ translateY }] }]}>
         <View style={styles.plantThumbPlaceholder}>
-          <ActivityIndicator color={SOFT_GREEN} size="small" />
+          <ActivityIndicator color={COLORS.softGreen} size="small" />
         </View>
         <View style={styles.plantInfo}>
           <Text style={styles.plantName}>Identifying…</Text>
@@ -98,31 +72,39 @@ function PlantCard({ plant, onDelete }) {
 
   return (
     <Animated.View style={[styles.plantCard, { opacity, transform: [{ translateY }] }]}>
+      <View style={styles.cardRow}>
       {plant.photo_uri
         ? <Image source={{ uri: plant.photo_uri }} style={styles.plantThumb} resizeMode="cover" />
         : <View style={styles.plantThumbPlaceholder} />
       }
       <View style={styles.plantInfo}>
         <View style={styles.plantNameRow}>
-          <Text style={[styles.plantName, { flex: 1 }]} numberOfLines={2}>{plant.plant_name}</Text>
+          <Text style={[styles.plantName, { flex: 1 }]} numberOfLines={2}>
+            {noMatch ? 'Not identified' : choosing ? 'Not sure yet' : plant.plant_name}
+          </Text>
           <TouchableOpacity onPress={onDelete} hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }} style={styles.deleteBtn}>
             <View style={styles.deleteBtnInner}>
               <Text style={styles.deleteBtnText}>✕</Text>
             </View>
           </TouchableOpacity>
         </View>
-        {plant.scientific_name ? (
-          <Text style={styles.plantSci}>{plant.scientific_name}</Text>
-        ) : null}
-        <View style={styles.badgeRow}>
-          <StatusBadge status={plant.invasive_status} />
-        </View>
-        <SupportPill level={plant.wildlife_support} />
-        <ConfidenceBadge confidence={plant.confidence} />
-        {((plant.confidence ?? 1) < 0.80 || plant.needs_confirmation) && (
-          <Text style={styles.expertWarning}>⚠ Low confidence — consult an expert before acting</Text>
+        {noMatch && <Text style={styles.expertWarning}>{NO_MATCH_TEXT}</Text>}
+        {settled && (
+          <>
+            <View style={styles.badgeRow}>
+              <StatusBadge status={plant.status} label={plant.status_label} />
+            </View>
+            {plant.picked === 0 && <SupportPill level={plant.wildlife_support} />}
+            <ConfidenceBadge confidence={plant.confidence} />
+          </>
         )}
       </View>
+      </View>
+      {choosing && (
+        <View style={styles.cardBelow}>
+          <CandidatePicker options={plant.options} suggested={plant.suggested} onPick={onPick} onNone={onNone} />
+        </View>
+      )}
     </Animated.View>
   );
 }
@@ -146,7 +128,7 @@ export default function AuditScreen({ navigation }) {
   const maxWidth   = Math.min(width, 960);
   const scrollRef  = useRef(null);
 
-  const [fontsLoaded] = useFonts({ Fraunces_700Bold, DMSans_400Regular, DMSans_700Bold });
+  const [fontsLoaded] = useFonts(FONT_ASSETS);
 
   const zipValid   = zipCode.length === 5;
   const identified = plants.filter(p => !p.loading);
@@ -183,7 +165,9 @@ export default function AuditScreen({ navigation }) {
       const data   = await identifyPlant(photo.base64, zipCode);
       const result = data.result;
       setPlants(prev => prev.map(p =>
-        p._id === tempId ? { ...result, _id: tempId, photo_uri: photo.uri, loading: false } : p
+        p._id === tempId
+          ? { ...result, _id: tempId, photo_uri: photo.uri, loading: false, picked: result.state === 'identified' ? 0 : null }
+          : p
       ));
     } catch {
       setPlants(prev => prev.filter(p => p._id !== tempId));
@@ -193,8 +177,21 @@ export default function AuditScreen({ navigation }) {
     }
   }
 
+  function pickOption(id, index) {
+    setPlants(prev => prev.map(p => {
+      if (p._id !== id) return p;
+      if (index === -1) return { ...p, picked: -1 };
+      return { ...p, ...p.options[index], picked: index };
+    }));
+  }
+
   function handleFinish() {
-    navigation.navigate('AuditResults', { plants: identified, zipCode });
+    const settled = identified.map(p => (
+      p.picked != null && p.picked >= 0
+        ? p
+        : { ...p, plant_name: 'Unidentified plant', scientific_name: '', status: 'unknown' }
+    ));
+    navigation.navigate('AuditResults', { plants: settled, zipCode });
   }
 
   function handleNewAudit() {
@@ -252,7 +249,7 @@ export default function AuditScreen({ navigation }) {
               value={zipCode}
               onChangeText={t => setZipCode(t.replace(/[^0-9]/g, '').slice(0, 5))}
               placeholder="Enter your school's ZIP code"
-              placeholderTextColor={TEXT_MUTED}
+              placeholderTextColor={COLORS.textMuted}
               keyboardType="numeric"
               maxLength={5}
             />
@@ -271,6 +268,8 @@ export default function AuditScreen({ navigation }) {
               <PlantCard
                 key={plant._id}
                 plant={plant}
+                onPick={i => pickOption(plant._id, i)}
+                onNone={() => pickOption(plant._id, -1)}
                 onDelete={() => {
                   if (plant.loading) return;
                   setPlants(prev => prev.filter(p => p._id !== plant._id));
@@ -299,7 +298,7 @@ export default function AuditScreen({ navigation }) {
             disabled={!zipValid || scanning}
           >
             {scanning
-              ? <ActivityIndicator color={CREAM} size="small" />
+              ? <ActivityIndicator color={COLORS.cream} size="small" />
               : <Text style={styles.scanBtnText}>📷  Scan Plant</Text>
             }
           </TouchableOpacity>
@@ -309,7 +308,7 @@ export default function AuditScreen({ navigation }) {
             onPress={() => scanPlant('gallery')}
             disabled={!zipValid || scanning}
           >
-            <Text style={[styles.uploadBtnText, (!zipValid || scanning) && { color: BORDER }]}>Upload Photo</Text>
+            <Text style={[styles.uploadBtnText, (!zipValid || scanning) && { color: COLORS.border }]}>Upload Photo</Text>
           </TouchableOpacity>
 
           {canFinish && (
@@ -325,7 +324,7 @@ export default function AuditScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: CREAM },
+  container:    { flex: 1, backgroundColor: COLORS.cream },
   scrollContent:{ alignItems: 'center' },
   inner:        { alignSelf: 'center' },
 
@@ -335,72 +334,74 @@ const styles = StyleSheet.create({
   },
   logoRow:    { flexDirection: 'row', alignItems: 'center', gap: 8 },
   logoImg:    { width: 40, height: 40, resizeMode: 'contain' },
-  logoText:   { fontSize: 20, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, letterSpacing: 0.3 },
-  newAuditBtn:{ fontSize: 12, fontFamily: 'DMSans_400Regular', color: TERRACOTTA },
+  logoText:   { fontSize: 20, fontFamily: FONTS.heading, color: COLORS.darkGreen, letterSpacing: 0.3 },
+  newAuditBtn:{ fontSize: 12, fontFamily: FONTS.body, color: COLORS.terracotta },
 
-  divider: { height: 1, backgroundColor: BORDER },
+  divider: { height: 1, backgroundColor: COLORS.border },
 
   titleSection: { alignItems: 'center', paddingTop: 32, paddingBottom: 24, paddingHorizontal: 24 },
-  pageTitle:    { fontSize: 34, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, marginBottom: 6 },
-  pageSubtitle: { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, textAlign: 'center', lineHeight: 19 },
+  pageTitle:    { fontSize: 34, fontFamily: FONTS.heading, color: COLORS.darkGreen, marginBottom: 6 },
+  pageSubtitle: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', lineHeight: 19 },
 
   zipSection: { paddingHorizontal: 20, marginBottom: 8 },
   zipInput: {
-    backgroundColor: '#fff', color: TEXT_BODY, borderRadius: 10,
-    padding: 13, fontSize: 14, fontFamily: 'DMSans_400Regular',
-    borderWidth: 1, borderColor: BORDER,
+    backgroundColor: COLORS.white, color: COLORS.textBody, borderRadius: 10,
+    padding: 13, fontSize: 14, fontFamily: FONTS.body,
+    borderWidth: 1, borderColor: COLORS.border,
   },
   zipLocked: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: LIGHT_BG, borderRadius: 10, padding: 13,
+    backgroundColor: COLORS.lightBg, borderRadius: 10, padding: 13,
   },
-  zipLockedText: { fontSize: 14, fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
-  zipLockedSub:  { fontSize: 12, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED },
+  zipLockedText: { fontSize: 14, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
+  zipLockedSub:  { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textMuted },
 
   listSection: { paddingHorizontal: 20, paddingTop: 16 },
 
   plantCard: {
-    backgroundColor: CARD_BG, borderRadius: 14,
-    borderWidth: 1, borderColor: BORDER,
-    flexDirection: 'row', overflow: 'hidden', marginBottom: 12,
+    backgroundColor: COLORS.cardBg, borderRadius: 14,
+    borderWidth: 1, borderColor: COLORS.border,
+    overflow: 'hidden', marginBottom: 12,
   },
+  cardRow:   { flexDirection: 'row' },
+  cardBelow: { padding: 12, borderTopWidth: 1, borderTopColor: COLORS.border },
   plantThumb:           { width: 90, height: 90 },
-  plantThumbPlaceholder:{ width: 90, height: 90, backgroundColor: LIGHT_BG, alignItems: 'center', justifyContent: 'center' },
+  plantThumbPlaceholder:{ width: 90, height: 90, backgroundColor: COLORS.lightBg, alignItems: 'center', justifyContent: 'center' },
   plantInfo:    { flex: 1, padding: 12, justifyContent: 'center' },
   plantNameRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  plantName:    { fontSize: 15, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, lineHeight: 21 },
+  plantName:    { fontSize: 15, fontFamily: FONTS.heading, color: COLORS.darkGreen, lineHeight: 21 },
   deleteBtn:      { paddingLeft: 8 },
   deleteBtnInner: {
     width: 26, height: 26, borderRadius: 13,
-    backgroundColor: '#f0ebe2', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: COLORS.photoBg, alignItems: 'center', justifyContent: 'center',
   },
-  deleteBtnText: { fontSize: 13, color: TERRACOTTA, fontFamily: 'DMSans_700Bold', lineHeight: 14 },
-  plantSci:     { fontSize: 11, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, fontStyle: 'italic', marginTop: 2 },
+  deleteBtnText: { fontSize: 13, color: COLORS.terracotta, fontFamily: FONTS.bodyBold, lineHeight: 14 },
+  plantSci:     { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textMuted, fontStyle: 'italic', marginTop: 2 },
   badgeRow:     { flexDirection: 'row', marginTop: 6 },
 
   emptyState:   { alignItems: 'center', paddingVertical: 52, paddingHorizontal: 32 },
   emptyIcon:    { fontSize: 36, marginBottom: 12 },
-  emptyTitle:   { fontSize: 17, fontFamily: 'Fraunces_700Bold', color: TEXT_BODY, marginBottom: 6 },
-  emptySubtitle:{ fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, textAlign: 'center', lineHeight: 19 },
+  emptyTitle:   { fontSize: 17, fontFamily: FONTS.heading, color: COLORS.textBody, marginBottom: 6 },
+  emptySubtitle:{ fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', lineHeight: 19 },
 
   actions: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 52, gap: 12 },
   scanBtn: {
-    backgroundColor: DARK_GREEN, borderRadius: 10,
+    backgroundColor: COLORS.darkGreen, borderRadius: 10,
     paddingVertical: 16, alignItems: 'center',
   },
-  scanBtnText: { fontSize: 15, fontFamily: 'DMSans_700Bold', color: CREAM },
+  scanBtnText: { fontSize: 15, fontFamily: FONTS.bodyBold, color: COLORS.cream },
   uploadBtn: {
     borderRadius: 10, paddingVertical: 14, alignItems: 'center',
-    borderWidth: 1.5, borderColor: DARK_GREEN,
+    borderWidth: 1.5, borderColor: COLORS.darkGreen,
   },
-  uploadBtnDisabled: { borderColor: BORDER },
-  uploadBtnText: { fontSize: 14, fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
+  uploadBtnDisabled: { borderColor: COLORS.border },
+  uploadBtnText: { fontSize: 14, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
   finishBtn: {
-    backgroundColor: SOFT_GREEN, borderRadius: 10,
+    backgroundColor: COLORS.softGreen, borderRadius: 10,
     paddingVertical: 16, alignItems: 'center', marginTop: 4,
   },
-  finishBtnText: { fontSize: 15, fontFamily: 'DMSans_700Bold', color: CREAM },
+  finishBtnText: { fontSize: 15, fontFamily: FONTS.bodyBold, color: COLORS.cream },
   btnDisabled: { opacity: 0.35 },
-  expertWarning: { fontSize: 11, fontFamily: 'DMSans_400Regular', color: '#C97D5D', marginTop: 4, lineHeight: 15 },
-  scanError: { marginHorizontal: 20, marginBottom: 10, fontSize: 13, fontFamily: 'DMSans_400Regular', color: TERRACOTTA, textAlign: 'center' },
+  expertWarning: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.terracotta, marginTop: 4, lineHeight: 15 },
+  scanError: { marginHorizontal: 20, marginBottom: 10, fontSize: 13, fontFamily: FONTS.body, color: COLORS.terracotta, textAlign: 'center' },
 });

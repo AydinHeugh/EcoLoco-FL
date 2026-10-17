@@ -30,20 +30,20 @@ def calculate_biodiversity_score(plants):
     if not plants:
         return {
             "score": 0, "projected_score": 0,
-            "breakdown": {"helping": [], "hurting": [], "unidentified": []},
+            "breakdown": {"native": [], "non_native": [], "invasive": [], "unknown": []},
             "insight": "No plants scanned.",
             "bonuses_applied": [],
             "plant_count": 0,
         }
 
-    helping, hurting, unidentified = [], [], []
+    native, non_native, invasive, unidentified = [], [], [], []
     scores = []
     native_names = set()
     invasive_count = 0
     unknown_count = 0
 
     for plant in plants:
-        raw_status = plant.get("invasive_status", "").lower().strip()
+        raw_status = plant.get("status", "").lower().strip()
         support    = plant.get("wildlife_support", "low").lower().strip()
         name       = plant.get("name", plant.get("plant_name", "Unknown plant"))
 
@@ -63,20 +63,17 @@ def calculate_biodiversity_score(plants):
 
         if raw_status == "native":
             native_names.add(name)
-            helping.append(name)
+            native.append(name)
         elif raw_status == "invasive":
             invasive_count += 1
-            hurting.append(name)
-        else:  # non-native
-            if support == "high":
-                helping.append(name)
-            else:
-                hurting.append(name)
+            invasive.append(name)
+        else:
+            non_native.append(name)
 
     n = len(plants)
     native_count = sum(
         1 for p in plants
-        if p.get("invasive_status", "").lower().strip() == "native"
+        if p.get("status", "").lower().strip() == "native"
     )
     native_ratio = native_count / n
 
@@ -135,7 +132,7 @@ def calculate_biodiversity_score(plants):
     return {
         "score":           score,
         "projected_score": projected_score,
-        "breakdown":       {"helping": helping, "hurting": hurting, "unidentified": unidentified},
+        "breakdown":       {"native": native, "non_native": non_native, "invasive": invasive, "unknown": unidentified},
         "insight":         insight,
         "bonuses_applied": bonuses_applied,
         "plant_count":     n,

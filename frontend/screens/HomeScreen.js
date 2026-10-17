@@ -11,23 +11,8 @@ import {
   useWindowDimensions,
 } from 'react-native'
 import { useFonts } from 'expo-font'
-import {
-  Fraunces_400Regular,
-  Fraunces_700Bold,
-  Fraunces_700Bold_Italic,
-} from '@expo-google-fonts/fraunces'
-import {
-  DMSans_400Regular,
-  DMSans_700Bold,
-} from '@expo-google-fonts/dm-sans'
+import { COLORS, FONTS, FONT_ASSETS } from '../theme'
 
-const CREAM      = '#f5f0e8'
-const DARK_GREEN = '#1e3a1e'
-const SOFT_GREEN = '#4a7a3a'
-const TEXT_BODY  = '#4a4a3a'
-const TEXT_MUTED = '#7a7a6a'
-const BORDER     = '#d4cfc4'
-const LIGHT_BG   = '#eaeee6'
 
 const EASE_OUT = Easing.bezier(0.22, 1, 0.36, 1)  // fast-out, ease-in-out feel
 
@@ -156,13 +141,7 @@ export default function HomeScreen({ navigation }) {
   const s3Anim = useFadeUp(440)
   const s4Anim = useFadeUp(560)
 
-  const [fontsLoaded] = useFonts({
-    Fraunces_400Regular,
-    Fraunces_700Bold,
-    Fraunces_700Bold_Italic,
-    DMSans_400Regular,
-    DMSans_700Bold,
-  })
+  const [fontsLoaded] = useFonts(FONT_ASSETS)
 
   if (!fontsLoaded) return <View style={styles.container} />
 
@@ -266,7 +245,7 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: CREAM,
+    backgroundColor: COLORS.cream,
   },
   scrollContent: {
     alignItems: 'center',
@@ -296,14 +275,14 @@ const styles = StyleSheet.create({
   },
   logoText: {
     fontSize: 20,
-    fontFamily: 'Fraunces_700Bold',
-    color: DARK_GREEN,
+    fontFamily: FONTS.heading,
+    color: COLORS.darkGreen,
     letterSpacing: 0.3,
   },
   // ── Divider ──
   dividerLine: {
     height: 1,
-    backgroundColor: BORDER,
+    backgroundColor: COLORS.border,
   },
 
   // ── Hero ──
@@ -321,21 +300,21 @@ const styles = StyleSheet.create({
   },
   heroHeading: {
     fontSize: 36,
-    fontFamily: 'Fraunces_400Regular',
-    color: DARK_GREEN,
+    fontFamily: FONTS.headingLight,
+    color: COLORS.darkGreen,
     lineHeight: 46,
   },
   heroHeadingItalic: {
     fontSize: 36,
-    fontFamily: 'Fraunces_700Bold_Italic',
-    color: DARK_GREEN,
+    fontFamily: FONTS.headingItalic,
+    color: COLORS.darkGreen,
     lineHeight: 46,
   },
 
   tagline: {
     fontSize: 15,
-    fontFamily: 'DMSans_700Bold',
-    color: DARK_GREEN,
+    fontFamily: FONTS.bodyBold,
+    color: COLORS.darkGreen,
     textAlign: 'center',
     marginTop: 20,
     lineHeight: 23,
@@ -352,12 +331,12 @@ const styles = StyleSheet.create({
   ornamentLine: {
     flex: 1,
     height: 1,
-    backgroundColor: BORDER,
+    backgroundColor: COLORS.border,
   },
   ornamentDiamond: {
     width: 7,
     height: 7,
-    backgroundColor: SOFT_GREEN,
+    backgroundColor: COLORS.softGreen,
     opacity: 0.45,
     transform: [{ rotate: '45deg' }],
   },
@@ -374,8 +353,8 @@ const styles = StyleSheet.create({
     width: '42%',
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: LIGHT_BG,
-    shadowColor: '#1e3a1e',
+    backgroundColor: COLORS.lightBg,
+    shadowColor: COLORS.darkGreen,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -387,7 +366,7 @@ const styles = StyleSheet.create({
   },
   imgFallback: {
     flex: 1,
-    backgroundColor: LIGHT_BG,
+    backgroundColor: COLORS.lightBg,
   },
   featureText: {
     flex: 1,
@@ -396,32 +375,32 @@ const styles = StyleSheet.create({
   },
   featureHeading: {
     fontSize: 18,
-    fontFamily: 'Fraunces_700Bold',
-    color: DARK_GREEN,
+    fontFamily: FONTS.heading,
+    color: COLORS.darkGreen,
     lineHeight: 26,
   },
   featureBody: {
     fontSize: 12.5,
-    fontFamily: 'DMSans_400Regular',
-    color: TEXT_BODY,
+    fontFamily: FONTS.body,
+    color: COLORS.textBody,
     lineHeight: 20,
   },
   linkBtn: {
     alignSelf: 'flex-start',
     borderBottomWidth: 1,
-    borderBottomColor: DARK_GREEN,
+    borderBottomColor: COLORS.darkGreen,
     paddingBottom: 1,
   },
   featureLink: {
     fontSize: 12,
-    fontFamily: 'DMSans_700Bold',
-    color: DARK_GREEN,
+    fontFamily: FONTS.bodyBold,
+    color: COLORS.darkGreen,
   },
 
   // ── Footer ──
   footerDivider: {
     height: 1,
-    backgroundColor: BORDER,
+    backgroundColor: COLORS.border,
     marginTop: 8,
   },
   footer: {
@@ -437,8 +416,8 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 11,
-    fontFamily: 'DMSans_400Regular',
-    color: TEXT_MUTED,
+    fontFamily: FONTS.body,
+    color: COLORS.textMuted,
     letterSpacing: 0.4,
   },
 })

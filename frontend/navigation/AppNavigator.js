@@ -8,11 +8,11 @@ import IdentificationScreen from '../screens/IdentificationScreen'
 import RecommendationScreen from '../screens/RecommendationScreen'
 import AuditScreen from '../screens/AuditScreen'
 import AuditResultsScreen from '../screens/AuditResultsScreen'
+import { COLORS } from '../theme'
 
 const Tab   = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
 
-const DARK_GREEN = '#1e3a1e'
 
 function TabNavigator() {
   return (
@@ -20,14 +20,14 @@ function TabNavigator() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: DARK_GREEN,
+          backgroundColor: COLORS.darkGreen,
           borderTopWidth: 0,
           height: 65,
           paddingBottom: 8,
           paddingTop: 8,
         },
-        tabBarActiveTintColor:   '#fff',
-        tabBarInactiveTintColor: '#d9f2d9',
+        tabBarActiveTintColor:   COLORS.white,
+        tabBarInactiveTintColor: COLORS.tabInactive,
         tabBarIcon: ({ color, size }) => {
           const icons = {
             Home:     'home',

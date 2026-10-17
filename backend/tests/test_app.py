@@ -2,6 +2,7 @@ import pytest
 
 import app as app_module
 from services import ai_service, openai_client
+from tests.helpers import species
 
 
 @pytest.fixture
@@ -11,9 +12,7 @@ def client():
 
 
 def test_identify_returns_source_and_why(client, monkeypatch):
-    monkeypatch.setattr(ai_service, "identify_species", lambda image, location: {
-        "scientific_name": "Schinus terebinthifolia", "common_name": "Brazilian pepper",
-        "confidence": 0.93, "candidates": [], "source": "plantnet", "needs_confirmation": False})
+    monkeypatch.setattr(ai_service, "identify_species", lambda image, location: species("Schinus terebinthifolia", "Brazilian pepper", 0.93))
     monkeypatch.setattr(ai_service, "assess_plant", lambda species, status, location: {
         "wildlife_support": "low", "wildlife_support_reason": "", "endangered_status": "not_threatened",
         "is_native": True, "invasive_status": "native", "actions": []})
@@ -21,7 +20,7 @@ def test_identify_returns_source_and_why(client, monkeypatch):
     assert response.status_code == 200
     result = response.get_json()["result"]
     assert result["source"] == "FISC"
-    assert result["invasive_status"] == "invasive"
+    assert result["status"] == "invasive"
     assert result["why"]
 
 
@@ -47,9 +46,7 @@ def test_dead_local_plants_route_is_gone(client):
 @pytest.fixture
 def species_spy(monkeypatch):
     received = []
-    monkeypatch.setattr(ai_service, "identify_species", lambda images, location: received.append(images) or {
-        "scientific_name": "Zamia integrifolia", "common_name": "Coontie", "confidence": 0.9,
-        "candidates": [], "source": "plantnet", "needs_confirmation": False})
+    monkeypatch.setattr(ai_service, "identify_species", lambda images, location: received.append(images) or species("Zamia integrifolia", "Coontie"))
     monkeypatch.setattr(ai_service, "assess_plant", lambda species, status, location: {})
     return received
 
@@ -60,7 +57,7 @@ def test_identify_accepts_multiple_images(client, species_spy):
     assert species_spy == [["a", "b", "c"]]
     result = response.get_json()["result"]
     assert result["id_source"] == "plantnet"
-    assert result["needs_confirmation"] is False
+    assert result["state"] == "identified"
 
 
 def test_identify_still_accepts_single_image(client, species_spy):
@@ -81,9 +78,7 @@ def _ai_down(monkeypatch):
 
 
 def test_identify_survives_ai_down(client, monkeypatch):
-    monkeypatch.setattr(ai_service, "identify_species", lambda images, location: {
-        "scientific_name": "Schinus terebinthifolia", "common_name": "Brazilian pepper",
-        "confidence": 0.9, "candidates": [], "source": "plantnet", "needs_confirmation": False})
+    monkeypatch.setattr(ai_service, "identify_species", lambda images, location: species("Schinus terebinthifolia", "Brazilian pepper", 0.9))
     _ai_down(monkeypatch)
     response = client.post("/identify", json={"image": "abc", "location": "33139"})
     assert response.status_code == 200

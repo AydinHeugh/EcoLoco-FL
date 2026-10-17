@@ -15,17 +15,19 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 - Your 5-digit ZIP code
 
 **You get back, for each plant:**
-- Its common and scientific name, and how confident the identification is
-- Which service identified it, the other species it might be, and whether you should double-check it
-- Whether it's native, non-native, or invasive in South Florida
-- Where that verdict came from: the Florida invasive species list, our list of Florida natives, the USDA plant database, or an AI guess if none of those know the plant
+- Its name and how sure PlantNet is about the match
+- When the app isn't sure, a short list of close matches to pick from ("Which one is it?"), each with its Florida status, plus a "None of these" button
+- When the photo is too unclear to match anything, "Couldn't identify this. Try a close-up of one leaf, or a flower" instead of a guess
+- Whether it's Native, Non-native, Invasive, or "Unknown: not on Florida lists"
+- Where that verdict came from: the Florida invasive species list, our list of Florida natives, or the USDA plant database. The AI never decides this; if none of them know the plant, it stays unknown
 - One line on why it matters (for example, coontie is the only plant the Atala butterfly can lay its eggs on)
 - How much it supports wildlife (high, medium, or low)
 - Two practical things you can do about it
 - A note when the AI part was unavailable, in which case wildlife value and actions show as unknown but the plant and its native/invasive verdict still come back
 
 **After you scan a whole campus (the EcoScan tab):**
-- Every plant you scan stays in the list. Ones the app isn't sure about are marked so you can double-check them or remove them with ✕.
+- Every plant you scan stays in the list. Ones the app isn't sure about show the same "Which one is it?" list, and any card can be removed with ✕.
+- Plants are grouped as native, non-native (not harmful), invasive, and unknown. Only invasive plants count as hurting wildlife.
 - A biodiversity score from 0 to 100, plus a list of the plants helping and hurting it
 - A projected score showing how much planting the top recommendations would raise it
 - Native plants to add for your ZIP code
@@ -35,15 +37,16 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 ## What happens in between
 
 1. **Identifying the plant.** The photos go to PlantNet, a plant identification service, which returns a ranked list of likely species with a score for each.
+   - Different names for the same plant (for example "Zamia pumila" and "Zamia integrifolia", both coontie) are merged first, and their scores added together.
+   - If PlantNet's top score is under 0.20, or it finds no plant at all, the app says it couldn't identify the photo.
    - If PlantNet is sure (top score 0.80 or higher, and clearly ahead of the next one), its answer is used.
-   - If it's unsure, OpenAI's image model (gpt-4o-mini) looks at the photos and picks between PlantNet's top guesses, taking your ZIP code into account. The result is marked as needing a double-check.
-   - If PlantNet can't be reached or finds nothing, OpenAI identifies the plant from the photos on its own.
-   - If both fail, the app gets an empty answer instead of an error.
-2. **Native or invasive.** The species name is checked in this order, and the first one that knows the plant wins:
+   - In between, you pick from the close matches. OpenAI's image model (gpt-4o-mini) only marks its best guess in that list; it doesn't change the scores.
+   - If PlantNet can't be reached, OpenAI identifies the plant from the photos on its own, using the same rules.
+2. **Native or invasive.** Any name for the plant (scientific name, older name, or common name like "Florida arrowroot") is turned into one species first, so every spelling gets the same answer. Then it's checked in this order, and the first one that knows the plant wins:
    - the full official Florida Invasive Species Council (FISC) 2026 list of 179 invasive plants, which ships with the backend;
    - our own list of 22 South Florida natives, which also ships with the backend;
    - the USDA PLANTS database online, which says whether the plant is native to Florida or was brought in from somewhere else (answers are remembered while the server runs);
-   - if none of them know it, the AI's guess, marked as such.
+   - if none of them know it, the plant is shown as unknown.
 3. **Wildlife value and actions.** OpenAI is asked how much the plant supports wildlife and what you can do about it. If it's invasive, the app always says to remove it and replace it with a native. If OpenAI is down or out of credits, the scan still returns the plant and its verdict, with wildlife value and actions marked unknown.
 4. **Scoring.** The biodiversity score is worked out with fixed rules, no AI: natives with high wildlife value score highest, invasives score lowest, and there are bonuses for having lots of natives and penalties for each invasive.
 5. **Recommendations and the letter.** OpenAI suggests native plants for your ZIP. Anything invasive, or that USDA says isn't native to Florida, gets filtered out. The letter is a fixed template, and OpenAI only writes one or two sentences about the plants you picked. Without OpenAI, recommendations come straight from our natives list and the letter uses each plant's "why it matters" line instead.
@@ -54,7 +57,7 @@ The invasive list is generated from the official FISC PDF by a script in `backen
 
 | Folder | What's in it |
 |---|---|
-| `frontend/` | The phone app. `screens/` has one file per screen, `navigation/` sets up the tabs, `services/` has the code that sends requests to the backend, and `styles/` has the colors. |
+| `frontend/` | The phone app. `screens/` has one file per screen, `components/` has pieces shared between screens, `navigation/` sets up the tabs, and `services/` has the code that sends requests to the backend. All colors and fonts are in `theme.js`, so a new look only needs that one file. |
 | `backend/` | The Python server the app talks to. `app.py` lists the web addresses the app can call. `services/` does the actual work (identifying, looking up Florida status, scoring, writing the letter). `data/` holds the Florida plant lists. `scripts/` has the tool that rebuilds the invasive list from the official FISC PDF. `tests/` checks it all works. |
 | `assets/` | Images used in the app, the app icon and splash screen, and the official "Powered by Pl@ntNet" logo shown under identification results. |
 | `docs/` | The interactive architecture map (`architecture.html`), the script that keeps it matched to the code, and our written plans (`superpowers/plans/`). |
@@ -101,5 +104,5 @@ You'll need Node.js, Python 3, an OpenAI API key, and a free PlantNet API key fr
 
 ## Where things stand
 
-- Done: Florida plant lists drive the native/invasive verdict, every verdict comes with its source and a "why it matters" line, plants are identified by PlantNet with OpenAI as a backup, the full FISC invasive list and a USDA check are in place, scans keep working when OpenAI is down, results credit Pl@ntNet, and the backend has automated tests.
-- Next: let the app send several photos and ask the user to confirm unsure identifications, show the source and "why it matters" in the app, show a notice when the AI part was unavailable, replace the remaining pop-up error messages that don't appear in the web version, double-check the plant lists against official sources, and put the backend online so the app works away from our computers.
+- Done: Florida plant lists drive the native/invasive verdict, every verdict comes with its source and a "why it matters" line, plants are identified by PlantNet with OpenAI as a backup, the full FISC invasive list and a USDA check are in place, scans keep working when OpenAI is down, unsure matches are confirmed by the user instead of guessed, results credit Pl@ntNet, and the backend has automated tests.
+- Next: let the app send several photos of one plant, show the source and "why it matters" in the app, show a notice when the AI part was unavailable, replace the remaining pop-up error messages that don't appear in the web version, double-check the plant lists against official sources, and put the backend online so the app works away from our computers.

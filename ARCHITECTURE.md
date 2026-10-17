@@ -63,7 +63,7 @@ and the answer comes back the same way.
 | `get_status()` (backend/services/fl_plants_service.py) | change planned | Add ZIP-specific regional lists behind the same get_status(). |
 | `fisc_list.json` (backend/data/fisc_list.json) | change planned | Verify the 22 curated "why" lines against FISC / UF-IFAS before the demo. |
 | `fl_natives.json` (backend/data/fl_natives.json) | change planned | Verify every entry against UF/IFAS and the Atlas of Florida Plants before the demo. |
-| `Multi-photo picker + confirm step` | PLANNED | Let users send 1–5 photos of one plant, and when `needs_confirmation` is true, ask them to pick from the candidates. The backend already accepts this. |
+| `Multi-photo upload` | PLANNED | Let users send 1–5 photos of one plant as `images` (Priority 6). The confirm picker already shipped. |
 | `AI-unavailable notice` | PLANNED | Show a short notice when a scan, recommendation list or letter has `ai_unavailable: true`. Unknown wildlife values and statuses are already labelled "Unknown". |
 <!-- /GENERATED:planned -->
 
@@ -84,8 +84,9 @@ flowchart LR
     ui_receipt["Source receipt badge<br/>PLANNED — goal: Show where each native/invasive verdict came from. The backend already returns `source` (FISC, fl_natives, USDA or unknown); only the UI is missing."]
     ui_jump["Before → after score jump<br/>PLANNED — goal: Make score → projected_score the headline jump. Mostly built already (toggle + BeforeAfterPill); remaining: lead with it, and use one source of truth for projected_score (the screen recomputes it today)."]
     letter["LetterGenerator"]
-    ui_multiphoto["Multi-photo picker + confirm step<br/>PLANNED — goal: Let users send 1–5 photos of one plant, and when `needs_confirmation` is true, ask them to pick from the candidates. The backend already accepts this."]
+    ui_multiphoto["Multi-photo upload<br/>PLANNED — goal: Let users send 1–5 photos of one plant as `images` (Priority 6). The confirm picker already shipped."]
     ui_ai_unknown["AI-unavailable notice<br/>PLANNED — goal: Show a short notice when a scan, recommendation list or letter has `ai_unavailable: true`. Unknown wildlife values and statuses are already labelled #quot;Unknown#quot;."]
+    ui_picker["CandidatePicker + StatusBadge"]
   end
   subgraph L_device["Device"]
     direction TB
@@ -123,6 +124,9 @@ flowchart LR
     s_bundled["bundled_natives()"]
     s_fallback_rec["fallback_recommendations()"]
     s_letter_noai["generate_letter_without_ai()"]
+    s_resolve["resolve()"]
+    s_option["plant_option()"]
+    s_common_name["common_name()"]
   end
   subgraph L_data["Bundled data"]
     direction TB
@@ -179,8 +183,7 @@ flowchart LR
   s_letter -->|"plant list + ZIP → 1–2 benefit sentences"| openai
   s_fl -->|"match scientific_name"| d_fisc
   s_fl -->|"match scientific_name"| d_natives
-  s_identify -->|"identify_species(images, location) → names, confidence, candidates, source, needs_confirmation"| s_species
-  s_identify -->|"get_status(scientific_name, zip) → native, invasive, source, why"| s_fl
+  s_identify -->|"identify_species(images, location) → state, ranked options, suggested"| s_species
   s_identify -->|"assess_plant(species, status, zip)"| s_assess
   s_species -->|"unsure: pick from PlantNet's top 5 · PlantNet failed: identify from photos"| openai
   s_assess -->|"names + ZIP + known status → wildlife, actions, status guess"| openai
@@ -198,6 +201,17 @@ flowchart LR
   s_fallback_rec -->|"bundled_natives() → first 11"| s_bundled
   s_letter_noai -->|"bundled_natives() → why lines"| s_bundled
   fisc_builder -->|"writes 179 species from the official PDF"| d_fisc
+  s_identify -->|"plant_option(name, common_name, confidence, zip) per option → status, labels, why"| s_option
+  s_option -->|"get_status(name, zip) → native, invasive, source, why"| s_fl
+  s_option -->|"resolve(name) → one scientific name"| s_resolve
+  s_fl -->|"resolve(name) before any list lookup"| s_resolve
+  s_species -->|"resolve(name) to merge names of the same species"| s_resolve
+  s_resolve -->|"names, synonyms, common names"| d_fisc
+  s_resolve -->|"names, synonyms, common names"| d_natives
+  ident -->|"unsure match → pick one or #quot;None of these#quot;"| ui_picker
+  audit -->|"unsure card → pick one or #quot;None of these#quot;"| ui_picker
+  s_option -->|"common_name(scientific_name) → our name for it"| s_common_name
+  s_common_name -->|"resolve(name)"| s_resolve
   classDef ui fill:#e3f2e1,stroke:#2e7d32,color:#12301a
   classDef device fill:#eceff1,stroke:#607d8b,color:#263238
   classDef client fill:#e1effa,stroke:#1e6fb8,color:#0d2d4d
@@ -207,11 +221,11 @@ flowchart LR
   classDef ext fill:#fde4e1,stroke:#c0392b,color:#4a0f08
   classDef planned stroke-dasharray:6 4,stroke-width:2px
   classDef dead fill:#f3f3f3,stroke:#9e9e9e,color:#616161,stroke-dasharray:3 3
-  class app,home,ident,rec,audit,results,ui_why,ui_receipt,ui_jump,letter,ui_multiphoto,ui_ai_unknown ui
+  class app,home,ident,rec,audit,results,ui_why,ui_receipt,ui_jump,letter,ui_multiphoto,ui_ai_unknown,ui_picker ui
   class picker,clipboard device
   class c_identify,c_rec,c_score,c_letter,c_local client
   class flask,r_identify,r_recommend,r_score,r_letter route
-  class s_inat,s_identify,s_rec,s_score,s_letter,s_fl,s_species,s_assess,s_plantnet,s_usda,s_bundled,s_fallback_rec,s_letter_noai svc
+  class s_inat,s_identify,s_rec,s_score,s_letter,s_fl,s_species,s_assess,s_plantnet,s_usda,s_bundled,s_fallback_rec,s_letter_noai,s_resolve,s_option,s_common_name svc
   class d_fisc,d_natives,fisc_builder data
   class inat,openai,usda,plantnet ext
   class ui_why,ui_receipt,ui_jump,ui_multiphoto,ui_ai_unknown planned
