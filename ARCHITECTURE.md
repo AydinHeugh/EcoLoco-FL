@@ -50,7 +50,7 @@ and the answer comes back the same way.
 | Item | Status | Goal |
 |---|---|---|
 | `'Why it matters' line` | PLANNED | Show the one-line stake for every plant. The backend already returns `why` from /identify and /recommend; only the UI is missing. |
-| `Source receipt badge` | PLANNED | Show where each native/invasive verdict came from. The backend already returns `source` (FISC, fl_natives or unknown); only the UI is missing. |
+| `Source receipt badge` | PLANNED | Show where each native/invasive verdict came from. The backend already returns `source` (FISC, fl_natives, USDA or unknown); only the UI is missing. |
 | `Before → after score jump` | PLANNED | Make score → projected_score the headline jump. Mostly built already (toggle + BeforeAfterPill); remaining: lead with it, and use one source of truth for projected_score (the screen recomputes it today). |
 | `identifyPlant()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
 | `getPlantRecommendations()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
@@ -60,11 +60,11 @@ and the answer comes back the same way.
 | `Flask app (app.py)` (backend/app.py) | change planned | Deploy to a public host before the demo (today: localhost with debug=True). |
 | `get_plant_requests()` (backend/services/inat_service.py) | DEAD | Nothing calls it since the confidence nudge was removed. Repurpose it (e.g. a 'seen near you' count) or delete inat_service.py. |
 | `get_plant_recommendations()` (backend/services/ai_service.py) | change planned | Pick the candidates from fl_natives.json instead of asking GPT for the list; GPT would then only write the wording. |
-| `get_status()` (backend/services/fl_plants_service.py) | change planned | Add a USDA PLANTS fallback and ZIP-specific lists behind the same get_status(). |
-| `fisc_list.json` (backend/data/fisc_list.json) | change planned | Verify every entry against the official FISC Invasive Plant List / UF-IFAS before the demo. |
+| `get_status()` (backend/services/fl_plants_service.py) | change planned | Add ZIP-specific regional lists behind the same get_status(). |
+| `fisc_list.json` (backend/data/fisc_list.json) | change planned | Verify the 22 curated "why" lines against FISC / UF-IFAS before the demo. |
 | `fl_natives.json` (backend/data/fl_natives.json) | change planned | Verify every entry against UF/IFAS and the Atlas of Florida Plants before the demo. |
-| `USDA PLANTS` | PLANNED | Native status for species that aren't in the bundled lists. |
-| `identify_species()` (backend/services/identification_service.py) | change planned | Swap OpenAI vision for PlantNet (or combine both) behind the same return shape. |
+| `Multi-photo picker + confirm step` | PLANNED | Let users send 1–5 photos of one plant, and when `needs_confirmation` is true, ask them to pick from the candidates. The backend already accepts this. |
+| `Show "unknown" + AI-unavailable notice` | PLANNED | When `ai_unavailable` is true, show wildlife value as unknown and a short notice. Today the EcoScan cards show any unrecognised wildlife value as "Medium". |
 <!-- /GENERATED:planned -->
 
 ## Diagram
@@ -81,9 +81,11 @@ flowchart LR
     audit["AuditScreen (EcoScan)"]
     results["AuditResultsScreen"]
     ui_why["'Why it matters' line<br/>PLANNED — goal: Show the one-line stake for every plant. The backend already returns `why` from /identify and /recommend; only the UI is missing."]
-    ui_receipt["Source receipt badge<br/>PLANNED — goal: Show where each native/invasive verdict came from. The backend already returns `source` (FISC, fl_natives or unknown); only the UI is missing."]
+    ui_receipt["Source receipt badge<br/>PLANNED — goal: Show where each native/invasive verdict came from. The backend already returns `source` (FISC, fl_natives, USDA or unknown); only the UI is missing."]
     ui_jump["Before → after score jump<br/>PLANNED — goal: Make score → projected_score the headline jump. Mostly built already (toggle + BeforeAfterPill); remaining: lead with it, and use one source of truth for projected_score (the screen recomputes it today)."]
     letter["LetterGenerator"]
+    ui_multiphoto["Multi-photo picker + confirm step<br/>PLANNED — goal: Let users send 1–5 photos of one plant, and when `needs_confirmation` is true, ask them to pick from the candidates. The backend already accepts this."]
+    ui_ai_unknown["Show #quot;unknown#quot; + AI-unavailable notice<br/>PLANNED — goal: When `ai_unavailable` is true, show wildlife value as unknown and a short notice. Today the EcoScan cards show any unrecognised wildlife value as #quot;Medium#quot;."]
   end
   subgraph L_device["Device"]
     direction TB
@@ -116,17 +118,24 @@ flowchart LR
     s_fl["get_status()"]
     s_species["identify_species()"]
     s_assess["assess_plant()"]
+    s_plantnet["identify_with_plantnet()"]
+    s_usda["florida_status()"]
+    s_bundled["bundled_natives()"]
+    s_fallback_rec["fallback_recommendations()"]
+    s_letter_noai["generate_letter_without_ai()"]
   end
   subgraph L_data["Bundled data"]
     direction TB
     d_fisc["fisc_list.json"]
     d_natives["fl_natives.json"]
+    fisc_builder["build_fisc_list.py"]
   end
   subgraph L_ext["External APIs"]
     direction TB
     inat["iNaturalist API"]
     openai["OpenAI (gpt-4o-mini)"]
-    usda["USDA PLANTS<br/>PLANNED — goal: Native status for species that aren't in the bundled lists."]
+    usda["USDA PLANTS"]
+    plantnet["PlantNet API"]
   end
   app -->|"tab: Home"| home
   app -->|"tab: Identify"| ident
@@ -170,13 +179,25 @@ flowchart LR
   s_letter -->|"plant list + ZIP → 1–2 benefit sentences"| openai
   s_fl -->|"match scientific_name"| d_fisc
   s_fl -->|"match scientific_name"| d_natives
-  s_fl -.->|"fallback lookup"| usda
-  s_identify -->|"identify_species(image, location) → names, confidence, candidates"| s_species
+  s_identify -->|"identify_species(images, location) → names, confidence, candidates, source, needs_confirmation"| s_species
   s_identify -->|"get_status(scientific_name, zip) → native, invasive, source, why"| s_fl
   s_identify -->|"assess_plant(species, status, zip)"| s_assess
-  s_species -->|"photo + ZIP → species + candidates (JSON)"| openai
+  s_species -->|"unsure: pick from PlantNet's top 5 · PlantNet failed: identify from photos"| openai
   s_assess -->|"names + ZIP + known status → wildlife, actions, status guess"| openai
   s_rec -->|"get_status() per plant → drop invasives, add source + why"| s_fl
+  ident -.->|"sends images[], reads needs_confirmation"| ui_multiphoto
+  audit -.->|"sends images[], reads needs_confirmation"| ui_multiphoto
+  s_species -->|"identify_with_plantnet(images) → ranked species + scores"| s_plantnet
+  s_plantnet -->|"POST /v2/identify/all (1–5 photos) → results[]"| plantnet
+  ident -.->|"reads ai_unavailable"| ui_ai_unknown
+  audit -.->|"reads ai_unavailable"| ui_ai_unknown
+  s_fl -->|"florida_status(name) → native / introduced / None"| s_usda
+  s_usda -->|"search → profile → FL distribution"| usda
+  r_recommend -->|"AIUnavailable → fallback_recommendations(location)"| s_fallback_rec
+  r_letter -->|"AIUnavailable → generate_letter_without_ai(...)"| s_letter_noai
+  s_fallback_rec -->|"bundled_natives() → first 11"| s_bundled
+  s_letter_noai -->|"bundled_natives() → why lines"| s_bundled
+  fisc_builder -->|"writes 179 species from the official PDF"| d_fisc
   classDef ui fill:#e3f2e1,stroke:#2e7d32,color:#12301a
   classDef device fill:#eceff1,stroke:#607d8b,color:#263238
   classDef client fill:#e1effa,stroke:#1e6fb8,color:#0d2d4d
@@ -186,14 +207,14 @@ flowchart LR
   classDef ext fill:#fde4e1,stroke:#c0392b,color:#4a0f08
   classDef planned stroke-dasharray:6 4,stroke-width:2px
   classDef dead fill:#f3f3f3,stroke:#9e9e9e,color:#616161,stroke-dasharray:3 3
-  class app,home,ident,rec,audit,results,ui_why,ui_receipt,ui_jump,letter ui
+  class app,home,ident,rec,audit,results,ui_why,ui_receipt,ui_jump,letter,ui_multiphoto,ui_ai_unknown ui
   class picker,clipboard device
   class c_identify,c_rec,c_score,c_letter,c_local client
   class flask,r_identify,r_recommend,r_score,r_letter route
-  class s_inat,s_identify,s_rec,s_score,s_letter,s_fl,s_species,s_assess svc
-  class d_fisc,d_natives data
-  class inat,openai,usda ext
-  class ui_why,ui_receipt,ui_jump,usda planned
+  class s_inat,s_identify,s_rec,s_score,s_letter,s_fl,s_species,s_assess,s_plantnet,s_usda,s_bundled,s_fallback_rec,s_letter_noai svc
+  class d_fisc,d_natives,fisc_builder data
+  class inat,openai,usda,plantnet ext
+  class ui_why,ui_receipt,ui_jump,ui_multiphoto,ui_ai_unknown planned
   class c_local,s_inat dead
 ```
 <!-- /GENERATED:mermaid -->

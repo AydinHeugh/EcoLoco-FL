@@ -1,7 +1,16 @@
+import os
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
-from services.ai_service import identify_plant, get_plant_recommendations, generate_letter
+from services import openai_client
+from services.ai_service import (
+    fallback_recommendations,
+    generate_letter,
+    generate_letter_without_ai,
+    get_plant_recommendations,
+    identify_plant,
+)
 from services.score_service import calculate_biodiversity_score
 
 load_dotenv()
@@ -10,16 +19,30 @@ app = Flask(__name__)
 CORS(app)
 
 
+def debug_enabled():
+    return os.getenv("ECOLOCO_DEV") == "1"
+
+
+def _valid_images(images):
+    return (
+        isinstance(images, list)
+        and 1 <= len(images) <= 5
+        and all(isinstance(image, str) and image for image in images)
+    )
+
+
 @app.route("/identify", methods=["POST"])
 def identify():
     data = request.get_json()
-    image = data.get("image")
+    images = data.get("images")
+    if images is None and data.get("image"):
+        images = [data["image"]]
     location = data.get("location")
 
-    if not image or not location:
-        return jsonify({"error": "image and location are required"}), 400
+    if not _valid_images(images) or not location:
+        return jsonify({"error": "1 to 5 images and a location are required"}), 400
 
-    result = identify_plant(image, location)
+    result = identify_plant(images, location)
     return jsonify({"result": result})
 
 
@@ -31,8 +54,11 @@ def recommend():
     if not location:
         return jsonify({"error": "location is required"}), 400
 
-    result = get_plant_recommendations(location)
-    return jsonify({"result": result})
+    try:
+        result, ai_unavailable = get_plant_recommendations(location), False
+    except openai_client.AIUnavailable:
+        result, ai_unavailable = fallback_recommendations(location), True
+    return jsonify({"result": result, "ai_unavailable": ai_unavailable})
 
 
 @app.route("/score", methods=["POST"])
@@ -55,9 +81,12 @@ def letter():
     if not plant_names or score is None or not zip_code:
         return jsonify({"error": "plant_names, score, and zip_code are required"}), 400
 
-    result = generate_letter(plant_names, score, zip_code)
-    return jsonify({"result": result})
+    try:
+        result, ai_unavailable = generate_letter(plant_names, score, zip_code), False
+    except openai_client.AIUnavailable:
+        result, ai_unavailable = generate_letter_without_ai(plant_names, score, zip_code), True
+    return jsonify({"result": result, "ai_unavailable": ai_unavailable})
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=debug_enabled(), host='0.0.0.0')

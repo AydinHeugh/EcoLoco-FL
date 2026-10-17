@@ -18,11 +18,18 @@ def _client():
     return OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
+class AIUnavailable(Exception):
+    pass
+
+
 def chat(content, json_reply=False):
-    response = _client().chat.completions.create(
-        model=MODEL,
-        temperature=0,
-        messages=[{"role": "user", "content": content}],
-    )
-    text = response.choices[0].message.content.strip()
-    return json.loads(_FENCE.sub("", text)) if json_reply else text
+    try:
+        response = _client().chat.completions.create(
+            model=MODEL,
+            temperature=0,
+            messages=[{"role": "user", "content": content}],
+        )
+        text = response.choices[0].message.content.strip()
+        return json.loads(_FENCE.sub("", text)) if json_reply else text
+    except Exception as err:
+        raise AIUnavailable(type(err).__name__) from err

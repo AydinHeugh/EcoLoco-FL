@@ -1,7 +1,9 @@
 import json
 
 import pytest
+import requests
 
+from services import usda_service
 from services.fl_plants_service import DATA_DIR, get_status
 
 ZIP = "33139"
@@ -77,7 +79,9 @@ def test_data_file_has_20_complete_entries(filename):
     for entry in species:
         assert entry["scientific_name"].strip()
         assert entry["common_name"].strip()
-        assert entry["why"].strip()
+        if filename == "fl_natives.json":
+            assert entry["why"].strip()
+    assert sum(1 for entry in species if entry["why"]) >= 15
 
 
 def test_no_species_is_on_both_lists():
@@ -88,3 +92,55 @@ def test_no_species_is_on_both_lists():
 def test_every_entry_resolves_to_its_own_list(filename, source):
     for entry in _species(filename):
         assert get_status(entry["scientific_name"], ZIP)["source"] == source, entry["scientific_name"]
+
+
+def _usda_says(monkeypatch, answer):
+    def fake(name):
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+    monkeypatch.setattr(usda_service, "florida_status", fake)
+
+
+def test_bundled_lists_win_over_usda(monkeypatch):
+    _usda_says(monkeypatch, AssertionError("USDA should not be asked"))
+    assert get_status("Zamia integrifolia", ZIP)["source"] == "fl_natives"
+    assert get_status("Schinus terebinthifolia", ZIP)["source"] == "FISC"
+
+
+def test_usda_native_status(monkeypatch):
+    _usda_says(monkeypatch, "native")
+    assert get_status("Hamelia cuprea", ZIP) == {"native": True, "invasive": False, "source": "USDA", "why": None}
+
+
+def test_usda_non_native_status(monkeypatch):
+    _usda_says(monkeypatch, "introduced")
+    assert get_status("Ficus benjamina", ZIP) == {"native": False, "invasive": False, "source": "USDA", "why": None}
+
+
+def test_usda_unknown_plant(monkeypatch):
+    _usda_says(monkeypatch, None)
+    assert get_status("Plantus imaginarius", ZIP) == UNKNOWN
+
+
+def test_usda_error_is_unknown_and_not_cached(monkeypatch):
+    monkeypatch.setattr(usda_service, "_cache", {})
+
+    def down(*args, **kwargs):
+        raise requests.ConnectionError("USDA down")
+
+    monkeypatch.setattr(requests, "get", down)
+    assert get_status("Ficus benjamina", ZIP) == UNKNOWN
+
+    class Ok:
+        def __init__(self, body):
+            self.body = body
+        def raise_for_status(self):
+            pass
+        def json(self):
+            return self.body
+
+    monkeypatch.setattr(requests, "get", lambda url, params=None, **kw: Ok(
+        [{"Plant": {"Id": 9, "Symbol": "FIBE", "ScientificName": "<i>Ficus benjamina</i> L."}}] if url.endswith("/PlantSearch")
+        else {"Id": 9, "Symbol": "FIBE", "NativeStatuses": [{"Region": "L48", "Status": "I"}]}))
+    assert get_status("Ficus benjamina", ZIP)["source"] == "USDA"

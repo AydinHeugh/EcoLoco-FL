@@ -14,6 +14,7 @@ import {
   Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as Linking from 'expo-linking';
 import { useFonts } from 'expo-font';
 import { Fraunces_700Bold, Fraunces_400Regular_Italic } from '@expo-google-fonts/fraunces';
 import { DMSans_400Regular, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
@@ -29,6 +30,8 @@ const BORDER     = '#d4cfc4';
 
 const EASE_OUT = Easing.bezier(0.22, 1, 0.36, 1);
 const LOGO = require('../../assets/EcoLoco_logo.png');
+const PLANTNET_LOGO = require('../../assets/powered-by-plantnet-light.png');
+const PLANTNET_URL = 'https://plantnet.org';
 
 // ─── Bouncing dots loader ────────────────────────────────────────────────────
 function LoadingDots({ message }) {
@@ -376,6 +379,15 @@ export default function IdentificationScreen({ navigation }) {
                 <Text style={styles.recBtnText}>Get native plant recommendations for {zipCode}  →</Text>
               </TouchableOpacity>
             )}
+
+            <TouchableOpacity
+              style={styles.credit}
+              accessibilityRole="link"
+              onPress={() => Linking.openURL(PLANTNET_URL).catch(() => {})}
+            >
+              <Image source={PLANTNET_LOGO} style={styles.creditLogo} resizeMode="contain" accessibilityLabel="Pl@ntNet logo" />
+              <Text style={styles.creditText}>Plant identification powered by Pl@ntNet</Text>
+            </TouchableOpacity>
           </View>
           </AnimatedResults>
         )}
@@ -492,6 +504,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14, alignItems: 'center',
   },
   recBtnText: { fontSize: 13, fontFamily: 'DMSans_700Bold', color: '#f5f0e8' },
+
+  credit: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: 8, marginTop: 18, paddingVertical: 6 },
+  creditLogo: { width: 102, height: 24 },
+  creditText: { fontSize: 11, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED },
   expertBanner: {
     backgroundColor: '#fdf0ec', borderRadius: 10, borderWidth: 1,
     borderColor: '#C97D5D', padding: 12, marginTop: 10,

@@ -13,7 +13,7 @@ def client():
 def test_identify_returns_source_and_why(client, monkeypatch):
     monkeypatch.setattr(ai_service, "identify_species", lambda image, location: {
         "scientific_name": "Schinus terebinthifolia", "common_name": "Brazilian pepper",
-        "confidence": 0.93, "candidates": []})
+        "confidence": 0.93, "candidates": [], "source": "plantnet", "needs_confirmation": False})
     monkeypatch.setattr(ai_service, "assess_plant", lambda species, status, location: {
         "wildlife_support": "low", "wildlife_support_reason": "", "endangered_status": "not_threatened",
         "is_native": True, "invasive_status": "native", "actions": []})
@@ -42,3 +42,86 @@ def test_identify_requires_image_and_location(client, body):
 
 def test_dead_local_plants_route_is_gone(client):
     assert client.post("/get_local_plants_endpoints", json={"location": "33139"}).status_code == 404
+
+
+@pytest.fixture
+def species_spy(monkeypatch):
+    received = []
+    monkeypatch.setattr(ai_service, "identify_species", lambda images, location: received.append(images) or {
+        "scientific_name": "Zamia integrifolia", "common_name": "Coontie", "confidence": 0.9,
+        "candidates": [], "source": "plantnet", "needs_confirmation": False})
+    monkeypatch.setattr(ai_service, "assess_plant", lambda species, status, location: {})
+    return received
+
+
+def test_identify_accepts_multiple_images(client, species_spy):
+    response = client.post("/identify", json={"images": ["a", "b", "c"], "location": "33139"})
+    assert response.status_code == 200
+    assert species_spy == [["a", "b", "c"]]
+    result = response.get_json()["result"]
+    assert result["id_source"] == "plantnet"
+    assert result["needs_confirmation"] is False
+
+
+def test_identify_still_accepts_single_image(client, species_spy):
+    assert client.post("/identify", json={"image": "a", "location": "33139"}).status_code == 200
+    assert species_spy == [["a"]]
+
+
+@pytest.mark.parametrize("images", [[], ["a"] * 6, [""], ["a", 5], "a"])
+def test_identify_rejects_bad_image_counts(client, species_spy, images):
+    assert client.post("/identify", json={"images": images, "location": "33139"}).status_code == 400
+    assert species_spy == []
+
+
+def _ai_down(monkeypatch):
+    def unavailable(content, json_reply=False):
+        raise openai_client.AIUnavailable("RateLimitError")
+    monkeypatch.setattr(openai_client, "chat", unavailable)
+
+
+def test_identify_survives_ai_down(client, monkeypatch):
+    monkeypatch.setattr(ai_service, "identify_species", lambda images, location: {
+        "scientific_name": "Schinus terebinthifolia", "common_name": "Brazilian pepper",
+        "confidence": 0.9, "candidates": [], "source": "plantnet", "needs_confirmation": False})
+    _ai_down(monkeypatch)
+    response = client.post("/identify", json={"image": "abc", "location": "33139"})
+    assert response.status_code == 200
+    result = response.get_json()["result"]
+    assert result["ai_unavailable"] is True
+    assert result["source"] == "FISC"
+
+
+def test_recommend_falls_back_when_ai_down(client, monkeypatch):
+    _ai_down(monkeypatch)
+    response = client.post("/recommend", json={"location": "33139"})
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["ai_unavailable"] is True
+    assert body["result"][0]["source"] == "fl_natives"
+
+
+def test_recommend_reports_ai_available(client, monkeypatch):
+    monkeypatch.setattr(openai_client, "chat", lambda content, json_reply=False: [
+        {"plant_name": "Coontie", "scientific_name": "Zamia integrifolia", "wildlife_support": "high"}])
+    assert client.post("/recommend", json={"location": "33139"}).get_json()["ai_unavailable"] is False
+
+
+def test_letter_falls_back_when_ai_down(client, monkeypatch):
+    _ai_down(monkeypatch)
+    response = client.post("/letter", json={"plant_names": ["Coontie"], "score": 42, "zip_code": "33139"})
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["ai_unavailable"] is True
+    assert "Coontie" in body["result"]
+
+
+def test_debug_off_by_default(monkeypatch):
+    monkeypatch.delenv("ECOLOCO_DEV", raising=False)
+    assert app_module.debug_enabled() is False
+
+
+@pytest.mark.parametrize("value, expected", [("1", True), ("0", False), ("", False)])
+def test_debug_on_only_with_dev_flag(monkeypatch, value, expected):
+    monkeypatch.setenv("ECOLOCO_DEV", value)
+    assert app_module.debug_enabled() is expected

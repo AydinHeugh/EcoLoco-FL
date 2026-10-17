@@ -1,10 +1,13 @@
+from concurrent.futures import ThreadPoolExecutor
+
 from services import openai_client
-from services.fl_plants_service import get_status
+from services.fl_plants_service import bundled_natives, get_status
 from services.identification_service import identify_species
 
 STATUSES = ("native", "non-native", "invasive")
 SUPPORT_LEVELS = ("high", "medium", "low")
 ENDANGERED = ("not_threatened", "threatened", "endangered", "critically_endangered", "unknown")
+GENERIC_BENEFIT = "These native plants provide food and shelter for local pollinators, birds and other wildlife."
 
 ASSESS_PROMPT = """The plant {common_name} ({scientific_name}) was found near US ZIP code {location}.
 {status_line}
@@ -52,6 +55,12 @@ Entries 4–11 are additional high-impact natives — compact format:
 Rank all 11 highest wildlife_support first. No markdown, no backticks, return only the JSON array."""
 
 
+def _status_label(status):
+    if status["invasive"]:
+        return "invasive"
+    return "native" if status["native"] else "non-native"
+
+
 def _pick(value, allowed, default):
     value = str(value or "").strip().lower()
     return value if value in allowed else default
@@ -74,27 +83,35 @@ def assess_plant(species, status, location):
     if status["source"] == "unknown":
         status_line = ""
     else:
-        label = "invasive" if status["invasive"] else "native"
+        label = _status_label(status)
         status_line = f"Florida records ({status['source']}) list it as {label} here; treat that as fact.\n"
-    return openai_client.chat(ASSESS_PROMPT.format(
+    assessment = openai_client.chat(ASSESS_PROMPT.format(
         common_name=species["common_name"] or "unknown",
         scientific_name=species["scientific_name"] or "unknown",
         location=location,
         status_line=status_line,
     ), json_reply=True)
+    if not isinstance(assessment, dict):
+        raise openai_client.AIUnavailable("unexpected reply shape")
+    return assessment
 
 
-def identify_plant(image_data, location):
-    species = identify_species(image_data, location)
+def identify_plant(images, location):
+    species = identify_species(images, location)
     status = get_status(species["scientific_name"], location)
-    assessment = assess_plant(species, status, location)
+    try:
+        assessment, ai_unavailable = assess_plant(species, status, location), False
+    except openai_client.AIUnavailable:
+        assessment, ai_unavailable = {}, True
 
-    if status["source"] == "unknown":
+    if status["source"] != "unknown":
+        invasive_status = _status_label(status)
+        is_native = status["native"]
+    elif ai_unavailable:
+        invasive_status, is_native = "unknown", None
+    else:
         invasive_status = _pick(assessment.get("invasive_status"), STATUSES, "non-native")
         is_native = bool(assessment.get("is_native"))
-    else:
-        invasive_status = "invasive" if status["invasive"] else "native"
-        is_native = status["native"]
 
     if invasive_status == "invasive":
         actions = _invasive_actions(location)
@@ -107,38 +124,67 @@ def identify_plant(image_data, location):
         "is_native": is_native,
         "invasive_status": invasive_status,
         "endangered_status": _pick(assessment.get("endangered_status"), ENDANGERED, "unknown"),
-        "wildlife_support": _pick(assessment.get("wildlife_support"), SUPPORT_LEVELS, "low"),
+        "wildlife_support": _pick(assessment.get("wildlife_support"), SUPPORT_LEVELS, "unknown" if ai_unavailable else "low"),
         "wildlife_support_reason": assessment.get("wildlife_support_reason", ""),
         "confidence": species["confidence"],
         "candidates": species["candidates"],
+        "id_source": species["source"],
+        "needs_confirmation": species["needs_confirmation"],
         "source": status["source"],
         "why": status["why"],
         "actions": actions,
+        "ai_unavailable": ai_unavailable,
     }
 
 
 def get_plant_recommendations(location: str):
+    plants = openai_client.chat(RECOMMEND_PROMPT.format(location=location), json_reply=True)
+    if not isinstance(plants, list):
+        raise openai_client.AIUnavailable("unexpected reply shape")
+    plants = [plant for plant in plants if isinstance(plant, dict)]
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        statuses = list(pool.map(lambda plant: get_status(plant.get("scientific_name"), location), plants))
     recommendations = []
-    for plant in openai_client.chat(RECOMMEND_PROMPT.format(location=location), json_reply=True):
-        status = get_status(plant.get("scientific_name"), location)
-        if status["invasive"]:
+    for plant, status in zip(plants, statuses):
+        if status["invasive"] or status["native"] is False:
             continue
         recommendations.append({**plant, "source": status["source"], "why": status["why"]})
     return recommendations
 
 
-def generate_letter(plant_names: list, score: int, zip_code: str):
+def fallback_recommendations(location: str):
+    recommendations = []
+    for i, native in enumerate(bundled_natives()[:11]):
+        item = {
+            "plant_name": native["common_name"],
+            "scientific_name": native["scientific_name"],
+            "wildlife_support": "unknown",
+            "source": "fl_natives",
+            "why": native["why"],
+        }
+        if i < 3:
+            item.update(
+                problem="Picked from our list of South Florida natives while AI suggestions are unavailable.",
+                action=f"Plant {native['common_name']} in a spot on campus where it can get established.",
+                impact=native["why"],
+            )
+        else:
+            item["benefit"] = native["why"]
+        recommendations.append(item)
+    return recommendations
+
+
+def _plant_list(plant_names):
     # Format plant list naturally
     if len(plant_names) == 1:
-        plant_list  = plant_names[0]
-        adding_word = "Adding it"
-    elif len(plant_names) == 2:
-        plant_list  = f"{plant_names[0]} and {plant_names[1]}"
-        adding_word = "Adding them"
-    else:
-        plant_list  = ", ".join(plant_names[:-1]) + f", and {plant_names[-1]}"
-        adding_word = "Adding them"
+        return plant_names[0], "Adding it"
+    if len(plant_names) == 2:
+        return f"{plant_names[0]} and {plant_names[1]}", "Adding them"
+    return ", ".join(plant_names[:-1]) + f", and {plant_names[-1]}", "Adding them"
 
+
+def generate_letter(plant_names: list, score: int, zip_code: str):
+    plant_list, _ = _plant_list(plant_names)
     # GPT generates only the benefit sentence(s)
     benefit = openai_client.chat(
         f"Write 1–2 sentences explaining why the following native plant(s) "
@@ -146,7 +192,18 @@ def generate_letter(plant_names: list, score: int, zip_code: str):
         "Be specific — mention pollinators, birds, or insects they support. "
         "Return only the sentences, no preamble or trailing text."
     )
+    return _letter(plant_names, score, zip_code, benefit)
 
+
+def generate_letter_without_ai(plant_names: list, score: int, zip_code: str):
+    whys = {native["common_name"].lower(): native["why"] for native in bundled_natives()}
+    known = [f"{name}: {whys[name.lower()]}" for name in plant_names if name.lower() in whys]
+    benefit = " ".join(known) or GENERIC_BENEFIT
+    return _letter(plant_names, score, zip_code, benefit)
+
+
+def _letter(plant_names, score, zip_code, benefit):
+    plant_list, adding_word = _plant_list(plant_names)
     letter = (
         f"Dear [PRINCIPAL_NAME],\n\n"
         f"The [SCHOOL_NAME] eco-club has been studying the plants growing around our campus, "

@@ -188,6 +188,7 @@
         "`handleIdentify()` calls `identifyPlant(photo.base64, zipCode)` and shows loading dots.",
         "Renders the result: name, scientific name, native/invasive badge, wildlife support, confidence, and suggested actions. (It still shows `inat_note` if present, but the backend no longer sends one.)",
         "'Get native plant recommendations for ZIP' → `navigate('Recommend', {prefillZip})`.",
+        "Under the result, a \"Plant identification powered by Pl@ntNet\" credit with the official logo links to plantnet.org (opened with `expo-linking`).",
         "Errors show inline under the photo."
       ]
     },
@@ -275,7 +276,7 @@
       "symbol": null,
       "col": 2,
       "row": 2,
-      "goal": "Show where each native/invasive verdict came from. The backend already returns `source` (FISC, fl_natives or unknown); only the UI is missing.",
+      "goal": "Show where each native/invasive verdict came from. The backend already returns `source` (FISC, fl_natives, USDA or unknown); only the UI is missing.",
       "what": "A small badge next to the native/invasive verdict that cites its source.",
       "how": [
         "Read `result.source` from /identify.",
@@ -441,10 +442,10 @@
       "goal": "Deploy to a public host before the demo (today: localhost with debug=True).",
       "what": "The Python web server that exposes the API the app talks to.",
       "how": [
-        "`load_dotenv()` reads `OPENAI_API_KEY` from `backend/.env`.",
+        "`load_dotenv()` reads `OPENAI_API_KEY` and `PLANTNET_API_KEY` from `backend/.env`.",
         "Creates the Flask app and turns on CORS so the Expo web build can call it.",
         "Registers the four routes: /identify, /recommend, /score, /letter.",
-        "`app.run(debug=True, host='0.0.0.0')` starts a local development server only."
+        "`app.run(host='0.0.0.0')` with debug mode only when `ECOLOCO_DEV=1` (`debug_enabled()`); debug is off by default, so crashes never show the code-revealing debug page."
       ]
     },
     {
@@ -458,9 +459,9 @@
       "row": 1.5,
       "what": "API endpoint for identifying one plant.",
       "how": [
-        "Reads `image` and `location` from the JSON body.",
-        "Returns 400 if either is missing.",
-        "Calls `identify_plant(image, location)` and returns `{result}`."
+        "Reads `images` (a list of 1–5 non-empty strings) or, for the current app, a single `image`, plus `location`.",
+        "Returns 400 if the photos or the location are missing or invalid (0 or more than 5 photos, empty or non-text entries).",
+        "Calls `identify_plant(images, location)` and returns `{result}`."
       ]
     },
     {
@@ -475,7 +476,9 @@
       "what": "API endpoint for native plant recommendations.",
       "how": [
         "Reads `location`; 400 if missing.",
-        "Calls `get_plant_recommendations(location)` and returns `{result}`."
+        "Calls `get_plant_recommendations(location)`.",
+        "If OpenAI is unavailable (`AIUnavailable`), returns `fallback_recommendations(location)` from the bundled natives list instead.",
+        "Returns `{result: [...], ai_unavailable}`."
       ]
     },
     {
@@ -505,7 +508,8 @@
       "what": "API endpoint for the letter to the school admin.",
       "how": [
         "Reads `plant_names`, `score`, `zip_code`; 400 if any is missing (a score of 0 is allowed).",
-        "Calls `generate_letter(...)` and returns `{result: letter text}`."
+        "Calls `generate_letter(...)`; if OpenAI is unavailable, uses `generate_letter_without_ai(...)` instead.",
+        "Returns `{result: letter text, ai_unavailable}`."
       ]
     },
     {
@@ -536,13 +540,13 @@
       "row": 1.5,
       "what": "The identification pipeline: works out what the plant is, whether it is native or invasive (from Florida data), and what to do about it.",
       "how": [
-        "`identify_species(image, location)` returns the standard ID shape: scientific name, common name, confidence, candidates.",
-        "`get_status(scientific_name, zip)` looks the plant up in the bundled FISC and FL-natives lists.",
+        "`identify_species(images, location)` returns the species, confidence, other candidates, which service identified it, and whether the user should confirm it.",
+        "`get_status(scientific_name, zip)` checks the FISC list, the bundled natives, then USDA PLANTS.",
         "`assess_plant(species, status, zip)` asks OpenAI for wildlife support + reason, conservation status, two actions, and its own native/invasive guess. When the status is known, the prompt tells the model to treat it as fact.",
-        "Status: if our data knows the plant (`source` is FISC or fl_natives), that answer wins. Only when `source` is `unknown` does it fall back to the model's guess.",
-        "Invasive plants get two fixed actions (don't propagate; remove and replace with natives); everything else gets the model's actions.",
-        "Cleans model values to the allowed lists (e.g. `HIGH` → `high`, unknown conservation status → `unknown`).",
-        "Returns `plant_name, scientific_name, is_native, invasive_status, endangered_status, wildlife_support, wildlife_support_reason, confidence, candidates, source, why, actions`."
+        "If OpenAI is unavailable (`AIUnavailable`: no credits, network error, or a malformed reply), the scan still returns: wildlife support, conservation status and reason become `unknown`, actions are empty (invasives still get the two fixed removal actions), and `ai_unavailable` is true.",
+        "Status: if our data knows the plant (FISC, fl_natives or USDA), that answer wins: invasive, native, or non-native. Only when `source` is `unknown` does it use the model's guess, or `unknown` if OpenAI is down.",
+        "Cleans model values to the allowed lists (e.g. `HIGH` → `high`).",
+        "Returns `plant_name, scientific_name, is_native, invasive_status, endangered_status, wildlife_support, wildlife_support_reason, confidence, candidates, id_source, needs_confirmation, source, why, actions, ai_unavailable`."
       ]
     },
     {
@@ -557,10 +561,11 @@
       "goal": "Pick the candidates from fl_natives.json instead of asking GPT for the list; GPT would then only write the wording.",
       "what": "Produces the ranked list of native plants to recommend for a ZIP.",
       "how": [
-        "One OpenAI call: 'For ZIP X, return 11 native plants ranked by ecological impact.'",
+        "One OpenAI call: 'For ZIP X, return 11 native plants ranked by ecological impact.' A reply that isn't a list counts as OpenAI being unavailable.",
         "Entries 1–3 in full: `plant_name, scientific_name, wildlife_support, problem, action, impact`; entries 4–11 compact with `benefit`.",
-        "Runs `get_status()` on every plant: drops anything on the FISC invasive list, and adds `source` and `why` to the rest.",
-        "Plants the model suggests that aren't in our data come back with `source: unknown` and `why: null`."
+        "Runs `get_status()` on all plants at once (in parallel, since USDA lookups take about a second each).",
+        "Drops anything on the FISC invasive list or confirmed non-native by USDA, and adds `source` and `why` to the rest.",
+        "Raises `AIUnavailable` when OpenAI fails, so the route can switch to `fallback_recommendations`."
       ]
     },
     {
@@ -593,7 +598,7 @@
       "what": "Writes the letter asking the school to plant the chosen natives.",
       "how": [
         "Joins the plant names naturally ('A', 'A and B', 'A, B, and C').",
-        "One `openai_client.chat()` call writes only 1–2 sentences about which wildlife those plants support in the ZIP.",
+        "One `openai_client.chat()` call writes only 1–2 sentences about which wildlife those plants support in the ZIP; if that fails, the route uses `generate_letter_without_ai` instead.",
         "Drops that into a fixed template with the score and ZIP and the [PRINCIPAL_NAME], [SCHOOL_NAME], [STUDENT_NAME] placeholders.",
         "Returns the letter as plain text."
       ]
@@ -622,16 +627,15 @@
       "symbol": "def get_status(",
       "col": 6,
       "row": 3.2,
-      "goal": "Add a USDA PLANTS fallback and ZIP-specific lists behind the same get_status().",
+      "goal": "Add ZIP-specific regional lists behind the same get_status().",
       "what": "The status seam: answers \"is this plant native or invasive in South Florida, and says who.\"",
       "how": [
         "Loads `fisc_list.json` and `fl_natives.json` once (cached), indexed by lower-cased scientific name and synonyms.",
-        "Normalises the name: trims, collapses whitespace, ignores case.",
-        "Checks FISC first → `{native: false, invasive: true, source: 'FISC', why}`.",
-        "Then FL natives → `{native: true, invasive: false, source: 'fl_natives', why}`.",
-        "If there's no exact match, retries with just the first two words, so `Zamia integrifolia L.` or `Asclepias tuberosa subsp. rolfsii` still match.",
-        "Otherwise → `{native: null, invasive: null, source: 'unknown', why: null}`.",
-        "`zip_code` is accepted for future regional lists; today both lists cover South Florida."
+        "Normalises the name: trims, collapses whitespace, ignores case; retries with just the first two words so author names or varieties still match.",
+        "FISC first → `{native: false, invasive: true, source: 'FISC', why}` (`why` is null for species without a curated line).",
+        "Then the bundled natives → `{native: true, invasive: false, source: 'fl_natives', why}`.",
+        "Then USDA PLANTS (`usda_service.florida_status`): native → `{native: true, invasive: false, source: 'USDA'}`; introduced → `{native: false, invasive: false, source: 'USDA'}`.",
+        "USDA errors are logged by type and treated as unknown → `{native: null, invasive: null, source: 'unknown', why: null}`."
       ]
     },
     {
@@ -645,10 +649,11 @@
       "row": 1.2,
       "what": "Cloud AI model, reached only through `openai_client.chat()`.",
       "how": [
-        "`chat(content, json_reply=False)` sends one user message (text, or text + image) with gpt-4o-mini at temperature 0.",
+        "`chat(content, json_reply=False)` sends one user message (text, or text + images) to gpt-4o-mini at temperature 0.",
         "With `json_reply=True` it strips Markdown code fences and parses the reply.",
+        "Any failure (missing key, no credits, network, bad JSON) is raised as one `AIUnavailable` error carrying only the error type, so every caller can fall back the same way.",
         "The client is created on first use, so importing services (tests, CI) needs no API key.",
-        "Used four ways: identify the photo, assess the plant, list recommendations, write the letter sentences."
+        "Used five ways: break ties between PlantNet's candidates, identify photos when PlantNet fails, assess the plant, list recommendations, write the letter sentences."
       ]
     },
     {
@@ -660,12 +665,12 @@
       "symbol": null,
       "col": 7,
       "row": 2.7,
-      "goal": "Verify every entry against the official FISC Invasive Plant List / UF-IFAS before the demo.",
-      "what": "Bundled list of 22 South Florida invasive plants (FISC Category I), shipped with the backend.",
+      "goal": "Verify the 22 curated \"why\" lines against FISC / UF-IFAS before the demo.",
+      "what": "The complete official Florida Invasive Species Council 2026 list: 179 species (85 Category I, 94 Category II).",
       "how": [
-        "One entry per species: `scientific_name, common_name, synonyms[], fisc_category, why`.",
-        "`why` is the one-line stake (Everglades, flooding, hurricanes, fire…).",
-        "A `_comment` at the top flags it as starter data to verify."
+        "One entry per species: `scientific_name, common_name, synonyms[], fisc_category (I/II), zones (N/C/S), why`.",
+        "Generated by `build_fisc_list.py` from the official PDF; don't hand-edit.",
+        "22 common species keep a curated one-line `why` (Everglades, flooding, hurricanes, fire…); the rest have `why: null`."
       ]
     },
     {
@@ -689,16 +694,17 @@
       "id": "usda",
       "label": "USDA PLANTS",
       "layer": "ext",
-      "status": "planned",
-      "file": null,
-      "symbol": null,
-      "col": 7,
-      "row": 4.7,
-      "goal": "Native status for species that aren't in the bundled lists.",
-      "what": "US government plant database with native status and state distribution.",
+      "status": "live",
+      "file": "backend/services/usda_service.py",
+      "symbol": "plantsservices.sc.egov.usda.gov/api",
+      "col": 8,
+      "row": 3.2,
+      "what": "US Department of Agriculture plant database, used as the last check for Florida nativity.",
       "how": [
-        "Look up the species by scientific name and read its Florida native status.",
-        "Cache answers so the demo doesn't depend on the service being up."
+        "No official API docs; these are the routes plants.usda.gov itself calls.",
+        "`GET /PlantSearch?searchText=` → matching plants with their USDA symbol.",
+        "`GET /PlantProfile?symbol=` → profile with `NativeStatuses` (e.g. L48 native/introduced).",
+        "`POST /PlantProfile/getDownloadDistributionDocumentation` → CSV of states and counties where the plant is recorded."
       ]
     },
     {
@@ -710,13 +716,15 @@
       "symbol": "def identify_species(",
       "col": 6,
       "row": 0.6,
-      "goal": "Swap OpenAI vision for PlantNet (or combine both) behind the same return shape.",
-      "what": "The identification seam: turns a photo into a species, always in the same shape, whatever model is behind it.",
+      "what": "Turns 1–5 photos of one plant into a species: PlantNet first, OpenAI to break ties or as a backup, always in the same shape.",
       "how": [
-        "Normalises the image: an http(s) URL or `data:` URL is used as-is; raw base64 gets a `data:image/jpeg;base64,` prefix.",
-        "Sends the photo + ZIP to OpenAI (via `openai_client.chat`) asking for scientific name, common name, a calibrated confidence and up to 3 other candidates, as JSON.",
-        "Cleans the reply: trims names, clamps confidence to 0–1 (bad values → 0), drops malformed candidates.",
-        "Returns `{scientific_name, common_name, confidence, candidates: [{scientific_name, common_name, confidence}]}`."
+        "Accepts one photo or a list of 1–5; anything else raises an error (the route rejects it first).",
+        "Asks PlantNet via `identify_with_plantnet(images)` for a ranked list of species with scores.",
+        "Confident = top score ≥ 0.80 and more than 0.15 ahead of the runner-up. If PlantNet is confident, its answer is used (`source: plantnet`).",
+        "If PlantNet is unsure, OpenAI sees the photos, the ZIP and PlantNet's top 5 and must pick one of them (`source: openai_adjudicated`, `needs_confirmation: true`). An answer outside the list, or an OpenAI error, keeps PlantNet's top match instead.",
+        "If PlantNet fails or finds nothing, OpenAI vision identifies the photos on its own (`source: openai_fallback`), and the same confidence rule sets `needs_confirmation`.",
+        "If everything fails it returns empty names with `source: none` instead of crashing. Failures are logged by error type only, never the raw message (PlantNet's URL contains the API key).",
+        "Returns `{scientific_name, common_name, confidence, candidates, source, needs_confirmation}`; `candidates` are the other possibilities with their scores."
       ]
     },
     {
@@ -732,7 +740,156 @@
       "how": [
         "Builds a prompt with the plant's names and ZIP. If `get_status` knew the plant, adds \"Florida records (FISC/fl_natives) list it as invasive/native here; treat that as fact.\"",
         "Asks for `wildlife_support`, a one-sentence reason, `endangered_status`, `is_native` + `invasive_status` (used only as a fallback), and two actions.",
-        "Returns the parsed JSON; `identify_plant` cleans and merges it."
+        "Returns the parsed JSON; `identify_plant` cleans and merges it.",
+        "A reply that isn't a JSON object raises `AIUnavailable`, so `identify_plant` degrades instead of crashing."
+      ]
+    },
+    {
+      "id": "s_plantnet",
+      "label": "identify_with_plantnet()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/identification_service.py",
+      "symbol": "def identify_with_plantnet(",
+      "col": 7,
+      "row": -0.4,
+      "what": "Sends the photos to PlantNet and returns its ranked list of species.",
+      "how": [
+        "Reads `PLANTNET_API_KEY`; raises if it isn't set.",
+        "Turns each photo into bytes (base64, `data:` URL, or downloads an http(s) URL) and checks it is JPEG or PNG, the only formats PlantNet accepts.",
+        "POSTs them as repeated `images` fields to `/v2/identify/all` with `api-key`, `nb-results=5`, `lang=en`; organs default to auto.",
+        "Raises on any HTTP error; otherwise returns `[{scientific_name, common_name, confidence}]` from `results[].species` and `score`, best first."
+      ]
+    },
+    {
+      "id": "plantnet",
+      "label": "PlantNet API",
+      "layer": "ext",
+      "status": "live",
+      "file": "backend/services/identification_service.py",
+      "symbol": "my-api.plantnet.org/v2/identify/all",
+      "col": 8,
+      "row": -0.4,
+      "what": "Plant identification service trained on botanical photos.",
+      "how": [
+        "`POST /v2/identify/{project}` with up to 5 JPEG/PNG photos of the same plant (50 MB total).",
+        "Returns `results[]` sorted by score (0–1), each with the species' scientific and common names.",
+        "Needs a free API key from my.plantnet.org, passed as the `api-key` query parameter."
+      ]
+    },
+    {
+      "id": "ui_multiphoto",
+      "label": "Multi-photo picker + confirm step",
+      "layer": "ui",
+      "status": "planned",
+      "file": null,
+      "symbol": null,
+      "col": 2,
+      "row": -0.4,
+      "goal": "Let users send 1–5 photos of one plant, and when `needs_confirmation` is true, ask them to pick from the candidates. The backend already accepts this.",
+      "what": "Lets the user add several photos of the same plant and confirm unsure identifications.",
+      "how": [
+        "Allow up to 5 photos per plant (leaf, flower, bark…) and send them as `images` to /identify.",
+        "If the result has `needs_confirmation: true`, show the top match and the `candidates` and let the user pick.",
+        "Show which service identified it (`id_source`)."
+      ]
+    },
+    {
+      "id": "s_usda",
+      "label": "florida_status()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/usda_service.py",
+      "symbol": "def florida_status(",
+      "col": 7,
+      "row": 3.2,
+      "what": "Asks USDA PLANTS whether a plant is native to Florida.",
+      "how": [
+        "Searches USDA by the two-word scientific name (author names make USDA's search return nothing) and picks the result with the same name.",
+        "Reads the plant's profile; synonyms resolve to the accepted name there.",
+        "If its lower-48 status isn't native → `introduced`.",
+        "If it is native in the US, downloads its state distribution and checks for Florida: present → `native`, absent → `introduced` (native elsewhere, not here).",
+        "Not found → `None`. Answers are cached in memory; network errors are raised, not cached."
+      ]
+    },
+    {
+      "id": "s_bundled",
+      "label": "bundled_natives()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/fl_plants_service.py",
+      "symbol": "def bundled_natives(",
+      "col": 6,
+      "row": 6.2,
+      "what": "Returns the bundled South Florida natives list, in file order.",
+      "how": [
+        "Reads `fl_natives.json` once (cached) and returns its species entries for the AI-free fallbacks."
+      ]
+    },
+    {
+      "id": "s_fallback_rec",
+      "label": "fallback_recommendations()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/ai_service.py",
+      "symbol": "def fallback_recommendations(",
+      "col": 5,
+      "row": 7.6,
+      "what": "Recommendations without AI, taken from the bundled natives list.",
+      "how": [
+        "Takes the first 11 natives from `bundled_natives()`.",
+        "The first 3 get `problem`, `action` and `impact` (impact = the native's `why`); the rest get `benefit`.",
+        "Each has `source: fl_natives`, its `why`, and `wildlife_support: unknown`."
+      ]
+    },
+    {
+      "id": "s_letter_noai",
+      "label": "generate_letter_without_ai()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/ai_service.py",
+      "symbol": "def generate_letter_without_ai(",
+      "col": 5,
+      "row": 8.8,
+      "what": "The same letter, with the benefit sentence built from our data instead of OpenAI.",
+      "how": [
+        "Looks up each chosen plant by common name in the bundled natives and uses its `why` line (\"Coontie: The only host plant of…\").",
+        "If none match, uses a generic sentence about food and shelter for pollinators and birds.",
+        "Fills the same template as `generate_letter`."
+      ]
+    },
+    {
+      "id": "fisc_builder",
+      "label": "build_fisc_list.py",
+      "layer": "data",
+      "status": "live",
+      "file": "backend/scripts/build_fisc_list.py",
+      "symbol": "def parse_pdf(",
+      "col": 9,
+      "row": 1.6,
+      "what": "Script that rebuilds fisc_list.json from the official FISC PDF.",
+      "how": [
+        "Downloads the PDF (or reads a local copy) and finds the Category I and II pages.",
+        "Splits each page's two side-by-side tables at the header columns and reads rows between the table's drawn borders, so wrapped names stay together.",
+        "Cleans names: removes footnote marks and turns `Genus (=Other) epithet` into a name plus synonym; keeps only rows with a valid N/C/S zone.",
+        "Merges in the curated `why` lines and synonyms by matching any name, and reports curated species missing from the official list.",
+        "Run: `venv\\Scripts\\python scripts/build_fisc_list.py <pdf or URL> data/fisc_list.json` (needs pdfplumber from requirements-dev.txt)."
+      ]
+    },
+    {
+      "id": "ui_ai_unknown",
+      "label": "Show \"unknown\" + AI-unavailable notice",
+      "layer": "ui",
+      "status": "planned",
+      "file": null,
+      "symbol": null,
+      "col": 2,
+      "row": 8.8,
+      "goal": "When `ai_unavailable` is true, show wildlife value as unknown and a short notice. Today the EcoScan cards show any unrecognised wildlife value as \"Medium\".",
+      "what": "Makes degraded results honest in the app.",
+      "how": [
+        "Handle `wildlife_support: \"unknown\"` in the support pill instead of defaulting to Medium.",
+        "Show a one-line notice when a scan, recommendation list or letter has `ai_unavailable: true`."
       ]
     }
   ],
@@ -873,13 +1030,13 @@
       "from": "c_identify",
       "to": "r_identify",
       "label": "POST /identify {image, location}",
-      "detail": "Returns {result: plant_name, scientific_name, is_native, invasive_status, endangered_status, wildlife_support, wildlife_support_reason, confidence, candidates[], source, why, actions[]}."
+      "detail": "Sends one photo today; the route also accepts `images` (1–5). Returns {result: plant_name, scientific_name, is_native, invasive_status, endangered_status, wildlife_support, wildlife_support_reason, confidence, candidates[], id_source, needs_confirmation, source, why, actions[]}."
     },
     {
       "from": "c_rec",
       "to": "r_recommend",
       "label": "POST /recommend {location}",
-      "detail": "Returns {result: [up to 11 × {plant_name, scientific_name, wildlife_support, problem/action/impact or benefit, source, why}]}. FISC-listed invasives are dropped."
+      "detail": "Returns {result: [up to 11 × {plant_name, scientific_name, wildlife_support, problem/action/impact or benefit, source, why}]}. FISC-listed invasives are dropped. Also returns ai_unavailable: true when the list came from the bundled natives because OpenAI was down."
     },
     {
       "from": "c_score",
@@ -891,7 +1048,7 @@
       "from": "c_letter",
       "to": "r_letter",
       "label": "POST /letter {plant_names, score, zip_code}",
-      "detail": "Returns {result: letter text}."
+      "detail": "Returns {result: letter text, ai_unavailable}."
     },
     {
       "from": "flask",
@@ -960,15 +1117,9 @@
       "label": "match scientific_name"
     },
     {
-      "from": "s_fl",
-      "to": "usda",
-      "label": "fallback lookup",
-      "status": "planned"
-    },
-    {
       "from": "s_identify",
       "to": "s_species",
-      "label": "identify_species(image, location) → names, confidence, candidates"
+      "label": "identify_species(images, location) → names, confidence, candidates, source, needs_confirmation"
     },
     {
       "from": "s_identify",
@@ -983,7 +1134,8 @@
     {
       "from": "s_species",
       "to": "openai",
-      "label": "photo + ZIP → species + candidates (JSON)"
+      "label": "unsure: pick from PlantNet's top 5 · PlantNet failed: identify from photos",
+      "detail": "Adjudication sends the photos, ZIP and PlantNet's candidates and accepts only a name from that list. Fallback uses the calibrated vision prompt and returns names, confidence and other candidates."
     },
     {
       "from": "s_assess",
@@ -994,6 +1146,75 @@
       "from": "s_rec",
       "to": "s_fl",
       "label": "get_status() per plant → drop invasives, add source + why"
+    },
+    {
+      "from": "ident",
+      "to": "ui_multiphoto",
+      "label": "sends images[], reads needs_confirmation",
+      "status": "planned"
+    },
+    {
+      "from": "audit",
+      "to": "ui_multiphoto",
+      "label": "sends images[], reads needs_confirmation",
+      "status": "planned"
+    },
+    {
+      "from": "s_species",
+      "to": "s_plantnet",
+      "label": "identify_with_plantnet(images) → ranked species + scores"
+    },
+    {
+      "from": "s_plantnet",
+      "to": "plantnet",
+      "label": "POST /v2/identify/all (1–5 photos) → results[]"
+    },
+    {
+      "from": "ident",
+      "to": "ui_ai_unknown",
+      "label": "reads ai_unavailable",
+      "status": "planned"
+    },
+    {
+      "from": "audit",
+      "to": "ui_ai_unknown",
+      "label": "reads ai_unavailable",
+      "status": "planned"
+    },
+    {
+      "from": "s_fl",
+      "to": "s_usda",
+      "label": "florida_status(name) → native / introduced / None"
+    },
+    {
+      "from": "s_usda",
+      "to": "usda",
+      "label": "search → profile → FL distribution"
+    },
+    {
+      "from": "r_recommend",
+      "to": "s_fallback_rec",
+      "label": "AIUnavailable → fallback_recommendations(location)"
+    },
+    {
+      "from": "r_letter",
+      "to": "s_letter_noai",
+      "label": "AIUnavailable → generate_letter_without_ai(...)"
+    },
+    {
+      "from": "s_fallback_rec",
+      "to": "s_bundled",
+      "label": "bundled_natives() → first 11"
+    },
+    {
+      "from": "s_letter_noai",
+      "to": "s_bundled",
+      "label": "bundled_natives() → why lines"
+    },
+    {
+      "from": "fisc_builder",
+      "to": "d_fisc",
+      "label": "writes 179 species from the official PDF"
     }
   ]
 }

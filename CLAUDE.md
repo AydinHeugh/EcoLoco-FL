@@ -1,5 +1,12 @@
 @AGENTS.md
 
+## Before calling a task done
+
+After any significant change, all three must be done before saying the task is finished:
+1. `README.md` updated (see README below).
+2. `docs/architecture.html` updated, with new pieces added and PLANNED pieces marked with their goal (see Architecture docs below).
+3. `node docs/sync-architecture.mjs` run, and it passes.
+
 ## README
 
 When a change affects what the app takes in or gives back, what happens in between, how to run
