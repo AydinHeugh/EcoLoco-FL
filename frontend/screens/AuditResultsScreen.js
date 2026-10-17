@@ -11,6 +11,7 @@ import StatusBadge from '../components/StatusBadge';
 import PercentRing from '../components/PercentRing';
 import PlanCard from '../components/PlanCard';
 import SourceLine from '../components/SourceLine';
+import OfflineNotice, { reportAi } from '../components/OfflineNotice';
 
 const LOGO = require('../../assets/EcoLoco_logo.png');
 const NURSERY_URL = 'https://plantrealflorida.org';
@@ -35,6 +36,7 @@ function LetterGenerator({ plan, zipCode }) {
     try {
       const data = await generateLetter(plan, zipCode);
       setLetter(data.result);
+      reportAi(data.ai_unavailable);
     } catch (err) {
       setError(userMessage(err, 'Could not write the letter. Check your connection and try again.'));
     } finally {
@@ -111,6 +113,7 @@ export default function AuditResultsScreen({ route, navigation }) {
         </View>
 
         <View style={styles.divider} />
+        <OfflineNotice />
 
         {loading && (
           <View style={styles.centerSection}>

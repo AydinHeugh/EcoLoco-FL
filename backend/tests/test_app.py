@@ -150,3 +150,15 @@ def test_plan_includes_why_this_matters(client):
     result = client.post("/plan", json={"location": "33496", "plants": []}).get_json()["result"]
     assert 1 <= len(result["why_this_matters"]) <= 4
     assert all(line["source"]["url"].startswith("https://") for line in result["why_this_matters"])
+
+
+def test_ai_down_is_reported_where_ai_is_used(client, monkeypatch):
+    monkeypatch.setattr(ai_service, "identify_species", lambda images, location: dict(
+        species("Zamia integrifolia", "Coontie", 0.4, "confirm"), ai_unavailable=True))
+    _ai_down(monkeypatch)
+    assert client.post("/identify", json={"image": "abc", "location": "33139"}).get_json()["result"]["ai_unavailable"] is True
+    plan = client.post("/plan", json={"location": "33139", "plants": []}).get_json()
+    assert "ai_unavailable" not in plan and "ai_unavailable" not in plan["result"]
+    assert "ai_unavailable" not in client.post("/recommend", json={"location": "33139"}).get_json()
+    letter = client.post("/letter", json={"plan": plan["result"], "zip_code": "33139"}).get_json()
+    assert letter["ai_unavailable"] is True

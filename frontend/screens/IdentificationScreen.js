@@ -21,6 +21,7 @@ import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS } from '../theme';
 import StatusBadge from '../components/StatusBadge';
 import CandidatePicker, { NO_MATCH_TEXT } from '../components/CandidatePicker';
 import SourceLine from '../components/SourceLine';
+import OfflineNotice, { reportAi } from '../components/OfflineNotice';
 
 
 const EASE_OUT = Easing.bezier(0.22, 1, 0.36, 1);
@@ -195,6 +196,7 @@ export default function IdentificationScreen({ navigation }) {
     try {
       const data = await identifyPlant(photo.base64, zipCode);
       setResult(data.result);
+      reportAi(data.result.ai_unavailable);
       setPicked(data.result.state === 'identified' ? 0 : null);
     } catch (err) {
       setError(userMessage(err, 'Could not identify this plant. Check your connection and try again.'));
@@ -227,6 +229,7 @@ export default function IdentificationScreen({ navigation }) {
         </View>
 
         <View style={styles.divider} />
+        <OfflineNotice />
 
         {/* ── Title ── */}
         <View style={styles.titleSection}>

@@ -10,6 +10,7 @@ import { identifyPlant, userMessage } from '../services/geminiService';
 import { COLORS, FONTS, FONT_ASSETS } from '../theme';
 import StatusBadge from '../components/StatusBadge';
 import CandidatePicker, { NO_MATCH_TEXT } from '../components/CandidatePicker';
+import OfflineNotice, { reportAi } from '../components/OfflineNotice';
 
 const EASE_OUT   = Easing.bezier(0.22, 1, 0.36, 1);
 
@@ -151,6 +152,7 @@ export default function AuditScreen({ navigation }) {
     try {
       const data   = await identifyPlant(photo.base64, zipCode);
       const result = data.result;
+      reportAi(result.ai_unavailable);
       setPlants(prev => prev.map(p =>
         p._id === tempId
           ? { ...result, _id: tempId, photo_uri: photo.uri, loading: false, picked: result.state === 'identified' ? 0 : null }
@@ -219,6 +221,7 @@ export default function AuditScreen({ navigation }) {
         </View>
 
         <View style={styles.divider} />
+        <OfflineNotice />
 
         {/* ── Title ── */}
         <View style={styles.titleSection}>

@@ -59,7 +59,6 @@ and the answer comes back the same way.
 | `fisc_list.json` (backend/data/fisc_list.json) | change planned | Verify the 22 curated "why" lines against FISC / UF-IFAS before the demo. |
 | `fl_natives.json` (backend/data/fl_natives.json) | change planned | Verify every entry against UF/IFAS and the Atlas of Florida Plants before the demo. |
 | `Multi-photo upload` | PLANNED | Let users send 1–5 photos of one plant as `images` (Priority 6). The confirm picker already shipped. |
-| `AI-unavailable notice` | PLANNED | Show a short notice when a scan, recommendation list or letter has `ai_unavailable: true`. Unknown wildlife values and statuses are already labelled "Unknown". |
 | `fl_recommendations.json` (backend/data/fl_recommendations.json) | change planned | A teammate checks each plant is native to Palm Beach County in the USF Atlas and sets verified: true. Only verified plants are recommended, so the plan shows no Add cards until then. |
 | `getPlan()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
 <!-- /GENERATED:planned -->
@@ -81,7 +80,7 @@ flowchart LR
     ui_receipt["SourceLine"]
     letter["LetterGenerator"]
     ui_multiphoto["Multi-photo upload<br/>PLANNED — goal: Let users send 1–5 photos of one plant as `images` (Priority 6). The confirm picker already shipped."]
-    ui_ai_unknown["AI-unavailable notice<br/>PLANNED — goal: Show a short notice when a scan, recommendation list or letter has `ai_unavailable: true`. Unknown wildlife values and statuses are already labelled #quot;Unknown#quot;."]
+    ui_ai_unknown["OfflineNotice"]
     ui_picker["CandidatePicker + StatusBadge"]
     ui_ring["PercentRing"]
     ui_plancard["PlanCard + SourceLine"]
@@ -180,8 +179,8 @@ flowchart LR
   audit -.->|"sends images[], reads needs_confirmation"| ui_multiphoto
   s_species -->|"identify_with_plantnet(images) → ranked species + scores"| s_plantnet
   s_plantnet -->|"POST /v2/identify/all (1–5 photos) → results[]"| plantnet
-  ident -.->|"reads ai_unavailable"| ui_ai_unknown
-  audit -.->|"reads ai_unavailable"| ui_ai_unknown
+  ident -->|"reportAi(result.ai_unavailable)"| ui_ai_unknown
+  audit -->|"reportAi(result.ai_unavailable)"| ui_ai_unknown
   s_fl -->|"florida_status(name) → native / introduced / None"| s_usda
   s_usda -->|"search → profile → FL distribution"| usda
   fisc_builder -->|"writes 179 species from the official PDF"| d_fisc
@@ -217,6 +216,7 @@ flowchart LR
   results -->|"Source: … under each fact"| ui_receipt
   ui_plancard -->|"Source: … under each row"| ui_receipt
   s_plan -->|"why_this_matters lines"| d_why
+  letter -->|"reportAi(ai_unavailable)"| ui_ai_unknown
   classDef ui fill:#e3f2e1,stroke:#2e7d32,color:#12301a
   classDef device fill:#eceff1,stroke:#607d8b,color:#263238
   classDef client fill:#e1effa,stroke:#1e6fb8,color:#0d2d4d
@@ -233,7 +233,7 @@ flowchart LR
   class s_inat,s_identify,s_letter,s_fl,s_species,s_plantnet,s_usda,s_resolve,s_option,s_common_name,s_summary,s_plan,s_guard,s_letter_facts svc
   class d_fisc,d_natives,fisc_builder,d_recs,d_nwf,d_terms,d_why data
   class inat,openai,usda,plantnet ext
-  class ui_multiphoto,ui_ai_unknown planned
+  class ui_multiphoto planned
   class c_local,s_inat dead
 ```
 <!-- /GENERATED:mermaid -->

@@ -726,18 +726,18 @@
     },
     {
       "id": "ui_ai_unknown",
-      "label": "AI-unavailable notice",
+      "label": "OfflineNotice",
       "layer": "ui",
-      "status": "planned",
-      "file": null,
-      "symbol": null,
+      "status": "live",
+      "file": "frontend/components/OfflineNotice.js",
+      "symbol": "export default function OfflineNotice",
       "col": 2,
       "row": 8.8,
-      "goal": "Show a short notice when a scan, recommendation list or letter has `ai_unavailable: true`. Unknown wildlife values and statuses are already labelled \"Unknown\".",
-      "what": "Tells users when part of a result came without AI.",
+      "what": "One small banner shown when the AI part is down.",
       "how": [
-        "Show a one-line notice when a scan, recommendation list or letter has `ai_unavailable: true`.",
-        "Also replace the remaining popup-based error messages on the Recommend and results screens, which don't show on the web build."
+        "Screens call `reportAi(ai_unavailable)` after /identify and /letter.",
+        "While the last report was true, Identify, EcoScan and the results screen show \"Extra descriptions are offline. Plant names and Florida status still work.\"",
+        "The next response with `ai_unavailable: false` hides it."
       ]
     },
     {
@@ -1229,14 +1229,12 @@
     {
       "from": "ident",
       "to": "ui_ai_unknown",
-      "label": "reads ai_unavailable",
-      "status": "planned"
+      "label": "reportAi(result.ai_unavailable)"
     },
     {
       "from": "audit",
       "to": "ui_ai_unknown",
-      "label": "reads ai_unavailable",
-      "status": "planned"
+      "label": "reportAi(result.ai_unavailable)"
     },
     {
       "from": "s_fl",
@@ -1413,6 +1411,11 @@
       "from": "s_plan",
       "to": "d_why",
       "label": "why_this_matters lines"
+    },
+    {
+      "from": "letter",
+      "to": "ui_ai_unknown",
+      "label": "reportAi(ai_unavailable)"
     }
   ]
 }

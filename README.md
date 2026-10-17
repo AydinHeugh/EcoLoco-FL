@@ -23,6 +23,7 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 - One line on why it matters (for example, coontie is the only plant the Atala butterfly can lay its eggs on), with where that line came from in small text underneath
 - For plants in our data: which animals it helps and what to watch out for (for example, coontie seeds are poisonous to pets), each with its source
 - For invasive plants: how to remove them safely (Brazilian pepper is in the poison ivy family, so an adult should do the cutting)
+- If the AI part is down, a small notice says "Extra descriptions are offline. Plant names and Florida status still work."
 
 **After you scan a whole campus (the EcoScan tab):**
 - Every plant you scan stays in the list. Ones the app isn't sure about show the same "Which one is it?" list, and any card can be removed with ✕.
@@ -110,4 +111,4 @@ You'll need Node.js, Python 3, an OpenAI API key, and a free PlantNet API key fr
 ## Where things stand
 
 - Done: Florida plant lists drive the native/invasive verdict, every verdict comes with its source and a "why it matters" line, plants are identified by PlantNet with OpenAI as a backup, the full FISC invasive list and a USDA check are in place, scans keep working when OpenAI is down, unsure matches are confirmed by the user instead of guessed, every fact in the app shows its source, results credit Pl@ntNet, and the backend has automated tests.
-- Next: let the app send several photos of one plant, show a notice when the AI part was unavailable, check each recommended plant in the USF Atlas and mark it verified, double-check the plant lists against official sources, and put the backend online so the app works away from our computers.
+- Next: let the app send several photos of one plant, check each recommended plant in the USF Atlas and mark it verified, double-check the plant lists against official sources, and put the backend online so the app works away from our computers.
