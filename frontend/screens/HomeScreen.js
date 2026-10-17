@@ -12,6 +12,7 @@ import {
 } from 'react-native'
 import { useFonts } from 'expo-font'
 import { COLORS, FONTS, FONT_ASSETS } from '../theme'
+import SourceLine from '../components/SourceLine'
 
 
 const EASE_OUT = Easing.bezier(0.22, 1, 0.36, 1)  // fast-out, ease-in-out feel
@@ -82,7 +83,7 @@ function Divider() {
 }
 
 // ─── Feature row ─────────────────────────────────────────────────────────────
-function FeatureRow({ image, heading, body, linkText, onLinkPress, imgHeight, reverse, animStyle }) {
+function FeatureRow({ image, heading, body, source, linkText, onLinkPress, imgHeight, reverse, animStyle }) {
   const imgBlock = (
     <View style={[styles.featureImgWrap, { height: imgHeight }]}>
       {image
@@ -95,6 +96,7 @@ function FeatureRow({ image, heading, body, linkText, onLinkPress, imgHeight, re
     <View style={[styles.featureText, reverse && { paddingLeft: 4 }]}>
       <Text style={styles.featureHeading}>{heading}</Text>
       <Text style={styles.featureBody}>{body}</Text>
+      {source && <SourceLine source={source} />}
       {linkText && (
         <TouchableOpacity onPress={onLinkPress} style={styles.linkBtn}>
           <Text style={styles.featureLink}>{linkText}</Text>
@@ -175,7 +177,7 @@ export default function HomeScreen({ navigation }) {
           </View>
           <Ornament delay={500} />
           <Animated.Text style={[styles.tagline, tagAnim]}>
-            Bring your local ecosystem back to life, one plant at a time.
+            Help wildlife on your campus, one plant at a time.
           </Animated.Text>
         </View>
 
@@ -186,9 +188,9 @@ export default function HomeScreen({ navigation }) {
           animStyle={s1Anim}
           image={IMG_SCANNING}
           imgHeight={imgHeight}
-          heading="Identify Plants"
-          body="Uncover information about plant type, native region, growing conditions, the pollinators it attracts, and whether it helps or hurts your local ecosystem, all from a single photo taken on your campus."
-          linkText="Go to Identification →"
+          heading="Identify a Plant"
+          body="Take a photo of a plant on campus. EcoLoco tells you if it's native to Florida, not native, or invasive, and where that answer comes from."
+          linkText="Identify a plant →"
           onLinkPress={() => navigation?.navigate('Camera')}
         />
 
@@ -200,8 +202,10 @@ export default function HomeScreen({ navigation }) {
           animStyle={s2Anim}
           image={IMG_POLLINATORS}
           imgHeight={imgHeight}
-          heading="Support Pollinators"
-          body="In recent years, pollinators and wildlife of all kinds have become threatened by habitat loss, climate change, and the spread of non-native species. By identifying what's growing on your school grounds and planting natives where it counts, your eco-club can make a real, measurable difference right where you are."
+          heading="Scan Your Campus"
+          body="Scan the plants around your school one by one. You'll see what share are native, which invasive plants to remove, and what to plant instead."
+          linkText="Start a campus scan →"
+          onLinkPress={() => navigation?.navigate('EcoScan')}
         />
 
         <Divider />
@@ -211,9 +215,9 @@ export default function HomeScreen({ navigation }) {
           animStyle={s3Anim}
           image={IMG_GROW}
           imgHeight={imgHeight}
-          heading="Grow with Confidence"
-          body="EcoLoco gives recommendations tailored to your school's location and conditions. Every suggestion is ranked by real ecological impact, so your club can choose the plants that do the most good while prioritizing species that are realistic to grow and care for."
-          linkText="Go to Recommendation →"
+          heading="Plant Florida Natives"
+          body="Get native plants picked for South Florida, with what each one helps and what to ask for at the nursery. Every fact shows its source."
+          linkText="See native plants →"
           onLinkPress={() => navigation?.navigate('Recommend')}
         />
 
@@ -225,8 +229,9 @@ export default function HomeScreen({ navigation }) {
           animStyle={s4Anim}
           image={IMG_ECOSYSTEM}
           imgHeight={imgHeight}
-          heading="Help Your Ecosystem"
-          body="While the climate crisis can feel global and overwhelming, EcoLoco brings it down to your own campus. Focusing on local impact lets students see the direct effects of their work, where one native oak can support over 500 butterfly and moth species and bring an entire food web back to life."
+          heading="Why It Matters"
+          body="Oaks feed 395 kinds of caterpillars in South Florida. Those caterpillars feed the birds that live here."
+          source={{ name: 'National Wildlife Federation', url: 'https://www.nwf.org/-/media/Documents/PDFs/Garden-for-Wildlife/Keystone-Plants/NWF-GFW-keystone-plant-list-ecoregion-15-tropical-wet-forests.pdf' }}
         />
 
         <View style={styles.footerDivider} />

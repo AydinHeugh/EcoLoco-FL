@@ -19,8 +19,8 @@ async function post(path, body) {
   return parseResponse(res);
 }
 
-export async function identifyPlant(imageData, location) {
-  return post('/identify', { image: imageData, location });
+export async function identifyPlant(images, location) {
+  return post('/identify', { images, location });
 }
 
 export async function getPlan(plants, location) {

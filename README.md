@@ -11,7 +11,7 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 ## What goes in and what comes out
 
 **You give it:**
-- One to five photos of the same plant, taken with the camera or uploaded (the app sends one photo for now; picking several is coming)
+- One to five photos of the same plant (a leaf, a flower, the bark), taken with the camera or uploaded. More photos give a surer match.
 - Your 5-digit ZIP code (Florida only; other ZIP codes get a message saying so)
 
 **You get back, for each plant:**
@@ -110,5 +110,5 @@ You'll need Node.js, Python 3, an OpenAI API key, and a free PlantNet API key fr
 
 ## Where things stand
 
-- Done: Florida plant lists drive the native/invasive verdict, every verdict comes with its source and a "why it matters" line, plants are identified by PlantNet with OpenAI as a backup, the full FISC invasive list and a USDA check are in place, scans keep working when OpenAI is down, unsure matches are confirmed by the user instead of guessed, every fact in the app shows its source, results credit Pl@ntNet, and the backend has automated tests.
-- Next: let the app send several photos of one plant, check each recommended plant in the USF Atlas and mark it verified, double-check the plant lists against official sources, and put the backend online so the app works away from our computers.
+- Done: Florida plant lists drive the native/invasive verdict, every verdict comes with its source and a "why it matters" line, plants are identified by PlantNet with OpenAI as a backup, the full FISC invasive list and a USDA check are in place, scans keep working when OpenAI is down, unsure matches are confirmed by the user instead of guessed, every fact in the app shows its source, all text is written in plain language and fits a phone screen, results credit Pl@ntNet, and the backend has automated tests.
+- Next: check each recommended plant in the USF Atlas and mark it verified, double-check the plant lists against official sources, and put the backend online so the app works away from our computers.

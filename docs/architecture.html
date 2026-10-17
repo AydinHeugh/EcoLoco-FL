@@ -165,11 +165,9 @@
       "row": 0,
       "what": "Landing page that explains what EcoLoco does and links into the tools.",
       "how": [
-        "Fades the 'Welcome to EcoLoco' headline in word by word, then fades up each section.",
-        "Shows four feature rows (Identify Plants, Support Pollinators, Grow with Confidence, Help Your Ecosystem) using images from `assets/`.",
-        "'Identify Plants' link → `navigate('Camera')` (the Identify tab).",
-        "'Grow with Confidence' link → `navigate('Recommend')`.",
-        "Makes no API calls."
+        "Four short cards: Identify a Plant, Scan Your Campus, Plant Florida Natives, Why It Matters.",
+        "Each links to its tab; the oak fact (\"Oaks feed 395 kinds of caterpillars in South Florida\") shows its National Wildlife Federation source.",
+        "Colors and fonts come from `frontend/theme.js`."
       ]
     },
     {
@@ -343,7 +341,7 @@
       "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
       "what": "Sends a photo and ZIP to the backend and returns the identification.",
       "how": [
-        "POSTs JSON `{image: base64, location: zip}` to `${EXPO_PUBLIC_API_URL}/identify`.",
+        "POSTs `{images: [base64, …], location}` (1–5 photos of one plant) to `/identify`.",
         "`parseResponse()` reads the JSON; if the HTTP status isn't OK it throws `data.error`.",
         "Returns `{result: {...}}`; screens read `data.result`."
       ]
@@ -674,18 +672,19 @@
     },
     {
       "id": "ui_multiphoto",
-      "label": "Multi-photo upload",
+      "label": "Multi-photo upload + progress text",
       "layer": "ui",
-      "status": "planned",
-      "file": null,
-      "symbol": null,
+      "status": "live",
+      "file": "frontend/screens/IdentificationScreen.js",
+      "symbol": "allowsMultipleSelection: true",
       "col": 2,
       "row": -1.4,
-      "goal": "Let users send 1–5 photos of one plant as `images` (Priority 6). The confirm picker already shipped.",
-      "what": "Lets the user add several photos of the same plant for a surer match.",
+      "what": "Lets the user send up to 5 photos of the same plant, and shows what the app is doing while it waits.",
       "how": [
-        "Allow up to 5 photos per plant (leaf, flower, bark…) and send them as `images` to /identify.",
-        "When the state is `confirm`, suggest which part to photograph next."
+        "Upload Photo on Identify and EcoScan allows picking several photos (`allowsMultipleSelection`); the app keeps the first 5. On the web you can also drag in several images.",
+        "All photos go to /identify as `images` in one request.",
+        "While waiting, the text changes from \"Identifying…\" to \"Checking Florida lists…\" after 2 seconds (`useProgressText` in frontend/components/ProgressText.js).",
+        "When the match is unsure, the screen suggests: \"For a surer match, add a photo of a leaf up close or a flower.\""
       ]
     },
     {
@@ -1207,14 +1206,12 @@
     {
       "from": "ident",
       "to": "ui_multiphoto",
-      "label": "sends images[], reads needs_confirmation",
-      "status": "planned"
+      "label": "1–5 photos, progress text"
     },
     {
       "from": "audit",
       "to": "ui_multiphoto",
-      "label": "sends images[], reads needs_confirmation",
-      "status": "planned"
+      "label": "1–5 photos, progress text"
     },
     {
       "from": "s_species",
@@ -1416,6 +1413,11 @@
       "from": "letter",
       "to": "ui_ai_unknown",
       "label": "reportAi(ai_unavailable)"
+    },
+    {
+      "from": "home",
+      "to": "audit",
+      "label": "navigate('EcoScan')"
     }
   ]
 }

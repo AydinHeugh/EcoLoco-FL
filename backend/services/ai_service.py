@@ -36,7 +36,12 @@ FISC_SOURCE = {"name": "Florida Invasive Species Council 2026 Plant List",
 LETTER_SYSTEM = (
     "You help students write to their school principal. Write at about a 7th-grade reading level, in short, "
     "friendly sentences. Use everyday words, not science words. Do not add any plant, animal, place, number "
-    "or fact that is not in the paragraph you are given. Keep every number exactly as it is."
+    "or fact that is not in the paragraph you are given. Keep every number exactly as it is. "
+    "Swap these words: say \"trimming\" instead of \"pruning\"; \"caterpillars eat its leaves\" instead of "
+    "\"host plant\"; \"one of the most important plants for wildlife here\" instead of \"keystone\"; "
+    "\"butterflies and moths\" instead of \"Lepidoptera\"; \"a different version sold in stores\" instead of "
+    "\"cultivar\"; \"after its first year\" instead of \"established\"; \"officially listed as invasive in Florida\" "
+    "instead of \"FISC Category I\"."
 )
 REPHRASE_PROMPT = "Rewrite this opening paragraph so it reads naturally. Return only the paragraph."
 

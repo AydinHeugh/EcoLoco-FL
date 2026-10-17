@@ -11,9 +11,11 @@ import { COLORS, FONTS, FONT_ASSETS } from '../theme';
 import StatusBadge from '../components/StatusBadge';
 import CandidatePicker, { NO_MATCH_TEXT } from '../components/CandidatePicker';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
+import { useProgressText } from '../components/ProgressText';
 
 const EASE_OUT   = Easing.bezier(0.22, 1, 0.36, 1);
 
+const MAX_PHOTOS = 5;
 const LOGO = require('../../assets/EcoLoco_logo.png');
 
 // ─── Confidence badge ─────────────────────────────────────────────────────────
@@ -41,6 +43,8 @@ function PlantCard({ plant, onDelete, onPick, onNone }) {
     ]).start();
   }, []);
 
+  const progress = useProgressText(!!plant.loading);
+  const narrow   = useWindowDimensions().width < 420;
   const noMatch  = plant.state === 'unidentified' || plant.picked === -1;
   const choosing = plant.state === 'confirm' && plant.picked == null;
   const settled  = !noMatch && !choosing;
@@ -52,8 +56,7 @@ function PlantCard({ plant, onDelete, onPick, onNone }) {
           <ActivityIndicator color={COLORS.softGreen} size="small" />
         </View>
         <View style={styles.plantInfo}>
-          <Text style={styles.plantName}>Identifying…</Text>
-          <Text style={styles.plantSci}>Analyzing your photo</Text>
+          <Text style={styles.plantName}>{progress}</Text>
         </View>
       </Animated.View>
     );
@@ -61,9 +64,9 @@ function PlantCard({ plant, onDelete, onPick, onNone }) {
 
   return (
     <Animated.View style={[styles.plantCard, { opacity, transform: [{ translateY }] }]}>
-      <View style={styles.cardRow}>
+      <View style={narrow ? null : styles.cardRow}>
       {plant.photo_uri
-        ? <Image source={{ uri: plant.photo_uri }} style={styles.plantThumb} resizeMode="cover" />
+        ? <Image source={{ uri: plant.photo_uri }} style={[styles.plantThumb, narrow && styles.plantThumbNarrow]} resizeMode="cover" />
         : <View style={styles.plantThumbPlaceholder} />
       }
       <View style={styles.plantInfo}>
@@ -137,12 +140,15 @@ export default function AuditScreen({ navigation }) {
     } else {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') { setScanError('Photo library access is required to upload a photo.'); return; }
-      res = await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.8 });
+      res = await ImagePicker.launchImageLibraryAsync({
+        base64: true, quality: 0.8, allowsMultipleSelection: true, selectionLimit: MAX_PHOTOS,
+      });
     }
 
     if (res.canceled) return;
 
-    const photo  = res.assets[0];
+    const photos = res.assets.slice(0, MAX_PHOTOS);
+    const photo  = photos[0];
     const tempId = Date.now().toString();
 
     setScanning(true);
@@ -150,7 +156,7 @@ export default function AuditScreen({ navigation }) {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 120);
 
     try {
-      const data   = await identifyPlant(photo.base64, zipCode);
+      const data   = await identifyPlant(photos.map(p => p.base64), zipCode);
       const result = data.result;
       reportAi(result.ai_unavailable);
       setPlants(prev => prev.map(p =>
@@ -189,7 +195,7 @@ export default function AuditScreen({ navigation }) {
       if (window.confirm('Start a new scan? This will clear all scanned plants.')) clear();
       return;
     }
-    Alert.alert('Start New Audit', 'This will clear all scanned plants.', [
+    Alert.alert('Start a new scan?', 'This will clear all scanned plants.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Clear', style: 'destructive', onPress: clear },
     ]);
@@ -303,7 +309,7 @@ export default function AuditScreen({ navigation }) {
 
           {canFinish && (
             <TouchableOpacity style={styles.finishBtn} onPress={handleFinish}>
-              <Text style={styles.finishBtnText}>Finish Audit  →</Text>
+              <Text style={styles.finishBtnText}>See my results  →</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -356,6 +362,7 @@ const styles = StyleSheet.create({
   cardRow:   { flexDirection: 'row' },
   cardBelow: { padding: 12, borderTopWidth: 1, borderTopColor: COLORS.border },
   plantThumb:           { width: 90, height: 90 },
+  plantThumbNarrow:     { width: '100%', height: 160 },
   plantThumbPlaceholder:{ width: 90, height: 90, backgroundColor: COLORS.lightBg, alignItems: 'center', justifyContent: 'center' },
   plantInfo:    { flex: 1, padding: 12, justifyContent: 'center' },
   plantNameRow: { flexDirection: 'row', alignItems: 'flex-start' },
@@ -366,7 +373,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.photoBg, alignItems: 'center', justifyContent: 'center',
   },
   deleteBtnText: { fontSize: 13, color: COLORS.terracotta, fontFamily: FONTS.bodyBold, lineHeight: 14 },
-  plantSci:     { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textMuted, fontStyle: 'italic', marginTop: 2 },
   badgeRow:     { flexDirection: 'row', marginTop: 6 },
 
   emptyState:   { alignItems: 'center', paddingVertical: 52, paddingHorizontal: 32 },

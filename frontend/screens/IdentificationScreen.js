@@ -22,9 +22,11 @@ import StatusBadge from '../components/StatusBadge';
 import CandidatePicker, { NO_MATCH_TEXT } from '../components/CandidatePicker';
 import SourceLine from '../components/SourceLine';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
+import { useProgressText } from '../components/ProgressText';
 
 
 const EASE_OUT = Easing.bezier(0.22, 1, 0.36, 1);
+const MAX_PHOTOS = 5;
 const LOGO = require('../../assets/EcoLoco_logo.png');
 const PLANTNET_LOGO = require('../../assets/powered-by-plantnet-light.png');
 const PLANTNET_URL = 'https://plantnet.org';
@@ -132,7 +134,7 @@ export default function IdentificationScreen({ navigation }) {
   const [result, setResult]     = useState(null);
   const [picked, setPicked]     = useState(null);
   const [error, setError]       = useState(null);
-  const [photo, setPhoto]       = useState(null);
+  const [photos, setPhotos]     = useState([]);
   const [zipCode, setZipCode]   = useState('');
   const [isDragging, setIsDragging] = useState(false);
 
@@ -147,17 +149,17 @@ export default function IdentificationScreen({ navigation }) {
       e.preventDefault();
       e.stopPropagation();
       setIsDragging(false);
-      const file = e.dataTransfer?.files?.[0];
-      if (!file || !file.type.startsWith('image/')) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result;
-        const base64 = dataUrl.split(',')[1];
-        setPhoto({ uri: dataUrl, base64 });
+      const files = [...(e.dataTransfer?.files ?? [])].filter(f => f.type.startsWith('image/')).slice(0, MAX_PHOTOS);
+      if (files.length === 0) return;
+      Promise.all(files.map(file => new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = () => resolve({ uri: reader.result, base64: reader.result.split(',')[1] });
+        reader.readAsDataURL(file);
+      }))).then(read => {
+        setPhotos(read);
         setResult(null); setPicked(null);
         setError(null);
-      };
-      reader.readAsDataURL(file);
+      });
     };
 
     el.addEventListener('dragover', onDragOver);
@@ -174,19 +176,22 @@ export default function IdentificationScreen({ navigation }) {
   const maxWidth = Math.min(width, 960);
 
   const [fontsLoaded] = useFonts(FONT_ASSETS);
+  const progress = useProgressText(loading);
 
   async function handleTakePhoto() {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') { setError('Camera permission is required.'); return; }
     const res = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.8 });
-    if (!res.canceled) { setPhoto(res.assets[0]); setResult(null); setPicked(null); setError(null); }
+    if (!res.canceled) { setPhotos([res.assets[0]]); setResult(null); setPicked(null); setError(null); }
   }
 
   async function handleUploadPhoto() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') { setError('Photo library permission is required.'); return; }
-    const res = await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.8 });
-    if (!res.canceled) { setPhoto(res.assets[0]); setResult(null); setPicked(null); setError(null); }
+    const res = await ImagePicker.launchImageLibraryAsync({
+      base64: true, quality: 0.8, allowsMultipleSelection: true, selectionLimit: MAX_PHOTOS,
+    });
+    if (!res.canceled) { setPhotos(res.assets.slice(0, MAX_PHOTOS)); setResult(null); setPicked(null); setError(null); }
   }
 
   async function handleIdentify() {
@@ -194,7 +199,7 @@ export default function IdentificationScreen({ navigation }) {
     setResult(null); setPicked(null);
     setError(null);
     try {
-      const data = await identifyPlant(photo.base64, zipCode);
+      const data = await identifyPlant(photos.map(p => p.base64), zipCode);
       setResult(data.result);
       reportAi(data.result.ai_unavailable);
       setPicked(data.result.state === 'identified' ? 0 : null);
@@ -205,7 +210,9 @@ export default function IdentificationScreen({ navigation }) {
     }
   }
 
-  const canIdentify = !!photo && zipCode.length === 5 && !loading;
+  const photo = photos[0];
+  const narrow = width < 420;
+  const canIdentify = photos.length > 0 && zipCode.length === 5 && !loading;
   const noMatch  = result && (result.state === 'unidentified' || picked === -1);
   const choosing = result && result.state === 'confirm' && picked === null;
   const shown    = result && !noMatch && picked !== null ? result.options[picked] : null;
@@ -243,7 +250,14 @@ export default function IdentificationScreen({ navigation }) {
           style={[styles.uploadBox, isDragging && styles.uploadBoxDragging]}
         >
           {photo
-            ? <Image source={{ uri: photo.uri }} style={styles.uploadPreview} resizeMode="cover" />
+            ? (
+              <View>
+                <Image source={{ uri: photo.uri }} style={styles.uploadPreview} resizeMode="cover" />
+                <Text style={styles.photoCount}>
+                  {photos.length > 1 ? `${photos.length} photos of this plant` : 'Tip: add up to 5 photos of the same plant (leaf, flower, bark) for a surer match.'}
+                </Text>
+              </View>
+            )
             : (
               <View style={styles.uploadPlaceholder}>
                 <ImagePlaceholderIcon />
@@ -291,7 +305,7 @@ export default function IdentificationScreen({ navigation }) {
 
         {error && <Text style={styles.errorText}>{error}</Text>}
 
-        {loading && <LoadingDots message="Analyzing your plant…" />}
+        {loading && <LoadingDots message={progress} />}
 
         {/* ── Results ── */}
         {result && (
@@ -322,10 +336,14 @@ export default function IdentificationScreen({ navigation }) {
               />
             )}
 
+            {choosing && (
+              <Text style={styles.retakeTip}>For a surer match, add a photo of a leaf up close or a flower.</Text>
+            )}
+
             {shown && (
-              <View style={styles.resultCard}>
+              <View style={[styles.resultCard, narrow && styles.resultCardNarrow]}>
                 {photo && (
-                  <Image source={{ uri: photo.uri }} style={styles.resultThumb} resizeMode="cover" />
+                  <Image source={{ uri: photo.uri }} style={[styles.resultThumb, narrow && styles.resultThumbNarrow]} resizeMode="cover" />
                 )}
                 <View style={styles.resultInfo}>
                   <Text style={styles.plantName}>{shown.plant_name}</Text>
@@ -457,7 +475,7 @@ const styles = StyleSheet.create({
   // ── Results ──
   resultsSection: { marginTop: 28, paddingHorizontal: 20, paddingBottom: 48 },
   resultsHeader: {
-    flexDirection: 'row', justifyContent: 'space-between',
+    flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, justifyContent: 'space-between',
     alignItems: 'baseline', marginBottom: 14,
   },
   resultsTitle: { fontSize: 26, fontFamily: FONTS.heading, color: COLORS.darkGreen },
@@ -469,7 +487,11 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.border,
     flexDirection: 'row', overflow: 'hidden', marginBottom: 16,
   },
+  resultCardNarrow: { flexDirection: 'column' },
   resultThumb: { width: 120, height: 120 },
+  resultThumbNarrow: { width: '100%', height: 180 },
+  photoCount: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', marginTop: 6 },
+  retakeTip: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textBody, marginTop: 8 },
   resultInfo: { flex: 1, padding: 16, justifyContent: 'center', gap: 10 },
   plantName: { fontSize: 22, fontFamily: FONTS.heading, color: COLORS.darkGreen, lineHeight: 28 },
   recBtn: {

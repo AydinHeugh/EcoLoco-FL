@@ -217,8 +217,8 @@ const styles = StyleSheet.create({
   inner:         { alignSelf: 'center', width: '100%' },
 
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 24, paddingTop: 52, paddingBottom: 16,
+    flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 24, paddingTop: 52, paddingBottom: 16, rowGap: 8,
   },
   logoRow:  { flexDirection: 'row', alignItems: 'center', gap: 8 },
   logoImg:  { width: 40, height: 40, resizeMode: 'contain' },
