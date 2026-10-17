@@ -1,9 +1,9 @@
 import json
+from collections import Counter
 from functools import cache
 
-from services.fl_plants_service import plant_option
 from services.species_service import DATA_DIR, resolve
-from services.summary_service import summarize
+from services.summary_service import summarize, with_plan
 
 MAX_ADDS = 5
 EFFORT_ORDER = {"easy": 0, "medium": 1, "big": 2}
@@ -104,16 +104,17 @@ def build_plan(plants):
     scanned = [dict(by_name.get(p["scientific_name"], {}), scientific_name=p["scientific_name"]) for p in base["plants"]]
     gaps, missing = _gaps(scanned)
 
-    invasives = {}
+    invasives, scans = {}, Counter()
     for p in base["plants"]:
         if p["status"] == "invasive":
             invasives.setdefault(p["scientific_name"], p)
+            scans[p["scientific_name"]] += 1
 
     recs = [rec for rec in _recommendations() if rec.get("verified") is True]
     ranked = sorted(recs, key=lambda r: _rank_key(r, gaps, missing, invasives.keys()))
     known, native = base["known"], base["counts"]["native"]
 
-    chosen, remove = [], []
+    chosen, remove, replaced = [], [], 0
     for name, invasive in invasives.items():
         used = {c["scientific_name"] for c in chosen}
         matches = [r for r in ranked if r["scientific_name"] not in used
@@ -123,16 +124,18 @@ def build_plan(plants):
             pick = next((r for r in ranked if r["scientific_name"] not in used and _allowed(r, chosen)), None)
         if pick is not None:
             chosen.append(dict(pick, reason=f"replaces {invasive['plant_name']}", effect=_nwf_effect(pick)))
-        fisc = plant_option(name, "", 0.0, "")
         remove.append({
             "plant_name": invasive["plant_name"],
             "scientific_name": name,
-            "why": fisc["why"],
-            "source_label": fisc["source_label"],
+            "why": invasive["why"],
+            "source_label": invasive["source_label"],
             "removal_safety": _fisc_by_name().get(name, {}).get("removal_safety", GENERIC_SAFETY),
-            "effect": f"Replacing it takes you from {_percent(native, known)}% to {_percent(native + 1, known)}% native.",
             "replacement": pick["scientific_name"] if pick else None,
         })
+        if pick is not None:
+            replaced += scans[name]
+            remove[-1]["effect"] = (f"Replacing it takes you from {_percent(native, known)}% "
+                                    f"to {_percent(native + scans[name], known)}% native.")
         if nwf := _nwf_count(name):
             remove[-1]["nwf"] = nwf
 
@@ -158,5 +161,5 @@ def build_plan(plants):
             del card["effect"]
         add.append(card)
 
-    return {"remove": remove, "add": add, "gaps": sorted(gaps), "summary": summarize(plants, added_natives=fillers),
+    return {"remove": remove, "add": add, "gaps": sorted(gaps), "summary": with_plan(base, fillers, replaced),
             "why_this_matters": _load("why_this_matters.json")["lines"]}

@@ -50,6 +50,8 @@ def _percent_sentence(summary):
     now, with_plan = summary.get("percent_native"), summary.get("percent_native_with_plan")
     if now is None or with_plan is None:
         return "We couldn't identify enough plants to give a percentage yet."
+    if with_plan == now:
+        return f"Of the plants we checked, {now}% are native to Florida."
     return (f"Of the plants we checked, {now}% are native to Florida. "
             f"With these changes, it would be {with_plan}%.")
 

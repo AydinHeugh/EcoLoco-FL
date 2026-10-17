@@ -791,10 +791,10 @@
       "what": "Counts the scanned plants by Florida status and works out the share that is native, now and with the plan. It replaced the old 0–100 score.",
       "how": [
         "Runs each plant's scientific name through `plant_option()`, so status comes from FISC, our natives list or USDA, never from the name the student typed or the AI.",
+        "Looks every plant up once, in parallel.",
         "Counts `native`, `non_native`, `invasive` and `unknown`. An empty name counts as unknown.",
         "`percent_native` = natives ÷ plants with a known status, rounded; `None` when no plant has a known status.",
-        "`percent_native_with_plan` = (natives + invasives replaced + `added_natives`) ÷ (known plants + `added_natives`).",
-        "`counts_with_plan`: the same counts with every invasive replaced and the added natives counted as native.",
+        "\"With the plan\" numbers come from `with_plan()`; by default every invasive counts as replaced, but `build_plan()` passes only the ones that got a replacement.",
         "Returns `{counts, known, plant_count, percent_native, percent_native_with_plan, plants}`; `plants` lists each one with its name, status label, `why` and source label, unknowns included."
       ]
     },
@@ -876,13 +876,14 @@
       "what": "Turns the scanned plants into a plan: invasives to remove, native plants to add, and the percent native now and with the plan. Every plant comes from our own data.",
       "how": [
         "Runs `summarize()` on the scanned plants for their statuses.",
-        "Each distinct invasive becomes a Remove card with its `why`, removal safety (or \"Ask your grounds crew how to remove it safely.\"), \"Replacing it takes you from X% to Y% native\" and a replacement.",
+        "Each distinct invasive becomes a Remove card with its `why`, removal safety (or \"Ask your grounds crew how to remove it safely.\"), a replacement, and (only when there is one) \"Replacing it takes you from X% to Y% native\", counting every scan of that plant.",
         "Finds gaps on campus: none of NWF's important plant groups, nothing caterpillars eat, no fruit, months with nothing blooming.",
         "Ranks verified plants from `fl_recommendations.json`: gaps filled + 2 if it replaces an invasive found + 0.5 if its group is on the NWF list; easy plants first on ties.",
         "Picks one replacement per invasive, then gap fillers, up to 5 Add cards; the first 3 have at most 1 tree and at least 1 easy plant.",
         "Cards whose plant group is on the NWF list carry `nwf: {group, caterpillar_species}` for the chart.",
         "Add cards say why they were picked and their effect: \"Oaks feed 395 kinds of caterpillars here.\" for NWF groups, otherwise the percent-native change. Counts are never added up.",
-        "Returns `{remove, add, gaps, summary, why_this_matters}`."
+        "Returns `{remove, add, gaps, summary, why_this_matters}`.",
+        "Looks the scanned plants up once and reuses that for the final summary through `with_plan()`."
       ]
     },
     {
@@ -958,7 +959,7 @@
       "row": 8.8,
       "what": "The letter built only from our data, with no AI. Also used when the AI is down.",
       "how": [
-        "Opening: the ZIP and \"Of the plants we checked, X% are native to Florida. With these changes, it would be Y%.\"",
+        "Opening: the ZIP and \"Of the plants we checked, X% are native to Florida.\", plus \"With these changes, it would be Y%.\" only when the plan changes the number.",
         "\"What we'd like to remove\": each invasive with its why and safety note.",
         "\"What we'd like to plant\": each Add card with what it helps and \"Buying it: ask for …\" plus look-alikes to avoid.",
         "\"Sources\": every source used, with links."
@@ -1099,9 +1100,9 @@
       "row": 8.0,
       "what": "API endpoint that turns the phone's location or a typed address into a ZIP code.",
       "how": [
-        "`{lat, lon}`: rounds again, then `reverse_zip()`. `{query}`: `geocode()`.",
-        "Not found → \"We couldn't find that place. Try your school's ZIP code.\"; outside Florida → the Florida-only message.",
-        "If the lookup service is down, a typed 5-digit ZIP still works; anything else gets \"Couldn't look up that place right now. Type your school's ZIP code instead.\"",
+        "A typed 5-digit ZIP is checked against the Florida range and accepted directly; `zip_center()` only adds coordinates for \"Seen near you\".",
+        "`{lat, lon}`: rounds again, then `reverse_zip()`. Other text: `geocode()`.",
+        "Not found → \"We couldn't find that place. Try your school's ZIP code.\"; outside Florida → the Florida-only message; lookup service down → \"Couldn't look up that place right now. Type your school's ZIP code instead.\"",
         "Returns `{result: {lat, lon, zip}}`."
       ]
     },
@@ -1165,6 +1166,7 @@
       "how": [
         "\"Use my location\" asks for location permission (expo-location) only when pressed, rounds to 2 decimals (about 1 km) on the phone, then calls `locate()`.",
         "If permission is denied, the button goes away and the typed box is used instead.",
+        "If the phone can't get a location (GPS off, timeout), it says so and points to the typed box; the button is disabled while it works.",
         "The typed box sends the address or ZIP to `locate()`.",
         "Shows the ZIP found, or the error text. Location is kept only in memory for the current scan, never saved."
       ]
@@ -1182,6 +1184,36 @@
       "how": [
         "StatusBars: a \"Now\" and a \"With plan\" bar split into native, non-native and invasive, from `summary.counts` and `summary.counts_with_plan`, with the numbers written under each bar.",
         "CaterpillarBars (frontend/components/CaterpillarBars.js): one bar per plan card whose plant group is on the NWF list, marked add or remove, showing that group's number of caterpillar species. Numbers are never added together, and the source is shown."
+      ]
+    },
+    {
+      "id": "s_with_plan",
+      "label": "with_plan()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/summary_service.py",
+      "symbol": "def with_plan(",
+      "col": 6,
+      "row": 6.2,
+      "what": "Works out the \"with the plan\" numbers from a summary, counting only changes the plan really makes.",
+      "how": [
+        "Takes the number of native plants added and the number of invasive plants that actually got a replacement.",
+        "Returns the summary with `percent_native_with_plan` and `counts_with_plan` updated; nothing is looked up again."
+      ]
+    },
+    {
+      "id": "s_zip_center",
+      "label": "zip_center()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/location_service.py",
+      "symbol": "def zip_center(",
+      "col": 5,
+      "row": 10.4,
+      "what": "Finds the map location of a typed ZIP code, only so \"Seen near you\" can work.",
+      "how": [
+        "Asks Nominatim for that postal code (not a free-text search).",
+        "Returns rounded `(lat, lon)`, or `None` if the lookup fails; the ZIP is accepted either way."
       ]
     }
   ],
@@ -1668,6 +1700,26 @@
       "from": "results",
       "to": "ui_charts",
       "label": "counts, counts_with_plan, nwf per card"
+    },
+    {
+      "from": "s_plan",
+      "to": "s_with_plan",
+      "label": "with_plan(base, added natives, invasives replaced)"
+    },
+    {
+      "from": "s_summary",
+      "to": "s_with_plan",
+      "label": "with_plan(summary)"
+    },
+    {
+      "from": "r_locate",
+      "to": "s_zip_center",
+      "label": "typed 5-digit ZIP → zip_center(zip)"
+    },
+    {
+      "from": "s_zip_center",
+      "to": "nominatim",
+      "label": "postal code search"
     }
   ]
 }

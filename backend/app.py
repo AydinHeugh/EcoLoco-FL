@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 from services.ai_service import generate_letter, identify_plant
-from services.location_service import geocode, reverse_zip, round_coords, seen_near
+from services.location_service import geocode, reverse_zip, round_coords, seen_near, zip_center
 from services.plan_service import build_plan
 
 load_dotenv()
@@ -83,6 +83,11 @@ LOOKUP_DOWN = "Couldn't look up that place right now. Type your school's ZIP cod
 def locate():
     data = request.get_json() or {}
     query = str(data.get("query") or "").strip()
+    if len(query) == 5 and query.isdigit():
+        if not is_florida_zip(query):
+            return jsonify({"error": FLORIDA_ONLY}), 400
+        lat, lon = zip_center(query) or (None, None)
+        return jsonify({"result": {"lat": lat, "lon": lon, "zip": query}})
     try:
         if "lat" in data or "lon" in data:
             lat, lon = round_coords(data.get("lat"), data.get("lon"))
@@ -95,9 +100,7 @@ def locate():
         return jsonify({"error": "lat and lon must be numbers"}), 400
     except Exception as err:
         log.warning("Place lookup failed (%s)", type(err).__name__)
-        if not (len(query) == 5 and query.isdigit()):
-            return jsonify({"error": LOOKUP_DOWN}), 503
-        place = {"lat": None, "lon": None, "zip": query}
+        return jsonify({"error": LOOKUP_DOWN}), 503
     if place is None or not place["zip"]:
         return jsonify({"error": NOT_FOUND}), 400
     if not is_florida_zip(place["zip"]):

@@ -26,15 +26,24 @@ export default function LocationPicker({ place, onChange }) {
   }
 
   async function useMyLocation() {
-    if (denied) return;
+    if (denied || busy) return;
     setError(null);
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      setDenied(true);
-      setError("Location is off. Type your school's address or ZIP code instead.");
+    setBusy(true);
+    let position;
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setDenied(true);
+        setError("Location is off. Type your school's address or ZIP code instead.");
+        return;
+      }
+      position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+    } catch {
+      setError("Couldn't get your location. Type your school's address or ZIP code instead.");
       return;
+    } finally {
+      setBusy(false);
     }
-    const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
     await find({ lat: round2(position.coords.latitude), lon: round2(position.coords.longitude) });
   }
 
@@ -42,7 +51,7 @@ export default function LocationPicker({ place, onChange }) {
     <View style={styles.wrap}>
       {place?.zip && <Text style={styles.found}>📍 ZIP {place.zip}</Text>}
       {!denied && (
-        <TouchableOpacity style={styles.btn} onPress={useMyLocation} disabled={busy}>
+        <TouchableOpacity style={[styles.btn, busy && styles.disabled]} onPress={useMyLocation} disabled={busy}>
           <Text style={styles.btnText}>Use my location</Text>
         </TouchableOpacity>
       )}

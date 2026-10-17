@@ -132,6 +132,8 @@ flowchart LR
     s_geocode["geocode()"]
     s_reverse["reverse_zip()"]
     s_seen["seen_near()"]
+    s_with_plan["with_plan()"]
+    s_zip_center["zip_center()"]
   end
   subgraph L_data["Bundled data"]
     direction TB
@@ -246,6 +248,10 @@ flowchart LR
   s_seen -->|"research-grade plants within 5 km"| inaturalist
   s_seen -->|"plant_option() → Florida status"| s_option
   results -->|"counts, counts_with_plan, nwf per card"| ui_charts
+  s_plan -->|"with_plan(base, added natives, invasives replaced)"| s_with_plan
+  s_summary -->|"with_plan(summary)"| s_with_plan
+  r_locate -->|"typed 5-digit ZIP → zip_center(zip)"| s_zip_center
+  s_zip_center -->|"postal code search"| nominatim
   classDef ui fill:#e3f2e1,stroke:#2e7d32,color:#12301a
   classDef device fill:#eceff1,stroke:#607d8b,color:#263238
   classDef client fill:#e1effa,stroke:#1e6fb8,color:#0d2d4d
@@ -259,7 +265,7 @@ flowchart LR
   class picker,clipboard device
   class c_identify,c_rec,c_letter,c_local,c_plan,c_user_message,c_locate,c_nearby client
   class flask,r_identify,r_recommend,r_letter,r_plan,r_locate,r_nearby route
-  class s_identify,s_letter,s_fl,s_species,s_plantnet,s_usda,s_resolve,s_option,s_common_name,s_summary,s_plan,s_guard,s_letter_facts,s_round,s_geocode,s_reverse,s_seen svc
+  class s_identify,s_letter,s_fl,s_species,s_plantnet,s_usda,s_resolve,s_option,s_common_name,s_summary,s_plan,s_guard,s_letter_facts,s_round,s_geocode,s_reverse,s_seen,s_with_plan,s_zip_center svc
   class d_fisc,d_natives,fisc_builder,d_recs,d_nwf,d_terms,d_why data
   class openai,usda,plantnet,nominatim,inaturalist ext
   class c_local dead

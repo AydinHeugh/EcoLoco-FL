@@ -57,6 +57,15 @@ def geocode(query):
     return {"lat": lat, "lon": lon, "zip": _zip(results[0].get("address")) or reverse_zip(lat, lon)}
 
 
+def zip_center(zip_code):
+    try:
+        results = _nominatim("search", {"postalcode": zip_code, "countrycodes": "us", "limit": 1})
+    except Exception as err:
+        log.warning("ZIP lookup failed (%s)", type(err).__name__)
+        return None
+    return round_coords(results[0]["lat"], results[0]["lon"]) if results else None
+
+
 def reverse_zip(lat, lon):
     lat, lon = round_coords(lat, lon)
     return _zip(_nominatim("reverse", {"lat": lat, "lon": lon, "zoom": 16}).get("address"))

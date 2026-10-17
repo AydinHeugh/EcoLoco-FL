@@ -232,3 +232,27 @@ def test_typed_zip_still_works_when_lookup_is_down(client, monkeypatch):
     monkeypatch.setattr(app_module, "geocode", down)
     response = client.post("/locate", json={"query": "33496"})
     assert response.get_json()["result"] == {"lat": None, "lon": None, "zip": "33496"}
+
+
+def _no_search(*args, **kwargs):
+    raise AssertionError("a typed ZIP must not go through free-text search")
+
+
+def test_typed_zip_is_used_directly(client, monkeypatch):
+    monkeypatch.setattr(app_module, "geocode", _no_search)
+    monkeypatch.setattr(app_module, "zip_center", lambda z: (26.71, -80.06))
+    assert client.post("/locate", json={"query": "33401"}).get_json()["result"] == {"lat": 26.71, "lon": -80.06, "zip": "33401"}
+
+
+def test_typed_non_florida_zip_gets_florida_message(client, monkeypatch):
+    monkeypatch.setattr(app_module, "geocode", _no_search)
+    monkeypatch.setattr(app_module, "zip_center", _no_search)
+    response = client.post("/locate", json={"query": "00000"})
+    assert response.status_code == 400
+    assert response.get_json()["error"] == FLORIDA_ONLY
+
+
+def test_typed_zip_without_coordinates_still_works(client, monkeypatch):
+    monkeypatch.setattr(app_module, "geocode", _no_search)
+    monkeypatch.setattr(app_module, "zip_center", lambda z: None)
+    assert client.post("/locate", json={"query": "33496"}).get_json()["result"] == {"lat": None, "lon": None, "zip": "33496"}

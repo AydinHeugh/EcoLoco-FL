@@ -200,3 +200,10 @@ def test_letter_without_percentages_says_so(rephrase):
     letter, _ = ai_service.generate_letter(empty, ZIP)
     assert "We couldn't identify enough plants to give a percentage yet." in letter
     assert "None%" not in letter
+
+
+def test_letter_drops_the_plan_sentence_when_nothing_changes(rephrase):
+    same = {"remove": [], "add": [], "gaps": [], "summary": {"percent_native": 40, "percent_native_with_plan": 40}}
+    letter, _ = ai_service.generate_letter(same, ZIP)
+    assert "Of the plants we checked, 40% are native to Florida." in letter
+    assert "With these changes" not in letter

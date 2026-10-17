@@ -122,3 +122,27 @@ def test_cards_carry_nwf_group_counts(verified, monkeypatch):
     assert adds["Live oak"] == {"group": "oaks", "caterpillar_species": 395}
     assert adds["Coontie"] is None
     assert plan["remove"][0]["nwf"] == {"group": "acacias", "caterpillar_species": 29}
+
+
+def test_unreplaced_invasive_does_not_count_as_native():
+    plan = build_plan([PEPPER, dict(PEPPER), {"scientific_name": "Zamia integrifolia"}])
+    assert plan["add"] == []
+    assert plan["summary"]["percent_native"] == 33
+    assert plan["summary"]["percent_native_with_plan"] == 33
+    assert plan["summary"]["counts_with_plan"]["invasive"] == 2
+    assert "effect" not in plan["remove"][0]
+
+
+def test_replaced_invasive_counts_every_scan_of_it(verified):
+    plan = build_plan([PEPPER, dict(PEPPER), {"scientific_name": "Zamia integrifolia"}])
+    assert plan["remove"][0]["effect"] == "Replacing it takes you from 33% to 100% native."
+    assert plan["summary"]["counts_with_plan"]["invasive"] == 0
+
+
+def test_plan_looks_each_plant_up_once(verified, monkeypatch):
+    from services import summary_service
+    calls = []
+    real = summary_service.plant_option
+    monkeypatch.setattr(summary_service, "plant_option", lambda *a: calls.append(a) or real(*a))
+    build_plan([PEPPER, {"scientific_name": "Ixora coccinea"}, {"scientific_name": "Zamia integrifolia"}])
+    assert len(calls) == 3

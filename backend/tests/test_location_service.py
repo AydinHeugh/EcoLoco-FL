@@ -110,3 +110,21 @@ def test_geocode_city_without_postcode_looks_up_zip_at_its_center(calls, monkeyp
         calls["calls"].append({"url": url, "params": params}) or FakeResponse(next(replies))))
     assert geocode("Boca Raton, FL") == {"lat": 26.36, "lon": -80.08, "zip": "33432"}
     assert calls["calls"][1]["url"].endswith("/reverse")
+
+
+def test_zip_center_uses_a_postal_code_search(calls):
+    from services.location_service import zip_center
+    calls["reply"] = [{"lat": "26.7153", "lon": "-80.0534"}]
+    assert zip_center("33401") == (26.72, -80.05)
+    assert calls["calls"][0]["params"]["postalcode"] == "33401"
+    assert "q" not in calls["calls"][0]["params"]
+
+
+def test_zip_center_survives_lookup_down(monkeypatch):
+    from services.location_service import zip_center
+
+    def down(*args, **kwargs):
+        raise requests.ConnectionError("down")
+
+    monkeypatch.setattr(requests, "get", down)
+    assert zip_center("33401") is None
