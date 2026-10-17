@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  ActivityIndicator, TextInput, Image, useWindowDimensions, Linking,
+  ActivityIndicator, Image, useWindowDimensions, Linking,
 } from 'react-native';
 import { useFonts } from 'expo-font';
 import { getPlantRecommendations, userMessage } from '../services/geminiService';
 import { COLORS, FONTS, FONT_ASSETS } from '../theme';
 import PlanCard from '../components/PlanCard';
+import LocationPicker from '../components/LocationPicker';
 
 const LOGO = require('../../assets/EcoLoco_logo.png');
 const NURSERY_URL = 'https://plantrealflorida.org';
 
 export default function RecommendationScreen({ route }) {
   const prefillZip = route?.params?.prefillZip ?? '';
-  const [zipCode, setZipCode] = useState(prefillZip);
+  const [place,   setPlace]   = useState(prefillZip ? { zip: prefillZip } : null);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
   const [error,   setError]   = useState(null);
@@ -25,13 +26,13 @@ export default function RecommendationScreen({ route }) {
 
   useEffect(() => {
     if (prefillZip?.length === 5) {
-      setZipCode(prefillZip);
+      setPlace({ zip: prefillZip });
       handleRecommend(prefillZip);
     }
   }, [prefillZip]);
 
   async function handleRecommend(zip) {
-    const target = zip ?? zipCode;
+    const target = zip ?? place?.zip ?? '';
     setError(null);
     if (!/^\d{5}$/.test(target)) {
       setError('Enter a 5-digit ZIP code.');
@@ -67,30 +68,13 @@ export default function RecommendationScreen({ route }) {
         <View style={styles.titleSection}>
           <Text style={styles.pageTitle}>Native plants to add</Text>
           <Text style={styles.pageSubtitle}>
-            Enter your school's ZIP code to see Florida native plants that help wildlife.
+            Find your school's location to see Florida native plants that help wildlife.
           </Text>
         </View>
 
         <View style={styles.inputSection}>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter ZIP code"
-            placeholderTextColor={COLORS.textMuted}
-            keyboardType="numeric"
-            maxLength={5}
-            value={zipCode}
-            onChangeText={t => setZipCode(t.replace(/[^0-9]/g, '').slice(0, 5))}
-          />
-          <TouchableOpacity
-            style={[styles.btn, (zipCode.length !== 5 || loading) && styles.btnDisabled]}
-            onPress={() => handleRecommend()}
-            disabled={loading || zipCode.length !== 5}
-          >
-            {loading
-              ? <ActivityIndicator color={COLORS.cream} size="small" />
-              : <Text style={styles.btnText}>Show plants</Text>
-            }
-          </TouchableOpacity>
+          <LocationPicker place={place} onChange={found => { setPlace(found); handleRecommend(found.zip); }} />
+          {loading && <ActivityIndicator color={COLORS.softGreen} size="small" />}
           {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
 
@@ -130,14 +114,6 @@ const styles = StyleSheet.create({
   pageSubtitle: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
 
   inputSection: { paddingHorizontal: 20, gap: 12, marginBottom: 8 },
-  input: {
-    backgroundColor: COLORS.white, color: COLORS.textBody, borderRadius: 10,
-    padding: 13, fontSize: 14, fontFamily: FONTS.body,
-    borderWidth: 1, borderColor: COLORS.border,
-  },
-  btn: { backgroundColor: COLORS.darkGreen, borderRadius: 10, paddingVertical: 15, alignItems: 'center' },
-  btnDisabled: { opacity: 0.4 },
-  btnText: { fontSize: 15, fontFamily: FONTS.bodyBold, color: COLORS.cream },
   errorText: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.error, textAlign: 'center' },
 
   resultsSection: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 48 },

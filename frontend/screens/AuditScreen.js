@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  ActivityIndicator, Image, TextInput, useWindowDimensions,
+  ActivityIndicator, Image, useWindowDimensions,
   Animated, Easing, Alert, Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -12,6 +12,7 @@ import StatusBadge from '../components/StatusBadge';
 import CandidatePicker, { NO_MATCH_TEXT } from '../components/CandidatePicker';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
 import { useProgressText } from '../components/ProgressText';
+import LocationPicker from '../components/LocationPicker';
 
 const EASE_OUT   = Easing.bezier(0.22, 1, 0.36, 1);
 
@@ -102,18 +103,19 @@ function PlantCard({ plant, onDelete, onPick, onNone }) {
 
 // Module-level vars so plants survive tab switches / component remounts
 let _savedPlants = [];
-let _savedZip    = '';
+let _savedPlace  = null;
 
 // ─── AuditScreen ─────────────────────────────────────────────────────────────
 export default function AuditScreen({ navigation }) {
-  const [zipCode, setZipCode] = useState(_savedZip);
+  const [place,   setPlace]   = useState(_savedPlace);
   const [plants,  setPlants]  = useState(_savedPlants);
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState(null);
 
   // Keep module vars in sync so state is restored on remount
   useEffect(() => { _savedPlants = plants; }, [plants]);
-  useEffect(() => { _savedZip = zipCode; }, [zipCode]);
+  useEffect(() => { _savedPlace = place; }, [place]);
+  const zipCode = place?.zip ?? '';
 
   const { width } = useWindowDimensions();
   const maxWidth   = Math.min(width, 960);
@@ -128,7 +130,7 @@ export default function AuditScreen({ navigation }) {
   async function scanPlant(source) {
     setScanError(null);
     if (!zipValid) {
-      setScanError('Enter a 5-digit ZIP code before scanning.');
+      setScanError("Find your school's location before scanning.");
       return;
     }
 
@@ -186,7 +188,7 @@ export default function AuditScreen({ navigation }) {
         ? p
         : { ...p, plant_name: 'Unidentified plant', scientific_name: '', status: 'unknown' }
     ));
-    navigation.navigate('AuditResults', { plants: settled, zipCode });
+    navigation.navigate('AuditResults', { plants: settled, zipCode, lat: place?.lat, lon: place?.lon });
   }
 
   function handleNewAudit() {
@@ -240,15 +242,7 @@ export default function AuditScreen({ navigation }) {
         {/* ── ZIP Input ── */}
         <View style={styles.zipSection}>
           {plants.length === 0 ? (
-            <TextInput
-              style={styles.zipInput}
-              value={zipCode}
-              onChangeText={t => setZipCode(t.replace(/[^0-9]/g, '').slice(0, 5))}
-              placeholder="Enter your school's ZIP code"
-              placeholderTextColor={COLORS.textMuted}
-              keyboardType="numeric"
-              maxLength={5}
-            />
+            <LocationPicker place={place} onChange={setPlace} />
           ) : (
             <View style={styles.zipLocked}>
               <Text style={styles.zipLockedText}>📍 ZIP {zipCode}</Text>
@@ -280,7 +274,7 @@ export default function AuditScreen({ navigation }) {
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>🌿</Text>
             <Text style={styles.emptyTitle}>No plants scanned yet</Text>
-            <Text style={styles.emptySubtitle}>Enter your ZIP code and start scanning plants around campus.</Text>
+            <Text style={styles.emptySubtitle}>Find your school's location, then start scanning plants around campus.</Text>
           </View>
         )}
 
@@ -340,11 +334,6 @@ const styles = StyleSheet.create({
   pageSubtitle: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', lineHeight: 19 },
 
   zipSection: { paddingHorizontal: 20, marginBottom: 8 },
-  zipInput: {
-    backgroundColor: COLORS.white, color: COLORS.textBody, borderRadius: 10,
-    padding: 13, fontSize: 14, fontFamily: FONTS.body,
-    borderWidth: 1, borderColor: COLORS.border,
-  },
   zipLocked: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     backgroundColor: COLORS.lightBg, borderRadius: 10, padding: 13,

@@ -185,3 +185,7 @@ def test_non_native_gets_plain_why(monkeypatch):
 
 def test_option_prefers_our_common_name():
     assert plant_option("Zamia integrifolia", "Florida Arrowroot", 0.25, "33496")["plant_name"] == "Coontie"
+
+
+def test_option_name_starts_with_a_capital():
+    assert plant_option("Melaleuca quinquenervia", "", 0.5, "33496")["plant_name"] == "Punktree"

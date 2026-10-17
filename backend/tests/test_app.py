@@ -162,3 +162,73 @@ def test_ai_down_is_reported_where_ai_is_used(client, monkeypatch):
     assert "ai_unavailable" not in client.post("/recommend", json={"location": "33139"}).get_json()
     letter = client.post("/letter", json={"plan": plan["result"], "zip_code": "33139"}).get_json()
     assert letter["ai_unavailable"] is True
+
+
+@pytest.fixture
+def places(monkeypatch):
+    from services import location_service
+    calls = []
+    monkeypatch.setattr(app_module, "geocode", lambda q: calls.append(("geocode", q)) or (
+        {"lat": 26.37, "lon": -80.13, "zip": "33496"} if "Boca" in q or q == "33496" else
+        {"lat": 40.75, "lon": -73.99, "zip": "10001"} if q == "10001" else None))
+    monkeypatch.setattr(app_module, "reverse_zip", lambda lat, lon: calls.append(("reverse", lat, lon)) or "33496")
+    monkeypatch.setattr(app_module, "seen_near", lambda lat, lon: calls.append(("nearby", lat, lon)) or [{"plant_name": "Coontie"}])
+    return calls
+
+
+def test_locate_typed_address(client, places):
+    response = client.post("/locate", json={"query": "Boca Raton FL"})
+    assert response.get_json()["result"] == {"lat": 26.37, "lon": -80.13, "zip": "33496"}
+
+
+def test_locate_rounds_device_coordinates_again(client, places):
+    response = client.post("/locate", json={"lat": 26.36789, "lon": -80.12345})
+    assert response.get_json()["result"] == {"lat": 26.37, "lon": -80.12, "zip": "33496"}
+    assert places == [("reverse", 26.37, -80.12)]
+
+
+def test_locate_outside_florida_is_rejected(client, places):
+    response = client.post("/locate", json={"query": "10001"})
+    assert response.status_code == 400
+    assert response.get_json()["error"] == FLORIDA_ONLY
+
+
+def test_locate_unknown_place(client, places):
+    response = client.post("/locate", json={"query": "zzzz"})
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "We couldn't find that place. Try your school's ZIP code."
+
+
+@pytest.mark.parametrize("body", [{}, {"lat": "x", "lon": 1}, {"query": ""}])
+def test_locate_bad_input(client, places, body):
+    assert client.post("/locate", json=body).status_code == 400
+
+
+def test_nearby_rounds_and_returns_plants(client, places):
+    response = client.post("/nearby", json={"lat": 26.36789, "lon": -80.12345})
+    assert response.get_json()["result"] == [{"plant_name": "Coontie"}]
+    assert places == [("nearby", 26.37, -80.12)]
+
+
+def test_old_inat_service_is_gone():
+    import importlib.util
+    assert importlib.util.find_spec("services.inat_service") is None
+
+
+def test_locate_survives_lookup_service_down(client, monkeypatch):
+    def down(*args, **kwargs):
+        raise RuntimeError("network blocked in tests")
+
+    monkeypatch.setattr(app_module, "geocode", down)
+    response = client.post("/locate", json={"query": "Boca Raton"})
+    assert response.status_code == 503
+    assert response.get_json()["error"] == "Couldn't look up that place right now. Type your school's ZIP code instead."
+
+
+def test_typed_zip_still_works_when_lookup_is_down(client, monkeypatch):
+    def down(*args, **kwargs):
+        raise RuntimeError("network blocked in tests")
+
+    monkeypatch.setattr(app_module, "geocode", down)
+    response = client.post("/locate", json={"query": "33496"})
+    assert response.get_json()["result"] == {"lat": None, "lon": None, "zip": "33496"}

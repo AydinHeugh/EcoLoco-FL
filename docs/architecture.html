@@ -222,7 +222,7 @@
       "row": 4.5,
       "what": "The campus audit: scan many plants one after another, then score the whole schoolyard.",
       "how": [
-        "Requires a 5-digit ZIP before scanning. The ZIP and the scanned plants live in module-level variables so they survive switching tabs.",
+        "Uses `LocationPicker` for the school's location before scanning. The place lives in module-level variables (memory only) so it survives switching tabs.",
         "`scanPlant(source)` asks for camera or photo-library permission, then opens expo-image-picker (on the web both buttons open a file picker).",
         "Adds a loading card right away, then calls `identifyPlant(photo.base64, zipCode)`.",
         "Every result is kept as a card. `confirm` cards show the `CandidatePicker` under the photo; `unidentified` cards say \"Not identified\" with the retake tip. Any card can be removed with ✕.",
@@ -247,6 +247,7 @@
         "Your plan: a Remove `PlanCard` for each invasive (why, safety, replacement), then Add cards, then a link to plantrealflorida.org.",
         "What your campus supports now: every plant with its status and one sourced line, or \"We don't have wildlife info for this plant yet\".",
         "How native is your campus: `PercentRing` now and with the plan (or \"Not enough identified plants yet\") and counts for the four groups.",
+        "Seen near you: if the scan has a location, the top 5 plants people photographed within about 5 km (iNaturalist), each with its status.",
         "Why this matters: up to 4 short lines from `why_this_matters.json`, each with its source.",
         "`LetterGenerator` writes the letter from the plan. Errors show as text."
       ]
@@ -460,23 +461,6 @@
       ]
     },
     {
-      "id": "s_inat",
-      "label": "get_plant_requests()",
-      "layer": "svc",
-      "status": "dead",
-      "file": "backend/services/inat_service.py",
-      "symbol": "def get_plant_requests(",
-      "col": 4,
-      "row": 8,
-      "goal": "Nothing calls it since the confidence nudge was removed. Repurpose it (e.g. a 'seen near you' count) or delete inat_service.py.",
-      "what": "Fetches recent iNaturalist sightings of a plant so we can see if it's found near the user.",
-      "how": [
-        "GET `api.inaturalist.org/v2/observations` with `q=<name>`, `iconic_taxa=Plantae`, has a location, newest first, up to 100.",
-        "Turns each 'lat,lng' string into numbers, with `observed_on` and `place_guess`.",
-        "On any request error, prints it and returns `[]`. No timeout is set on this request."
-      ]
-    },
-    {
       "id": "s_identify",
       "label": "identify_plant()",
       "layer": "svc",
@@ -510,21 +494,6 @@
         "Keeps the AI's version only if `mentions_new_names()` finds nothing new and the numbers are unchanged; otherwise keeps ours.",
         "Everything else comes from `letter_facts()`: removals with safety notes, plants to add with buying info, and sources.",
         "Returns `(letter, ai_unavailable)`."
-      ]
-    },
-    {
-      "id": "inat",
-      "label": "iNaturalist API",
-      "layer": "ext",
-      "status": "live",
-      "file": "backend/services/inat_service.py",
-      "symbol": "api.inaturalist.org/v2/observations",
-      "col": 6,
-      "row": 8,
-      "what": "Public database of citizen-science plant and animal sightings.",
-      "how": [
-        "`GET /v2/observations` returns recent observations with coordinates.",
-        "No API key; we send a custom User-Agent."
       ]
     },
     {
@@ -1023,6 +992,179 @@
         "Birds and insects (National Wildlife Federation), fertilizer and algae blooms (UF/IFAS), invasive plants and flood control (South Florida Water Management District), and the chickadee study (Narango et al., 2018).",
         "`build_plan()` returns them as `why_this_matters`."
       ]
+    },
+    {
+      "id": "nominatim",
+      "label": "Nominatim (OpenStreetMap)",
+      "layer": "ext",
+      "status": "live",
+      "file": "backend/services/location_service.py",
+      "symbol": "https://nominatim.openstreetmap.org",
+      "col": 7,
+      "row": 9.2,
+      "what": "Free service that turns an address into a map location, and a map location into an address.",
+      "how": [
+        "`/search?q=…` finds a typed address or ZIP; `/reverse?lat=…&lon=…` finds the ZIP at a spot.",
+        "Its rules allow at most one request per second and need a User-Agent; ours names the app and its GitHub page, with no email address."
+      ]
+    },
+    {
+      "id": "inaturalist",
+      "label": "iNaturalist API",
+      "layer": "ext",
+      "status": "live",
+      "file": "backend/services/location_service.py",
+      "symbol": "https://api.inaturalist.org/v1/observations/species_counts",
+      "col": 7,
+      "row": 11.4,
+      "what": "Public database of plant and animal sightings photographed by people.",
+      "how": [
+        "`/v1/observations/species_counts` with `lat`, `lng`, `radius=5` (km), `quality_grade=research` and `iconic_taxa=Plantae` returns the most-seen plants nearby.",
+        "No API key; we send the same User-Agent as for Nominatim."
+      ]
+    },
+    {
+      "id": "s_round",
+      "label": "round_coords()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/location_service.py",
+      "symbol": "def round_coords(",
+      "col": 6,
+      "row": 8.0,
+      "what": "Rounds a location to 2 decimal places (about 1 km) and checks it is a real latitude and longitude.",
+      "how": [
+        "Used on every location the server receives, even though the phone already rounds it.",
+        "Raises an error for missing or out-of-range values."
+      ]
+    },
+    {
+      "id": "s_geocode",
+      "label": "geocode()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/location_service.py",
+      "symbol": "def geocode(",
+      "col": 6,
+      "row": 9.2,
+      "what": "Turns a typed address or ZIP into a rounded location and a ZIP code.",
+      "how": [
+        "Asks Nominatim's search (US only, 1 result).",
+        "If the place has no postcode (a whole city, for example), looks up the ZIP at its center with `reverse_zip()`.",
+        "Returns `{lat, lon, zip}` or `None` if nothing was found."
+      ]
+    },
+    {
+      "id": "s_reverse",
+      "label": "reverse_zip()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/location_service.py",
+      "symbol": "def reverse_zip(",
+      "col": 6,
+      "row": 10.4,
+      "what": "Finds the ZIP code at a rounded location.",
+      "how": [
+        "Asks Nominatim's reverse lookup and keeps the first 5 digits of the postcode.",
+        "Every Nominatim call waits so there is at least 1 second between requests."
+      ]
+    },
+    {
+      "id": "s_seen",
+      "label": "seen_near()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/location_service.py",
+      "symbol": "def seen_near(",
+      "col": 6,
+      "row": 11.6,
+      "what": "The top 5 plants people have photographed within about 5 km, each with its Florida status.",
+      "how": [
+        "Asks iNaturalist for research-grade plant sightings within 5 km of the rounded location.",
+        "Runs each one through `plant_option()` so it shows Native, Non-native, Invasive or Unknown.",
+        "Returns `[]` if iNaturalist can't be reached. Nothing about the location is saved or logged."
+      ]
+    },
+    {
+      "id": "r_locate",
+      "label": "POST /locate",
+      "layer": "route",
+      "status": "live",
+      "file": "backend/app.py",
+      "symbol": "def locate(",
+      "col": 4,
+      "row": 8.0,
+      "what": "API endpoint that turns the phone's location or a typed address into a ZIP code.",
+      "how": [
+        "`{lat, lon}`: rounds again, then `reverse_zip()`. `{query}`: `geocode()`.",
+        "Not found → \"We couldn't find that place. Try your school's ZIP code.\"; outside Florida → the Florida-only message.",
+        "If the lookup service is down, a typed 5-digit ZIP still works; anything else gets \"Couldn't look up that place right now. Type your school's ZIP code instead.\"",
+        "Returns `{result: {lat, lon, zip}}`."
+      ]
+    },
+    {
+      "id": "r_nearby",
+      "label": "POST /nearby",
+      "layer": "route",
+      "status": "live",
+      "file": "backend/app.py",
+      "symbol": "def nearby(",
+      "col": 4,
+      "row": 9.6,
+      "what": "API endpoint for \"Seen near you\".",
+      "how": [
+        "Rounds `lat` and `lon` again (400 if they aren't numbers).",
+        "Returns `{result: seen_near(lat, lon)}`."
+      ]
+    },
+    {
+      "id": "c_locate",
+      "label": "locate()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/services/geminiService.js",
+      "symbol": "export async function locate",
+      "col": 3,
+      "row": 10.2,
+      "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
+      "what": "Sends a rounded location or a typed address to the backend and gets the ZIP back.",
+      "how": [
+        "POSTs `{lat, lon}` or `{query}` to `/locate`.",
+        "Returns `{result: {lat, lon, zip}}`."
+      ]
+    },
+    {
+      "id": "c_nearby",
+      "label": "getNearby()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/services/geminiService.js",
+      "symbol": "export async function getNearby",
+      "col": 3,
+      "row": 11.4,
+      "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
+      "what": "Asks the backend which plants have been seen near the school.",
+      "how": [
+        "POSTs `{lat, lon}` to `/nearby`.",
+        "Returns `{result: [plants]}`."
+      ]
+    },
+    {
+      "id": "ui_location",
+      "label": "LocationPicker",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/LocationPicker.js",
+      "symbol": "export default function LocationPicker",
+      "col": 2,
+      "row": 10.2,
+      "what": "Replaces typing a ZIP code: a \"Use my location\" button, or type an address or ZIP.",
+      "how": [
+        "\"Use my location\" asks for location permission (expo-location) only when pressed, rounds to 2 decimals (about 1 km) on the phone, then calls `locate()`.",
+        "If permission is denied, the button goes away and the typed box is used instead.",
+        "The typed box sends the address or ZIP to `locate()`.",
+        "Shows the ZIP found, or the error text. Location is kept only in memory for the current scan, never saved."
+      ]
     }
   ],
   "edges": [
@@ -1170,12 +1312,6 @@
       "from": "r_letter",
       "to": "s_letter",
       "label": "generate_letter(plan, zip_code)"
-    },
-    {
-      "from": "s_inat",
-      "to": "inat",
-      "label": "GET /v2/observations q=name → ≤100 points",
-      "status": "dead"
     },
     {
       "from": "s_letter",
@@ -1418,6 +1554,97 @@
       "from": "home",
       "to": "audit",
       "label": "navigate('EcoScan')"
+    },
+    {
+      "from": "ident",
+      "to": "ui_location",
+      "label": "school location → ZIP"
+    },
+    {
+      "from": "audit",
+      "to": "ui_location",
+      "label": "school location → ZIP"
+    },
+    {
+      "from": "rec",
+      "to": "ui_location",
+      "label": "school location → ZIP"
+    },
+    {
+      "from": "ui_location",
+      "to": "c_locate",
+      "label": "locate({lat, lon} or {query})"
+    },
+    {
+      "from": "c_locate",
+      "to": "r_locate",
+      "label": "POST /locate",
+      "detail": "Returns {result: lat, lon, zip}."
+    },
+    {
+      "from": "results",
+      "to": "c_nearby",
+      "label": "getNearby(lat, lon)"
+    },
+    {
+      "from": "c_nearby",
+      "to": "r_nearby",
+      "label": "POST /nearby {lat, lon}"
+    },
+    {
+      "from": "flask",
+      "to": "r_locate",
+      "label": "registers"
+    },
+    {
+      "from": "flask",
+      "to": "r_nearby",
+      "label": "registers"
+    },
+    {
+      "from": "r_locate",
+      "to": "s_round",
+      "label": "round_coords(lat, lon)"
+    },
+    {
+      "from": "r_locate",
+      "to": "s_geocode",
+      "label": "geocode(query)"
+    },
+    {
+      "from": "r_locate",
+      "to": "s_reverse",
+      "label": "reverse_zip(lat, lon)"
+    },
+    {
+      "from": "r_nearby",
+      "to": "s_seen",
+      "label": "seen_near(lat, lon)"
+    },
+    {
+      "from": "s_geocode",
+      "to": "nominatim",
+      "label": "search, 1 request per second"
+    },
+    {
+      "from": "s_geocode",
+      "to": "s_reverse",
+      "label": "no postcode → ZIP at the center"
+    },
+    {
+      "from": "s_reverse",
+      "to": "nominatim",
+      "label": "reverse, 1 request per second"
+    },
+    {
+      "from": "s_seen",
+      "to": "inaturalist",
+      "label": "research-grade plants within 5 km"
+    },
+    {
+      "from": "s_seen",
+      "to": "s_option",
+      "label": "plant_option() → Florida status"
     }
   ]
 }

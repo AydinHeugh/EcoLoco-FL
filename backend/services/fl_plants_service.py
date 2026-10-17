@@ -70,8 +70,9 @@ def plant_option(scientific_name, common_name, confidence, zip_code):
     why = status["why"]
     if key == "non-native" and not why:
         why = NON_NATIVE_WHY
+    name = species_common_name(canonical) or common_name or canonical
     option = {
-        "plant_name": species_common_name(canonical) or common_name or canonical,
+        "plant_name": name[:1].upper() + name[1:],
         "scientific_name": canonical,
         "confidence": confidence,
         "status": key,

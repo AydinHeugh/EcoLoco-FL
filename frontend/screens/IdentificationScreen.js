@@ -7,7 +7,6 @@ import {
   ScrollView,
   ActivityIndicator,
   Image,
-  TextInput,
   useWindowDimensions,
   Animated,
   Easing,
@@ -23,6 +22,7 @@ import CandidatePicker, { NO_MATCH_TEXT } from '../components/CandidatePicker';
 import SourceLine from '../components/SourceLine';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
 import { useProgressText } from '../components/ProgressText';
+import LocationPicker from '../components/LocationPicker';
 
 
 const EASE_OUT = Easing.bezier(0.22, 1, 0.36, 1);
@@ -135,7 +135,8 @@ export default function IdentificationScreen({ navigation }) {
   const [picked, setPicked]     = useState(null);
   const [error, setError]       = useState(null);
   const [photos, setPhotos]     = useState([]);
-  const [zipCode, setZipCode]   = useState('');
+  const [place, setPlace]       = useState(null);
+  const zipCode = place?.zip ?? '';
   const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
@@ -280,15 +281,7 @@ export default function IdentificationScreen({ navigation }) {
 
         {/* ── ZIP code ── */}
         <View style={styles.zipRow}>
-          <TextInput
-            style={styles.zipInput}
-            value={zipCode}
-            onChangeText={(t) => setZipCode(t.replace(/[^0-9]/g, '').slice(0, 5))}
-            placeholder="Enter ZIP code for your location"
-            placeholderTextColor={COLORS.textMuted}
-            keyboardType="numeric"
-            maxLength={5}
-          />
+          <LocationPicker place={place} onChange={setPlace} />
         </View>
 
         {/* ── Identify button ── */}
@@ -449,12 +442,6 @@ const styles = StyleSheet.create({
 
   // ── ZIP ──
   zipRow: { marginHorizontal: 20, marginBottom: 14 },
-  zipInput: {
-    backgroundColor: COLORS.white, color: COLORS.textBody,
-    borderRadius: 10, padding: 13, fontSize: 14,
-    fontFamily: FONTS.body,
-    borderWidth: 1, borderColor: COLORS.border,
-  },
 
   // ── Identify button ──
   identifyBtn: {

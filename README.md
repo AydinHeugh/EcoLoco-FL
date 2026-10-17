@@ -12,7 +12,7 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 
 **You give it:**
 - One to five photos of the same plant (a leaf, a flower, the bark), taken with the camera or uploaded. More photos give a surer match.
-- Your 5-digit ZIP code (Florida only; other ZIP codes get a message saying so)
+- Your school's location: press "Use my location", or type an address or ZIP code. The app rounds your location to about 1 km before it leaves the phone and never saves it. Only Florida locations work; anywhere else gets a message saying so.
 
 **You get back, for each plant:**
 - Its name and how sure PlantNet is about the match
@@ -33,6 +33,7 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 - Plants the app couldn't identify are still listed, but they aren't counted in the percent
 - A plan: a "Remove" card for each invasive plant found, with a safety note and a native plant to replace it, and "Add" cards for native plants that fill gaps on your campus. Each card shows what the plant helps, where it grows, what to ask for at the nursery (and look-alikes to avoid), what to watch out for, and questions to look into, each fact with its source
 - A link to plantrealflorida.org to find a native plant nursery
+- "Seen near you": the five plants people have photographed most within about 5 km of your school (from iNaturalist), each marked native, non-native, invasive or unknown
 - A short "Why this matters" section: four facts about native plants, birds, water and flooding, each with its source
 - An editable letter to your principal listing the plants to remove and add, how to buy them, safety notes, the percent native now and with the plan, and sources
 
@@ -53,7 +54,8 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 3. **Facts about the plant.** Everything shown about a plant comes from our own data files, each fact with a link to where it came from (the Institute for Regional Conservation's Natives for Your Neighborhood, UF/IFAS, the ASPCA, or the FISC list). The AI doesn't write facts about plants. If we don't have facts for a plant, the app says so.
 4. **Counting.** The app counts how many scanned plants are in each group and divides the natives by the plants it could identify. No AI is involved, and the name a plant was scanned under doesn't change the result: "Coontie", "coontie" and "Zamia integrifolia" all count the same. Replacing each invasive plant with a native gives the "with the plan" percent.
 5. **The plan.** Plants to add come only from our list of about 30 South Florida natives. Each invasive plant found gets a replacement. The other picks fill gaps on campus: none of the plant groups that feed the most caterpillars here (from the National Wildlife Federation), nothing caterpillars eat, no fruit for birds, or months with nothing blooming. The first three picks include at most one tree and at least one easy plant. Plant-group counts like "Oaks feed 395 kinds of caterpillars here" are always for the whole group, and are never added together.
-6. **The letter.** The letter is built from the plan. OpenAI may only reword the opening paragraph, and its version is thrown away if it adds a plant or animal name, or changes a number. Without OpenAI, the letter still works.
+6. **Your location.** A typed address or ZIP, or your rounded location, is turned into a ZIP code using OpenStreetMap's free Nominatim service (no more than one request a second, as its rules ask). The same rounded location is used to ask iNaturalist which plants have been seen nearby. Neither is stored.
+7. **The letter.** The letter is built from the plan. OpenAI may only reword the opening paragraph, and its version is thrown away if it adds a plant or animal name, or changes a number. Without OpenAI, the letter still works.
 
 The invasive list is generated from the official FISC PDF by a script in `backend/scripts/`. The 22 natives and the "why it matters" lines are our own and still need checking against UF/IFAS before the demo.
 

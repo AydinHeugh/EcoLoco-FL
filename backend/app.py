@@ -1,14 +1,17 @@
+import logging
 import os
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 from services.ai_service import generate_letter, identify_plant
+from services.location_service import geocode, reverse_zip, round_coords, seen_near
 from services.plan_service import build_plan
 
 load_dotenv()
 
 app = Flask(__name__)
+log = logging.getLogger(__name__)
 CORS(app)
 
 
@@ -70,6 +73,46 @@ def plan():
     if not is_florida_zip(location):
         return jsonify({"error": FLORIDA_ONLY}), 400
     return jsonify({"result": build_plan(plants)})
+
+
+NOT_FOUND = "We couldn't find that place. Try your school's ZIP code."
+LOOKUP_DOWN = "Couldn't look up that place right now. Type your school's ZIP code instead."
+
+
+@app.route("/locate", methods=["POST"])
+def locate():
+    data = request.get_json() or {}
+    query = str(data.get("query") or "").strip()
+    try:
+        if "lat" in data or "lon" in data:
+            lat, lon = round_coords(data.get("lat"), data.get("lon"))
+            place = {"lat": lat, "lon": lon, "zip": reverse_zip(lat, lon)}
+        elif query:
+            place = geocode(query)
+        else:
+            return jsonify({"error": "query or lat and lon are required"}), 400
+    except ValueError:
+        return jsonify({"error": "lat and lon must be numbers"}), 400
+    except Exception as err:
+        log.warning("Place lookup failed (%s)", type(err).__name__)
+        if not (len(query) == 5 and query.isdigit()):
+            return jsonify({"error": LOOKUP_DOWN}), 503
+        place = {"lat": None, "lon": None, "zip": query}
+    if place is None or not place["zip"]:
+        return jsonify({"error": NOT_FOUND}), 400
+    if not is_florida_zip(place["zip"]):
+        return jsonify({"error": FLORIDA_ONLY}), 400
+    return jsonify({"result": place})
+
+
+@app.route("/nearby", methods=["POST"])
+def nearby():
+    data = request.get_json() or {}
+    try:
+        lat, lon = round_coords(data.get("lat"), data.get("lon"))
+    except ValueError:
+        return jsonify({"error": "lat and lon must be numbers"}), 400
+    return jsonify({"result": seen_near(lat, lon)})
 
 
 @app.route("/letter", methods=["POST"])

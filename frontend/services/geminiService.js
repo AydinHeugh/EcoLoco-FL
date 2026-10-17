@@ -35,6 +35,14 @@ export async function generateLetter(plan, zipCode) {
   return post('/letter', { plan, zip_code: zipCode });
 }
 
+export async function locate(place) {
+  return post('/locate', place);
+}
+
+export async function getNearby(lat, lon) {
+  return post('/nearby', { lat, lon });
+}
+
 export function userMessage(err, fallback) {
   return err?.status === 400 ? err.message : fallback;
 }

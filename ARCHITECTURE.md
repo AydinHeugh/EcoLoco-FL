@@ -54,12 +54,13 @@ and the answer comes back the same way.
 | `generateLetter()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
 | `getLocalPlants()` (frontend/services/plantService.js) | DEAD | Delete plantService.js — the backend route it called has been removed. |
 | `Flask app (app.py)` (backend/app.py) | change planned | Deploy to a public host before the demo (today: localhost with debug=True). |
-| `get_plant_requests()` (backend/services/inat_service.py) | DEAD | Nothing calls it since the confidence nudge was removed. Repurpose it (e.g. a 'seen near you' count) or delete inat_service.py. |
 | `get_status()` (backend/services/fl_plants_service.py) | change planned | Add ZIP-specific regional lists behind the same get_status(). |
 | `fisc_list.json` (backend/data/fisc_list.json) | change planned | Verify the 22 curated "why" lines against FISC / UF-IFAS before the demo. |
 | `fl_natives.json` (backend/data/fl_natives.json) | change planned | Verify every entry against UF/IFAS and the Atlas of Florida Plants before the demo. |
 | `fl_recommendations.json` (backend/data/fl_recommendations.json) | change planned | A teammate checks each plant is native to Palm Beach County in the USF Atlas and sets verified: true. Only verified plants are recommended, so the plan shows no Add cards until then. |
 | `getPlan()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
+| `locate()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
+| `getNearby()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
 <!-- /GENERATED:planned -->
 
 ## Diagram
@@ -83,6 +84,7 @@ flowchart LR
     ui_picker["CandidatePicker + StatusBadge"]
     ui_ring["PercentRing"]
     ui_plancard["PlanCard + SourceLine"]
+    ui_location["LocationPicker"]
   end
   subgraph L_device["Device"]
     direction TB
@@ -97,6 +99,8 @@ flowchart LR
     c_local["getLocalPlants()<br/>DEAD — Delete plantService.js — the backend route it called has been removed."]
     c_plan["getPlan()"]
     c_user_message["userMessage()"]
+    c_locate["locate()"]
+    c_nearby["getNearby()"]
   end
   subgraph L_route["Flask routes"]
     direction TB
@@ -105,10 +109,11 @@ flowchart LR
     r_recommend["POST /recommend"]
     r_letter["POST /letter"]
     r_plan["POST /plan"]
+    r_locate["POST /locate"]
+    r_nearby["POST /nearby"]
   end
   subgraph L_svc["Services"]
     direction TB
-    s_inat["get_plant_requests()<br/>DEAD — Nothing calls it since the confidence nudge was removed. Repurpose it (e.g. a 'seen near you' count) or delete inat_service.py."]
     s_identify["identify_plant()"]
     s_letter["generate_letter()"]
     s_fl["get_status()"]
@@ -122,6 +127,10 @@ flowchart LR
     s_plan["build_plan()"]
     s_guard["mentions_new_names()"]
     s_letter_facts["letter_facts()"]
+    s_round["round_coords()"]
+    s_geocode["geocode()"]
+    s_reverse["reverse_zip()"]
+    s_seen["seen_near()"]
   end
   subgraph L_data["Bundled data"]
     direction TB
@@ -135,10 +144,11 @@ flowchart LR
   end
   subgraph L_ext["External APIs"]
     direction TB
-    inat["iNaturalist API"]
     openai["OpenAI (gpt-4o-mini)"]
     usda["USDA PLANTS"]
     plantnet["PlantNet API"]
+    nominatim["Nominatim (OpenStreetMap)"]
+    inaturalist["iNaturalist API"]
   end
   app -->|"tab: Home"| home
   app -->|"tab: Identify"| ident
@@ -168,7 +178,6 @@ flowchart LR
   flask -->|"registers"| r_letter
   r_identify -->|"identify_plant(image, location)"| s_identify
   r_letter -->|"generate_letter(plan, zip_code)"| s_letter
-  s_inat -.->|"GET /v2/observations q=name → ≤100 points"| inat
   s_letter -->|"opening paragraph + plain-language system prompt → reworded paragraph"| openai
   s_fl -->|"match scientific_name"| d_fisc
   s_fl -->|"match scientific_name"| d_natives
@@ -217,6 +226,24 @@ flowchart LR
   s_plan -->|"why_this_matters lines"| d_why
   letter -->|"reportAi(ai_unavailable)"| ui_ai_unknown
   home -->|"navigate('EcoScan')"| audit
+  ident -->|"school location → ZIP"| ui_location
+  audit -->|"school location → ZIP"| ui_location
+  rec -->|"school location → ZIP"| ui_location
+  ui_location -->|"locate({lat, lon} or {query})"| c_locate
+  c_locate -->|"POST /locate"| r_locate
+  results -->|"getNearby(lat, lon)"| c_nearby
+  c_nearby -->|"POST /nearby {lat, lon}"| r_nearby
+  flask -->|"registers"| r_locate
+  flask -->|"registers"| r_nearby
+  r_locate -->|"round_coords(lat, lon)"| s_round
+  r_locate -->|"geocode(query)"| s_geocode
+  r_locate -->|"reverse_zip(lat, lon)"| s_reverse
+  r_nearby -->|"seen_near(lat, lon)"| s_seen
+  s_geocode -->|"search, 1 request per second"| nominatim
+  s_geocode -->|"no postcode → ZIP at the center"| s_reverse
+  s_reverse -->|"reverse, 1 request per second"| nominatim
+  s_seen -->|"research-grade plants within 5 km"| inaturalist
+  s_seen -->|"plant_option() → Florida status"| s_option
   classDef ui fill:#e3f2e1,stroke:#2e7d32,color:#12301a
   classDef device fill:#eceff1,stroke:#607d8b,color:#263238
   classDef client fill:#e1effa,stroke:#1e6fb8,color:#0d2d4d
@@ -226,13 +253,13 @@ flowchart LR
   classDef ext fill:#fde4e1,stroke:#c0392b,color:#4a0f08
   classDef planned stroke-dasharray:6 4,stroke-width:2px
   classDef dead fill:#f3f3f3,stroke:#9e9e9e,color:#616161,stroke-dasharray:3 3
-  class app,home,ident,rec,audit,results,ui_why,ui_receipt,letter,ui_multiphoto,ui_ai_unknown,ui_picker,ui_ring,ui_plancard ui
+  class app,home,ident,rec,audit,results,ui_why,ui_receipt,letter,ui_multiphoto,ui_ai_unknown,ui_picker,ui_ring,ui_plancard,ui_location ui
   class picker,clipboard device
-  class c_identify,c_rec,c_letter,c_local,c_plan,c_user_message client
-  class flask,r_identify,r_recommend,r_letter,r_plan route
-  class s_inat,s_identify,s_letter,s_fl,s_species,s_plantnet,s_usda,s_resolve,s_option,s_common_name,s_summary,s_plan,s_guard,s_letter_facts svc
+  class c_identify,c_rec,c_letter,c_local,c_plan,c_user_message,c_locate,c_nearby client
+  class flask,r_identify,r_recommend,r_letter,r_plan,r_locate,r_nearby route
+  class s_identify,s_letter,s_fl,s_species,s_plantnet,s_usda,s_resolve,s_option,s_common_name,s_summary,s_plan,s_guard,s_letter_facts,s_round,s_geocode,s_reverse,s_seen svc
   class d_fisc,d_natives,fisc_builder,d_recs,d_nwf,d_terms,d_why data
-  class inat,openai,usda,plantnet ext
-  class c_local,s_inat dead
+  class openai,usda,plantnet,nominatim,inaturalist ext
+  class c_local dead
 ```
 <!-- /GENERATED:mermaid -->

@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useFonts } from 'expo-font';
-import { getPlan, generateLetter, userMessage } from '../services/geminiService';
+import { getPlan, getNearby, generateLetter, userMessage } from '../services/geminiService';
 import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS } from '../theme';
 import StatusBadge from '../components/StatusBadge';
 import PercentRing from '../components/PercentRing';
@@ -77,10 +77,11 @@ function LetterGenerator({ plan, zipCode }) {
 }
 
 export default function AuditResultsScreen({ route, navigation }) {
-  const { plants = [], zipCode } = route.params ?? {};
+  const { plants = [], zipCode, lat, lon } = route.params ?? {};
   const [plan,    setPlan]    = useState(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState(null);
+  const [nearby,  setNearby]  = useState([]);
 
   const { width } = useWindowDimensions();
   const maxWidth   = Math.min(width, 960);
@@ -91,6 +92,9 @@ export default function AuditResultsScreen({ route, navigation }) {
       .then(data => setPlan(data.result))
       .catch(err => setError(userMessage(err, 'Could not check your plants. Check your connection and try again.')))
       .finally(() => setLoading(false));
+    if (lat != null && lon != null) {
+      getNearby(lat, lon).then(data => setNearby(data.result)).catch(() => setNearby([]));
+    }
   }, []);
 
   if (!fontsLoaded) return <View style={styles.container} />;
@@ -183,6 +187,26 @@ export default function AuditResultsScreen({ route, navigation }) {
             </View>
 
             <View style={styles.divider} />
+
+            {nearby.length > 0 && (
+              <>
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Seen near you</Text>
+                  <Text style={styles.sectionNote}>Plants people photographed within about 5 km of your school, checked by other iNaturalist users.</Text>
+                  {nearby.map((p, i) => (
+                    <View key={i} style={styles.plantRow}>
+                      <View style={styles.plantHead}>
+                        <Text style={styles.plantName}>{p.plant_name}</Text>
+                        <StatusBadge status={p.status} label={p.status_label} />
+                      </View>
+                      <Text style={styles.plantWhy}>Seen {p.count} {p.count === 1 ? 'time' : 'times'} nearby</Text>
+                    </View>
+                  ))}
+                  <SourceLine source={{ name: 'iNaturalist', url: 'https://www.inaturalist.org' }} />
+                </View>
+                <View style={styles.divider} />
+              </>
+            )}
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Why this matters</Text>
