@@ -144,3 +144,9 @@ def test_non_florida_zip_is_rejected(client, route, body, zip_code):
                                                 ("32003", False), ("34998", False), ("10001", False), ("", False)])
 def test_is_florida_zip(zip_code, expected):
     assert app_module.is_florida_zip(zip_code) is expected
+
+
+def test_plan_includes_why_this_matters(client):
+    result = client.post("/plan", json={"location": "33496", "plants": []}).get_json()["result"]
+    assert 1 <= len(result["why_this_matters"]) <= 4
+    assert all(line["source"]["url"].startswith("https://") for line in result["why_this_matters"])

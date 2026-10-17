@@ -20,6 +20,7 @@ import { identifyPlant, userMessage } from '../services/geminiService';
 import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS } from '../theme';
 import StatusBadge from '../components/StatusBadge';
 import CandidatePicker, { NO_MATCH_TEXT } from '../components/CandidatePicker';
+import SourceLine from '../components/SourceLine';
 
 
 const EASE_OUT = Easing.bezier(0.22, 1, 0.36, 1);
@@ -331,6 +332,23 @@ export default function IdentificationScreen({ navigation }) {
               </View>
             )}
 
+            {shown && (shown.why || shown.helps || shown.watch_out || shown.removal_safety) && (
+              <View style={styles.facts}>
+                {[
+                  shown.why && { label: 'Why it matters', text: shown.why, source: { name: shown.source_label } },
+                  shown.helps && { label: 'Helps', text: shown.helps.text, source: shown.helps.source },
+                  ...(shown.watch_out ?? []).map(w => ({ label: 'Watch out', text: w.text, source: w.source })),
+                  shown.removal_safety && { label: 'Removing it safely', text: shown.removal_safety.text, source: shown.removal_safety.source },
+                ].filter(Boolean).map((fact, i) => (
+                  <View key={i} style={styles.fact}>
+                    <Text style={styles.factLabel}>{fact.label}</Text>
+                    <Text style={styles.factText}>{fact.text}</Text>
+                    <SourceLine source={fact.source} />
+                  </View>
+                ))}
+              </View>
+            )}
+
             {/* Navigate to full recommendations */}
             {zipCode?.length === 5 && (
               <TouchableOpacity
@@ -426,6 +444,10 @@ const styles = StyleSheet.create({
   identifyBtnDisabled: { opacity: 0.4 },
   identifyBtnText: { fontSize: 15, fontFamily: FONTS.bodyBold, color: COLORS.cream },
 
+  facts: { marginTop: 14, gap: 12 },
+  fact: { gap: 2 },
+  factLabel: { fontSize: 11, fontFamily: FONTS.bodyBold, color: COLORS.textMuted, letterSpacing: 0.5 },
+  factText: { fontSize: 14, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: 20 },
   noData: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 6 },
   errorText: { color: COLORS.error, fontSize: 13, fontFamily: FONTS.body, marginHorizontal: 20, marginTop: 8 },
 

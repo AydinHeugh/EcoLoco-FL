@@ -181,6 +181,18 @@ export default function AuditResultsScreen({ route, navigation }) {
 
             <View style={styles.divider} />
 
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Why this matters</Text>
+              {plan.why_this_matters.map((line, i) => (
+                <View key={i} style={styles.whyLine}>
+                  <Text style={styles.plantWhy}>{line.text}</Text>
+                  <SourceLine source={line.source} />
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.divider} />
+
             <LetterGenerator plan={plan} zipCode={zipCode} />
 
             <View style={styles.ctaSection}>
@@ -226,6 +238,7 @@ const styles = StyleSheet.create({
   plantRow:  { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.lightBg, gap: 4 },
   plantHead: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   plantName: { fontSize: 15, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, flexShrink: 1 },
+  whyLine:   { paddingVertical: 6 },
   plantWhy:  { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: 19 },
 
   countRow:   { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 16, marginTop: 12 },

@@ -20,7 +20,7 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 - When the photo is too unclear to match anything, "Couldn't identify this. Try a close-up of one leaf, or a flower" instead of a guess
 - Whether it's Native, Non-native, Invasive, or "Unknown: not on Florida lists"
 - Where that verdict came from: the Florida invasive species list, our list of Florida natives, or the USDA plant database. The AI never decides this; if none of them know the plant, it stays unknown
-- One line on why it matters (for example, coontie is the only plant the Atala butterfly can lay its eggs on)
+- One line on why it matters (for example, coontie is the only plant the Atala butterfly can lay its eggs on), with where that line came from in small text underneath
 - For plants in our data: which animals it helps and what to watch out for (for example, coontie seeds are poisonous to pets), each with its source
 - For invasive plants: how to remove them safely (Brazilian pepper is in the poison ivy family, so an adult should do the cutting)
 
@@ -32,6 +32,7 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 - Plants the app couldn't identify are still listed, but they aren't counted in the percent
 - A plan: a "Remove" card for each invasive plant found, with a safety note and a native plant to replace it, and "Add" cards for native plants that fill gaps on your campus. Each card shows what the plant helps, where it grows, what to ask for at the nursery (and look-alikes to avoid), what to watch out for, and questions to look into, each fact with its source
 - A link to plantrealflorida.org to find a native plant nursery
+- A short "Why this matters" section: four facts about native plants, birds, water and flooding, each with its source
 - An editable letter to your principal listing the plants to remove and add, how to buy them, safety notes, the percent native now and with the plan, and sources
 
 
@@ -108,5 +109,5 @@ You'll need Node.js, Python 3, an OpenAI API key, and a free PlantNet API key fr
 
 ## Where things stand
 
-- Done: Florida plant lists drive the native/invasive verdict, every verdict comes with its source and a "why it matters" line, plants are identified by PlantNet with OpenAI as a backup, the full FISC invasive list and a USDA check are in place, scans keep working when OpenAI is down, unsure matches are confirmed by the user instead of guessed, results credit Pl@ntNet, and the backend has automated tests.
-- Next: let the app send several photos of one plant, show the source and "why it matters" in the app, show a notice when the AI part was unavailable, check each recommended plant in the USF Atlas and mark it verified, double-check the plant lists against official sources, and put the backend online so the app works away from our computers.
+- Done: Florida plant lists drive the native/invasive verdict, every verdict comes with its source and a "why it matters" line, plants are identified by PlantNet with OpenAI as a backup, the full FISC invasive list and a USDA check are in place, scans keep working when OpenAI is down, unsure matches are confirmed by the user instead of guessed, every fact in the app shows its source, results credit Pl@ntNet, and the backend has automated tests.
+- Next: let the app send several photos of one plant, show a notice when the AI part was unavailable, check each recommended plant in the USF Atlas and mark it verified, double-check the plant lists against official sources, and put the backend online so the app works away from our computers.

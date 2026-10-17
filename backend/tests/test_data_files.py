@@ -140,3 +140,12 @@ def test_merge_leaves_removal_safety_out_when_not_curated():
                  "fisc_category": "I", "zones": "C, S"}]
     merged, _ = merge(official, [])
     assert "removal_safety" not in merged[0]
+
+
+WHY = _load("why_this_matters.json")["lines"]
+
+
+def test_why_this_matters_is_short_and_sourced():
+    assert 1 <= len(WHY) <= 4
+    assert all(_sourced(line) for line in WHY)
+    assert all(not [w for w in BANNED if w in line["text"].lower()] for line in WHY)

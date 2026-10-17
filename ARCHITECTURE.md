@@ -49,8 +49,6 @@ and the answer comes back the same way.
 <!-- GENERATED:planned -->
 | Item | Status | Goal |
 |---|---|---|
-| `'Why it matters' line` | PLANNED | Priority 4: show the why line and its source on the Identify screen, and the 4-line "Why this matters" section on the results screen. |
-| `Source receipt badge` | PLANNED | Show where each native/invasive verdict came from. The backend already returns `source` (FISC, fl_natives, USDA or unknown); only the UI is missing. |
 | `identifyPlant()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
 | `getPlantRecommendations()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
 | `generateLetter()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
@@ -79,8 +77,8 @@ flowchart LR
     rec["RecommendationScreen"]
     audit["AuditScreen (EcoScan)"]
     results["AuditResultsScreen"]
-    ui_why["'Why it matters' line<br/>PLANNED — goal: Priority 4: show the why line and its source on the Identify screen, and the 4-line #quot;Why this matters#quot; section on the results screen."]
-    ui_receipt["Source receipt badge<br/>PLANNED — goal: Show where each native/invasive verdict came from. The backend already returns `source` (FISC, fl_natives, USDA or unknown); only the UI is missing."]
+    ui_why["Sourced facts on Identify"]
+    ui_receipt["SourceLine"]
     letter["LetterGenerator"]
     ui_multiphoto["Multi-photo upload<br/>PLANNED — goal: Let users send 1–5 photos of one plant as `images` (Priority 6). The confirm picker already shipped."]
     ui_ai_unknown["AI-unavailable notice<br/>PLANNED — goal: Show a short notice when a scan, recommendation list or letter has `ai_unavailable: true`. Unknown wildlife values and statuses are already labelled #quot;Unknown#quot;."]
@@ -135,6 +133,7 @@ flowchart LR
     d_recs["fl_recommendations.json"]
     d_nwf["nwf_keystone_fl.json"]
     d_terms["nature_terms.json"]
+    d_why["why_this_matters.json"]
   end
   subgraph L_ext["External APIs"]
     direction TB
@@ -157,10 +156,8 @@ flowchart LR
   ident -->|"launchCamera / launchImageLibrary → {uri, base64}"| picker
   audit -->|"launchCamera / launchImageLibrary → {uri, base64}"| picker
   letter -->|"setStringAsync(editedLetter)"| clipboard
-  ident -.->|"renders result.why"| ui_why
-  rec -.->|"renders item.why"| ui_why
-  ident -.->|"renders result.source"| ui_receipt
-  audit -.->|"renders plant.source"| ui_receipt
+  ident -->|"renders why, helps, watch_out, removal_safety"| ui_why
+  ident -->|"Source: … under each fact"| ui_receipt
   ident -->|"identifyPlant(photo.base64, zipCode)"| c_identify
   audit -->|"identifyPlant(photo.base64, zipCode) per scan"| c_identify
   rec -->|"getPlantRecommendations(zip)"| c_rec
@@ -217,6 +214,9 @@ flowchart LR
   results -->|"Remove and Add cards"| ui_plancard
   rec -->|"Add cards"| ui_plancard
   results -->|"error text"| c_user_message
+  results -->|"Source: … under each fact"| ui_receipt
+  ui_plancard -->|"Source: … under each row"| ui_receipt
+  s_plan -->|"why_this_matters lines"| d_why
   classDef ui fill:#e3f2e1,stroke:#2e7d32,color:#12301a
   classDef device fill:#eceff1,stroke:#607d8b,color:#263238
   classDef client fill:#e1effa,stroke:#1e6fb8,color:#0d2d4d
@@ -231,9 +231,9 @@ flowchart LR
   class c_identify,c_rec,c_letter,c_local,c_plan,c_user_message client
   class flask,r_identify,r_recommend,r_letter,r_plan route
   class s_inat,s_identify,s_letter,s_fl,s_species,s_plantnet,s_usda,s_resolve,s_option,s_common_name,s_summary,s_plan,s_guard,s_letter_facts svc
-  class d_fisc,d_natives,fisc_builder,d_recs,d_nwf,d_terms data
+  class d_fisc,d_natives,fisc_builder,d_recs,d_nwf,d_terms,d_why data
   class inat,openai,usda,plantnet ext
-  class ui_why,ui_receipt,ui_multiphoto,ui_ai_unknown planned
+  class ui_multiphoto,ui_ai_unknown planned
   class c_local,s_inat dead
 ```
 <!-- /GENERATED:mermaid -->

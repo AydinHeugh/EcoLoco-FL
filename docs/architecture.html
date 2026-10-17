@@ -249,41 +249,39 @@
         "Your plan: a Remove `PlanCard` for each invasive (why, safety, replacement), then Add cards, then a link to plantrealflorida.org.",
         "What your campus supports now: every plant with its status and one sourced line, or \"We don't have wildlife info for this plant yet\".",
         "How native is your campus: `PercentRing` now and with the plan (or \"Not enough identified plants yet\") and counts for the four groups.",
+        "Why this matters: up to 4 short lines from `why_this_matters.json`, each with its source.",
         "`LetterGenerator` writes the letter from the plan. Errors show as text."
       ]
     },
     {
       "id": "ui_why",
-      "label": "'Why it matters' line",
+      "label": "Sourced facts on Identify",
       "layer": "ui",
-      "status": "planned",
-      "file": null,
-      "symbol": null,
+      "status": "live",
+      "file": "frontend/screens/IdentificationScreen.js",
+      "symbol": "label: 'Why it matters'",
       "col": 2,
       "row": 0.8,
-      "goal": "Priority 4: show the why line and its source on the Identify screen, and the 4-line \"Why this matters\" section on the results screen.",
-      "what": "A single sentence under each plant name saying why this plant matters in South Florida.",
+      "what": "Under an identified plant, the facts we have about it, each followed by where it came from.",
       "how": [
-        "Read `result.why` from /identify and `why` from each /recommend item.",
-        "Show it under the plant name on IdentificationScreen and on each recommendation card.",
-        "Examples: Brazilian pepper → crowds out Everglades natives; coontie → only host plant of the Atala butterfly."
+        "\"Why it matters\": the plant's `why` line with its `source_label` (FISC list, our natives list or USDA).",
+        "\"Helps\" and \"Watch out\" from `fl_recommendations.json`, and \"Removing it safely\" for invasives, each with its source link.",
+        "If we have none of these, the card says \"We don't have wildlife info for this plant yet\"."
       ]
     },
     {
       "id": "ui_receipt",
-      "label": "Source receipt badge",
+      "label": "SourceLine",
       "layer": "ui",
-      "status": "planned",
-      "file": null,
-      "symbol": null,
+      "status": "live",
+      "file": "frontend/components/SourceLine.js",
+      "symbol": "export default function SourceLine",
       "col": 2,
       "row": 2,
-      "goal": "Show where each native/invasive verdict came from. The backend already returns `source` (FISC, fl_natives, USDA or unknown); only the UI is missing.",
-      "what": "A small badge next to the native/invasive verdict that cites its source.",
+      "what": "The small \"Source: …\" line shown under every fact in the app.",
       "how": [
-        "Read `result.source` from /identify.",
-        "Show it next to the status badge on IdentificationScreen and on each AuditScreen card.",
-        "If `source` is 'unknown', label the verdict 'unverified (AI guess)' instead of presenting it as fact."
+        "Shows \"Source: name\" in small text.",
+        "When the source has a link, tapping it opens the page."
       ]
     },
     {
@@ -913,7 +911,7 @@
         "Ranks verified plants from `fl_recommendations.json`: gaps filled + 2 if it replaces an invasive found + 0.5 if its group is on the NWF list; easy plants first on ties.",
         "Picks one replacement per invasive, then gap fillers, up to 5 Add cards; the first 3 have at most 1 tree and at least 1 easy plant.",
         "Add cards say why they were picked and their effect: \"Oaks feed 395 kinds of caterpillars here.\" for NWF groups, otherwise the percent-native change. Counts are never added up.",
-        "Returns `{remove, add, gaps, summary}`."
+        "Returns `{remove, add, gaps, summary, why_this_matters}`."
       ]
     },
     {
@@ -1011,6 +1009,21 @@
         "Shows 2 rows and a \"More\" button for the rest.",
         "`SourceLine` (frontend/components/SourceLine.js) shows \"Source: …\" in small text and opens the link."
       ]
+    },
+    {
+      "id": "d_why",
+      "label": "why_this_matters.json",
+      "layer": "data",
+      "status": "live",
+      "file": "backend/data/why_this_matters.json",
+      "symbol": null,
+      "col": 8,
+      "row": 6.6,
+      "what": "The 4 short \"Why this matters\" lines on the results screen, each with a checked source.",
+      "how": [
+        "Birds and insects (National Wildlife Federation), fertilizer and algae blooms (UF/IFAS), invasive plants and flood control (South Florida Water Management District), and the chickadee study (Narango et al., 2018).",
+        "`build_plan()` returns them as `why_this_matters`."
+      ]
     }
   ],
   "edges": [
@@ -1088,26 +1101,12 @@
     {
       "from": "ident",
       "to": "ui_why",
-      "label": "renders result.why",
-      "status": "planned"
-    },
-    {
-      "from": "rec",
-      "to": "ui_why",
-      "label": "renders item.why",
-      "status": "planned"
+      "label": "renders why, helps, watch_out, removal_safety"
     },
     {
       "from": "ident",
       "to": "ui_receipt",
-      "label": "renders result.source",
-      "status": "planned"
-    },
-    {
-      "from": "audit",
-      "to": "ui_receipt",
-      "label": "renders plant.source",
-      "status": "planned"
+      "label": "Source: … under each fact"
     },
     {
       "from": "ident",
@@ -1399,6 +1398,21 @@
       "from": "results",
       "to": "c_user_message",
       "label": "error text"
+    },
+    {
+      "from": "results",
+      "to": "ui_receipt",
+      "label": "Source: … under each fact"
+    },
+    {
+      "from": "ui_plancard",
+      "to": "ui_receipt",
+      "label": "Source: … under each row"
+    },
+    {
+      "from": "s_plan",
+      "to": "d_why",
+      "label": "why_this_matters lines"
     }
   ]
 }

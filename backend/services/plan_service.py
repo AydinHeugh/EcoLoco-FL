@@ -149,4 +149,5 @@ def build_plan(plants):
             del card["effect"]
         add.append(card)
 
-    return {"remove": remove, "add": add, "gaps": sorted(gaps), "summary": summarize(plants, added_natives=fillers)}
+    return {"remove": remove, "add": add, "gaps": sorted(gaps), "summary": summarize(plants, added_natives=fillers),
+            "why_this_matters": _load("why_this_matters.json")["lines"]}
