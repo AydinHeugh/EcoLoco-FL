@@ -115,12 +115,25 @@ def test_recommendations_drop_invasives_and_add_source_and_why(monkeypatch):
     assert recs[1]["source"] == "unknown" and recs[1]["why"] is None
 
 
+SUMMARY = {"percent_native": 50, "percent_native_with_plan": 75}
+
+
 def test_generate_letter_still_works(monkeypatch):
     monkeypatch.setattr(openai_client, "chat", lambda content, json_reply=False: "They feed bees.")
-    letter = ai_service.generate_letter(["Coontie", "Firebush"], 42, ZIP)
+    letter = ai_service.generate_letter(["Coontie", "Firebush"], SUMMARY, ZIP)
     assert "Coontie and Firebush" in letter
     assert "They feed bees." in letter
-    assert "42 out of 100" in letter
+    assert "Of the plants we checked, 50% are native to Florida." in letter
+    assert letter.count("Right now") <= 1
+    assert "it would be 75%" in letter
+    assert "out of 100" not in letter
+    assert "score" not in letter.lower()
+
+
+def test_letter_without_percentages_says_so():
+    letter = ai_service.generate_letter_without_ai(["Coontie"], {"percent_native": None, "percent_native_with_plan": None}, ZIP)
+    assert "We couldn't identify enough plants to give a percentage yet." in letter
+    assert "None%" not in letter
 
 
 def test_identify_plant_exposes_id_source_and_state(model):
@@ -220,14 +233,14 @@ def test_fallback_recommendations_come_from_natives():
 
 
 def test_letter_without_ai_uses_why_lines():
-    letter = ai_service.generate_letter_without_ai(["Coontie", "Firebush"], 42, ZIP)
+    letter = ai_service.generate_letter_without_ai(["Coontie", "Firebush"], SUMMARY, ZIP)
     assert "Coontie and Firebush" in letter
     assert "Atala" in letter
-    assert "42 out of 100" in letter
+    assert "50%" in letter
 
 
 def test_letter_without_ai_unknown_plants_uses_generic_sentence():
-    letter = ai_service.generate_letter_without_ai(["Mystery plant"], 42, ZIP)
+    letter = ai_service.generate_letter_without_ai(["Mystery plant"], SUMMARY, ZIP)
     assert "Mystery plant" in letter
     assert "food and shelter" in letter
 

@@ -15,8 +15,8 @@ export async function identifyPlant(imageData, location) {
   return parseResponse(res);
 }
 
-export async function getScore(plants) {
-  const res = await fetch(`${API_URL}/score`, {
+export async function getSummary(plants) {
+  const res = await fetch(`${API_URL}/summary`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ plants }),
@@ -33,11 +33,11 @@ export async function getPlantRecommendations(location) {
   return parseResponse(res);
 }
 
-export async function generateLetter(plantNames, score, zipCode) {
+export async function generateLetter(plantNames, summary, zipCode) {
   const res = await fetch(`${API_URL}/letter`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ plant_names: plantNames, score, zip_code: zipCode }),
+    body: JSON.stringify({ plant_names: plantNames, summary, zip_code: zipCode }),
   });
   return parseResponse(res);
 }

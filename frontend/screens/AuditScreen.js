@@ -237,7 +237,7 @@ export default function AuditScreen({ navigation }) {
         <View style={styles.titleSection}>
           <Text style={styles.pageTitle}>EcoScan</Text>
           <Text style={styles.pageSubtitle}>
-            Scan plants around campus to calculate your school's biodiversity score and discover how to improve it.
+            Scan the plants around campus to see how many are native to Florida, and what to change.
           </Text>
         </View>
 

@@ -241,17 +241,15 @@
       "symbol": "async function fetchAll",
       "col": 1,
       "row": 6,
-      "what": "Turns the scanned plants into a biodiversity score, the top fixes, and a letter to the principal.",
+      "what": "Shows what's on campus by Florida status, the percent that is native now and with the plan, native plants to add, and a letter to the principal.",
       "how": [
         "Receives `plants[]` and `zipCode` from AuditScreen via route params.",
-        "`fetchAll()` maps each plant to `{name, status, wildlife_support}` and calls `getScore()`.",
-        "Then, if there's a ZIP, calls `getPlantRecommendations(zipCode)`.",
-        "Shows a score ring that counts up, the plants grouped as Native, Non-native (not harmful), Invasive and Unknown, and the insight sentence.",
-        "Projected score: the screen recomputes it itself as score + a boost per top-3 recommendation (high 8, medium 6, low 5, max 100). It only uses the backend's `projected_score` while recommendations are still loading.",
-        "Hovering an action card previews that one card's boost; a Current/Projected toggle swaps the ring and shows the `BeforeAfterPill` (old → new, +N pts).",
-        "Renders `LetterGenerator` with the recommendations, score and ZIP.",
-        "'See all recommendations' → Recommend tab with `prefillZip`.",
-        "Recommendation pills show \"? Unknown\" for wildlife values other than high/medium/low."
+        "`fetchAll()` sends each plant's scientific name and name to `getSummary()`, then, if there's a ZIP, calls `getPlantRecommendations(zipCode)`.",
+        "Shows `PercentRing` (now and with the plan), or \"Not enough identified plants yet\" when nothing has a known status.",
+        "Shows counts for Native, Non-native (not harmful), Invasive and Unknown, and a note that unknown plants aren't in the percentage.",
+        "Lists every plant under its status with the shared `StatusBadge`; unknown plants stay visible.",
+        "Lists native plants to add (top 3, more on request) and renders `LetterGenerator` with them and the summary.",
+        "Errors show as text on the screen, not pop-ups."
       ]
     },
     {
@@ -305,23 +303,6 @@
       ]
     },
     {
-      "id": "ui_jump",
-      "label": "Before → after score jump",
-      "layer": "ui",
-      "status": "planned",
-      "file": null,
-      "symbol": null,
-      "col": 2,
-      "row": 5,
-      "goal": "Make score → projected_score the headline jump. Mostly built already (toggle + BeforeAfterPill); remaining: lead with it, and use one source of truth for projected_score (the screen recomputes it today).",
-      "what": "Show the current score jumping to the projected score as the main payoff of an audit.",
-      "how": [
-        "Reuse `ScoreRing` and `BeforeAfterPill` from AuditResultsScreen.",
-        "Animate once from `score` to `projected_score` when results load, instead of hiding it behind a toggle.",
-        "Pick one formula: either trust the backend's `projected_score` or move the screen's per-recommendation boost into score_service."
-      ]
-    },
-    {
       "id": "letter",
       "label": "LetterGenerator",
       "layer": "ui",
@@ -333,9 +314,10 @@
       "what": "Drafts an editable letter to the school admin asking to plant the recommended natives.",
       "how": [
         "The top 3 recommendations are pre-selected; tapping a plant toggles it and clears any old letter.",
-        "`handleGenerate()` collects the selected plant names and calls `generateLetter(plantNames, score, zipCode)`.",
+        "`handleGenerate()` collects the selected plant names and calls `generateLetter(plantNames, summary, zipCode)`.",
         "Shows the letter in an editable text box with [PRINCIPAL_NAME], [SCHOOL_NAME] and [STUDENT_NAME] placeholders.",
-        "Copy writes the edited text with `Clipboard.setStringAsync` and shows 'Copied' for 2 seconds."
+        "Copy writes the edited text with `Clipboard.setStringAsync` and shows 'Copied' for 2 seconds.",
+        "If the letter can't be written, an error shows as text under the button."
       ]
     },
     {
@@ -386,22 +368,6 @@
       ]
     },
     {
-      "id": "c_score",
-      "label": "getScore()",
-      "layer": "client",
-      "status": "live",
-      "file": "frontend/services/geminiService.js",
-      "symbol": "export async function getScore",
-      "col": 3,
-      "row": 4.8,
-      "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
-      "what": "Sends the audited plants to the backend and gets the biodiversity score back.",
-      "how": [
-        "POSTs `{plants: [{name, invasive_status, wildlife_support}]}` to `/score`.",
-        "Throws on non-OK responses; returns `{result: {score, projected_score, breakdown, insight, bonuses_applied, plant_count}}`."
-      ]
-    },
-    {
       "id": "c_letter",
       "label": "generateLetter()",
       "layer": "client",
@@ -413,7 +379,7 @@
       "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
       "what": "Asks the backend to write the letter to the school admin.",
       "how": [
-        "POSTs `{plant_names, score, zip_code}` to `/letter`.",
+        "POSTs `{plant_names, summary, zip_code}` to `/letter`.",
         "Throws on non-OK responses; returns `{result: 'letter text'}`."
       ]
     },
@@ -486,21 +452,6 @@
       ]
     },
     {
-      "id": "r_score",
-      "label": "POST /score",
-      "layer": "route",
-      "status": "live",
-      "file": "backend/app.py",
-      "symbol": "def score(",
-      "col": 4,
-      "row": 4.8,
-      "what": "API endpoint for the biodiversity score.",
-      "how": [
-        "Reads `plants`; 400 if missing or empty.",
-        "Calls `calculate_biodiversity_score(plants)` and returns `{result}`."
-      ]
-    },
-    {
       "id": "r_letter",
       "label": "POST /letter",
       "layer": "route",
@@ -511,7 +462,7 @@
       "row": 6.4,
       "what": "API endpoint for the letter to the school admin.",
       "how": [
-        "Reads `plant_names`, `score`, `zip_code`; 400 if any is missing (a score of 0 is allowed).",
+        "Reads `plant_names`, `summary` and `zip_code`; 400 if any is missing or `summary` isn't an object.",
         "Calls `generate_letter(...)`; if OpenAI is unavailable, uses `generate_letter_without_ai(...)` instead.",
         "Returns `{result: letter text, ai_unavailable}`."
       ]
@@ -572,24 +523,6 @@
       ]
     },
     {
-      "id": "s_score",
-      "label": "calculate_biodiversity_score()",
-      "layer": "svc",
-      "status": "live",
-      "file": "backend/services/score_service.py",
-      "symbol": "def calculate_biodiversity_score(",
-      "col": 5,
-      "row": 4.8,
-      "what": "Turns a list of plants into a 0–100 biodiversity score, with no network or AI involved.",
-      "how": [
-        "Each plant gets base points from status + wildlife support: native high 88–95, medium 70–80, low 50–62; non-native 25–35; invasive 0–12; unknown 15. Where it lands in the range comes from a hash of the plant's name, so the same plant always scores the same.",
-        "Averages those points.",
-        "Bonuses and penalties: +5 if over 60% native, +3 for 5+ different natives, −3 per invasive, −1 per unknown. Clamped to 0–100.",
-        "`projected_score` = score + three 'action boosts' of 5–8 points each (also from a hash), max 100.",
-        "Sorts plants into helping / hurting / unidentified (non-natives with high support count as helping) and picks an insight sentence by score band and whether invasives are present."
-      ]
-    },
-    {
       "id": "s_letter",
       "label": "generate_letter()",
       "layer": "svc",
@@ -602,7 +535,7 @@
       "how": [
         "Joins the plant names naturally ('A', 'A and B', 'A, B, and C').",
         "One `openai_client.chat()` call writes only 1–2 sentences about which wildlife those plants support in the ZIP; if that fails, the route uses `generate_letter_without_ai` instead.",
-        "Drops that into a fixed template with the score and ZIP and the [PRINCIPAL_NAME], [SCHOOL_NAME], [STUDENT_NAME] placeholders.",
+        "Drops that into a fixed template with the ZIP, the [PRINCIPAL_NAME], [SCHOOL_NAME], [STUDENT_NAME] placeholders, and \"Of the plants we checked, X% are native to Florida. With these changes, it would be Y%.\" (or \"We couldn't identify enough plants to give a percentage yet.\").",
         "Returns the letter as plain text."
       ]
     },
@@ -963,6 +896,71 @@
         "Resolves the name with `resolve()`.",
         "Returns the first `common_name` our lists have for that species, or `None`."
       ]
+    },
+    {
+      "id": "s_summary",
+      "label": "summarize()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/summary_service.py",
+      "symbol": "def summarize(",
+      "col": 5,
+      "row": 4.8,
+      "what": "Counts the scanned plants by Florida status and works out the share that is native, now and with the plan. It replaced the old 0–100 score.",
+      "how": [
+        "Runs each plant's scientific name through `plant_option()`, so status comes from FISC, our natives list or USDA, never from the name the student typed or the AI.",
+        "Counts `native`, `non_native`, `invasive` and `unknown`. An empty name counts as unknown.",
+        "`percent_native` = natives ÷ plants with a known status, rounded; `None` when no plant has a known status.",
+        "`percent_native_with_plan` = (natives + invasives replaced + `added_natives`) ÷ (known plants + `added_natives`).",
+        "Returns `{counts, known, plant_count, percent_native, percent_native_with_plan, plants}`; `plants` lists each one with its name, status label, `why` and source label, unknowns included."
+      ]
+    },
+    {
+      "id": "r_summary",
+      "label": "POST /summary",
+      "layer": "route",
+      "status": "live",
+      "file": "backend/app.py",
+      "symbol": "def summary(",
+      "col": 4,
+      "row": 4.8,
+      "what": "API endpoint for the campus summary.",
+      "how": [
+        "Reads `plants`; 400 \"plants list is required\" if missing or empty.",
+        "Calls `summarize(plants)` and returns `{result}`."
+      ]
+    },
+    {
+      "id": "c_summary",
+      "label": "getSummary()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/services/geminiService.js",
+      "symbol": "export async function getSummary",
+      "col": 3,
+      "row": 4.8,
+      "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
+      "what": "Sends the audited plants to the backend and gets the counts and percent native back.",
+      "how": [
+        "POSTs `{plants: [{scientific_name, plant_name}]}` to `/summary`.",
+        "Throws on non-OK responses; returns `{result: {counts, known, plant_count, percent_native, percent_native_with_plan, plants}}`."
+      ]
+    },
+    {
+      "id": "ui_ring",
+      "label": "PercentRing",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/PercentRing.js",
+      "symbol": "export default function PercentRing",
+      "col": 2,
+      "row": 5,
+      "what": "Shows the share of plants that are native, now and with the plan, as a ring of dots.",
+      "how": [
+        "Draws 40 dots in a circle with plain Views (no chart library).",
+        "Dark green dots = native now; light green = what the plan adds; grey = the rest. There is no target marker.",
+        "A legend underneath spells out both numbers."
+      ]
     }
   ],
   "edges": [
@@ -1020,7 +1018,7 @@
     {
       "from": "results",
       "to": "letter",
-      "label": "renders LetterGenerator {recs, score, zipCode}"
+      "label": "renders LetterGenerator {recs, summary, zipCode}"
     },
     {
       "from": "ident",
@@ -1062,12 +1060,6 @@
       "status": "planned"
     },
     {
-      "from": "results",
-      "to": "ui_jump",
-      "label": "score → projected_score",
-      "status": "planned"
-    },
-    {
       "from": "ident",
       "to": "c_identify",
       "label": "identifyPlant(photo.base64, zipCode)"
@@ -1089,14 +1081,9 @@
       "label": "getPlantRecommendations(zipCode)"
     },
     {
-      "from": "results",
-      "to": "c_score",
-      "label": "getScore([{name, invasive_status, wildlife_support}])"
-    },
-    {
       "from": "letter",
       "to": "c_letter",
-      "label": "generateLetter(plantNames[], score, zipCode)"
+      "label": "generateLetter(plantNames[], summary, zipCode)"
     },
     {
       "from": "c_identify",
@@ -1111,15 +1098,9 @@
       "detail": "Returns {result: [up to 11 × {plant_name, scientific_name, wildlife_support, problem/action/impact or benefit, source, why}]}. FISC-listed invasives are dropped. Also returns ai_unavailable: true when the list came from the bundled natives because OpenAI was down."
     },
     {
-      "from": "c_score",
-      "to": "r_score",
-      "label": "POST /score {plants}",
-      "detail": "Returns {result: score, projected_score, breakdown{helping, hurting, unidentified}, insight, bonuses_applied, plant_count}."
-    },
-    {
       "from": "c_letter",
       "to": "r_letter",
-      "label": "POST /letter {plant_names, score, zip_code}",
+      "label": "POST /letter {plant_names, summary, zip_code}",
       "detail": "Returns {result: letter text, ai_unavailable}."
     },
     {
@@ -1130,11 +1111,6 @@
     {
       "from": "flask",
       "to": "r_recommend",
-      "label": "registers"
-    },
-    {
-      "from": "flask",
-      "to": "r_score",
       "label": "registers"
     },
     {
@@ -1153,14 +1129,9 @@
       "label": "get_plant_recommendations(location)"
     },
     {
-      "from": "r_score",
-      "to": "s_score",
-      "label": "calculate_biodiversity_score(plants)"
-    },
-    {
       "from": "r_letter",
       "to": "s_letter",
-      "label": "generate_letter(plant_names, score, zip_code)"
+      "label": "generate_letter(plant_names, summary, zip_code)"
     },
     {
       "from": "s_inat",
@@ -1337,6 +1308,37 @@
       "from": "s_common_name",
       "to": "s_resolve",
       "label": "resolve(name)"
+    },
+    {
+      "from": "results",
+      "to": "c_summary",
+      "label": "getSummary([{scientific_name, plant_name}])"
+    },
+    {
+      "from": "c_summary",
+      "to": "r_summary",
+      "label": "POST /summary {plants}",
+      "detail": "Returns {result: counts, known, plant_count, percent_native, percent_native_with_plan, plants}."
+    },
+    {
+      "from": "flask",
+      "to": "r_summary",
+      "label": "registers"
+    },
+    {
+      "from": "r_summary",
+      "to": "s_summary",
+      "label": "summarize(plants)"
+    },
+    {
+      "from": "s_summary",
+      "to": "s_option",
+      "label": "plant_option(name) per plant → status"
+    },
+    {
+      "from": "results",
+      "to": "ui_ring",
+      "label": "percent_native, percent_native_with_plan"
     }
   ]
 }

@@ -2,7 +2,7 @@
 
 A tool for climate action, built for South Florida.
 
-EcoLoco helps students find out which plants on their campus help local wildlife and which ones hurt it. You scan plants with your phone, and the app tells you whether each one is native or invasive, gives your schoolyard a biodiversity score from 0 to 100, suggests native plants to add, and writes a letter you can send to your principal asking to plant them.
+EcoLoco helps students find out which plants on their campus help local wildlife and which ones hurt it. You scan plants with your phone, and the app tells you whether each one is native or invasive, shows what share of your schoolyard's plants are native to Florida, suggests native plants to add, and writes a letter you can send to your principal asking to plant them.
 
 This is our entry for the 2026 Congressional App Challenge (FL-22). It started as EcoLoco and is being reworked around real Florida plant data.
 
@@ -28,10 +28,11 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 **After you scan a whole campus (the EcoScan tab):**
 - Every plant you scan stays in the list. Ones the app isn't sure about show the same "Which one is it?" list, and any card can be removed with ✕.
 - Plants are grouped as native, non-native (not harmful), invasive, and unknown. Only invasive plants count as hurting wildlife.
-- A biodiversity score from 0 to 100, plus a list of the plants helping and hurting it
-- A projected score showing how much planting the top recommendations would raise it
+- How many plants are native, non-native, invasive, or unknown, and what percent of the identified ones are native
+- What that percent would be if the invasive plants were replaced with natives
+- Plants the app couldn't identify are still listed, but they aren't counted in the percent
 - Native plants to add for your ZIP code
-- An editable letter to your principal that you can copy and send
+- An editable letter to your principal, with the percent native now and with the plan, that you can copy and send
 
 
 ## What happens in between
@@ -48,7 +49,7 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
    - the USDA PLANTS database online, which says whether the plant is native to Florida or was brought in from somewhere else (answers are remembered while the server runs);
    - if none of them know it, the plant is shown as unknown.
 3. **Wildlife value and actions.** OpenAI is asked how much the plant supports wildlife and what you can do about it. If it's invasive, the app always says to remove it and replace it with a native. If OpenAI is down or out of credits, the scan still returns the plant and its verdict, with wildlife value and actions marked unknown.
-4. **Scoring.** The biodiversity score is worked out with fixed rules, no AI: natives with high wildlife value score highest, invasives score lowest, and there are bonuses for having lots of natives and penalties for each invasive.
+4. **Counting.** The app counts how many scanned plants are in each group and divides the natives by the plants it could identify. No AI is involved, and the name a plant was scanned under doesn't change the result: "Coontie", "coontie" and "Zamia integrifolia" all count the same. Replacing each invasive plant with a native gives the "with the plan" percent.
 5. **Recommendations and the letter.** OpenAI suggests native plants for your ZIP. Anything invasive, or that USDA says isn't native to Florida, gets filtered out. The letter is a fixed template, and OpenAI only writes one or two sentences about the plants you picked. Without OpenAI, recommendations come straight from our natives list and the letter uses each plant's "why it matters" line instead.
 
 The invasive list is generated from the official FISC PDF by a script in `backend/scripts/`. The 22 natives and the "why it matters" lines are our own and still need checking against UF/IFAS before the demo.
@@ -58,7 +59,7 @@ The invasive list is generated from the official FISC PDF by a script in `backen
 | Folder | What's in it |
 |---|---|
 | `frontend/` | The phone app. `screens/` has one file per screen, `components/` has pieces shared between screens, `navigation/` sets up the tabs, and `services/` has the code that sends requests to the backend. All colors and fonts are in `theme.js`, so a new look only needs that one file. |
-| `backend/` | The Python server the app talks to. `app.py` lists the web addresses the app can call. `services/` does the actual work (identifying, looking up Florida status, scoring, writing the letter). `data/` holds the Florida plant lists. `scripts/` has the tool that rebuilds the invasive list from the official FISC PDF. `tests/` checks it all works. |
+| `backend/` | The Python server the app talks to. `app.py` lists the web addresses the app can call. `services/` does the actual work (identifying, looking up Florida status, counting, writing the letter). `data/` holds the Florida plant lists. `scripts/` has the tool that rebuilds the invasive list from the official FISC PDF. `tests/` checks it all works. |
 | `assets/` | Images used in the app, the app icon and splash screen, and the official "Powered by Pl@ntNet" logo shown under identification results. |
 | `docs/` | The interactive architecture map (`architecture.html`), the script that keeps it matched to the code, and our written plans (`superpowers/plans/`). |
 

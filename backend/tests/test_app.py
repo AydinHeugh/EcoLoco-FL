@@ -104,7 +104,8 @@ def test_recommend_reports_ai_available(client, monkeypatch):
 
 def test_letter_falls_back_when_ai_down(client, monkeypatch):
     _ai_down(monkeypatch)
-    response = client.post("/letter", json={"plant_names": ["Coontie"], "score": 42, "zip_code": "33139"})
+    response = client.post("/letter", json={"plant_names": ["Coontie"], "zip_code": "33139",
+                                            "summary": {"percent_native": 50, "percent_native_with_plan": 75}})
     assert response.status_code == 200
     body = response.get_json()
     assert body["ai_unavailable"] is True
@@ -120,3 +121,23 @@ def test_debug_off_by_default(monkeypatch):
 def test_debug_on_only_with_dev_flag(monkeypatch, value, expected):
     monkeypatch.setenv("ECOLOCO_DEV", value)
     assert app_module.debug_enabled() is expected
+
+
+def test_summary_counts_statuses(client):
+    response = client.post("/summary", json={"plants": [
+        {"scientific_name": "Zamia pumila"}, {"scientific_name": "Schinus terebinthifolius"}]})
+    assert response.status_code == 200
+    result = response.get_json()["result"]
+    assert result["counts"] == {"native": 1, "non_native": 0, "invasive": 1, "unknown": 0}
+    assert result["percent_native"] == 50
+    assert result["percent_native_with_plan"] == 100
+
+
+def test_summary_requires_plants(client):
+    response = client.post("/summary", json={"plants": []})
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "plants list is required"
+
+
+def test_score_route_is_gone(client):
+    assert client.post("/score", json={"plants": [{"name": "x"}]}).status_code == 404

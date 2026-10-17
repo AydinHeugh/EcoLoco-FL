@@ -51,10 +51,8 @@ and the answer comes back the same way.
 |---|---|---|
 | `'Why it matters' line` | PLANNED | Show the one-line stake for every plant. The backend already returns `why` from /identify and /recommend; only the UI is missing. |
 | `Source receipt badge` | PLANNED | Show where each native/invasive verdict came from. The backend already returns `source` (FISC, fl_natives, USDA or unknown); only the UI is missing. |
-| `Before → after score jump` | PLANNED | Make score → projected_score the headline jump. Mostly built already (toggle + BeforeAfterPill); remaining: lead with it, and use one source of truth for projected_score (the screen recomputes it today). |
 | `identifyPlant()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
 | `getPlantRecommendations()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
-| `getScore()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
 | `generateLetter()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
 | `getLocalPlants()` (frontend/services/plantService.js) | DEAD | Delete plantService.js — the backend route it called has been removed. |
 | `Flask app (app.py)` (backend/app.py) | change planned | Deploy to a public host before the demo (today: localhost with debug=True). |
@@ -65,6 +63,7 @@ and the answer comes back the same way.
 | `fl_natives.json` (backend/data/fl_natives.json) | change planned | Verify every entry against UF/IFAS and the Atlas of Florida Plants before the demo. |
 | `Multi-photo upload` | PLANNED | Let users send 1–5 photos of one plant as `images` (Priority 6). The confirm picker already shipped. |
 | `AI-unavailable notice` | PLANNED | Show a short notice when a scan, recommendation list or letter has `ai_unavailable: true`. Unknown wildlife values and statuses are already labelled "Unknown". |
+| `getSummary()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
 <!-- /GENERATED:planned -->
 
 ## Diagram
@@ -82,11 +81,11 @@ flowchart LR
     results["AuditResultsScreen"]
     ui_why["'Why it matters' line<br/>PLANNED — goal: Show the one-line stake for every plant. The backend already returns `why` from /identify and /recommend; only the UI is missing."]
     ui_receipt["Source receipt badge<br/>PLANNED — goal: Show where each native/invasive verdict came from. The backend already returns `source` (FISC, fl_natives, USDA or unknown); only the UI is missing."]
-    ui_jump["Before → after score jump<br/>PLANNED — goal: Make score → projected_score the headline jump. Mostly built already (toggle + BeforeAfterPill); remaining: lead with it, and use one source of truth for projected_score (the screen recomputes it today)."]
     letter["LetterGenerator"]
     ui_multiphoto["Multi-photo upload<br/>PLANNED — goal: Let users send 1–5 photos of one plant as `images` (Priority 6). The confirm picker already shipped."]
     ui_ai_unknown["AI-unavailable notice<br/>PLANNED — goal: Show a short notice when a scan, recommendation list or letter has `ai_unavailable: true`. Unknown wildlife values and statuses are already labelled #quot;Unknown#quot;."]
     ui_picker["CandidatePicker + StatusBadge"]
+    ui_ring["PercentRing"]
   end
   subgraph L_device["Device"]
     direction TB
@@ -97,24 +96,23 @@ flowchart LR
     direction TB
     c_identify["identifyPlant()"]
     c_rec["getPlantRecommendations()"]
-    c_score["getScore()"]
     c_letter["generateLetter()"]
     c_local["getLocalPlants()<br/>DEAD — Delete plantService.js — the backend route it called has been removed."]
+    c_summary["getSummary()"]
   end
   subgraph L_route["Flask routes"]
     direction TB
     flask["Flask app (app.py)"]
     r_identify["POST /identify"]
     r_recommend["POST /recommend"]
-    r_score["POST /score"]
     r_letter["POST /letter"]
+    r_summary["POST /summary"]
   end
   subgraph L_svc["Services"]
     direction TB
     s_inat["get_plant_requests()<br/>DEAD — Nothing calls it since the confidence nudge was removed. Repurpose it (e.g. a 'seen near you' count) or delete inat_service.py."]
     s_identify["identify_plant()"]
     s_rec["get_plant_recommendations()"]
-    s_score["calculate_biodiversity_score()"]
     s_letter["generate_letter()"]
     s_fl["get_status()"]
     s_species["identify_species()"]
@@ -127,6 +125,7 @@ flowchart LR
     s_resolve["resolve()"]
     s_option["plant_option()"]
     s_common_name["common_name()"]
+    s_summary["summarize()"]
   end
   subgraph L_data["Bundled data"]
     direction TB
@@ -151,7 +150,7 @@ flowchart LR
   ident -->|"navigate('Recommend', {prefillZip})"| rec
   audit -->|"navigate('AuditResults', {plants[], zipCode})"| results
   results -->|"navigate(Main → Recommend, {prefillZip})"| rec
-  results -->|"renders LetterGenerator {recs, score, zipCode}"| letter
+  results -->|"renders LetterGenerator {recs, summary, zipCode}"| letter
   ident -->|"launchCamera / launchImageLibrary → {uri, base64}"| picker
   audit -->|"launchCamera / launchImageLibrary → {uri, base64}"| picker
   letter -->|"setStringAsync(editedLetter)"| clipboard
@@ -159,25 +158,20 @@ flowchart LR
   rec -.->|"renders item.why"| ui_why
   ident -.->|"renders result.source"| ui_receipt
   audit -.->|"renders plant.source"| ui_receipt
-  results -.->|"score → projected_score"| ui_jump
   ident -->|"identifyPlant(photo.base64, zipCode)"| c_identify
   audit -->|"identifyPlant(photo.base64, zipCode) per scan"| c_identify
   rec -->|"getPlantRecommendations(zip)"| c_rec
   results -->|"getPlantRecommendations(zipCode)"| c_rec
-  results -->|"getScore([{name, invasive_status, wildlife_support}])"| c_score
-  letter -->|"generateLetter(plantNames[], score, zipCode)"| c_letter
+  letter -->|"generateLetter(plantNames[], summary, zipCode)"| c_letter
   c_identify -->|"POST /identify {image, location}"| r_identify
   c_rec -->|"POST /recommend {location}"| r_recommend
-  c_score -->|"POST /score {plants}"| r_score
-  c_letter -->|"POST /letter {plant_names, score, zip_code}"| r_letter
+  c_letter -->|"POST /letter {plant_names, summary, zip_code}"| r_letter
   flask -->|"registers"| r_identify
   flask -->|"registers"| r_recommend
-  flask -->|"registers"| r_score
   flask -->|"registers"| r_letter
   r_identify -->|"identify_plant(image, location)"| s_identify
   r_recommend -->|"get_plant_recommendations(location)"| s_rec
-  r_score -->|"calculate_biodiversity_score(plants)"| s_score
-  r_letter -->|"generate_letter(plant_names, score, zip_code)"| s_letter
+  r_letter -->|"generate_letter(plant_names, summary, zip_code)"| s_letter
   s_inat -.->|"GET /v2/observations q=name → ≤100 points"| inat
   s_rec -->|"ZIP → 11 ranked natives (JSON)"| openai
   s_letter -->|"plant list + ZIP → 1–2 benefit sentences"| openai
@@ -212,6 +206,12 @@ flowchart LR
   audit -->|"unsure card → pick one or #quot;None of these#quot;"| ui_picker
   s_option -->|"common_name(scientific_name) → our name for it"| s_common_name
   s_common_name -->|"resolve(name)"| s_resolve
+  results -->|"getSummary([{scientific_name, plant_name}])"| c_summary
+  c_summary -->|"POST /summary {plants}"| r_summary
+  flask -->|"registers"| r_summary
+  r_summary -->|"summarize(plants)"| s_summary
+  s_summary -->|"plant_option(name) per plant → status"| s_option
+  results -->|"percent_native, percent_native_with_plan"| ui_ring
   classDef ui fill:#e3f2e1,stroke:#2e7d32,color:#12301a
   classDef device fill:#eceff1,stroke:#607d8b,color:#263238
   classDef client fill:#e1effa,stroke:#1e6fb8,color:#0d2d4d
@@ -221,14 +221,14 @@ flowchart LR
   classDef ext fill:#fde4e1,stroke:#c0392b,color:#4a0f08
   classDef planned stroke-dasharray:6 4,stroke-width:2px
   classDef dead fill:#f3f3f3,stroke:#9e9e9e,color:#616161,stroke-dasharray:3 3
-  class app,home,ident,rec,audit,results,ui_why,ui_receipt,ui_jump,letter,ui_multiphoto,ui_ai_unknown,ui_picker ui
+  class app,home,ident,rec,audit,results,ui_why,ui_receipt,letter,ui_multiphoto,ui_ai_unknown,ui_picker,ui_ring ui
   class picker,clipboard device
-  class c_identify,c_rec,c_score,c_letter,c_local client
-  class flask,r_identify,r_recommend,r_score,r_letter route
-  class s_inat,s_identify,s_rec,s_score,s_letter,s_fl,s_species,s_assess,s_plantnet,s_usda,s_bundled,s_fallback_rec,s_letter_noai,s_resolve,s_option,s_common_name svc
+  class c_identify,c_rec,c_letter,c_local,c_summary client
+  class flask,r_identify,r_recommend,r_letter,r_summary route
+  class s_inat,s_identify,s_rec,s_letter,s_fl,s_species,s_assess,s_plantnet,s_usda,s_bundled,s_fallback_rec,s_letter_noai,s_resolve,s_option,s_common_name,s_summary svc
   class d_fisc,d_natives,fisc_builder data
   class inat,openai,usda,plantnet ext
-  class ui_why,ui_receipt,ui_jump,ui_multiphoto,ui_ai_unknown planned
+  class ui_why,ui_receipt,ui_multiphoto,ui_ai_unknown planned
   class c_local,s_inat dead
 ```
 <!-- /GENERATED:mermaid -->

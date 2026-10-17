@@ -181,7 +181,7 @@ def _plant_list(plant_names):
     return ", ".join(plant_names[:-1]) + f", and {plant_names[-1]}", "Adding them"
 
 
-def generate_letter(plant_names: list, score: int, zip_code: str):
+def generate_letter(plant_names: list, summary: dict, zip_code: str):
     plant_list, _ = _plant_list(plant_names)
     # GPT generates only the benefit sentence(s)
     benefit = openai_client.chat(
@@ -190,29 +190,36 @@ def generate_letter(plant_names: list, score: int, zip_code: str):
         "Be specific — mention pollinators, birds, or insects they support. "
         "Return only the sentences, no preamble or trailing text."
     )
-    return _letter(plant_names, score, zip_code, benefit)
+    return _letter(plant_names, summary, zip_code, benefit)
 
 
-def generate_letter_without_ai(plant_names: list, score: int, zip_code: str):
+def generate_letter_without_ai(plant_names: list, summary: dict, zip_code: str):
     whys = {native["common_name"].lower(): native["why"] for native in bundled_natives()}
     known = [f"{name}: {whys[name.lower()]}" for name in plant_names if name.lower() in whys]
     benefit = " ".join(known) or GENERIC_BENEFIT
-    return _letter(plant_names, score, zip_code, benefit)
+    return _letter(plant_names, summary, zip_code, benefit)
 
 
-def _letter(plant_names, score, zip_code, benefit):
+def _percent_sentence(summary):
+    now, with_plan = summary.get("percent_native"), summary.get("percent_native_with_plan")
+    if now is None or with_plan is None:
+        return "We couldn't identify enough plants to give a percentage yet."
+    return (f"Of the plants we checked, {now}% are native to Florida. "
+            f"With these changes, it would be {with_plan}%.")
+
+
+def _letter(plant_names, summary, zip_code, benefit):
     plant_list, adding_word = _plant_list(plant_names)
     letter = (
         f"Dear [PRINCIPAL_NAME],\n\n"
         f"The [SCHOOL_NAME] eco-club has been studying the plants growing around our campus, "
         f"and we'd like to propose a change that could make a real difference for local wildlife.\n\n"
         f"Right now, much of our schoolyard is planted with species that do very little for the "
-        f"insects, birds, and pollinators that depend on this area. We audited our grounds and our "
-        f"campus scored {score} out of 100 on biodiversity, a measure of how well our plants "
-        f"actually support native wildlife. We think we can do better, and it starts with a few changes.\n\n"
+        f"insects, birds, and pollinators that depend on this area. We checked the plants on our grounds. "
+        f"{_percent_sentence(summary)} We think we can do better, and it starts with a few changes.\n\n"
         f"We're requesting permission to add the following native species, well suited to our region "
         f"(ZIP {zip_code}): {plant_list}. {benefit} "
-        f"{adding_word} would raise our biodiversity score and create real, living habitat that "
+        f"{adding_word} would raise that share and create real, living habitat that "
         f"students can watch grow and learn from all year.\n\n"
         f"We researched this using EcoLoco, a tool that identifies plants and ranks them by how much "
         f"they help the local ecosystem. We'd be glad to share our full audit and find a time to talk "

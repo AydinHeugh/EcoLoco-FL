@@ -11,7 +11,7 @@ from services.ai_service import (
     get_plant_recommendations,
     identify_plant,
 )
-from services.score_service import calculate_biodiversity_score
+from services.summary_service import summarize
 
 load_dotenv()
 
@@ -61,30 +61,29 @@ def recommend():
     return jsonify({"result": result, "ai_unavailable": ai_unavailable})
 
 
-@app.route("/score", methods=["POST"])
-def score():
+@app.route("/summary", methods=["POST"])
+def summary():
     data = request.get_json()
     plants = data.get("plants")
     if not plants:
         return jsonify({"error": "plants list is required"}), 400
-    result = calculate_biodiversity_score(plants)
-    return jsonify({"result": result})
+    return jsonify({"result": summarize(plants)})
 
 
 @app.route("/letter", methods=["POST"])
 def letter():
     data       = request.get_json()
     plant_names = data.get("plant_names")
-    score      = data.get("score")
+    summary    = data.get("summary")
     zip_code   = data.get("zip_code")
 
-    if not plant_names or score is None or not zip_code:
-        return jsonify({"error": "plant_names, score, and zip_code are required"}), 400
+    if not plant_names or not isinstance(summary, dict) or not zip_code:
+        return jsonify({"error": "plant_names, summary, and zip_code are required"}), 400
 
     try:
-        result, ai_unavailable = generate_letter(plant_names, score, zip_code), False
+        result, ai_unavailable = generate_letter(plant_names, summary, zip_code), False
     except openai_client.AIUnavailable:
-        result, ai_unavailable = generate_letter_without_ai(plant_names, score, zip_code), True
+        result, ai_unavailable = generate_letter_without_ai(plant_names, summary, zip_code), True
     return jsonify({"result": result, "ai_unavailable": ai_unavailable})
 
 
