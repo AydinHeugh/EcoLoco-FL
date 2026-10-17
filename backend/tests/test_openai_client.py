@@ -56,3 +56,16 @@ def test_chat_bad_json_raises_ai_unavailable(monkeypatch):
     monkeypatch.setattr(openai_client, "_client", lambda: _fake_client("Sorry, I can't help with that."))
     with pytest.raises(openai_client.AIUnavailable):
         openai_client.chat("hi", json_reply=True)
+
+
+def test_chat_sends_system_message_first(monkeypatch):
+    sent = {}
+
+    class Completions:
+        def create(self, **kwargs):
+            sent.update(kwargs)
+            return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content="ok"))])
+
+    monkeypatch.setattr(openai_client, "_client", lambda: SimpleNamespace(chat=SimpleNamespace(completions=Completions())))
+    assert openai_client.chat("hi", system="be plain") == "ok"
+    assert sent["messages"] == [{"role": "system", "content": "be plain"}, {"role": "user", "content": "hi"}]

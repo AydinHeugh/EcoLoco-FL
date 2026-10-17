@@ -28,7 +28,7 @@ def test_openai_fallback_returns_standard_shape(model_reply):
             {"scientific_name": "Zamia integrifolia", "common_name": "Coontie", "confidence": 0.87},
             {"scientific_name": "Zamia furfuracea", "common_name": "Cardboard palm", "confidence": 0.1},
         ],
-        "suggested": 0, "source": "openai_fallback",
+        "suggested": 0, "source": "openai_fallback", "ai_unavailable": False,
     }
 
 
@@ -155,7 +155,7 @@ def test_plantnet_confident_is_used_directly(plantnet, openai):
     plantnet["ranked"] = [dict(A, confidence=0.92), dict(B, confidence=0.03)]
     assert identify_species("img", ZIP) == {
         "state": "identified", "ranked": [dict(A, confidence=0.92), dict(B, confidence=0.03)],
-        "suggested": 0, "source": "plantnet",
+        "suggested": 0, "source": "plantnet", "ai_unavailable": False,
     }
     assert openai["calls"] == []
 
@@ -164,7 +164,7 @@ def test_adjudication_only_suggests(plantnet, openai):
     plantnet["ranked"] = [A, B, C]
     openai["reply"] = {"scientific_name": "Zamia furfuracea", "confidence": 0.95}
     result = identify_species(["img1", "img2"], ZIP)
-    assert result == {"state": "confirm", "ranked": [A, B, C], "suggested": 1, "source": "openai_adjudicated"}
+    assert result == {"state": "confirm", "ranked": [A, B, C], "suggested": 1, "source": "openai_adjudicated", "ai_unavailable": False}
     prompt = _text(openai["calls"][0])
     assert ZIP in prompt
     assert all(p["scientific_name"] in prompt for p in (A, B, C))
@@ -174,7 +174,7 @@ def test_adjudication_only_suggests(plantnet, openai):
 def test_adjudicator_off_list_answer_keeps_plantnet_order(plantnet, openai):
     plantnet["ranked"] = [A, B, C]
     openai["reply"] = {"scientific_name": "Quercus virginiana", "confidence": 0.9}
-    assert identify_species("img", ZIP) == {"state": "confirm", "ranked": [A, B, C], "suggested": 0, "source": "plantnet"}
+    assert identify_species("img", ZIP) == {"state": "confirm", "ranked": [A, B, C], "suggested": 0, "source": "plantnet", "ai_unavailable": False}
 
 
 def test_adjudicator_error_keeps_plantnet_order(plantnet, openai):
@@ -182,6 +182,7 @@ def test_adjudicator_error_keeps_plantnet_order(plantnet, openai):
     openai["error"] = openai_client.AIUnavailable("down")
     result = identify_species("img", ZIP)
     assert (result["source"], result["suggested"], result["state"]) == ("plantnet", 0, "confirm")
+    assert result["ai_unavailable"] is True
 
 
 def test_plantnet_failure_falls_back_to_openai_vision(plantnet, openai):
@@ -194,14 +195,14 @@ def test_plantnet_failure_falls_back_to_openai_vision(plantnet, openai):
 
 def test_plantnet_no_match_is_unidentified_without_openai(plantnet, openai):
     plantnet["ranked"] = []
-    assert identify_species("img", ZIP) == {"state": "unidentified", "ranked": [], "suggested": 0, "source": "plantnet"}
+    assert identify_species("img", ZIP) == {"state": "unidentified", "ranked": [], "suggested": 0, "source": "plantnet", "ai_unavailable": False}
     assert openai["calls"] == []
 
 
 def test_everything_failing_never_crashes(plantnet, openai):
     plantnet["error"] = RuntimeError("PlantNet down")
     openai["error"] = RuntimeError("OpenAI down")
-    assert identify_species("img", ZIP) == {"state": "unidentified", "ranked": [], "suggested": 0, "source": "none"}
+    assert identify_species("img", ZIP) == {"state": "unidentified", "ranked": [], "suggested": 0, "source": "none", "ai_unavailable": True}
 
 
 @pytest.mark.parametrize("top, runner_up, expected", [

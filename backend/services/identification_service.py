@@ -79,10 +79,10 @@ def _state(ranked):
     return "identified"
 
 
-def _result(state, ranked, source, suggested=0):
+def _result(state, ranked, source, suggested=0, ai_unavailable=False):
     if state == "unidentified":
         ranked = []
-    return {"state": state, "ranked": ranked, "suggested": suggested, "source": source}
+    return {"state": state, "ranked": ranked, "suggested": suggested, "source": source, "ai_unavailable": ai_unavailable}
 
 
 def _merge_same_species(ranked):
@@ -147,7 +147,7 @@ def identify_species(images, location):
             pick = _adjudicate(images, ranked, location)
         except Exception as err:
             log.warning("OpenAI adjudication failed (%s); keeping PlantNet's order", _describe(err))
-            pick = None
+            return _result(state, ranked, "plantnet", ai_unavailable=True)
         if pick is None:
             return _result(state, ranked, "plantnet")
         return _result(state, ranked, "openai_adjudicated", pick)
@@ -156,7 +156,7 @@ def identify_species(images, location):
         ranked = _merge_same_species(_identify_with_openai(images, location))
     except Exception as err:
         log.warning("OpenAI vision failed (%s)", _describe(err))
-        return _result("unidentified", [], "none")
+        return _result("unidentified", [], "none", ai_unavailable=True)
     return _result(_state(ranked), ranked, "openai_fallback")
 
 

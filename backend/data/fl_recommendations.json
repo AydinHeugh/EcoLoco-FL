@@ -1,0 +1,1790 @@
+{
+  "_comment": "South Florida native plants EcoLoco can recommend. Facts come from the linked sources. 'effort' (easy / medium / big) is EcoLoco's rating from each plant's size, growth speed and water needs on its IRC page. 'replaces' pairs are EcoLoco suggestions (similar size and spot), not taken from a source; review them. Every entry starts with verified: false. A teammate checks it is native to Palm Beach County in the USF Atlas of Florida Plants (https://florida.plantatlas.usf.edu) and sets it to true. Only verified entries are recommended.",
+  "species": [
+    {
+      "scientific_name": "Zamia integrifolia",
+      "common_name": "Coontie",
+      "genus": "Zamia",
+      "plant_type": "groundcover",
+      "effort": "easy",
+      "sun": "Full sun to light shade",
+      "mature_size": "1 to 4 feet tall and about as wide",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Zamiinte"
+      },
+      "helps": {
+        "animals": [
+          "atala butterflies"
+        ],
+        "text": "Caterpillars of the atala butterfly eat its leaves, and butterflies and beetles visit its cones.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Zamiinte"
+        }
+      },
+      "offers": [
+        "caterpillar food"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "buying": {
+        "ask_for": "Zamia integrifolia",
+        "avoid": "Some plants sold as Zamia pumila come from the West Indies, not Florida. Ask for the Florida kind.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Zamiinte"
+        }
+      },
+      "watch_out": [
+        {
+          "text": "Its seeds are poisonous to dogs, cats and horses. One or two seeds can kill a pet.",
+          "source": {
+            "name": "ASPCA Animal Poison Control",
+            "url": "https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/coontie-palm"
+          }
+        },
+        {
+          "text": "Atala caterpillars can chew it bare. It grows back, but it may look rough for a while.",
+          "source": {
+            "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+            "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Zamiinte"
+          }
+        }
+      ],
+      "look_into": [
+        "Have atala butterflies been seen near your school?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Tradescantia spathacea",
+          "why": "A low plant for the same shady beds."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Hamelia patens",
+      "common_name": "Firebush",
+      "genus": "Hamelia",
+      "plant_type": "shrub",
+      "effort": "medium",
+      "sun": "Full sun is best; part shade works too",
+      "mature_size": "Usually 10 to 12 feet tall; can be kept at 5 to 8 feet",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Hamepate"
+      },
+      "helps": {
+        "animals": [
+          "hummingbirds",
+          "butterflies",
+          "mockingbirds",
+          "catbirds"
+        ],
+        "text": "Hummingbirds and many butterflies drink from its red flowers, and songbirds like mockingbirds and catbirds eat its berries.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Hamepate"
+        }
+      },
+      "offers": [
+        "caterpillar food",
+        "nectar",
+        "fruit",
+        "shelter"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "buying": {
+        "ask_for": "Hamelia patens var. patens",
+        "avoid": "Plants sold as 'Dwarf' or 'Compacta' are usually a non-native look-alike (Hamelia patens var. glabra).",
+        "source": {
+          "name": "UF/IFAS Gardening Solutions",
+          "url": "https://gardeningsolutions.ifas.ufl.edu/plants/trees-and-shrubs/shrubs/firebush/"
+        }
+      },
+      "watch_out": [
+        {
+          "text": "Its branches are weak and break easily, so keep it out of busy paths.",
+          "source": {
+            "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+            "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Hamepate"
+          }
+        }
+      ],
+      "look_into": [
+        "Which nearby nurseries sell the Florida kind of firebush?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Schinus terebinthifolia",
+          "why": "A bird and butterfly shrub for the same sunny spot."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Quercus virginiana",
+      "common_name": "Live oak",
+      "genus": "Quercus",
+      "plant_type": "tree",
+      "effort": "big",
+      "sun": "Full sun",
+      "mature_size": "Usually 30 to 50 feet tall in South Florida, and about as wide",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Quervirg"
+      },
+      "helps": {
+        "animals": [
+          "squirrels",
+          "owls",
+          "hairstreak butterflies",
+          "duskywing butterflies"
+        ],
+        "text": "Caterpillars of several butterflies eat its leaves, squirrels eat its acorns, and owls and other birds nest in it.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Quervirg"
+        }
+      },
+      "offers": [
+        "caterpillar food",
+        "fruit",
+        "shelter"
+      ],
+      "bloom_months": [
+        3
+      ],
+      "buying": {
+        "ask_for": "Quercus virginiana"
+      },
+      "watch_out": [
+        {
+          "text": "It spreads very wide. Give it lots of room away from buildings.",
+          "source": {
+            "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+            "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Quervirg"
+          }
+        }
+      ],
+      "look_into": [
+        "Is there an open spot on campus at least 50 feet across?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Casuarina equisetifolia",
+          "why": "A big shade tree for the open spots where Australian pine grows."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Callicarpa americana",
+      "common_name": "American beautyberry",
+      "genus": "Callicarpa",
+      "plant_type": "shrub",
+      "effort": "easy",
+      "sun": "Full sun to light shade",
+      "mature_size": "5 to 9 feet tall and about as wide",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Callamer"
+      },
+      "helps": {
+        "animals": [
+          "birds",
+          "butterflies"
+        ],
+        "text": "Birds eat its bright purple berries, and butterflies drink from its flowers.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Callamer"
+        }
+      },
+      "offers": [
+        "nectar",
+        "fruit",
+        "shelter"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "buying": {
+        "ask_for": "Callicarpa americana"
+      },
+      "watch_out": [
+        {
+          "text": "Cut it back hard every so often to keep it full.",
+          "source": {
+            "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+            "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Callamer"
+          }
+        }
+      ],
+      "look_into": [
+        "Which birds on campus might eat its berries in the fall?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Schinus terebinthifolia",
+          "why": "A berry shrub that can fill the same spot."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Mimosa strigillosa",
+      "common_name": "Sunshine mimosa",
+      "genus": "Mimosa",
+      "plant_type": "groundcover",
+      "effort": "easy",
+      "sun": "Full sun",
+      "mature_size": "1 to 3 inches tall, spreading into wide mats",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Mimostri"
+      },
+      "helps": {
+        "animals": [
+          "little yellow butterflies",
+          "bees"
+        ],
+        "text": "Caterpillars of the little yellow butterfly eat its leaves, and bees and butterflies visit its flowers.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Mimostri"
+        }
+      },
+      "offers": [
+        "caterpillar food",
+        "nectar"
+      ],
+      "bloom_months": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "buying": {
+        "ask_for": "Mimosa strigillosa"
+      },
+      "look_into": [
+        "Could it replace a patch of lawn that doesn't get much foot traffic?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Sphagneticola trilobata",
+          "why": "A low, spreading groundcover for the same sunny ground."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Psychotria nervosa",
+      "common_name": "Wild coffee",
+      "genus": "Psychotria",
+      "plant_type": "shrub",
+      "effort": "easy",
+      "sun": "Light shade to full sun",
+      "mature_size": "4 to 6 feet tall and about as wide",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Psycnerv"
+      },
+      "helps": {
+        "animals": [
+          "atala butterflies",
+          "julia butterflies",
+          "birds"
+        ],
+        "text": "Butterflies like the atala and julia drink from its flowers, and birds eat its red berries.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Psycnerv"
+        }
+      },
+      "offers": [
+        "nectar",
+        "fruit",
+        "shelter"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "buying": {
+        "ask_for": "Psychotria nervosa"
+      },
+      "look_into": [
+        "Which shady spots on campus could use a shrub?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Heptapleurum actinophyllum",
+          "why": "A shade-loving shrub for spots where umbrella trees pop up."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Ardisia escallonioides",
+      "common_name": "Marlberry",
+      "genus": "Ardisia",
+      "plant_type": "shrub",
+      "effort": "medium",
+      "sun": "Light shade to full sun",
+      "mature_size": "8 to 15 feet tall, usually taller than wide",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Ardiesca"
+      },
+      "helps": {
+        "animals": [
+          "birds",
+          "bees"
+        ],
+        "text": "Many kinds of birds eat its shiny black berries, and bees visit its flowers.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Ardiesca"
+        }
+      },
+      "offers": [
+        "nectar",
+        "fruit",
+        "shelter"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "buying": {
+        "ask_for": "Ardisia escallonioides",
+        "avoid": "Don't mix it up with shoebutton ardisia (Ardisia elliptica), an invasive look-alike.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Ardiesca"
+        }
+      },
+      "look_into": [
+        "Is there invasive shoebutton ardisia on campus that this could replace?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Ardisia elliptica",
+          "why": "Looks similar, but it's the Florida kind."
+        },
+        {
+          "scientific_name": "Schinus terebinthifolia",
+          "why": "A tall berry shrub for the same spot."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Chrysobalanus icaco",
+      "common_name": "Cocoplum",
+      "genus": "Chrysobalanus",
+      "plant_type": "shrub",
+      "effort": "medium",
+      "sun": "Full sun",
+      "mature_size": "10 to 15 feet tall, often kept lower as a hedge",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Chryicac"
+      },
+      "helps": {
+        "animals": [
+          "butterflies",
+          "bees",
+          "cardinals",
+          "woodpeckers",
+          "squirrels"
+        ],
+        "text": "Butterflies and bees visit its flowers, and cardinals, woodpeckers and squirrels eat its fruit.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Chryicac"
+        }
+      },
+      "offers": [
+        "nectar",
+        "fruit",
+        "shelter"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "buying": {
+        "ask_for": "Chrysobalanus icaco"
+      },
+      "look_into": [
+        "Could it replace a hedge along a fence or parking lot?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Schinus terebinthifolia",
+          "why": "A hedge shrub for the same spot, with fruit wildlife eats."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Coccoloba uvifera",
+      "common_name": "Sea grape",
+      "genus": "Coccoloba",
+      "plant_type": "tree",
+      "effort": "big",
+      "sun": "Full sun",
+      "mature_size": "10 to 50 feet tall, often wider than tall",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Coccuvif"
+      },
+      "helps": {
+        "animals": [
+          "butterflies",
+          "bees"
+        ],
+        "text": "It handles salty wind better than almost any native tree. Butterflies drink from its flowers, and animals eat its purple grapes.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Coccuvif"
+        }
+      },
+      "offers": [
+        "nectar",
+        "fruit",
+        "shelter"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "buying": {
+        "ask_for": "Coccoloba uvifera"
+      },
+      "look_into": [
+        "How close is your campus to the ocean or the Intracoastal?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Casuarina equisetifolia",
+          "why": "Handles salty wind near the coast, where Australian pine often grows."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Coccoloba diversifolia",
+      "common_name": "Pigeon plum",
+      "genus": "Coccoloba",
+      "plant_type": "tree",
+      "effort": "big",
+      "sun": "Full sun to light shade",
+      "mature_size": "30 to 40 feet tall, taller than wide",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Coccdive"
+      },
+      "helps": {
+        "animals": [
+          "birds",
+          "raccoons",
+          "butterflies",
+          "bees"
+        ],
+        "text": "Birds and raccoons eat its dark red fruit, and butterflies and bees visit its flowers.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Coccdive"
+        }
+      },
+      "offers": [
+        "nectar",
+        "fruit",
+        "shelter"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "buying": {
+        "ask_for": "Coccoloba diversifolia"
+      },
+      "look_into": [
+        "Is there carrotwood on campus that this could replace?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Cupaniopsis anacardioides",
+          "why": "A medium tree with fruit birds eat, for the spots where carrotwood grows."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Bursera simaruba",
+      "common_name": "Gumbo limbo",
+      "genus": "Bursera",
+      "plant_type": "tree",
+      "effort": "big",
+      "sun": "Full sun to light shade",
+      "mature_size": "30 to 50 feet tall, about as wide",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Burssima"
+      },
+      "helps": {
+        "animals": [
+          "dingy purplewing butterflies",
+          "kingbirds",
+          "bees"
+        ],
+        "text": "Caterpillars of the dingy purplewing butterfly eat its leaves, bees visit its flowers, and kingbirds and other flycatchers eat its fruit.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Burssima"
+        }
+      },
+      "offers": [
+        "caterpillar food",
+        "nectar",
+        "fruit",
+        "shelter"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "buying": {
+        "ask_for": "Bursera simaruba"
+      },
+      "look_into": [
+        "Where on campus could a fast-growing shade tree go?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Acacia auriculiformis",
+          "why": "A fast-growing tree for the same open spots."
+        },
+        {
+          "scientific_name": "Heptapleurum actinophyllum",
+          "why": "A native tree for spots where umbrella trees grow."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Acer rubrum",
+      "common_name": "Red maple",
+      "genus": "Acer",
+      "plant_type": "tree",
+      "effort": "big",
+      "sun": "Light shade to full sun",
+      "mature_size": "30 to 70 feet tall, taller than wide",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Acerrubr"
+      },
+      "helps": {
+        "animals": [
+          "birds"
+        ],
+        "text": "It gives food and cover to birds and other wildlife, and its flowers draw pollinators.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Acerrubr"
+        }
+      },
+      "offers": [
+        "nectar",
+        "shelter"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        12
+      ],
+      "buying": {
+        "ask_for": "Acer rubrum",
+        "avoid": "Ask for trees grown from South Florida stock. Ones from farther north don't do as well here.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Acerrubr"
+        }
+      },
+      "watch_out": [
+        {
+          "text": "It needs moist or wet soil and won't handle long dry spells.",
+          "source": {
+            "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+            "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Acerrubr"
+          }
+        }
+      ],
+      "look_into": [
+        "Does your campus have a low spot that stays wet after rain?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Melaleuca quinquenervia",
+          "why": "Grows well in the same wet, low spots."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Ilex cassine",
+      "common_name": "Dahoon holly",
+      "genus": "Ilex",
+      "plant_type": "tree",
+      "effort": "big",
+      "sun": "Full sun to light shade",
+      "mature_size": "10 to 30 feet tall, taller than wide",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Ilexcass"
+      },
+      "helps": {
+        "animals": [
+          "songbirds",
+          "red-eyed vireos",
+          "quail",
+          "turkeys"
+        ],
+        "text": "Songbirds, quail and turkeys eat its red berries, and its thick leaves give small birds cover.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Ilexcass"
+        }
+      },
+      "offers": [
+        "nectar",
+        "fruit",
+        "shelter"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "buying": {
+        "ask_for": "Ilex cassine"
+      },
+      "watch_out": [
+        {
+          "text": "It needs moist soil, so it does best in low, wet spots.",
+          "source": {
+            "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+            "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Ilexcass"
+          }
+        }
+      ],
+      "look_into": [
+        "Does your campus have a low spot that stays wet after rain?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Melaleuca quinquenervia",
+          "why": "Likes the same wet, low spots."
+        },
+        {
+          "scientific_name": "Schinus terebinthifolia",
+          "why": "A berry tree for birds where Brazilian pepper grew."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Pinus elliottii",
+      "common_name": "South Florida slash pine",
+      "genus": "Pinus",
+      "plant_type": "tree",
+      "effort": "big",
+      "sun": "Full sun",
+      "mature_size": "30 to 50 feet tall in South Florida, taller than wide",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Pinuellidens"
+      },
+      "helps": {
+        "animals": [
+          "birds that nest in tree holes"
+        ],
+        "text": "Big old pines give birds that nest in tree holes a place to raise their young.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Pinuellidens"
+        }
+      },
+      "offers": [
+        "shelter"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        12
+      ],
+      "buying": {
+        "ask_for": "Pinus elliottii var. densa"
+      },
+      "look_into": [
+        "Does your campus have sandy soil with full sun?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Casuarina equisetifolia",
+          "why": "A tall needle tree for the same open, sandy spots."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Myrcianthes fragrans",
+      "common_name": "Simpson's stopper",
+      "genus": "Myrcianthes",
+      "plant_type": "shrub",
+      "effort": "medium",
+      "sun": "Full sun to light shade",
+      "mature_size": "10 to 20 feet tall, taller than wide",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Myrcfrag"
+      },
+      "helps": {
+        "animals": [
+          "birds"
+        ],
+        "text": "Birds eat its orange-red berries, and pollinators visit its flowers.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Myrcfrag"
+        }
+      },
+      "offers": [
+        "nectar",
+        "fruit",
+        "shelter"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "buying": {
+        "ask_for": "Myrcianthes fragrans"
+      },
+      "look_into": [
+        "Could it work as a hedge where Brazilian pepper was removed?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Schinus terebinthifolia",
+          "why": "A berry shrub for a hedge where Brazilian pepper was."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Stachytarpheta jamaicensis",
+      "common_name": "Blue porterweed",
+      "genus": "Stachytarpheta",
+      "plant_type": "groundcover",
+      "effort": "easy",
+      "sun": "Full sun",
+      "mature_size": "1 to 3 feet tall, wider than tall",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Stacjama"
+      },
+      "helps": {
+        "animals": [
+          "tropical buckeye butterflies",
+          "julia butterflies",
+          "gulf fritillaries",
+          "hummingbirds"
+        ],
+        "text": "Caterpillars of the tropical buckeye butterfly eat its leaves, and dozens of kinds of butterflies plus hummingbirds drink from its flowers.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Stacjama"
+        }
+      },
+      "offers": [
+        "caterpillar food",
+        "nectar"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "buying": {
+        "ask_for": "Stachytarpheta jamaicensis",
+        "avoid": "The Florida kind stays low. Tall, upright porterweeds are usually a non-native kind.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Stacjama"
+        }
+      },
+      "look_into": [
+        "Which butterflies show up in your sunniest garden bed?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Lantana strigocamara",
+          "why": "Another butterfly favorite for sunny beds."
+        },
+        {
+          "scientific_name": "Stachytarpheta cayennensis",
+          "why": "The native kind of the same plant."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Helianthus debilis",
+      "common_name": "Dune sunflower",
+      "genus": "Helianthus",
+      "plant_type": "groundcover",
+      "effort": "easy",
+      "sun": "Full sun",
+      "mature_size": "1 to 2 feet tall, spreading into wide patches",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Helidebidebi"
+      },
+      "helps": {
+        "animals": [
+          "bees",
+          "butterflies",
+          "birds"
+        ],
+        "text": "Bees, butterflies and moths visit its yellow flowers, and birds eat its seeds and the insects on it.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Helidebidebi"
+        }
+      },
+      "offers": [
+        "nectar"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "buying": {
+        "ask_for": "Helianthus debilis subsp. debilis"
+      },
+      "watch_out": [
+        {
+          "text": "It can look messy after it blooms. Cut it back and it grows back.",
+          "source": {
+            "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+            "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Helidebidebi"
+          }
+        }
+      ],
+      "look_into": [
+        "Is there a sunny, sandy slope that needs something to hold the soil?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Sphagneticola trilobata",
+          "why": "A yellow-flowered groundcover for the same sunny spots."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Ruellia caroliniensis",
+      "common_name": "Carolina wild petunia",
+      "genus": "Ruellia",
+      "plant_type": "wildflower",
+      "effort": "easy",
+      "sun": "Full sun",
+      "mature_size": "6 to 15 inches tall",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Ruelcaro"
+      },
+      "helps": {
+        "animals": [
+          "common buckeye butterflies",
+          "white peacock butterflies"
+        ],
+        "text": "Caterpillars of the common buckeye and white peacock butterflies eat its leaves, and pollinators visit its flowers.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Ruelcaro"
+        }
+      },
+      "offers": [
+        "caterpillar food",
+        "nectar"
+      ],
+      "bloom_months": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "buying": {
+        "ask_for": "Ruellia caroliniensis"
+      },
+      "look_into": [
+        "Is invasive Mexican petunia growing in any beds on campus?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Ruellia simplex",
+          "why": "A native wild petunia instead of the invasive Mexican petunia."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Passiflora suberosa",
+      "common_name": "Corkystem passionflower",
+      "genus": "Passiflora",
+      "plant_type": "vine",
+      "effort": "easy",
+      "sun": "Light shade to full sun",
+      "mature_size": "Stems 2 feet or longer, often spreading into patches",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Passsube"
+      },
+      "helps": {
+        "animals": [
+          "zebra longwing butterflies",
+          "julia butterflies",
+          "gulf fritillaries",
+          "bees"
+        ],
+        "text": "Caterpillars of the zebra longwing, julia and gulf fritillary butterflies eat its leaves. It is one of the best plants for butterfly caterpillars.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Passsube"
+        }
+      },
+      "offers": [
+        "caterpillar food",
+        "fruit"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "buying": {
+        "ask_for": "Passiflora suberosa"
+      },
+      "look_into": [
+        "Is there a fence or railing where a small vine could climb?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Dioscorea bulbifera",
+          "why": "A small native vine for fences where air potato grows."
+        },
+        {
+          "scientific_name": "Lygodium microphyllum",
+          "why": "A native climber instead of Old World climbing fern."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Passiflora incarnata",
+      "common_name": "Maypop",
+      "genus": "Passiflora",
+      "plant_type": "vine",
+      "effort": "easy",
+      "sun": "Full sun to light shade",
+      "mature_size": "Stems 3 to 10 feet or longer",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Passinca"
+      },
+      "helps": {
+        "animals": [
+          "zebra longwing butterflies",
+          "gulf fritillaries",
+          "variegated fritillaries",
+          "bees"
+        ],
+        "text": "Caterpillars of the zebra longwing and gulf fritillary butterflies eat its leaves, and bees visit its purple flowers.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Passinca"
+        }
+      },
+      "offers": [
+        "caterpillar food",
+        "nectar",
+        "fruit"
+      ],
+      "bloom_months": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "buying": {
+        "ask_for": "Passiflora incarnata"
+      },
+      "look_into": [
+        "Is there a sunny fence where a big vine could climb?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Pueraria montana var. lobata",
+          "why": "A climbing vine for fences instead of kudzu."
+        },
+        {
+          "scientific_name": "Dioscorea bulbifera",
+          "why": "A native vine for the spots where air potato climbs."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Salvia coccinea",
+      "common_name": "Tropical sage",
+      "genus": "Salvia",
+      "plant_type": "wildflower",
+      "effort": "easy",
+      "sun": "Full sun to light shade",
+      "mature_size": "2 to 4 feet tall",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Salvcocc"
+      },
+      "helps": {
+        "animals": [
+          "hummingbirds",
+          "butterflies",
+          "birds"
+        ],
+        "text": "Hummingbirds and butterflies drink from its red flowers, and other birds eat its seeds.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Salvcocc"
+        }
+      },
+      "offers": [
+        "nectar"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "buying": {
+        "ask_for": "Salvia coccinea"
+      },
+      "look_into": [
+        "Which flower beds on campus get at least half a day of sun?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Lantana strigocamara",
+          "why": "A hummingbird flower for the same sunny beds."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Tripsacum dactyloides",
+      "common_name": "Fakahatchee grass",
+      "genus": "Tripsacum",
+      "plant_type": "grass",
+      "effort": "medium",
+      "sun": "Full sun to light shade",
+      "mature_size": "3 to 4 feet tall, up to 6 feet when blooming",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Tripdact"
+      },
+      "helps": {
+        "animals": [
+          "clouded skipper butterflies",
+          "three-spotted skipper butterflies",
+          "birds"
+        ],
+        "text": "Caterpillars of two kinds of skipper butterflies eat its leaves, and birds find seeds and insects in it.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Tripdact"
+        }
+      },
+      "offers": [
+        "caterpillar food",
+        "shelter"
+      ],
+      "bloom_months": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "buying": {
+        "ask_for": "Tripsacum dactyloides"
+      },
+      "look_into": [
+        "Is there a damp spot near a drain or pond on campus?"
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Muhlenbergia capillaris",
+      "common_name": "Muhly grass",
+      "genus": "Muhlenbergia",
+      "plant_type": "grass",
+      "effort": "easy",
+      "sun": "Full sun to light shade",
+      "mature_size": "2 to 3 feet tall, up to 5 feet when blooming",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Muhlcapi"
+      },
+      "helps": {
+        "animals": [
+          "small animals"
+        ],
+        "text": "Its thick clumps give small animals a good place to hide.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Muhlcapi"
+        }
+      },
+      "offers": [
+        "shelter"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "buying": {
+        "ask_for": "Muhlenbergia capillaris"
+      },
+      "look_into": [
+        "Could a row of it border a walkway or parking lot?"
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Serenoa repens",
+      "common_name": "Saw palmetto",
+      "genus": "Serenoa",
+      "plant_type": "shrub",
+      "effort": "medium",
+      "sun": "Full sun to light shade",
+      "mature_size": "4 to 6 feet tall, usually wider than tall",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Sererepe"
+      },
+      "helps": {
+        "animals": [
+          "palmetto skipper butterflies",
+          "monk skipper butterflies",
+          "deer",
+          "bears",
+          "turkeys"
+        ],
+        "text": "Caterpillars of the palmetto skipper and monk skipper butterflies eat its leaves, and deer, bears and turkeys eat its fruit.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Sererepe"
+        }
+      },
+      "offers": [
+        "caterpillar food",
+        "nectar",
+        "fruit",
+        "shelter"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "buying": {
+        "ask_for": "Serenoa repens"
+      },
+      "watch_out": [
+        {
+          "text": "It grows very slowly, so start with the biggest plant you can.",
+          "source": {
+            "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+            "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Sererepe"
+          }
+        }
+      ],
+      "look_into": [
+        "Are there saw palmettos growing wild anywhere near your school?"
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Rudbeckia hirta",
+      "common_name": "Black-eyed Susan",
+      "genus": "Rudbeckia",
+      "plant_type": "wildflower",
+      "effort": "easy",
+      "sun": "Full sun",
+      "mature_size": "1 to 3 feet tall",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Rudbhirt"
+      },
+      "helps": {
+        "animals": [
+          "native bees",
+          "birds"
+        ],
+        "text": "Native bees and other helpful insects visit its flowers, and birds eat its seeds.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Rudbhirt"
+        }
+      },
+      "offers": [
+        "nectar"
+      ],
+      "bloom_months": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "buying": {
+        "ask_for": "Rudbeckia hirta"
+      },
+      "look_into": [
+        "Which sunny beds could use a summer wildflower?"
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Solidago stricta",
+      "common_name": "Wand goldenrod",
+      "genus": "Solidago",
+      "plant_type": "wildflower",
+      "effort": "easy",
+      "sun": "Full sun",
+      "mature_size": "Under a foot tall, up to 4 feet when blooming",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Solistri"
+      },
+      "helps": {
+        "animals": [
+          "native bees",
+          "birds"
+        ],
+        "text": "Native bees visit its flowers, and birds find lots of insects on it to eat.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Solistri"
+        }
+      },
+      "offers": [
+        "nectar"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "buying": {
+        "ask_for": "Solidago stricta"
+      },
+      "look_into": [
+        "Does anyone at school worry goldenrod causes hay fever? (It doesn't.)"
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Salix caroliniana",
+      "common_name": "Coastal Plain willow",
+      "genus": "Salix",
+      "plant_type": "tree",
+      "effort": "big",
+      "sun": "Full sun to light shade",
+      "mature_size": "15 to 30 feet tall in South Florida",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Salicaro"
+      },
+      "helps": {
+        "animals": [
+          "viceroy butterflies",
+          "io moths",
+          "bees"
+        ],
+        "text": "It is the only native plant whose leaves viceroy butterfly caterpillars eat, and io moth caterpillars eat it too.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Salicaro"
+        }
+      },
+      "offers": [
+        "caterpillar food",
+        "nectar",
+        "shelter"
+      ],
+      "bloom_months": [
+        3,
+        4,
+        5
+      ],
+      "buying": {
+        "ask_for": "Salix caroliniana"
+      },
+      "watch_out": [
+        {
+          "text": "It needs moist or wet soil and won't handle long dry spells.",
+          "source": {
+            "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+            "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Salicaro"
+          }
+        }
+      ],
+      "look_into": [
+        "Is there a pond edge or ditch on campus that stays wet?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Melaleuca quinquenervia",
+          "why": "Grows in the same wet spots."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Zanthoxylum fagara",
+      "common_name": "Wild lime",
+      "genus": "Zanthoxylum",
+      "plant_type": "shrub",
+      "effort": "medium",
+      "sun": "Full sun",
+      "mature_size": "10 to 20 feet tall, about as wide",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Zantfaga"
+      },
+      "helps": {
+        "animals": [
+          "giant swallowtail butterflies"
+        ],
+        "text": "Caterpillars of the giant swallowtail butterfly eat its leaves.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Zantfaga"
+        }
+      },
+      "offers": [
+        "caterpillar food",
+        "shelter"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "buying": {
+        "ask_for": "Zanthoxylum fagara"
+      },
+      "watch_out": [
+        {
+          "text": "Its branches have sharp, hooked thorns. Keep it away from paths.",
+          "source": {
+            "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+            "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Zantfaga"
+          }
+        }
+      ],
+      "look_into": [
+        "Is there a corner away from walkways where a thorny shrub could go?"
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Asclepias incarnata",
+      "common_name": "Swamp milkweed",
+      "genus": "Asclepias",
+      "plant_type": "wildflower",
+      "effort": "medium",
+      "sun": "Light to moderate shade, or full sun",
+      "mature_size": "3 to 5 feet tall",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Asclinca"
+      },
+      "helps": {
+        "animals": [
+          "monarch butterflies",
+          "queen butterflies",
+          "hummingbirds",
+          "bees"
+        ],
+        "text": "Caterpillars of the monarch and queen butterflies eat its leaves, and hummingbirds, bees and butterflies drink from its flowers.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Asclinca"
+        }
+      },
+      "offers": [
+        "caterpillar food",
+        "nectar"
+      ],
+      "bloom_months": [
+        6,
+        7,
+        8
+      ],
+      "buying": {
+        "ask_for": "Asclepias incarnata"
+      },
+      "watch_out": [
+        {
+          "text": "It needs moist or wet soil and won't handle long dry spells.",
+          "source": {
+            "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+            "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Asclinca"
+          }
+        }
+      ],
+      "look_into": [
+        "Is there a rain garden or wet spot where it could grow?"
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Scaevola plumieri",
+      "common_name": "Inkberry",
+      "genus": "Scaevola",
+      "plant_type": "shrub",
+      "effort": "medium",
+      "sun": "Full sun",
+      "mature_size": "2 to 5 feet tall, usually wider than tall",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Scaeplum"
+      },
+      "helps": {
+        "animals": [
+          "wildlife on the beach"
+        ],
+        "text": "Its black berries and low branches give food and cover to wildlife near the beach.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Scaeplum"
+        }
+      },
+      "offers": [
+        "fruit",
+        "shelter"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "buying": {
+        "ask_for": "Scaevola plumieri"
+      },
+      "look_into": [
+        "Is your campus close enough to the coast for beach plants?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Scaevola taccada",
+          "why": "The native beach shrub, instead of invasive beach naupaka."
+        }
+      ],
+      "verified": false
+    },
+    {
+      "scientific_name": "Lantana involucrata",
+      "common_name": "Wild sage",
+      "genus": "Lantana",
+      "plant_type": "shrub",
+      "effort": "easy",
+      "sun": "Full sun",
+      "mature_size": "4 to 8 feet tall, about as wide",
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Lantinvo"
+      },
+      "helps": {
+        "animals": [
+          "butterflies",
+          "birds",
+          "bees"
+        ],
+        "text": "Dozens of kinds of butterflies drink from its flowers, and many birds eat its purple fruit.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Lantinvo"
+        }
+      },
+      "offers": [
+        "nectar",
+        "fruit",
+        "shelter"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "buying": {
+        "ask_for": "Lantana involucrata",
+        "avoid": "Lantana strigocamara, often sold just as lantana, is on Florida's invasive list. Make sure the tag says Lantana involucrata.",
+        "source": {
+          "name": "Florida Invasive Species Council 2026 Plant List",
+          "url": "https://www.floridainvasives.org/wp-content/uploads/2026/07/FISC-2026-Plant-List-Cat-I-II_April2026.pdf"
+        }
+      },
+      "look_into": [
+        "Is the lantana already on campus the invasive kind?"
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Lantana strigocamara",
+          "why": "The native lantana, instead of the invasive kind."
+        }
+      ],
+      "verified": false
+    }
+  ]
+}

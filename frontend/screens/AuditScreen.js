@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useFonts } from 'expo-font';
-import { identifyPlant } from '../services/geminiService';
+import { identifyPlant, userMessage } from '../services/geminiService';
 import { COLORS, FONTS, FONT_ASSETS } from '../theme';
 import StatusBadge from '../components/StatusBadge';
 import CandidatePicker, { NO_MATCH_TEXT } from '../components/CandidatePicker';
@@ -14,18 +14,6 @@ import CandidatePicker, { NO_MATCH_TEXT } from '../components/CandidatePicker';
 const EASE_OUT   = Easing.bezier(0.22, 1, 0.36, 1);
 
 const LOGO = require('../../assets/EcoLoco_logo.png');
-
-// ─── Wildlife support pill ────────────────────────────────────────────────────
-function SupportPill({ level }) {
-  const labels = { high: '↑ High', medium: '→ Medium', low: '↓ Low' };
-  const label = labels[level?.toLowerCase()];
-  if (!label) return null;
-  return <Text style={sp.text}>{label} wildlife support</Text>;
-}
-
-const sp = StyleSheet.create({
-  text: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 4 },
-});
 
 // ─── Confidence badge ─────────────────────────────────────────────────────────
 function ConfidenceBadge({ confidence }) {
@@ -94,7 +82,6 @@ function PlantCard({ plant, onDelete, onPick, onNone }) {
             <View style={styles.badgeRow}>
               <StatusBadge status={plant.status} label={plant.status_label} />
             </View>
-            {plant.picked === 0 && <SupportPill level={plant.wildlife_support} />}
             <ConfidenceBadge confidence={plant.confidence} />
           </>
         )}
@@ -169,9 +156,9 @@ export default function AuditScreen({ navigation }) {
           ? { ...result, _id: tempId, photo_uri: photo.uri, loading: false, picked: result.state === 'identified' ? 0 : null }
           : p
       ));
-    } catch {
+    } catch (err) {
       setPlants(prev => prev.filter(p => p._id !== tempId));
-      setScanError('Could not identify this plant. Check your connection and try again.');
+      setScanError(userMessage(err, 'Could not identify this plant. Check your connection and try again.'));
     } finally {
       setScanning(false);
     }

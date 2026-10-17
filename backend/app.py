@@ -3,15 +3,8 @@ import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
-from services import openai_client
-from services.ai_service import (
-    fallback_recommendations,
-    generate_letter,
-    generate_letter_without_ai,
-    get_plant_recommendations,
-    identify_plant,
-)
-from services.summary_service import summarize
+from services.ai_service import generate_letter, identify_plant
+from services.plan_service import build_plan
 
 load_dotenv()
 
@@ -21,6 +14,13 @@ CORS(app)
 
 def debug_enabled():
     return os.getenv("ECOLOCO_DEV") == "1"
+
+
+FLORIDA_ONLY = "EcoLoco's plant lists cover Florida only. Enter a Florida ZIP code."
+
+
+def is_florida_zip(zip_code):
+    return isinstance(zip_code, str) and len(zip_code) == 5 and zip_code.isdigit() and 32004 <= int(zip_code) <= 34997
 
 
 def _valid_images(images):
@@ -41,6 +41,8 @@ def identify():
 
     if not _valid_images(images) or not location:
         return jsonify({"error": "1 to 5 images and a location are required"}), 400
+    if not is_florida_zip(location):
+        return jsonify({"error": FLORIDA_ONLY}), 400
 
     result = identify_plant(images, location)
     return jsonify({"result": result})
@@ -53,37 +55,31 @@ def recommend():
 
     if not location:
         return jsonify({"error": "location is required"}), 400
-
-    try:
-        result, ai_unavailable = get_plant_recommendations(location), False
-    except openai_client.AIUnavailable:
-        result, ai_unavailable = fallback_recommendations(location), True
-    return jsonify({"result": result, "ai_unavailable": ai_unavailable})
+    if not is_florida_zip(location):
+        return jsonify({"error": FLORIDA_ONLY}), 400
+    return jsonify({"result": build_plan([])["add"]})
 
 
-@app.route("/summary", methods=["POST"])
-def summary():
+@app.route("/plan", methods=["POST"])
+def plan():
     data = request.get_json()
     plants = data.get("plants")
-    if not plants:
-        return jsonify({"error": "plants list is required"}), 400
-    return jsonify({"result": summarize(plants)})
+    location = data.get("location")
+    if not isinstance(plants, list) or not location:
+        return jsonify({"error": "plants and location are required"}), 400
+    if not is_florida_zip(location):
+        return jsonify({"error": FLORIDA_ONLY}), 400
+    return jsonify({"result": build_plan(plants)})
 
 
 @app.route("/letter", methods=["POST"])
 def letter():
-    data       = request.get_json()
-    plant_names = data.get("plant_names")
-    summary    = data.get("summary")
-    zip_code   = data.get("zip_code")
-
-    if not plant_names or not isinstance(summary, dict) or not zip_code:
-        return jsonify({"error": "plant_names, summary, and zip_code are required"}), 400
-
-    try:
-        result, ai_unavailable = generate_letter(plant_names, summary, zip_code), False
-    except openai_client.AIUnavailable:
-        result, ai_unavailable = generate_letter_without_ai(plant_names, summary, zip_code), True
+    data = request.get_json()
+    plan = data.get("plan")
+    zip_code = data.get("zip_code")
+    if not isinstance(plan, dict) or not {"remove", "add", "summary"} <= plan.keys() or not zip_code:
+        return jsonify({"error": "plan and zip_code are required"}), 400
+    result, ai_unavailable = generate_letter(plan, zip_code)
     return jsonify({"result": result, "ai_unavailable": ai_unavailable})
 
 

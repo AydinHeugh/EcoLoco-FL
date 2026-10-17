@@ -189,6 +189,7 @@
         "`identified`: shows the name, the shared `StatusBadge`, and PlantNet's match percentage.",
         "`confirm`: shows `CandidatePicker` (\"Which one is it?\") with every option's status and PlantNet %, the AI's suggestion marked \"Best guess\", and \"None of these\".",
         "`unidentified` or \"None of these\": shows \"Couldn't identify this. Try a close-up of one leaf, or a flower\" and no name.",
+        "Errors show as text; a 400 from the server (like the Florida-only message) shows the server's message.",
         "Plants with no wildlife facts in our data say \"We don't have wildlife info for this plant yet\".",
         "'Get native plant recommendations for ZIP' → `navigate('Recommend', {prefillZip})`. A \"Plant identification powered by Pl@ntNet\" credit links to plantnet.org.",
         "Colors and fonts come from `frontend/theme.js`."
@@ -203,13 +204,13 @@
       "symbol": "async function handleRecommend",
       "col": 1,
       "row": 3,
-      "what": "Lists the best native plants to add for a ZIP code.",
+      "what": "Shows Florida native plants to add for a ZIP code, from our own data.",
       "how": [
-        "If opened with `route.params.prefillZip`, fills the ZIP box and runs automatically.",
-        "`handleRecommend(zip)` rejects anything that isn't exactly 5 digits.",
-        "Calls `getPlantRecommendations(zip)` and shows skeleton cards while waiting.",
-        "The top 3 come back with problem / action / impact text and are shown as large cards; the other 8 have a one-line benefit and sit behind 'View all'.",
-        "Network errors show an alert, which does not appear on the web build. Unrecognised wildlife values show as \"? Unknown\"."
+        "You type a 5-digit ZIP (or arrive with one pre-filled) and press \"Show plants\".",
+        "Calls `getPlantRecommendations(zip)` and shows each plant as a `PlanCard` (Helps, Where, Buying it, Watch out, Look into, with sources).",
+        "If no plants are verified yet, says \"No plants are ready to recommend yet. Our team is still checking each one.\"",
+        "Links to plantrealflorida.org to find a native nursery.",
+        "Errors (bad ZIP, ZIP outside Florida, no connection) show as text, not pop-ups."
       ]
     },
     {
@@ -238,18 +239,17 @@
       "layer": "ui",
       "status": "live",
       "file": "frontend/screens/AuditResultsScreen.js",
-      "symbol": "async function fetchAll",
+      "symbol": "export default function AuditResultsScreen",
       "col": 1,
       "row": 6,
-      "what": "Shows what's on campus by Florida status, the percent that is native now and with the plan, native plants to add, and a letter to the principal.",
+      "what": "The audit results: the plan first, then what the campus supports now, the percent native, and the letter.",
       "how": [
-        "Receives `plants[]` and `zipCode` from AuditScreen via route params.",
-        "`fetchAll()` sends each plant's scientific name and name to `getSummary()`, then, if there's a ZIP, calls `getPlantRecommendations(zipCode)`.",
-        "Shows `PercentRing` (now and with the plan), or \"Not enough identified plants yet\" when nothing has a known status.",
-        "Shows counts for Native, Non-native (not harmful), Invasive and Unknown, and a note that unknown plants aren't in the percentage.",
-        "Lists every plant under its status with the shared `StatusBadge`; unknown plants stay visible.",
-        "Lists native plants to add (top 3, more on request) and renders `LetterGenerator` with them and the summary.",
-        "Errors show as text on the screen, not pop-ups."
+        "Receives `plants[]` and `zipCode` from AuditScreen.",
+        "Calls `getPlan()` once; the plan includes the summary.",
+        "Your plan: a Remove `PlanCard` for each invasive (why, safety, replacement), then Add cards, then a link to plantrealflorida.org.",
+        "What your campus supports now: every plant with its status and one sourced line, or \"We don't have wildlife info for this plant yet\".",
+        "How native is your campus: `PercentRing` now and with the plan (or \"Not enough identified plants yet\") and counts for the four groups.",
+        "`LetterGenerator` writes the letter from the plan. Errors show as text."
       ]
     },
     {
@@ -261,7 +261,7 @@
       "symbol": null,
       "col": 2,
       "row": 0.8,
-      "goal": "Show the one-line stake for every plant. The backend already returns `why` from /identify and /recommend; only the UI is missing.",
+      "goal": "Priority 4: show the why line and its source on the Identify screen, and the 4-line \"Why this matters\" section on the results screen.",
       "what": "A single sentence under each plant name saying why this plant matters in South Florida.",
       "how": [
         "Read `result.why` from /identify and `why` from each /recommend item.",
@@ -311,13 +311,12 @@
       "symbol": "function LetterGenerator",
       "col": 2,
       "row": 6.4,
-      "what": "Drafts an editable letter to the school admin asking to plant the recommended natives.",
+      "what": "Writes an editable letter to the principal from the whole plan.",
       "how": [
-        "The top 3 recommendations are pre-selected; tapping a plant toggles it and clears any old letter.",
-        "`handleGenerate()` collects the selected plant names and calls `generateLetter(plantNames, summary, zipCode)`.",
-        "Shows the letter in an editable text box with [PRINCIPAL_NAME], [SCHOOL_NAME] and [STUDENT_NAME] placeholders.",
+        "\"Write the letter\" calls `generateLetter(plan, zipCode)`; there are no checkboxes, the letter covers the whole plan.",
+        "Shows the letter in an editable box with [PRINCIPAL_NAME], [SCHOOL_NAME] and [STUDENT_NAME] to fill in.",
         "Copy writes the edited text with `Clipboard.setStringAsync` and shows 'Copied' for 2 seconds.",
-        "If the letter can't be written, an error shows as text under the button."
+        "Errors show as text under the button."
       ]
     },
     {
@@ -363,8 +362,8 @@
       "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
       "what": "Asks the backend for native plants to add for a ZIP.",
       "how": [
-        "POSTs `{location: zip}` to `/recommend`.",
-        "Throws on non-OK responses; returns `{result: [11 plants]}`."
+        "POSTs `{location}` to `/recommend`.",
+        "Returns `{result: [Add cards]}`."
       ]
     },
     {
@@ -379,8 +378,8 @@
       "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
       "what": "Asks the backend to write the letter to the school admin.",
       "how": [
-        "POSTs `{plant_names, summary, zip_code}` to `/letter`.",
-        "Throws on non-OK responses; returns `{result: 'letter text'}`."
+        "POSTs `{plan, zip_code}` to `/letter`.",
+        "Returns `{result: letter text, ai_unavailable}`."
       ]
     },
     {
@@ -443,12 +442,10 @@
       "symbol": "def recommend(",
       "col": 4,
       "row": 3,
-      "what": "API endpoint for native plant recommendations.",
+      "what": "API endpoint for the Recommend tab: native plants to add when there's no audit.",
       "how": [
-        "Reads `location`; 400 if missing.",
-        "Calls `get_plant_recommendations(location)`.",
-        "If OpenAI is unavailable (`AIUnavailable`), returns `fallback_recommendations(location)` from the bundled natives list instead.",
-        "Returns `{result: [...], ai_unavailable}`."
+        "Reads `location`; 400 if missing, and the Florida-only message for ZIPs outside Florida.",
+        "Returns `{result: build_plan([]).add}`: verified plants from our data, ranked as if the campus had nothing yet. No AI is used."
       ]
     },
     {
@@ -462,9 +459,8 @@
       "row": 6.4,
       "what": "API endpoint for the letter to the school admin.",
       "how": [
-        "Reads `plant_names`, `summary` and `zip_code`; 400 if any is missing or `summary` isn't an object.",
-        "Calls `generate_letter(...)`; if OpenAI is unavailable, uses `generate_letter_without_ai(...)` instead.",
-        "Returns `{result: letter text, ai_unavailable}`."
+        "Reads `plan` (with `remove`, `add`, `summary`) and `zip_code`; 400 if missing.",
+        "Calls `generate_letter(plan, zip_code)` and returns `{result: letter text, ai_unavailable}`."
       ]
     },
     {
@@ -495,31 +491,11 @@
       "row": 1.5,
       "what": "The identification pipeline: works out what the plant is, its Florida status from our data, and how sure the app is.",
       "how": [
-        "`identify_species(images, location)` returns the state (`identified`, `confirm` or `unidentified`), the ranked options and the suggested one.",
-        "`unidentified` returns the message \"Couldn't identify this. Try a close-up of one leaf, or a flower\" with no options, and makes no AI call.",
-        "Otherwise each option goes through `plant_option()` in parallel, so every option in the picker shows its own Florida status.",
-        "Status comes only from our lists and USDA. `assess_plant()` still asks OpenAI for wildlife support, conservation status and two actions for the top option (removed in Priority 3).",
-        "If OpenAI is unavailable, wildlife values become unknown, actions are empty (invasives still get the fixed removal actions) and `ai_unavailable` is true.",
-        "Returns the top option's fields plus `state, options, suggested, message, id_source, wildlife_support, wildlife_support_reason, endangered_status, actions, ai_unavailable`."
-      ]
-    },
-    {
-      "id": "s_rec",
-      "label": "get_plant_recommendations()",
-      "layer": "svc",
-      "status": "live",
-      "file": "backend/services/ai_service.py",
-      "symbol": "def get_plant_recommendations(",
-      "col": 5,
-      "row": 3,
-      "goal": "Pick the candidates from fl_natives.json instead of asking GPT for the list; GPT would then only write the wording.",
-      "what": "Produces the ranked list of native plants to recommend for a ZIP.",
-      "how": [
-        "One OpenAI call: 'For ZIP X, return 11 native plants ranked by ecological impact.' A reply that isn't a list counts as OpenAI being unavailable.",
-        "Entries 1–3 in full: `plant_name, scientific_name, wildlife_support, problem, action, impact`; entries 4–11 compact with `benefit`.",
-        "Runs `get_status()` on all plants at once (in parallel, since USDA lookups take about a second each).",
-        "Drops anything on the FISC invasive list or confirmed non-native by USDA, and adds `source` and `why` to the rest.",
-        "Raises `AIUnavailable` when OpenAI fails, so the route can switch to `fallback_recommendations`."
+        "`identify_species(images, location)` returns the state (`identified`, `confirm` or `unidentified`), the ranked options, the suggested one, and whether the AI tiebreaker was unavailable.",
+        "`unidentified` returns the message \"Couldn't identify this. Try a close-up of one leaf, or a flower\" with no options.",
+        "Otherwise each option goes through `plant_option()` in parallel: status from our lists and USDA, plus `helps`, `watch_out` and `removal_safety` from our data when we have them.",
+        "No OpenAI call is made here; the AI no longer rates wildlife value or suggests actions.",
+        "Returns the top option's fields plus `state, options, suggested, message, id_source, ai_unavailable`."
       ]
     },
     {
@@ -531,12 +507,13 @@
       "symbol": "def generate_letter(",
       "col": 5,
       "row": 6.4,
-      "what": "Writes the letter asking the school to plant the chosen natives.",
+      "what": "Writes the letter to the principal from the plan. OpenAI may only reword the opening paragraph.",
       "how": [
-        "Joins the plant names naturally ('A', 'A and B', 'A, B, and C').",
-        "One `openai_client.chat()` call writes only 1–2 sentences about which wildlife those plants support in the ZIP; if that fails, the route uses `generate_letter_without_ai` instead.",
-        "Drops that into a fixed template with the ZIP, the [PRINCIPAL_NAME], [SCHOOL_NAME], [STUDENT_NAME] placeholders, and \"Of the plants we checked, X% are native to Florida. With these changes, it would be Y%.\" (or \"We couldn't identify enough plants to give a percentage yet.\").",
-        "Returns the letter as plain text."
+        "Builds the opening paragraph from the plan's percentages.",
+        "Asks OpenAI to reword only that paragraph, with a system prompt: about a 7th-grade reading level, everyday words, add no plant, animal, place, number or fact, keep every number.",
+        "Keeps the AI's version only if `mentions_new_names()` finds nothing new and the numbers are unchanged; otherwise keeps ours.",
+        "Everything else comes from `letter_facts()`: removals with safety notes, plants to add with buying info, and sources.",
+        "Returns `(letter, ai_unavailable)`."
       ]
     },
     {
@@ -665,23 +642,6 @@
       ]
     },
     {
-      "id": "s_assess",
-      "label": "assess_plant()",
-      "layer": "svc",
-      "status": "live",
-      "file": "backend/services/ai_service.py",
-      "symbol": "def assess_plant(",
-      "col": 6,
-      "row": 1.9,
-      "what": "Asks OpenAI for wildlife support, conservation status and two actions for the top match. It no longer guesses native/invasive status (Priority 3 removes it entirely).",
-      "how": [
-        "Builds a prompt with the plant's names and ZIP. If `get_status` knew the plant, adds \"Florida records (FISC/fl_natives/USDA) list it as invasive/native/non-native here; treat that as fact.\"",
-        "Asks for `wildlife_support`, a one-sentence reason, `endangered_status` and two actions. It is no longer asked for a native/invasive guess.",
-        "Returns the parsed JSON; `identify_plant` cleans and merges it.",
-        "A reply that isn't a JSON object raises `AIUnavailable`, so `identify_plant` degrades instead of crashing."
-      ]
-    },
-    {
       "id": "s_plantnet",
       "label": "identify_with_plantnet()",
       "layer": "svc",
@@ -746,52 +706,6 @@
         "If its lower-48 status isn't native → `introduced`.",
         "If it is native in the US, downloads its state distribution and checks for Florida: present → `native`, absent → `introduced` (native elsewhere, not here).",
         "Not found → `None`. Answers are cached in memory; network errors are raised, not cached."
-      ]
-    },
-    {
-      "id": "s_bundled",
-      "label": "bundled_natives()",
-      "layer": "svc",
-      "status": "live",
-      "file": "backend/services/fl_plants_service.py",
-      "symbol": "def bundled_natives(",
-      "col": 6,
-      "row": 6.2,
-      "what": "Returns the bundled South Florida natives list, in file order.",
-      "how": [
-        "Reads `fl_natives.json` once (cached) and returns its species entries for the AI-free fallbacks."
-      ]
-    },
-    {
-      "id": "s_fallback_rec",
-      "label": "fallback_recommendations()",
-      "layer": "svc",
-      "status": "live",
-      "file": "backend/services/ai_service.py",
-      "symbol": "def fallback_recommendations(",
-      "col": 5,
-      "row": 7.6,
-      "what": "Recommendations without AI, taken from the bundled natives list.",
-      "how": [
-        "Takes the first 11 natives from `bundled_natives()`.",
-        "The first 3 get `problem`, `action` and `impact` (impact = the native's `why`); the rest get `benefit`.",
-        "Each has `source: fl_natives`, its `why`, and `wildlife_support: unknown`."
-      ]
-    },
-    {
-      "id": "s_letter_noai",
-      "label": "generate_letter_without_ai()",
-      "layer": "svc",
-      "status": "live",
-      "file": "backend/services/ai_service.py",
-      "symbol": "def generate_letter_without_ai(",
-      "col": 5,
-      "row": 8.8,
-      "what": "The same letter, with the benefit sentence built from our data instead of OpenAI.",
-      "how": [
-        "Looks up each chosen plant by common name in the bundled natives and uses its `why` line (\"Coontie: The only host plant of…\").",
-        "If none match, uses a generic sentence about food and shelter for pollinators and birds.",
-        "Fills the same template as `generate_letter`."
       ]
     },
     {
@@ -862,6 +776,7 @@
         "Adds `status_label` (`Native`, `Non-native`, `Invasive`, `Unknown: not on Florida lists`) and `source_label` (for example `Florida Invasive Species Council 2026 list`).",
         "Uses our list's common name first, then PlantNet's, then the scientific name, so a name is never blank.",
         "Non-native plants from USDA with no curated line get `why`: \"Not from Florida, and not on Florida's invasive list.\"",
+        "Adds `helps` and `watch_out` from `fl_recommendations.json` and `removal_safety` from the FISC list when we have them.",
         "Returns `{plant_name, scientific_name, confidence, status, status_label, source, source_label, why}`."
       ]
     },
@@ -904,8 +819,8 @@
       "status": "live",
       "file": "backend/services/summary_service.py",
       "symbol": "def summarize(",
-      "col": 5,
-      "row": 4.8,
+      "col": 6,
+      "row": 5.5,
       "what": "Counts the scanned plants by Florida status and works out the share that is native, now and with the plan. It replaced the old 0–100 score.",
       "how": [
         "Runs each plant's scientific name through `plant_option()`, so status comes from FISC, our natives list or USDA, never from the name the student typed or the AI.",
@@ -913,37 +828,6 @@
         "`percent_native` = natives ÷ plants with a known status, rounded; `None` when no plant has a known status.",
         "`percent_native_with_plan` = (natives + invasives replaced + `added_natives`) ÷ (known plants + `added_natives`).",
         "Returns `{counts, known, plant_count, percent_native, percent_native_with_plan, plants}`; `plants` lists each one with its name, status label, `why` and source label, unknowns included."
-      ]
-    },
-    {
-      "id": "r_summary",
-      "label": "POST /summary",
-      "layer": "route",
-      "status": "live",
-      "file": "backend/app.py",
-      "symbol": "def summary(",
-      "col": 4,
-      "row": 4.8,
-      "what": "API endpoint for the campus summary.",
-      "how": [
-        "Reads `plants`; 400 \"plants list is required\" if missing or empty.",
-        "Calls `summarize(plants)` and returns `{result}`."
-      ]
-    },
-    {
-      "id": "c_summary",
-      "label": "getSummary()",
-      "layer": "client",
-      "status": "live",
-      "file": "frontend/services/geminiService.js",
-      "symbol": "export async function getSummary",
-      "col": 3,
-      "row": 4.8,
-      "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
-      "what": "Sends the audited plants to the backend and gets the counts and percent native back.",
-      "how": [
-        "POSTs `{plants: [{scientific_name, plant_name}]}` to `/summary`.",
-        "Throws on non-OK responses; returns `{result: {counts, known, plant_count, percent_native, percent_native_with_plan, plants}}`."
       ]
     },
     {
@@ -960,6 +844,172 @@
         "Draws 40 dots in a circle with plain Views (no chart library).",
         "Dark green dots = native now; light green = what the plan adds; grey = the rest. There is no target marker.",
         "A legend underneath spells out both numbers."
+      ]
+    },
+    {
+      "id": "d_recs",
+      "label": "fl_recommendations.json",
+      "layer": "data",
+      "status": "live",
+      "file": "backend/data/fl_recommendations.json",
+      "symbol": null,
+      "col": 7,
+      "row": 5.6,
+      "goal": "A teammate checks each plant is native to Palm Beach County in the USF Atlas and sets verified: true. Only verified plants are recommended, so the plan shows no Add cards until then.",
+      "what": "31 South Florida native plants EcoLoco can recommend, each fact with its source.",
+      "how": [
+        "Each entry: names, plant type, effort (easy / medium / big), sun, size, what it helps (with the animals named), what it offers (caterpillar food, nectar, fruit, shelter), bloom months, how to buy it (the name to ask for and look-alikes to avoid), up to 2 watch-outs and up to 2 questions to look into.",
+        "Facts come from IRC Natives for Your Neighborhood, UF/IFAS, ASPCA and the FISC list, each with a link.",
+        "`replaces` pairs a plant with FISC invasives it can stand in for, with a plain reason. These pairings are EcoLoco suggestions for the team to review.",
+        "Every Palm Beach County prohibited invasive has at least one replacement (a test checks this).",
+        "Every entry starts `verified: false`."
+      ]
+    },
+    {
+      "id": "d_nwf",
+      "label": "nwf_keystone_fl.json",
+      "layer": "data",
+      "status": "live",
+      "file": "backend/data/nwf_keystone_fl.json",
+      "symbol": null,
+      "col": 8,
+      "row": 5.6,
+      "what": "The 30 plant groups whose leaves feed the most kinds of caterpillars in South Florida, from the National Wildlife Federation.",
+      "how": [
+        "Transcribed from NWF's Ecoregion 15 (Tropical Wet Forests) keystone plant list, with the PDF link.",
+        "Each row: genus, plain group name (\"oaks\") and number of caterpillar species.",
+        "Counts are for the whole group and are never added together."
+      ]
+    },
+    {
+      "id": "d_terms",
+      "label": "nature_terms.json",
+      "layer": "data",
+      "status": "live",
+      "file": "backend/data/nature_terms.json",
+      "symbol": null,
+      "col": 8,
+      "row": 7.6,
+      "what": "Animal and plant words the letter's name check looks for.",
+      "how": [
+        "`words` match whole words and their plurals (bee, bees).",
+        "`endings` catch compound names like mockingbird or dragonfly."
+      ]
+    },
+    {
+      "id": "s_plan",
+      "label": "build_plan()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/plan_service.py",
+      "symbol": "def build_plan(",
+      "col": 5,
+      "row": 4.8,
+      "what": "Turns the scanned plants into a plan: invasives to remove, native plants to add, and the percent native now and with the plan. Every plant comes from our own data.",
+      "how": [
+        "Runs `summarize()` on the scanned plants for their statuses.",
+        "Each distinct invasive becomes a Remove card with its `why`, removal safety (or \"Ask your grounds crew how to remove it safely.\"), \"Replacing it takes you from X% to Y% native\" and a replacement.",
+        "Finds gaps on campus: none of NWF's important plant groups, nothing caterpillars eat, no fruit, months with nothing blooming.",
+        "Ranks verified plants from `fl_recommendations.json`: gaps filled + 2 if it replaces an invasive found + 0.5 if its group is on the NWF list; easy plants first on ties.",
+        "Picks one replacement per invasive, then gap fillers, up to 5 Add cards; the first 3 have at most 1 tree and at least 1 easy plant.",
+        "Add cards say why they were picked and their effect: \"Oaks feed 395 kinds of caterpillars here.\" for NWF groups, otherwise the percent-native change. Counts are never added up.",
+        "Returns `{remove, add, gaps, summary}`."
+      ]
+    },
+    {
+      "id": "r_plan",
+      "label": "POST /plan",
+      "layer": "route",
+      "status": "live",
+      "file": "backend/app.py",
+      "symbol": "def plan(",
+      "col": 4,
+      "row": 4.8,
+      "what": "API endpoint for the campus plan.",
+      "how": [
+        "Reads `plants` (a list, may be empty) and `location`; 400 if missing.",
+        "ZIP codes outside Florida (32004–34997) get \"EcoLoco's plant lists cover Florida only. Enter a Florida ZIP code.\"",
+        "Returns `{result: build_plan(plants)}`."
+      ]
+    },
+    {
+      "id": "c_plan",
+      "label": "getPlan()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/services/geminiService.js",
+      "symbol": "export async function getPlan",
+      "col": 3,
+      "row": 4.8,
+      "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
+      "what": "Sends the audited plants to the backend and gets the plan back.",
+      "how": [
+        "POSTs `{plants: [{scientific_name, plant_name}], location}` to `/plan`.",
+        "Errors keep the HTTP status; `userMessage(err, fallback)` shows the server's own message for 400s (like the Florida-only message) and a friendly fallback otherwise."
+      ]
+    },
+    {
+      "id": "c_user_message",
+      "label": "userMessage()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/services/geminiService.js",
+      "symbol": "export function userMessage",
+      "col": 3,
+      "row": 9,
+      "what": "Picks the error text a screen shows.",
+      "how": [
+        "For a 400 from our server, shows the server's message (for example \"Florida only\").",
+        "For anything else, shows the screen's own friendly message."
+      ]
+    },
+    {
+      "id": "s_guard",
+      "label": "mentions_new_names()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/name_guard.py",
+      "symbol": "def mentions_new_names(",
+      "col": 6,
+      "row": 6.8,
+      "what": "Checks whether a piece of AI text names a plant or animal that wasn't in what we gave it.",
+      "how": [
+        "Builds patterns from `nature_terms.json` plus every plant name, synonym, animal and NWF group in our data files.",
+        "Returns true if the text contains any match that doesn't also appear in the allowed text."
+      ]
+    },
+    {
+      "id": "s_letter_facts",
+      "label": "letter_facts()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/ai_service.py",
+      "symbol": "def letter_facts(",
+      "col": 5,
+      "row": 8.8,
+      "what": "The letter built only from our data, with no AI. Also used when the AI is down.",
+      "how": [
+        "Opening: the ZIP and \"Of the plants we checked, X% are native to Florida. With these changes, it would be Y%.\"",
+        "\"What we'd like to remove\": each invasive with its why and safety note.",
+        "\"What we'd like to plant\": each Add card with what it helps and \"Buying it: ask for …\" plus look-alikes to avoid.",
+        "\"Sources\": every source used, with links."
+      ]
+    },
+    {
+      "id": "ui_plancard",
+      "label": "PlanCard + SourceLine",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/PlanCard.js",
+      "symbol": "export default function PlanCard",
+      "col": 2,
+      "row": 4.2,
+      "what": "One Remove or Add card in the plan, with every fact followed by its source.",
+      "how": [
+        "Add cards: name, why it was picked, effect, then Helps / Where / Buying it / Watch out / Look into.",
+        "Remove cards: name, Invasive badge, Why, Safety, and what to replace it with.",
+        "Shows 2 rows and a \"More\" button for the rest.",
+        "`SourceLine` (frontend/components/SourceLine.js) shows \"Source: …\" in small text and opens the link."
       ]
     }
   ],
@@ -1018,7 +1068,7 @@
     {
       "from": "results",
       "to": "letter",
-      "label": "renders LetterGenerator {recs, summary, zipCode}"
+      "label": "renders LetterGenerator {plan, zipCode}"
     },
     {
       "from": "ident",
@@ -1076,14 +1126,9 @@
       "label": "getPlantRecommendations(zip)"
     },
     {
-      "from": "results",
-      "to": "c_rec",
-      "label": "getPlantRecommendations(zipCode)"
-    },
-    {
       "from": "letter",
       "to": "c_letter",
-      "label": "generateLetter(plantNames[], summary, zipCode)"
+      "label": "generateLetter(plan, zipCode)"
     },
     {
       "from": "c_identify",
@@ -1100,7 +1145,7 @@
     {
       "from": "c_letter",
       "to": "r_letter",
-      "label": "POST /letter {plant_names, summary, zip_code}",
+      "label": "POST /letter {plan, zip_code}",
       "detail": "Returns {result: letter text, ai_unavailable}."
     },
     {
@@ -1124,14 +1169,9 @@
       "label": "identify_plant(image, location)"
     },
     {
-      "from": "r_recommend",
-      "to": "s_rec",
-      "label": "get_plant_recommendations(location)"
-    },
-    {
       "from": "r_letter",
       "to": "s_letter",
-      "label": "generate_letter(plant_names, summary, zip_code)"
+      "label": "generate_letter(plan, zip_code)"
     },
     {
       "from": "s_inat",
@@ -1140,14 +1180,9 @@
       "status": "dead"
     },
     {
-      "from": "s_rec",
-      "to": "openai",
-      "label": "ZIP → 11 ranked natives (JSON)"
-    },
-    {
       "from": "s_letter",
       "to": "openai",
-      "label": "plant list + ZIP → 1–2 benefit sentences"
+      "label": "opening paragraph + plain-language system prompt → reworded paragraph"
     },
     {
       "from": "s_fl",
@@ -1165,25 +1200,10 @@
       "label": "identify_species(images, location) → state, ranked options, suggested"
     },
     {
-      "from": "s_identify",
-      "to": "s_assess",
-      "label": "assess_plant(species, status, zip)"
-    },
-    {
       "from": "s_species",
       "to": "openai",
-      "label": "unsure: pick from PlantNet's top 5 · PlantNet failed: identify from photos",
+      "label": "unsure: suggest one of PlantNet's options · PlantNet failed: identify from photos",
       "detail": "Adjudication sends the photos, ZIP and PlantNet's candidates and accepts only a name from that list. Fallback uses the calibrated vision prompt and returns names, confidence and other candidates."
-    },
-    {
-      "from": "s_assess",
-      "to": "openai",
-      "label": "names + ZIP + known status → wildlife, actions, status guess"
-    },
-    {
-      "from": "s_rec",
-      "to": "s_fl",
-      "label": "get_status() per plant → drop invasives, add source + why"
     },
     {
       "from": "ident",
@@ -1228,26 +1248,6 @@
       "from": "s_usda",
       "to": "usda",
       "label": "search → profile → FL distribution"
-    },
-    {
-      "from": "r_recommend",
-      "to": "s_fallback_rec",
-      "label": "AIUnavailable → fallback_recommendations(location)"
-    },
-    {
-      "from": "r_letter",
-      "to": "s_letter_noai",
-      "label": "AIUnavailable → generate_letter_without_ai(...)"
-    },
-    {
-      "from": "s_fallback_rec",
-      "to": "s_bundled",
-      "label": "bundled_natives() → first 11"
-    },
-    {
-      "from": "s_letter_noai",
-      "to": "s_bundled",
-      "label": "bundled_natives() → why lines"
     },
     {
       "from": "fisc_builder",
@@ -1310,27 +1310,6 @@
       "label": "resolve(name)"
     },
     {
-      "from": "results",
-      "to": "c_summary",
-      "label": "getSummary([{scientific_name, plant_name}])"
-    },
-    {
-      "from": "c_summary",
-      "to": "r_summary",
-      "label": "POST /summary {plants}",
-      "detail": "Returns {result: counts, known, plant_count, percent_native, percent_native_with_plan, plants}."
-    },
-    {
-      "from": "flask",
-      "to": "r_summary",
-      "label": "registers"
-    },
-    {
-      "from": "r_summary",
-      "to": "s_summary",
-      "label": "summarize(plants)"
-    },
-    {
       "from": "s_summary",
       "to": "s_option",
       "label": "plant_option(name) per plant → status"
@@ -1339,6 +1318,87 @@
       "from": "results",
       "to": "ui_ring",
       "label": "percent_native, percent_native_with_plan"
+    },
+    {
+      "from": "results",
+      "to": "c_plan",
+      "label": "getPlan([{scientific_name, plant_name}], zipCode)"
+    },
+    {
+      "from": "c_plan",
+      "to": "r_plan",
+      "label": "POST /plan {plants, location}",
+      "detail": "Returns {result: remove, add, gaps, summary}."
+    },
+    {
+      "from": "flask",
+      "to": "r_plan",
+      "label": "registers"
+    },
+    {
+      "from": "r_plan",
+      "to": "s_plan",
+      "label": "build_plan(plants)"
+    },
+    {
+      "from": "r_recommend",
+      "to": "s_plan",
+      "label": "build_plan([]) → add cards"
+    },
+    {
+      "from": "s_plan",
+      "to": "s_summary",
+      "label": "summarize(plants, added_natives)"
+    },
+    {
+      "from": "s_plan",
+      "to": "d_recs",
+      "label": "verified plants, facts, replaces"
+    },
+    {
+      "from": "s_plan",
+      "to": "d_nwf",
+      "label": "genus → caterpillar count for the group"
+    },
+    {
+      "from": "s_option",
+      "to": "d_recs",
+      "label": "helps, watch_out for known plants"
+    },
+    {
+      "from": "s_resolve",
+      "to": "d_recs",
+      "label": "names, common names"
+    },
+    {
+      "from": "s_letter",
+      "to": "s_letter_facts",
+      "label": "letter_facts(plan, zip) → template text"
+    },
+    {
+      "from": "s_letter",
+      "to": "s_guard",
+      "label": "mentions_new_names(reply, opening)"
+    },
+    {
+      "from": "s_guard",
+      "to": "d_terms",
+      "label": "animal and plant words"
+    },
+    {
+      "from": "results",
+      "to": "ui_plancard",
+      "label": "Remove and Add cards"
+    },
+    {
+      "from": "rec",
+      "to": "ui_plancard",
+      "label": "Add cards"
+    },
+    {
+      "from": "results",
+      "to": "c_user_message",
+      "label": "error text"
     }
   ]
 }

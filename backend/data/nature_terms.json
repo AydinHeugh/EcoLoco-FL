@@ -1,0 +1,12 @@
+{
+  "_comment": "Words for animals and plants used by the letter's name check. 'words' match as whole words (plurals included); 'endings' catch compound names like mockingbird or dragonfly. Names from EcoLoco's other data files are checked too.",
+  "words": [
+    "animal", "ant", "bat", "bear", "bee", "beetle", "berry", "bird", "bobcat", "bush", "butterfly", "butterflies",
+    "cardinal", "caterpillar", "crab", "deer", "dove", "duck", "egret", "fern", "fish", "flower", "fox", "frog",
+    "grass", "hawk", "heron", "hummingbird", "insect", "larva", "larvae", "lizard", "manatee", "moth", "oak",
+    "opossum", "owl", "palm", "panther", "pine", "plant", "pollinator", "rabbit", "raccoon", "shrub", "snake",
+    "spider", "squirrel", "toad", "tortoise", "tree", "turkey", "turtle", "vine", "wasp", "weed", "wildflower",
+    "woodpecker", "worm"
+  ],
+  "endings": ["bird", "birds", "fly", "flies", "berry", "berries", "weed", "weeds", "wort", "grass", "wood", "worm", "worms"]
+}

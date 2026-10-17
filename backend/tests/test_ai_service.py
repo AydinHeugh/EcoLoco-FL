@@ -1,6 +1,7 @@
 import pytest
 
 from services import ai_service, openai_client, usda_service
+from services.name_guard import mentions_new_names
 from tests.helpers import species
 
 ZIP = "33139"
@@ -8,132 +9,62 @@ ZIP = "33139"
 
 @pytest.fixture
 def model(monkeypatch):
-    state = {
-        "species": species(""),
-        "assessment": {
-            "wildlife_support": "medium", "wildlife_support_reason": "Feeds some birds.",
-            "endangered_status": "not_threatened", "is_native": True, "invasive_status": "native",
-            "actions": [{"action": "Plant firebush nearby", "impact": "Feeds hummingbirds."}],
-        },
-        "assess_calls": [],
-        "assess_error": None,
-    }
+    state = {"species": species(""), "chat_calls": []}
     monkeypatch.setattr(ai_service, "identify_species", lambda image, location: state["species"])
 
-    def fake_assess(species, status, location):
-        state["assess_calls"].append(status)
-        if state["assess_error"]:
-            raise state["assess_error"]
-        return state["assessment"]
+    def no_chat(*args, **kwargs):
+        state["chat_calls"].append(args)
+        raise AssertionError("identify_plant must not call OpenAI")
 
-    monkeypatch.setattr(ai_service, "assess_plant", fake_assess)
+    monkeypatch.setattr(openai_client, "chat", no_chat)
     return state
 
 
-def _says(model, scientific_name, common_name, **assessment):
+def _says(model, scientific_name, common_name):
     model["species"]["ranked"][0].update(scientific_name=scientific_name, common_name=common_name)
-    model["assessment"].update(assessment)
 
 
-def test_database_overrides_model_for_invasive(model):
-    _says(model, "Schinus terebinthifolia", "Brazilian pepper", is_native=True, invasive_status="native")
+def test_invasive_status_and_removal_safety_from_our_data(model):
+    _says(model, "Schinus terebinthifolia", "Brazilian peppertree")
     result = ai_service.identify_plant("img", ZIP)
     assert result["status"] == "invasive"
     assert result["source"] == "FISC"
     assert result["why"]
-    assert result["actions"][0]["action"] == "Do not plant or propagate this species"
+    assert "poison ivy" in result["removal_safety"]["text"]
 
 
-def test_database_overrides_model_for_native(model):
-    _says(model, "Zamia integrifolia", "Coontie", is_native=False, invasive_status="invasive")
+def test_native_gets_helps_and_watch_out_from_our_data(model):
+    _says(model, "Zamia integrifolia", "Coontie")
     result = ai_service.identify_plant("img", ZIP)
     assert result["status"] == "native"
-    assert result["source"] == "fl_natives"
-    assert "Atala" in result["why"]
-    assert result["actions"] == model["assessment"]["actions"]
+    assert "atala" in result["helps"]["text"]
+    assert result["helps"]["source"]["name"].startswith("Institute for Regional Conservation")
+    assert any("dogs" in w["text"] for w in result["watch_out"])
 
 
-@pytest.mark.parametrize("model_says", ["native", "non-native", "invasive"])
-def test_ai_cannot_set_status_for_unlisted_plant(model, monkeypatch, model_says):
+@pytest.mark.parametrize("label", ["Welwitschia mirabilis", "Plantus imaginarius"])
+def test_unlisted_plant_is_unknown_and_has_no_facts(model, monkeypatch, label):
     monkeypatch.setattr(usda_service, "florida_status", lambda name: None)
-    _says(model, "Welwitschia mirabilis", "Tree tumbo", is_native=model_says == "native", invasive_status=model_says)
+    _says(model, label, "Mystery")
     result = ai_service.identify_plant("img", ZIP)
     assert result["status"] == "unknown"
     assert result["status_label"] == "Unknown: not on Florida lists"
-    assert result["source"] == "unknown"
-    assert result["why"] is None
-    assert "Do not plant or propagate this species" not in [a["action"] for a in result["actions"]]
+    assert "helps" not in result and "watch_out" not in result
 
 
-def test_result_has_full_contract(model):
+def test_identified_result_never_calls_openai(model):
+    _says(model, "Zamia integrifolia", "Coontie")
+    ai_service.identify_plant("img", ZIP)
+    assert model["chat_calls"] == []
+
+
+def test_result_has_no_ai_facts(model):
     _says(model, "Zamia integrifolia", "Coontie")
     result = ai_service.identify_plant("img", ZIP)
+    for key in ("actions", "wildlife_support", "wildlife_support_reason", "endangered_status", "is_native", "invasive_status"):
+        assert key not in result
     assert {"plant_name", "scientific_name", "status", "status_label", "source", "source_label", "why",
-            "wildlife_support", "confidence", "actions"} <= result.keys()
-    assert result["plant_name"] == "Coontie"
-    assert result["confidence"] == 0.9
-    assert "inat_note" not in result
-
-
-def test_assess_is_told_the_database_status(model):
-    _says(model, "Schinus terebinthifolia", "Brazilian pepper")
-    ai_service.identify_plant("img", ZIP)
-    assert model["assess_calls"][0]["source"] == "FISC"
-
-
-def test_messy_model_values_are_cleaned(model):
-    _says(model, "Plantus imaginarius", "Made-up plant", invasive_status=" Native ",
-          wildlife_support="HIGH", endangered_status="who knows")
-    result = ai_service.identify_plant("img", ZIP)
-    assert result["status"] == "unknown"
-    assert result["wildlife_support"] == "high"
-    assert result["endangered_status"] == "unknown"
-
-
-def test_assess_plant_prompt_includes_known_status(monkeypatch):
-    sent = {}
-
-    def fake_chat(content, json_reply=False):
-        sent["prompt"] = content
-        return {}
-
-    monkeypatch.setattr(openai_client, "chat", fake_chat)
-    species = {"scientific_name": "Schinus terebinthifolia", "common_name": "Brazilian pepper"}
-    ai_service.assess_plant(species, {"native": False, "invasive": True, "source": "FISC", "why": "x"}, ZIP)
-    assert "invasive" in sent["prompt"] and "FISC" in sent["prompt"] and ZIP in sent["prompt"]
-
-
-def test_recommendations_drop_invasives_and_add_source_and_why(monkeypatch):
-    monkeypatch.setattr(openai_client, "chat", lambda content, json_reply=False: [
-        {"plant_name": "Coontie", "scientific_name": "Zamia integrifolia", "wildlife_support": "high"},
-        {"plant_name": "Brazilian pepper", "scientific_name": "Schinus terebinthifolius", "wildlife_support": "low"},
-        {"plant_name": "Made-up plant", "scientific_name": "Plantus imaginarius", "wildlife_support": "medium"},
-    ])
-    recs = ai_service.get_plant_recommendations(ZIP)
-    assert [r["plant_name"] for r in recs] == ["Coontie", "Made-up plant"]
-    assert recs[0]["source"] == "fl_natives" and "Atala" in recs[0]["why"]
-    assert recs[1]["source"] == "unknown" and recs[1]["why"] is None
-
-
-SUMMARY = {"percent_native": 50, "percent_native_with_plan": 75}
-
-
-def test_generate_letter_still_works(monkeypatch):
-    monkeypatch.setattr(openai_client, "chat", lambda content, json_reply=False: "They feed bees.")
-    letter = ai_service.generate_letter(["Coontie", "Firebush"], SUMMARY, ZIP)
-    assert "Coontie and Firebush" in letter
-    assert "They feed bees." in letter
-    assert "Of the plants we checked, 50% are native to Florida." in letter
-    assert letter.count("Right now") <= 1
-    assert "it would be 75%" in letter
-    assert "out of 100" not in letter
-    assert "score" not in letter.lower()
-
-
-def test_letter_without_percentages_says_so():
-    letter = ai_service.generate_letter_without_ai(["Coontie"], {"percent_native": None, "percent_native_with_plan": None}, ZIP)
-    assert "We couldn't identify enough plants to give a percentage yet." in letter
-    assert "None%" not in letter
+            "confidence", "state", "options", "suggested", "message", "id_source", "ai_unavailable"} <= result.keys()
 
 
 def test_identify_plant_exposes_id_source_and_state(model):
@@ -145,15 +76,22 @@ def test_identify_plant_exposes_id_source_and_state(model):
     assert result["source"] == "fl_natives"
 
 
+def test_ai_unavailable_comes_from_the_tiebreaker(model):
+    _says(model, "Zamia integrifolia", "Coontie")
+    model["species"].update(state="confirm", ai_unavailable=True)
+    assert ai_service.identify_plant("img", ZIP)["ai_unavailable"] is True
+    model["species"]["ai_unavailable"] = False
+    assert ai_service.identify_plant("img", ZIP)["ai_unavailable"] is False
+
+
 def test_unidentified_returns_message_and_no_options(model):
-    model["species"] = {"state": "unidentified", "ranked": [], "suggested": 0, "source": "plantnet"}
+    model["species"] = {"state": "unidentified", "ranked": [], "suggested": 0, "source": "plantnet", "ai_unavailable": False}
     result = ai_service.identify_plant("img", ZIP)
     assert result["state"] == "unidentified"
     assert result["options"] == []
     assert result["message"] == "Couldn't identify this. Try a close-up of one leaf, or a flower"
     assert result["status"] == "unknown"
     assert result["plant_name"] == ""
-    assert model["assess_calls"] == []
 
 
 def test_confirm_returns_options_with_status(model, monkeypatch):
@@ -175,88 +113,90 @@ def test_identified_has_single_option(model):
     assert [o["scientific_name"] for o in result["options"]] == ["Schinus terebinthifolia"]
 
 
-def _ai_down(model):
-    model["assess_error"] = openai_client.AIUnavailable("RateLimitError")
-
-
-def test_scan_survives_openai_outage(model):
-    _says(model, "Schinus terebinthifolia", "Brazilian pepper")
-    _ai_down(model)
-    result = ai_service.identify_plant("img", ZIP)
-    assert result["status"] == "invasive"
-    assert result["source"] == "FISC"
-    assert result["why"]
-    assert result["wildlife_support"] == "unknown"
-    assert result["wildlife_support_reason"] == ""
-    assert result["endangered_status"] == "unknown"
-    assert result["actions"][0]["action"] == "Do not plant or propagate this species"
-    assert result["ai_unavailable"] is True
-
-
-def test_scan_native_without_ai_has_no_actions(model):
-    _says(model, "Zamia integrifolia", "Coontie")
-    _ai_down(model)
-    result = ai_service.identify_plant("img", ZIP)
-    assert result["status"] == "native"
-    assert result["actions"] == []
-    assert result["ai_unavailable"] is True
-
-
-def test_scan_unknown_plant_without_ai(model):
-    _says(model, "Plantus imaginarius", "Made-up plant")
-    _ai_down(model)
-    result = ai_service.identify_plant("img", ZIP)
-    assert result["status"] == "unknown"
-    assert result["source"] == "unknown"
-
-
-def test_normal_scan_has_ai_unavailable_false(model):
-    _says(model, "Zamia integrifolia", "Coontie")
-    assert ai_service.identify_plant("img", ZIP)["ai_unavailable"] is False
-
-
-def test_assess_returning_a_list_degrades(monkeypatch):
-    monkeypatch.setattr(ai_service, "identify_species", lambda images, location: species("Zamia integrifolia", "Coontie"))
-    monkeypatch.setattr(openai_client, "chat", lambda content, json_reply=False: ["not", "a", "dict"])
-    result = ai_service.identify_plant("img", ZIP)
-    assert result["ai_unavailable"] is True
-    assert result["wildlife_support"] == "unknown"
-
-
-def test_fallback_recommendations_come_from_natives():
-    recs = ai_service.fallback_recommendations(ZIP)
-    assert len(recs) == 11
-    assert all(r["source"] == "fl_natives" and r["why"] and r["wildlife_support"] == "unknown" for r in recs)
-    assert recs[0]["plant_name"] == "Coontie"
-    assert all({"problem", "action", "impact"} <= r.keys() for r in recs[:3])
-    assert all("benefit" in r for r in recs[3:])
-
-
-def test_letter_without_ai_uses_why_lines():
-    letter = ai_service.generate_letter_without_ai(["Coontie", "Firebush"], SUMMARY, ZIP)
-    assert "Coontie and Firebush" in letter
-    assert "Atala" in letter
-    assert "50%" in letter
-
-
-def test_letter_without_ai_unknown_plants_uses_generic_sentence():
-    letter = ai_service.generate_letter_without_ai(["Mystery plant"], SUMMARY, ZIP)
-    assert "Mystery plant" in letter
-    assert "food and shelter" in letter
-
-
 def test_usda_non_native_scan_is_non_native(model, monkeypatch):
     monkeypatch.setattr(usda_service, "florida_status", lambda name: "introduced")
-    _says(model, "Ficus benjamina", "Weeping fig", is_native=True, invasive_status="native")
+    _says(model, "Ficus benjamina", "Weeping fig")
     result = ai_service.identify_plant("img", ZIP)
     assert result["status"] == "non-native"
     assert result["source"] == "USDA"
 
 
-def test_recommendations_drop_usda_non_natives(monkeypatch):
-    monkeypatch.setattr(usda_service, "florida_status", lambda name: "introduced")
-    monkeypatch.setattr(openai_client, "chat", lambda content, json_reply=False: [
-        {"plant_name": "Coontie", "scientific_name": "Zamia integrifolia", "wildlife_support": "high"},
-        {"plant_name": "Weeping fig", "scientific_name": "Ficus benjamina", "wildlife_support": "low"},
-    ])
-    assert [r["plant_name"] for r in ai_service.get_plant_recommendations(ZIP)] == ["Coontie"]
+@pytest.fixture
+def plan(monkeypatch):
+    import json
+    from services import plan_service
+    from services.species_service import DATA_DIR
+    entries = json.loads((DATA_DIR / "fl_recommendations.json").read_text(encoding="utf-8"))["species"]
+    monkeypatch.setattr(plan_service, "_recommendations", lambda: [dict(e, verified=True) for e in entries])
+    return plan_service.build_plan([{"scientific_name": "Schinus terebinthifolius", "plant_name": "Brazilian peppertree"},
+                                    {"scientific_name": "Zamia integrifolia"}])
+
+
+@pytest.fixture
+def rephrase(monkeypatch):
+    state = {"reply": None, "system": None}
+
+    def fake_chat(content, json_reply=False, system=None):
+        state["system"] = system
+        if isinstance(state["reply"], Exception):
+            raise state["reply"]
+        return state["reply"] if state["reply"] is not None else content.split("\n\n", 1)[1]
+
+    monkeypatch.setattr(openai_client, "chat", fake_chat)
+    return state
+
+
+def test_letter_includes_pepper_removal_and_buying(plan, rephrase):
+    letter, ai_unavailable = ai_service.generate_letter(plan, ZIP)
+    assert ai_unavailable is False
+    assert "Brazilian pepper" in letter and "poison ivy" in letter
+    assert "Buying it: ask for" in letter
+    assert "Sources" in letter and "https://" in letter
+    assert "Of the plants we checked, 50% are native to Florida. With these changes, it would be" in letter
+    assert "score" not in letter.lower()
+
+
+def test_letter_rejects_ai_text_with_new_names(plan, rephrase):
+    rephrase["reply"] = "Our campus could host the Northern mockingbird and saw palmetto."
+    letter, ai_unavailable = ai_service.generate_letter(plan, ZIP)
+    assert "northern mockingbird" not in letter.lower() and "saw palmetto" not in letter.lower()
+    assert ai_unavailable is False
+
+
+def test_letter_rejects_ai_text_that_changes_numbers(plan, rephrase):
+    rephrase["reply"] = "Of the plants we checked, 90% are native to Florida."
+    letter, _ = ai_service.generate_letter(plan, ZIP)
+    assert "90%" not in letter
+
+
+def test_letter_contains_no_names_beyond_its_input(plan, rephrase):
+    rephrase["reply"] = None
+    letter, _ = ai_service.generate_letter(plan, ZIP)
+    assert not mentions_new_names(letter, ai_service.letter_facts(plan, ZIP))
+
+
+def test_letter_uses_ai_wording_when_it_passes(plan, rephrase):
+    opening = ai_service.letter_facts(plan, ZIP).split("\n\n")[1]
+    rephrase["reply"] = "Hello! " + opening
+    letter, _ = ai_service.generate_letter(plan, ZIP)
+    assert "Hello! " in letter
+
+
+def test_letter_prompt_has_plain_language_rules(plan, rephrase):
+    ai_service.generate_letter(plan, ZIP)
+    assert "7th-grade" in rephrase["system"]
+    assert "Do not add" in rephrase["system"]
+
+
+def test_letter_works_without_ai(plan, rephrase):
+    rephrase["reply"] = openai_client.AIUnavailable("down")
+    letter, ai_unavailable = ai_service.generate_letter(plan, ZIP)
+    assert ai_unavailable is True
+    assert letter == ai_service.letter_facts(plan, ZIP)
+
+
+def test_letter_without_percentages_says_so(rephrase):
+    empty = {"remove": [], "add": [], "gaps": [], "summary": {"percent_native": None, "percent_native_with_plan": None}}
+    letter, _ = ai_service.generate_letter(empty, ZIP)
+    assert "We couldn't identify enough plants to give a percentage yet." in letter
+    assert "None%" not in letter

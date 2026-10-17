@@ -169,8 +169,10 @@ def test_option_uses_canonical_name_and_list_labels():
         "plant_name": "Brazilian pepper", "scientific_name": "Schinus terebinthifolia", "confidence": 0.73,
         "status": "invasive", "status_label": "Invasive", "source": "FISC",
         "source_label": "Florida Invasive Species Council 2026 list", "why": option["why"],
+        "removal_safety": option["removal_safety"],
     }
     assert option["why"]
+    assert "poison ivy" in option["removal_safety"]["text"]
 
 
 def test_non_native_gets_plain_why(monkeypatch):

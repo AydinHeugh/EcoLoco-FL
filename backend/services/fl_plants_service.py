@@ -22,10 +22,6 @@ def _by_name(filename):
     return {entry["scientific_name"]: entry for entry in _species(filename)}
 
 
-def bundled_natives():
-    return list(_species("fl_natives.json"))
-
-
 def get_status(scientific_name, zip_code):
     # zip_code is unused until there are regional lists; both lists cover South Florida.
     if not scientific_name or not str(scientific_name).strip():
@@ -74,7 +70,7 @@ def plant_option(scientific_name, common_name, confidence, zip_code):
     why = status["why"]
     if key == "non-native" and not why:
         why = NON_NATIVE_WHY
-    return {
+    option = {
         "plant_name": species_common_name(canonical) or common_name or canonical,
         "scientific_name": canonical,
         "confidence": confidence,
@@ -84,3 +80,10 @@ def plant_option(scientific_name, common_name, confidence, zip_code):
         "source_label": SOURCE_LABELS.get(status["source"]),
         "why": why,
     }
+    facts = _by_name("fl_recommendations.json").get(canonical, {})
+    for key in ("helps", "watch_out"):
+        if key in facts:
+            option[key] = facts[key]
+    if safety := _by_name("fisc_list.json").get(canonical, {}).get("removal_safety"):
+        option["removal_safety"] = safety
+    return option

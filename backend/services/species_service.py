@@ -3,7 +3,7 @@ from functools import cache
 from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-DATA_FILES = ("fisc_list.json", "fl_natives.json")
+DATA_FILES = ("fisc_list.json", "fl_natives.json", "fl_recommendations.json")
 
 
 def _normalize(name):

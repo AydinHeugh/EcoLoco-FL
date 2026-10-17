@@ -16,7 +16,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
 import { useFonts } from 'expo-font';
-import { identifyPlant } from '../services/geminiService';
+import { identifyPlant, userMessage } from '../services/geminiService';
 import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS } from '../theme';
 import StatusBadge from '../components/StatusBadge';
 import CandidatePicker, { NO_MATCH_TEXT } from '../components/CandidatePicker';
@@ -196,8 +196,7 @@ export default function IdentificationScreen({ navigation }) {
       setResult(data.result);
       setPicked(data.result.state === 'identified' ? 0 : null);
     } catch (err) {
-      console.error(err);
-      setError(err.message);
+      setError(userMessage(err, 'Could not identify this plant. Check your connection and try again.'));
     } finally {
       setLoading(false);
     }
@@ -327,21 +326,8 @@ export default function IdentificationScreen({ navigation }) {
                 <View style={styles.resultInfo}>
                   <Text style={styles.plantName}>{shown.plant_name}</Text>
                   <StatusBadge status={shown.status} label={shown.status_label} />
-                  {!shown.why && <Text style={styles.noData}>We don't have wildlife info for this plant yet</Text>}
+                  {!shown.why && !shown.helps && <Text style={styles.noData}>We don't have wildlife info for this plant yet</Text>}
                 </View>
-              </View>
-            )}
-
-            {shown && picked === 0 && result.actions?.length > 0 && (
-              <View style={styles.actionsSection}>
-                <Text style={styles.actionsLabel}>RECOMMENDED ACTIONS</Text>
-                {result.actions.map((item, i) => (
-                  <View key={i} style={styles.actionCard}>
-                    <Text style={styles.actionText}>{item.action}</Text>
-                    <View style={styles.actionDivider} />
-                    <Text style={styles.impactText}>{item.impact}</Text>
-                  </View>
-                ))}
               </View>
             )}
 
@@ -461,20 +447,6 @@ const styles = StyleSheet.create({
   resultThumb: { width: 120, height: 120 },
   resultInfo: { flex: 1, padding: 16, justifyContent: 'center', gap: 10 },
   plantName: { fontSize: 22, fontFamily: FONTS.heading, color: COLORS.darkGreen, lineHeight: 28 },
-
-  // ── Actions ──
-  actionsSection: { gap: 10 },
-  actionsLabel: {
-    fontSize: 11, fontFamily: FONTS.bodyBold,
-    color: COLORS.softGreen, letterSpacing: 1.5, marginBottom: 4,
-  },
-  actionCard: {
-    backgroundColor: COLORS.white, borderRadius: 12,
-    borderWidth: 1, borderColor: COLORS.border, padding: 16, gap: 4,
-  },
-  actionDivider: { height: 1, backgroundColor: COLORS.border, marginVertical: 6 },
-  actionText: { fontSize: 14, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
-  impactText: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: 19 },
   recBtn: {
     marginTop: 16, backgroundColor: COLORS.darkGreen, borderRadius: 10,
     paddingVertical: 14, alignItems: 'center',
