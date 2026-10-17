@@ -86,6 +86,11 @@ def _allowed(rec, chosen):
     return True
 
 
+def _nwf_count(scientific_name):
+    group = _nwf().get(scientific_name.split()[0]) if scientific_name else None
+    return {"group": group["group"], "caterpillar_species": group["caterpillar_species"]} if group else None
+
+
 def _nwf_effect(rec):
     group = _nwf().get(rec["genus"])
     if group:
@@ -128,6 +133,8 @@ def build_plan(plants):
             "effect": f"Replacing it takes you from {_percent(native, known)}% to {_percent(native + 1, known)}% native.",
             "replacement": pick["scientific_name"] if pick else None,
         })
+        if nwf := _nwf_count(name):
+            remove[-1]["nwf"] = nwf
 
     fillers = 0
     for rec in ranked:
@@ -145,6 +152,8 @@ def build_plan(plants):
     add = []
     for rec in chosen:
         card = dict(rec, where=f"{rec['sun']}. {rec['mature_size']}.")
+        if nwf := _nwf_count(rec["scientific_name"]):
+            card["nwf"] = nwf
         if card["effect"] is None:
             del card["effect"]
         add.append(card)

@@ -59,3 +59,9 @@ def test_names_never_change_counts():
     a = summarize([{"scientific_name": "Ixora coccinea", "plant_name": "Ixora"}])
     b = summarize([{"scientific_name": "Ixora coccinea", "plant_name": "Totally different label"}])
     assert a["counts"] == b["counts"]
+
+
+def test_counts_with_plan_replace_invasives_and_add_natives():
+    s = summarize([{"scientific_name": "Ixora coccinea"}, {"scientific_name": "Schinus terebinthifolia"},
+                   {"scientific_name": ""}], added_natives=2)
+    assert s["counts_with_plan"] == {"native": 3, "non_native": 1, "invasive": 0, "unknown": 1}

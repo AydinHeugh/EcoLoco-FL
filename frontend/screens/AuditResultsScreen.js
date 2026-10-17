@@ -11,6 +11,8 @@ import StatusBadge from '../components/StatusBadge';
 import PercentRing from '../components/PercentRing';
 import PlanCard from '../components/PlanCard';
 import SourceLine from '../components/SourceLine';
+import StatusBars from '../components/StatusBars';
+import CaterpillarBars from '../components/CaterpillarBars';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
 
 const LOGO = require('../../assets/EcoLoco_logo.png');
@@ -184,6 +186,11 @@ export default function AuditResultsScreen({ route, navigation }) {
               {summary.counts.unknown > 0 && (
                 <Text style={styles.mutedText}>Unknown plants are not counted in the percentage.</Text>
               )}
+              {summary.known > 0 && <StatusBars now={summary.counts} withPlan={summary.counts_with_plan} />}
+              <CaterpillarBars items={[
+                ...plan.add.filter(c => c.nwf).map(c => ({ name: c.common_name, kind: 'add', ...c.nwf, count: c.nwf.caterpillar_species })),
+                ...plan.remove.filter(c => c.nwf).map(c => ({ name: c.plant_name, kind: 'remove', ...c.nwf, count: c.nwf.caterpillar_species })),
+              ]} />
             </View>
 
             <View style={styles.divider} />

@@ -33,6 +33,7 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 - Plants the app couldn't identify are still listed, but they aren't counted in the percent
 - A plan: a "Remove" card for each invasive plant found, with a safety note and a native plant to replace it, and "Add" cards for native plants that fill gaps on your campus. Each card shows what the plant helps, where it grows, what to ask for at the nursery (and look-alikes to avoid), what to watch out for, and questions to look into, each fact with its source
 - A link to plantrealflorida.org to find a native plant nursery
+- Two simple charts: plants by status now and with the plan, and how many kinds of caterpillars each plant's group feeds (from the National Wildlife Federation)
 - "Seen near you": the five plants people have photographed most within about 5 km of your school (from iNaturalist), each marked native, non-native, invasive or unknown
 - A short "Why this matters" section: four facts about native plants, birds, water and flooding, each with its source
 - An editable letter to your principal listing the plants to remove and add, how to buy them, safety notes, the percent native now and with the plan, and sources

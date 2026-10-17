@@ -23,5 +23,6 @@ def summarize(plants, added_natives=0):
         "plant_count": len(plants),
         "percent_native": _percent(counts["native"], known),
         "percent_native_with_plan": _percent(with_plan, known + added_natives),
+        "counts_with_plan": {**counts, "native": with_plan, "invasive": 0},
         "plants": listed,
     }

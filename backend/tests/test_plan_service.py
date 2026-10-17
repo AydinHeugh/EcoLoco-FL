@@ -112,3 +112,13 @@ def test_summary_counts_the_plan(verified):
     plan = build_plan([PEPPER])
     assert plan["summary"]["percent_native"] == 0
     assert plan["summary"]["percent_native_with_plan"] == 100
+
+
+def test_cards_carry_nwf_group_counts(verified, monkeypatch):
+    monkeypatch.setattr(plan_service, "_recommendations",
+                        lambda: [dict(e, verified=True) for e in ALL if e["common_name"] in {"Live oak", "Coontie"}])
+    plan = build_plan([{"scientific_name": "Acacia auriculiformis"}])
+    adds = {a["common_name"]: a.get("nwf") for a in plan["add"]}
+    assert adds["Live oak"] == {"group": "oaks", "caterpillar_species": 395}
+    assert adds["Coontie"] is None
+    assert plan["remove"][0]["nwf"] == {"group": "acacias", "caterpillar_species": 29}
