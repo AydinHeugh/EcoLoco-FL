@@ -1,413 +1,295 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  ActivityIndicator, Image, TextInput, useWindowDimensions,
-  Animated, Easing, Alert, Platform,
-} from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, Modal, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useFonts } from 'expo-font';
-import { Fraunces_700Bold } from '@expo-google-fonts/fraunces';
-import { DMSans_400Regular, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
-import { identifyPlant } from '../services/geminiService';
+import { Fraunces_700Bold } from '@expo-google-fonts/fraunces/700Bold';
+import { DMSans_400Regular } from '@expo-google-fonts/dm-sans/400Regular';
+import { DMSans_700Bold } from '@expo-google-fonts/dm-sans/700Bold';
+import { identifyPlant, confirmPlant, getCatalog } from '../services/geminiService';
+import { createEmptyAudit, loadAudit, saveAudit, patchAudit, subscribeAudit, flushAudit } from '../services/auditStorage';
+import PlantEvidence from '../components/PlantEvidence';
+import PhotoPicker from '../components/PhotoPicker';
+import SiteConditions from '../components/SiteConditions';
+import { identificationNeedsConfirmation } from '../utils/plantEvidence';
+import { matchesCatalogQuery } from '../utils/catalogSearch';
+import { AuditButton, AuditField, AuditNotice, AuditPage, auditStyles as s } from '../components/AuditUI';
 
-const CREAM      = '#f5f0e8';
-const DARK_GREEN = '#1e3a1e';
-const SOFT_GREEN = '#4a7a3a';
-const LIGHT_BG   = '#eaeee6';
-const TEXT_BODY  = '#4a4a3a';
-const TEXT_MUTED = '#7a7a6a';
-const BORDER     = '#d4cfc4';
-const AMBER      = '#c49a3a';
-const TERRACOTTA = '#C97D5D';
-const CARD_BG    = '#fefcf8';
-const EASE_OUT   = Easing.bezier(0.22, 1, 0.36, 1);
+const SAMPLE_SPECIES = ['Quercus virginiana', 'Zamia integrifolia', 'Schinus terebinthifolia'];
+const zipIsSupported = value => /^(330|331|332|333|334)\d{2}$/.test(value);
 
-const LOGO = require('../../assets/EcoLoco_logo.png');
+export default function AuditScreen({ navigation, route }) {
+  const [loadedAudit, setAudit] = useState(null);
+  const [sampleMode, setSampleMode] = useState(Boolean(route.params?.sample));
+  // A mode change can render before its load effect runs. Never expose an audit
+  // from the other storage slot under the new mode's label or controls.
+  const audit = loadedAudit && Boolean(loadedAudit.sample) === sampleMode ? loadedAudit : null;
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [saveError, setSaveError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [busy, setBusy] = useState('');
+  const [photos, setPhotos] = useState([]);
+  const [preview, setPreview] = useState(null);
+  const [resetVisible, setResetVisible] = useState(false);
+  const [catalog, setCatalog] = useState(null);
+  const [search, setSearch] = useState('');
+  const [retryLoad, setRetryLoad] = useState(0);
+  const request = useRef(null);
+  const saveVersion = useRef(0);
+  const alive = useRef(true);
+  useFonts({ Fraunces_700Bold, DMSans_400Regular, DMSans_700Bold });
 
-// ─── Status badge ─────────────────────────────────────────────────────────────
-function StatusBadge({ status }) {
-  const cfg = {
-    native:        { bg: '#eaf2e8', color: SOFT_GREEN,    label: 'Native' },
-    'non-native':  { bg: '#faf3e0', color: AMBER,          label: 'Non-Native' },
-    invasive:      { bg: '#fdf0ec', color: TERRACOTTA,     label: 'Invasive' },
-  };
-  const c = cfg[status?.toLowerCase()] ?? cfg['non-native'];
-  return (
-    <View style={[sb.wrap, { backgroundColor: c.bg }]}>
-      <Text style={[sb.text, { color: c.color }]}>{c.label}</Text>
-    </View>
-  );
-}
-
-const sb = StyleSheet.create({
-  wrap: { alignSelf: 'flex-start', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
-  text: { fontSize: 11, fontFamily: 'DMSans_700Bold' },
-});
-
-// ─── Wildlife support pill ────────────────────────────────────────────────────
-function SupportPill({ level }) {
-  const labels = { high: '↑ High', medium: '→ Medium', low: '↓ Low' };
-  return (
-    <Text style={sp.text}>{labels[level?.toLowerCase()] ?? '→ Medium'} wildlife support</Text>
-  );
-}
-
-const sp = StyleSheet.create({
-  text: { fontSize: 11, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, marginTop: 4 },
-});
-
-// ─── Confidence badge ─────────────────────────────────────────────────────────
-function ConfidenceBadge({ confidence }) {
-  const pct = Math.round((confidence ?? 0) * 100);
-  const color = pct >= 85 ? SOFT_GREEN : pct >= 75 ? AMBER : TERRACOTTA;
-  return (
-    <Text style={[cb.text, { color }]}>{pct}% confident</Text>
-  );
-}
-
-const cb = StyleSheet.create({
-  text: { fontSize: 11, fontFamily: 'DMSans_400Regular', marginTop: 4 },
-});
-
-// ─── Animated plant card ──────────────────────────────────────────────────────
-function PlantCard({ plant, onDelete }) {
-  const opacity    = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(14)).current;
+  function cancelRequest() {
+    request.current?.abort();
+    request.current = null;
+    setBusy('');
+  }
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(opacity,    { toValue: 1, duration: 380, easing: EASE_OUT, useNativeDriver: true }),
-      Animated.timing(translateY, { toValue: 0, duration: 380, easing: EASE_OUT, useNativeDriver: true }),
-    ]).start();
+    alive.current = true;
+    return () => { alive.current = false; request.current?.abort(); };
   }, []);
 
-  if (plant.loading) {
-    return (
-      <Animated.View style={[styles.plantCard, { opacity, transform: [{ translateY }] }]}>
-        <View style={styles.plantThumbPlaceholder}>
-          <ActivityIndicator color={SOFT_GREEN} size="small" />
-        </View>
-        <View style={styles.plantInfo}>
-          <Text style={styles.plantName}>Identifying…</Text>
-          <Text style={styles.plantSci}>Analyzing your photo</Text>
-        </View>
-      </Animated.View>
-    );
+  useEffect(() => navigation.addListener('blur', cancelRequest), [navigation]);
+
+  useEffect(() => {
+    if (typeof route.params?.sample === 'boolean') {
+      setSampleMode(route.params.sample);
+      navigation.setParams({ sample: undefined });
+    }
+  }, [route.params?.sample, navigation]);
+
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    cancelRequest();
+    saveVersion.current++;
+    setAudit(null);
+    setLoading(true);
+    setError('');
+    setSaveError('');
+    setSaving(false);
+    setPhotos([]);
+    setPreview(null);
+    setCatalog(null);
+    setSearch('');
+    setResetVisible(false);
+    const unsubscribe = subscribeAudit(next => {
+      if (active && Boolean(next.sample) === sampleMode) setAudit(next);
+    });
+    (async () => {
+      try {
+        let restored = await loadAudit(sampleMode);
+        if (!active) return;
+        if (!restored) {
+          restored = createEmptyAudit(sampleMode);
+          if (sampleMode) {
+            const answers = await Promise.all(SAMPLE_SPECIES.map(name => confirmPlant(name, '33431', { signal: controller.signal })));
+            if (!active) return;
+            restored = {
+              ...restored, site_name: 'Sample courtyard (fictional)', zip_code: '33431',
+              site: { sun: 'full', moisture: 'average', space: 'medium', maintenance: 'low' },
+              plants: answers.map((answer, index) => ({ ...answer.result, _id: `sample-${index}`, note: 'Fictional demonstration observation; not a real campus finding.' })),
+            };
+          }
+          await saveAudit(restored);
+        }
+        if (active) setAudit(restored);
+      } catch (err) {
+        if (active && err.name !== 'AbortError') setError(err.message || 'The saved audit could not be opened. Try again.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => { active = false; controller.abort(); unsubscribe(); };
+  }, [sampleMode, retryLoad]);
+
+  function edit(patch, changesEvidence = false) {
+    if (!audit) return Promise.resolve();
+    const version = ++saveVersion.current;
+    setSaving(true);
+    setSaveError('');
+    return patchAudit(audit.id, { ...patch, ...(changesEvidence && audit.letter ? { letter_stale: true } : {}) }, sampleMode)
+      .catch(err => { if (alive.current && version === saveVersion.current) setSaveError(err.message || 'Could not save on this device. Export your report before leaving.'); throw err; })
+      .finally(() => { if (alive.current && version === saveVersion.current) setSaving(false); });
   }
 
-  return (
-    <Animated.View style={[styles.plantCard, { opacity, transform: [{ translateY }] }]}>
-      {plant.photo_uri
-        ? <Image source={{ uri: plant.photo_uri }} style={styles.plantThumb} resizeMode="cover" />
-        : <View style={styles.plantThumbPlaceholder} />
-      }
-      <View style={styles.plantInfo}>
-        <View style={styles.plantNameRow}>
-          <Text style={[styles.plantName, { flex: 1 }]} numberOfLines={2}>{plant.plant_name}</Text>
-          <TouchableOpacity onPress={onDelete} hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }} style={styles.deleteBtn}>
-            <View style={styles.deleteBtnInner}>
-              <Text style={styles.deleteBtnText}>✕</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-        {plant.scientific_name ? (
-          <Text style={styles.plantSci}>{plant.scientific_name}</Text>
-        ) : null}
-        <View style={styles.badgeRow}>
-          <StatusBadge status={plant.invasive_status} />
-        </View>
-        <SupportPill level={plant.wildlife_support} />
-        <ConfidenceBadge confidence={plant.confidence} />
-        {(plant.confidence ?? 1) < 0.80 && (
-          <Text style={styles.expertWarning}>⚠ Low confidence — consult an expert before acting</Text>
-        )}
-      </View>
-    </Animated.View>
-  );
-}
+  function change(patch, changesEvidence = false) { edit(patch, changesEvidence).catch(() => {}); }
 
-// Module-level vars so plants survive tab switches / component remounts
-let _savedPlants = [];
-let _savedZip    = '';
+  function requireZIP() {
+    if (!zipIsSupported(audit?.zip_code || '')) {
+      setError('Enter a supported South Florida ZIP: five digits beginning 330, 331, 332, 333 or 334.');
+      return false;
+    }
+    return true;
+  }
 
-// ─── AuditScreen ─────────────────────────────────────────────────────────────
-export default function AuditScreen({ navigation }) {
-  const [zipCode, setZipCode] = useState(_savedZip);
-  const [plants,  setPlants]  = useState(_savedPlants);
-  const [scanning, setScanning] = useState(false);
+  async function run(label, work) {
+    cancelRequest();
+    const controller = new AbortController();
+    request.current = controller;
+    setBusy(label);
+    setError('');
+    try {
+      await work(controller.signal, () => request.current === controller && !controller.signal.aborted);
+    } catch (err) {
+      if (request.current === controller && err.name !== 'AbortError') setError(err.message || 'The request failed. Your observations are saved; try again.');
+    } finally {
+      if (request.current === controller) { request.current = null; setBusy(''); }
+    }
+  }
 
-  // Keep module vars in sync so state is restored on remount
-  useEffect(() => { _savedPlants = plants; }, [plants]);
-  useEffect(() => { _savedZip = zipCode; }, [zipCode]);
+  function identify() {
+    if (!requireZIP()) return;
+    if (!photos.length) { setError('Add at least one clear photograph of the same plant.'); return; }
+    run('Identifying your plant…', async (signal, current) => {
+      const answer = await identifyPlant(photos.map(photo => photo.base64), audit.zip_code, { signal });
+      if (current()) setPreview(answer.result);
+    });
+  }
 
-  const { width } = useWindowDimensions();
-  const maxWidth   = Math.min(width, 960);
-  const scrollRef  = useRef(null);
+  function confirm(scientificName, observationId) {
+    if (!requireZIP()) return;
+    run('Checking the selected species and its sources…', async (signal, current) => {
+      const answer = await confirmPlant(scientificName, audit.zip_code, { signal });
+      if (!current()) return;
+      if (observationId) {
+        await edit({ plants: audit.plants.map(plant => plant._id === observationId ? { ...answer.result, _id: plant._id, note: plant.note } : plant) }, true);
+      } else setPreview(answer.result);
+    });
+  }
 
-  const [fontsLoaded] = useFonts({ Fraunces_700Bold, DMSans_400Regular, DMSans_700Bold });
-
-  const zipValid   = zipCode.length === 5;
-  const identified = plants.filter(p => !p.loading);
-  const canFinish  = identified.length > 0 && !scanning;
-
-  async function scanPlant(source) {
-    if (!zipValid) {
-      Alert.alert('ZIP Required', 'Enter a 5-digit ZIP code before scanning.');
+  async function addPreview() {
+    if (!preview || busy) return;
+    if (audit.plants.length >= 300) {
+      setError('This audit has reached 300 observations. Export the report and start another audit for the next surveyed area.');
       return;
     }
-
-    let res;
-    if (source === 'camera') {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') { Alert.alert('Permission needed', 'Camera access is required.'); return; }
-      res = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.8 });
-    } else {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') { Alert.alert('Permission needed', 'Photo library access is required.'); return; }
-      res = await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.8 });
-    }
-
-    if (res.canceled) return;
-
-    const photo  = res.assets[0];
-    const tempId = Date.now().toString();
-
-    setScanning(true);
-    setPlants(prev => [...prev, { _id: tempId, loading: true, photo_uri: photo.uri }]);
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 120);
-
+    const observation = { ...preview, _id: `plant-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, note: '' };
+    // The store publishes the observation immediately, even if disk saving fails.
+    // Clear the stage now so a retry cannot accidentally add it twice.
+    setPhotos([]);
+    setPreview(null);
     try {
-      const data   = await identifyPlant(photo.base64, zipCode);
-      const result = data.result;
-      const pct    = Math.round((result.confidence ?? 1) * 100);
+      await edit({ plants: [...audit.plants, observation] }, true);
+    } catch { /* The persistent save message includes recovery guidance. */ }
+  }
 
-      const addPlant = () => setPlants(prev => prev.map(p =>
-        p._id === tempId ? { ...result, _id: tempId, photo_uri: photo.uri, loading: false } : p
-      ));
-      const discard  = () => setPlants(prev => prev.filter(p => p._id !== tempId));
+  function openCatalog() {
+    if (!requireZIP()) return;
+    run('Opening the verified plant catalog…', async (signal, current) => {
+      const answer = await getCatalog(audit.zip_code, { signal });
+      if (current()) { setCatalog(Array.isArray(answer.result) ? answer.result : answer.result?.species || []); setSearch(''); }
+    });
+  }
 
-      if (pct < 70) {
-        // remove loading card first, then prompt
-        discard();
-        Alert.alert(
-          `Low confidence (${pct}%)`,
-          `We're not sure this is a plant. The AI identified "${result.plant_name}" but with low confidence — this photo may not contain a plant, or the image is unclear.`,
-          [
-            { text: 'Add anyway', onPress: () => setPlants(prev => [...prev, { ...result, _id: tempId, photo_uri: photo.uri, loading: false }]) },
-            { text: 'Discard', style: 'destructive' },
-          ]
-        );
-      } else {
-        addPlant();
-      }
-    } catch {
-      setPlants(prev => prev.filter(p => p._id !== tempId));
-      Alert.alert('Error', 'Could not identify this plant. Try again.');
-    } finally {
-      setScanning(false);
+  function selectCatalog(name) {
+    setCatalog(null);
+    setPhotos([]);
+    confirm(name);
+  }
+
+  async function reset() {
+    cancelRequest();
+    try {
+      setSaveError('');
+      const next = createEmptyAudit(sampleMode);
+      if (sampleMode) { next.site_name = 'Sample survey (fictional)'; next.zip_code = '33431'; }
+      await saveAudit(next);
+      setAudit(next);
+      setPhotos([]);
+      setPreview(null);
+      setError('');
+      setResetVisible(false);
+    } catch (err) { setSaveError(err.message || 'The audit could not be reset. Please try again.'); setResetVisible(false); }
+  }
+
+  async function finish() {
+    if (!requireZIP()) return;
+    if (!audit.site_name.trim()) { setError('Name the surveyed area so the report has a clear scope, such as “North courtyard.”'); return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(audit.survey_date) || Number.isNaN(Date.parse(`${audit.survey_date}T12:00:00Z`)) || new Date(`${audit.survey_date}T12:00:00Z`).toISOString().slice(0, 10) !== audit.survey_date) {
+      setError('Enter a real survey date in YYYY-MM-DD format.'); return;
     }
+    if (!audit.plants.length) { setError('Add at least one observation before reviewing the audit.'); return; }
+    try {
+      await flushAudit();
+      navigation.navigate('AuditResults', { auditId: audit.id, sample: sampleMode });
+    } catch { setSaveError('The latest edits have not saved. Retry saving before opening the report.'); }
   }
 
-  function handleFinish() {
-    navigation.navigate('AuditResults', { plants: identified, zipCode });
-  }
+  const catalogMatches = (catalog || []).filter(plant => matchesCatalogQuery(plant, search));
 
-  function handleNewAudit() {
-    Alert.alert('Start New Audit', 'This will clear all scanned plants.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Clear', style: 'destructive', onPress: () => setPlants([]) },
-    ]);
-  }
-
-  if (!fontsLoaded) return <View style={styles.container} />;
-
-  return (
-    <ScrollView
-      ref={scrollRef}
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    >
-      <View style={[styles.inner, { width: maxWidth }]}>
-
-        {/* ── Header ── */}
-        <View style={styles.header}>
-          <View style={styles.logoRow}>
-            <Image source={LOGO} style={styles.logoImg} />
-            <Text style={styles.logoText}>EcoLoco</Text>
-          </View>
-          {plants.length > 0 && (
-            <TouchableOpacity onPress={handleNewAudit}>
-              <Text style={styles.newAuditBtn}>New Scan</Text>
-            </TouchableOpacity>
-          )}
+  return <AuditPage>
+    <View style={s.row}>
+      <Text accessibilityRole="header" style={[s.title, { flex: 1 }]}>Campus plant audit</Text>
+      <AuditButton secondary onPress={() => setResetVisible(true)} disabled={Boolean(busy) || loading}>New audit</AuditButton>
+    </View>
+    <Text style={s.body}>Survey a defined area, review the plant evidence, and prepare a practical planting proposal. The report measures the native share of verified species you record.</Text>
+    <Text style={s.muted}>South Florida pilot: ZIP codes beginning 330–334. Statewide status evidence does not establish suitability for every planting site.</Text>
+    {sampleMode && <AuditNotice>
+      <Text style={s.label}>Sample audit — fictional demonstration</Text>
+      <Text style={s.body}>These are illustrative observations, not measured campus findings. Your real survey stays saved separately.</Text>
+      <AuditButton secondary disabled={Boolean(busy)} onPress={() => setSampleMode(false)}>Return to my real audit</AuditButton>
+    </AuditNotice>}
+    {error ? <AuditNotice error><Text style={s.body}>{error}</Text>{!audit && <AuditButton secondary onPress={() => setRetryLoad(value => value + 1)}>Try opening audit again</AuditButton>}</AuditNotice> : null}
+    {saveError ? <AuditNotice error><Text style={s.body}>{saveError}</Text><AuditButton secondary onPress={() => edit({}).catch(() => {})}>Retry saving</AuditButton></AuditNotice> : null}
+    {loading ? <ActivityIndicator accessibilityLabel="Opening saved audit" color="#1e3a1e" /> : audit && <>
+      <Text accessibilityLiveRegion="polite" style={s.muted}>{saving ? 'Saving on this device…' : saveError ? 'Changes are not safely saved yet.' : `Saved on this device · ${audit.plants.length} observation${audit.plants.length === 1 ? '' : 's'}`}</Text>
+      <View style={s.card}>
+        <Text accessibilityRole="header" style={s.heading}>1. Define the surveyed area</Text>
+        <AuditField label="Surveyed area name" value={audit.site_name} onChangeText={site_name => change({ site_name }, true)} editable={!busy} placeholder="North courtyard at your school" maxLength={160} />
+        <View style={s.row}>
+          <AuditField label="Survey date (YYYY-MM-DD)" value={audit.survey_date} onChangeText={survey_date => change({ survey_date }, true)} editable={!busy} maxLength={10} />
+          <AuditField label="School ZIP code" value={audit.zip_code} onChangeText={zip_code => { setPreview(null); setCatalog(null); change({ zip_code: zip_code.replace(/\D/g, '').slice(0, 5) }, true); }} editable={!busy && !audit.plants.length} keyboardType="number-pad" maxLength={5} placeholder="33431" />
         </View>
-
-        <View style={styles.divider} />
-
-        {/* ── Title ── */}
-        <View style={styles.titleSection}>
-          <Text style={styles.pageTitle}>EcoScan</Text>
-          <Text style={styles.pageSubtitle}>
-            Scan plants around campus to calculate your school's biodiversity score and discover how to improve it.
-          </Text>
-        </View>
-
-        {/* ── ZIP Input ── */}
-        <View style={styles.zipSection}>
-          {plants.length === 0 ? (
-            <TextInput
-              style={styles.zipInput}
-              value={zipCode}
-              onChangeText={t => setZipCode(t.replace(/[^0-9]/g, '').slice(0, 5))}
-              placeholder="Enter your school's ZIP code"
-              placeholderTextColor={TEXT_MUTED}
-              keyboardType="numeric"
-              maxLength={5}
-            />
-          ) : (
-            <View style={styles.zipLocked}>
-              <Text style={styles.zipLockedText}>📍 ZIP {zipCode}</Text>
-              <Text style={styles.zipLockedSub}>{identified.length} plant{identified.length !== 1 ? 's' : ''} identified</Text>
-            </View>
-          )}
-        </View>
-
-        {/* ── Plant List ── */}
-        {plants.length > 0 && (
-          <View style={styles.listSection}>
-            {plants.map(plant => (
-              <PlantCard
-                key={plant._id}
-                plant={plant}
-                onDelete={() => {
-                  if (plant.loading) return;
-                  setPlants(prev => prev.filter(p => p._id !== plant._id));
-                }}
-              />
-            ))}
-          </View>
-        )}
-
-        {/* ── Empty state ── */}
-        {plants.length === 0 && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🌿</Text>
-            <Text style={styles.emptyTitle}>No plants scanned yet</Text>
-            <Text style={styles.emptySubtitle}>Enter your ZIP code and start scanning plants around campus.</Text>
-          </View>
-        )}
-
-        {/* ── Action Buttons ── */}
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={[styles.scanBtn, (!zipValid || scanning) && styles.btnDisabled]}
-            onPress={() => scanPlant('camera')}
-            disabled={!zipValid || scanning}
-          >
-            {scanning
-              ? <ActivityIndicator color={CREAM} size="small" />
-              : <Text style={styles.scanBtnText}>📷  Scan Plant</Text>
-            }
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.uploadBtn, (!zipValid || scanning) && styles.uploadBtnDisabled]}
-            onPress={() => scanPlant('gallery')}
-            disabled={!zipValid || scanning}
-          >
-            <Text style={[styles.uploadBtnText, (!zipValid || scanning) && { color: BORDER }]}>Upload Photo</Text>
-          </TouchableOpacity>
-
-          {canFinish && (
-            <TouchableOpacity style={styles.finishBtn} onPress={handleFinish}>
-              <Text style={styles.finishBtnText}>Finish Audit  →</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
+        {audit.plants.length > 0 && <Text style={s.muted}>ZIP stays fixed for this survey. Start a new audit to survey another location.</Text>}
+        <SiteConditions site={audit.site} onChange={site => change({ site }, true)} disabled={Boolean(busy)} />
       </View>
-    </ScrollView>
-  );
+      <View style={s.card}>
+        <Text accessibilityRole="header" style={s.heading}>2. Add an observation</Text>
+        <Text style={s.body}>Use up to five photos of the same plant: the whole plant, a leaf, and flowers or fruit. Each observation can be reviewed before adding it.</Text>
+        <PhotoPicker photos={photos} onChange={next => { cancelRequest(); setPhotos(next); setPreview(null); setError(''); }} onError={setError} disabled={Boolean(busy)} />
+        <View style={s.row}>
+          <AuditButton onPress={identify} disabled={Boolean(busy)}>{preview ? 'Identify photos again' : 'Identify these photos'}</AuditButton>
+          <AuditButton secondary onPress={openCatalog} disabled={Boolean(busy)}>Select a known species</AuditButton>
+        </View>
+        {busy && <AuditNotice><View style={s.row}><ActivityIndicator color="#1e3a1e" /><Text style={s.body}>{busy}</Text></View><AuditButton secondary onPress={cancelRequest}>Cancel request</AuditButton></AuditNotice>}
+        {preview && <View style={{ gap: 14 }}>
+          <PlantEvidence plant={preview} onConfirm={name => confirm(name)} onRetake={() => { cancelRequest(); setPreview(null); setPhotos([]); }} confirming={Boolean(busy)} />
+          <AuditButton disabled={Boolean(busy)} onPress={addPreview}>{identificationNeedsConfirmation(preview) ? 'Keep as an unresolved observation' : 'Add this observation'}</AuditButton>
+        </View>}
+      </View>
+      <Text accessibilityRole="header" style={s.heading}>Recorded observations ({audit.plants.length})</Text>
+      {!audit.plants.length && <AuditNotice>No observations yet. Add photos, or select a species you can already identify from the sourced catalog.</AuditNotice>}
+      {audit.plants.map((plant, index) => <View key={plant._id} style={s.card}>
+        <Text style={s.label}>Observation {index + 1}</Text>
+        <PlantEvidence plant={plant} onConfirm={name => confirm(name, plant._id)} confirming={Boolean(busy)} />
+        <AuditField label={`Location or field note for observation ${index + 1}`} value={plant.note || ''} onChangeText={note => change({ plants: audit.plants.map(item => item._id === plant._id ? { ...item, note } : item) }, true)} editable={!busy} placeholder="Beside the west gate; identification checked by…" maxLength={500} />
+        <AuditButton secondary accessibilityLabel={`Delete observation ${index + 1}`} disabled={Boolean(busy)} onPress={() => change({ plants: audit.plants.filter(item => item._id !== plant._id) }, true)}>Delete observation</AuditButton>
+      </View>)}
+      <AuditButton onPress={finish} disabled={Boolean(busy) || saving}>Review audit and build a proposal →</AuditButton>
+      <Text style={s.muted}>Observations and draft text save on this device. Photographs are used for identification and are not saved in the audit. Export your report for a portable copy; clearing browser/app storage removes the local copy.</Text>
+    </>}
+    <Modal visible={resetVisible} transparent animationType="fade" onRequestClose={() => setResetVisible(false)}>
+      <View style={s.modalShade}><View style={s.modal} accessibilityViewIsModal>
+        <Text accessibilityRole="header" style={s.heading}>Start a new {sampleMode ? 'sample ' : ''}audit?</Text>
+        <Text style={s.body}>This clears this audit’s observations, selections and proposal on this device. Export the current report first if you want to keep it.</Text>
+        <View style={s.row}><AuditButton secondary onPress={() => setResetVisible(false)}>Keep current audit</AuditButton><AuditButton onPress={reset}>Clear and start new audit</AuditButton></View>
+      </View></View>
+    </Modal>
+    <Modal visible={catalog !== null} transparent animationType="slide" onRequestClose={() => setCatalog(null)}>
+      <View style={s.modalShade}><View style={s.modal} accessibilityViewIsModal>
+        <Text accessibilityRole="header" style={s.heading}>Select a species you recognize</Text>
+        <Text style={s.muted}>This records your identification choice, then checks its status against sources. A catalog match does not confirm what your plant looks like.</Text>
+        <AuditField label="Search catalog by common or scientific name" value={search} onChangeText={setSearch} autoFocus />
+        <ScrollView style={{ flexShrink: 1 }} keyboardShouldPersistTaps="handled">
+          {catalogMatches.slice(0, 80).map(plant => <TouchableOpacity accessibilityRole="button" key={plant.taxon_id || plant.scientific_name} onPress={() => selectCatalog(plant.scientific_name)} style={{ paddingVertical: 13, borderBottomWidth: 1, borderColor: '#d4cfc4', gap: 4 }}>
+            <Text style={s.label}>{plant.common_name || plant.plant_name || plant.scientific_name}</Text><Text style={s.muted}>{plant.scientific_name}</Text>
+          </TouchableOpacity>)}
+          {catalogMatches.length === 0 && <Text style={s.body}>No catalog matches. Use photographs or retain an unresolved observation.</Text>}
+          {catalogMatches.length > 80 && <Text style={s.muted}>Showing the first 80 matches. Type more of the name to narrow the list.</Text>}
+        </ScrollView>
+        <AuditButton secondary onPress={() => setCatalog(null)}>Close catalog</AuditButton>
+      </View></View>
+    </Modal>
+  </AuditPage>;
 }
-
-const styles = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: CREAM },
-  scrollContent:{ alignItems: 'center' },
-  inner:        { alignSelf: 'center' },
-
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 24, paddingTop: 52, paddingBottom: 16,
-  },
-  logoRow:    { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logoImg:    { width: 40, height: 40, resizeMode: 'contain' },
-  logoText:   { fontSize: 20, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, letterSpacing: 0.3 },
-  newAuditBtn:{ fontSize: 12, fontFamily: 'DMSans_400Regular', color: TERRACOTTA },
-
-  divider: { height: 1, backgroundColor: BORDER },
-
-  titleSection: { alignItems: 'center', paddingTop: 32, paddingBottom: 24, paddingHorizontal: 24 },
-  pageTitle:    { fontSize: 34, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, marginBottom: 6 },
-  pageSubtitle: { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, textAlign: 'center', lineHeight: 19 },
-
-  zipSection: { paddingHorizontal: 20, marginBottom: 8 },
-  zipInput: {
-    backgroundColor: '#fff', color: TEXT_BODY, borderRadius: 10,
-    padding: 13, fontSize: 14, fontFamily: 'DMSans_400Regular',
-    borderWidth: 1, borderColor: BORDER,
-  },
-  zipLocked: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: LIGHT_BG, borderRadius: 10, padding: 13,
-  },
-  zipLockedText: { fontSize: 14, fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
-  zipLockedSub:  { fontSize: 12, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED },
-
-  listSection: { paddingHorizontal: 20, paddingTop: 16 },
-
-  plantCard: {
-    backgroundColor: CARD_BG, borderRadius: 14,
-    borderWidth: 1, borderColor: BORDER,
-    flexDirection: 'row', overflow: 'hidden', marginBottom: 12,
-  },
-  plantThumb:           { width: 90, height: 90 },
-  plantThumbPlaceholder:{ width: 90, height: 90, backgroundColor: LIGHT_BG, alignItems: 'center', justifyContent: 'center' },
-  plantInfo:    { flex: 1, padding: 12, justifyContent: 'center' },
-  plantNameRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  plantName:    { fontSize: 15, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, lineHeight: 21 },
-  deleteBtn:      { paddingLeft: 8 },
-  deleteBtnInner: {
-    width: 26, height: 26, borderRadius: 13,
-    backgroundColor: '#f0ebe2', alignItems: 'center', justifyContent: 'center',
-  },
-  deleteBtnText: { fontSize: 13, color: TERRACOTTA, fontFamily: 'DMSans_700Bold', lineHeight: 14 },
-  plantSci:     { fontSize: 11, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, fontStyle: 'italic', marginTop: 2 },
-  badgeRow:     { flexDirection: 'row', marginTop: 6 },
-
-  emptyState:   { alignItems: 'center', paddingVertical: 52, paddingHorizontal: 32 },
-  emptyIcon:    { fontSize: 36, marginBottom: 12 },
-  emptyTitle:   { fontSize: 17, fontFamily: 'Fraunces_700Bold', color: TEXT_BODY, marginBottom: 6 },
-  emptySubtitle:{ fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, textAlign: 'center', lineHeight: 19 },
-
-  actions: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 52, gap: 12 },
-  scanBtn: {
-    backgroundColor: DARK_GREEN, borderRadius: 10,
-    paddingVertical: 16, alignItems: 'center',
-  },
-  scanBtnText: { fontSize: 15, fontFamily: 'DMSans_700Bold', color: CREAM },
-  uploadBtn: {
-    borderRadius: 10, paddingVertical: 14, alignItems: 'center',
-    borderWidth: 1.5, borderColor: DARK_GREEN,
-  },
-  uploadBtnDisabled: { borderColor: BORDER },
-  uploadBtnText: { fontSize: 14, fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
-  finishBtn: {
-    backgroundColor: SOFT_GREEN, borderRadius: 10,
-    paddingVertical: 16, alignItems: 'center', marginTop: 4,
-  },
-  finishBtnText: { fontSize: 15, fontFamily: 'DMSans_700Bold', color: CREAM },
-  btnDisabled: { opacity: 0.35 },
-  expertWarning: { fontSize: 11, fontFamily: 'DMSans_400Regular', color: '#C97D5D', marginTop: 4, lineHeight: 15 },
-});

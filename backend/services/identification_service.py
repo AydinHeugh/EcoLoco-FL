@@ -1,5 +1,6 @@
 import base64
 import logging
+import math
 import os
 
 import requests
@@ -42,24 +43,33 @@ Respond only in JSON:
 
 
 def _image_url(image):
-    if image.startswith(("http://", "https://", "data:image")):
+    if image.startswith(("http:", "https:", "file:")):
+        raise ValueError("Remote image URLs are not accepted")
+    if image.startswith("data:image"):
         return image
     return f"data:image/jpeg;base64,{image}"
 
 
 def _confidence(value):
+    if isinstance(value, bool):
+        return 0.0
     try:
-        return round(min(1.0, max(0.0, float(value))), 2)
+        number = float(value)
+        return round(min(1.0, max(0.0, number)), 2) if math.isfinite(number) else 0.0
     except (TypeError, ValueError):
         return 0.0
 
 
 def _species(raw):
     return {
-        "scientific_name": str(raw.get("scientific_name") or "").strip(),
-        "common_name": str(raw.get("common_name") or "").strip(),
+        "scientific_name": _name(raw.get("scientific_name")),
+        "common_name": _name(raw.get("common_name")),
         "confidence": _confidence(raw.get("confidence")),
     }
+
+
+def _name(value):
+    return value.strip()[:180] if isinstance(value, str) else ""
 
 
 def _image_parts(images):
@@ -67,6 +77,8 @@ def _image_parts(images):
 
 
 def _needs_confirmation(ranked):
+    if not ranked or not ranked[0].get("scientific_name"):
+        return True
     top = ranked[0]["confidence"]
     runner_up = ranked[1]["confidence"] if len(ranked) > 1 else 0.0
     # Rounded so float error can't push an exact 0.15 gap over the line.
@@ -110,7 +122,10 @@ def _identify_with_openai(images, location):
         *_image_parts(images),
         {"type": "text", "text": VISION_PROMPT.format(location=location)},
     ], json_reply=True)
-    candidates = [_species(c) for c in raw.get("candidates") or [] if isinstance(c, dict)]
+    if not isinstance(raw, dict):
+        raise ValueError("Identification response must be an object")
+    alternatives = raw.get("candidates")
+    candidates = [_species(c) for c in alternatives[:3] if isinstance(c, dict)] if isinstance(alternatives, list) else []
     return [_species(raw), *candidates]
 
 
@@ -119,6 +134,8 @@ def identify_species(images, location):
         images = [images]
     if not 1 <= len(images) <= MAX_IMAGES:
         raise ValueError(f"expected 1 to {MAX_IMAGES} images, got {len(images)}")
+    if any(not isinstance(image, str) or image.startswith(("http:", "https:", "file:")) for image in images):
+        raise ValueError("Upload JPEG or PNG photo data; remote URLs are not accepted")
 
     try:
         ranked = identify_with_plantnet(images)
@@ -149,13 +166,13 @@ def identify_species(images, location):
 
 
 def _image_bytes(image):
-    if image.startswith(("http://", "https://")):
-        response = requests.get(image, timeout=15)
-        response.raise_for_status()
-        return response.content
+    if image.startswith(("http:", "https:", "file:")):
+        raise ValueError("Remote image URLs are not accepted")
     if image.startswith("data:"):
         image = image.split(",", 1)[1]
-    return base64.b64decode(image)
+    if len(image) > 4 * 1024 * 1024 * 4 // 3 + 4:
+        raise ValueError("Image exceeds the 4 MB limit")
+    return base64.b64decode(image, validate=True)
 
 
 def _mime(data):
@@ -178,14 +195,26 @@ def identify_with_plantnet(images):
         PLANTNET_URL,
         params={"api-key": key, "nb-results": 5, "lang": "en"},
         files=files,
-        timeout=20,
+        timeout=(3, 12),
     )
     response.raise_for_status()
-    return [
-        {
-            "scientific_name": result["species"]["scientificNameWithoutAuthor"],
-            "common_name": (result["species"].get("commonNames") or [""])[0],
-            "confidence": _confidence(result["score"]),
-        }
-        for result in response.json().get("results", [])
-    ]
+    body = response.json()
+    if not isinstance(body, dict) or not isinstance(body.get("results"), list):
+        raise ValueError("Identification response has no result list")
+    ranked = []
+    seen = set()
+    for result in body["results"][:20]:
+        if not isinstance(result, dict) or not isinstance(result.get("species"), dict):
+            continue
+        species = result["species"]
+        name = _name(species.get("scientificNameWithoutAuthor"))
+        if not name or name.lower() in seen:
+            continue
+        seen.add(name.lower())
+        common = species.get("commonNames")
+        ranked.append({
+            "scientific_name": name,
+            "common_name": _name(common[0]) if isinstance(common, list) and common else "",
+            "confidence": _confidence(result.get("score")),
+        })
+    return sorted(ranked, key=lambda entry: entry["confidence"], reverse=True)[:5]

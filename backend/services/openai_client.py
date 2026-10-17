@@ -15,7 +15,7 @@ _FENCE = re.compile(r"^```(?:json)?\s*|\s*```$")
 @cache
 def _client():
     # Created on first use, so importing services (tests, CI) needs no API key.
-    return OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    return OpenAI(api_key=os.getenv("OPENAI_API_KEY"), timeout=12.0, max_retries=0)
 
 
 class AIUnavailable(Exception):
@@ -27,6 +27,7 @@ def chat(content, json_reply=False):
         response = _client().chat.completions.create(
             model=MODEL,
             temperature=0,
+            max_tokens=1200,
             messages=[{"role": "user", "content": content}],
         )
         text = response.choices[0].message.content.strip()

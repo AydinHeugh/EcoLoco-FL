@@ -1,19 +1,6 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
-import AppNavigator from './frontend/navigation/AppNavigator'
-
+import AppNavigator from './frontend/navigation/AppNavigator';
+import AppErrorBoundary from './frontend/components/AppErrorBoundary';
 
 export default function App() {
-  return (
-    <AppNavigator />
-  );
+  return <AppErrorBoundary><AppNavigator /></AppErrorBoundary>;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

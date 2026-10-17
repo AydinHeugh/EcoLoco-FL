@@ -1,820 +1,282 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  ActivityIndicator, Image, useWindowDimensions, Animated, Easing, Pressable, Linking,
-  Alert, TextInput,
-} from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, ActivityIndicator, TouchableOpacity, TextInput, Linking, Platform, Share, Modal } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useFonts } from 'expo-font';
-import { Fraunces_700Bold } from '@expo-google-fonts/fraunces';
-import { DMSans_400Regular, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
+import { Fraunces_700Bold } from '@expo-google-fonts/fraunces/700Bold';
+import { DMSans_400Regular } from '@expo-google-fonts/dm-sans/400Regular';
+import { DMSans_700Bold } from '@expo-google-fonts/dm-sans/700Bold';
 import { getScore, getPlantRecommendations, generateLetter } from '../services/geminiService';
+import { loadAudit, patchAudit, subscribeAudit, buildAuditReport } from '../services/auditStorage';
+import { AuditButton, AuditField, AuditNotice, AuditPage, auditStyles as s } from '../components/AuditUI';
 
-const CREAM      = '#f5f0e8';
-const DARK_GREEN = '#1e3a1e';
-const SOFT_GREEN = '#4a7a3a';
-const LIGHT_BG   = '#eaeee6';
-const TEXT_BODY  = '#4a4a3a';
-const TEXT_MUTED = '#7a7a6a';
-const BORDER     = '#d4cfc4';
-const AMBER      = '#c49a3a';
-const TERRACOTTA = '#C97D5D';
-const CARD_BG    = '#fefcf8';
-const EASE_OUT   = Easing.bezier(0.22, 1, 0.36, 1);
+const percent = value => value == null ? 'Not enough evidence' : `${Math.round(value * 10) / 10}%`;
 
-const LOGO = require('../../assets/EcoLoco_logo.png');
-
-function scoreColor(s) {
-  if (s >= 66) return SOFT_GREEN;
-  if (s >= 41) return AMBER;
-  return TERRACOTTA;
-}
-
-function scoreLabel(s) {
-  if (s >= 80) return 'Outstanding';
-  if (s >= 65) return 'Good';
-  if (s >= 45) return 'Moderate';
-  if (s >= 25) return 'Low';
-  return 'Critical';
-}
-
-// ─── Animated score ring ──────────────────────────────────────────────────────
-function ScoreRing({ targetScore, label, size = 190 }) {
-  const anim   = useRef(new Animated.Value(0)).current;
-  const [shown, setShown] = useState(0);
+export default function AuditResultsScreen({ navigation, route }) {
+  const sample = Boolean(route.params?.sample);
+  const [audit, setAudit] = useState(null);
+  const [loadError, setLoadError] = useState('');
+  const [score, setScore] = useState(null);
+  const [scoreError, setScoreError] = useState('');
+  const [scoreLoading, setScoreLoading] = useState(false);
+  const [recs, setRecs] = useState([]);
+  const [recError, setRecError] = useState('');
+  const [recsLoading, setRecsLoading] = useState(false);
+  const [retryScore, setRetryScore] = useState(0);
+  const [retryRecs, setRetryRecs] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [letterError, setLetterError] = useState('');
+  const [status, setStatus] = useState('');
+  const [replaceVisible, setReplaceVisible] = useState(false);
+  const letterRequest = useRef(null);
+  const saveVersion = useRef(0);
+  const alive = useRef(true);
+  useFonts({ Fraunces_700Bold, DMSans_400Regular, DMSans_700Bold });
 
   useEffect(() => {
-    anim.stopAnimation();
-    anim.removeAllListeners();
-    anim.addListener(({ value }) => setShown(Math.round(value)));
-    Animated.timing(anim, {
-      toValue: targetScore,
-      duration: 700,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-    return () => { anim.stopAnimation(); anim.removeAllListeners(); };
-  }, [targetScore]);
+    let active = true;
+    alive.current = true;
+    const update = next => {
+      if (!active || Boolean(next.sample) !== sample) return;
+      if (route.params?.auditId && next.id !== route.params.auditId) {
+        setLoadError('A new audit has replaced this one. Return to the audit to continue.');
+        setAudit(null);
+      } else setAudit(next);
+    };
+    const unsubscribe = subscribeAudit(update);
+    loadAudit(sample).then(restored => {
+      if (!active) return;
+      if (restored) update(restored);
+      else setLoadError('No saved audit was found. Open the campus audit to add observations.');
+    }).catch(err => { if (active) setLoadError(err.message || 'Could not open the saved audit.'); });
+    return () => { active = false; alive.current = false; unsubscribe(); letterRequest.current?.abort(); };
+  }, [sample, route.params?.auditId]);
 
-  const color = scoreColor(shown || targetScore);
-
-  return (
-    <View style={[
-      ring.wrap,
-      { width: size, height: size, borderRadius: size / 2, borderColor: color },
-    ]}>
-      <Text style={[ring.num, { color, fontSize: size * 0.3 }]}>{shown}</Text>
-      {label
-        ? <Text style={[ring.sub, { color, fontFamily: 'DMSans_700Bold' }]}>{label}</Text>
-        : <Text style={ring.sub}>out of 100</Text>
-      }
-    </View>
-  );
-}
-
-const ring = StyleSheet.create({
-  wrap: { borderWidth: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: CREAM },
-  num:  { fontFamily: 'Fraunces_700Bold' },
-  sub:  { fontSize: 11, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, marginTop: 2 },
-});
-
-// ─── Highlight plant name in green inside a text block ───────────────────────
-function HighlightedText({ text, plantName, style }) {
-  if (!plantName || !text || !text.includes(plantName)) {
-    return <Text style={style}>{text}</Text>;
-  }
-  const parts = text.split(plantName);
-  return (
-    <Text style={style}>
-      {parts.map((part, i) => (
-        <React.Fragment key={i}>
-          {part}
-          {i < parts.length - 1 && (
-            <Text style={{ color: SOFT_GREEN, fontFamily: 'DMSans_700Bold' }}>{plantName}</Text>
-          )}
-        </React.Fragment>
-      ))}
-    </Text>
-  );
-}
-
-// ─── Fade-in wrapper ──────────────────────────────────────────────────────────
-function FadeIn({ delay = 0, children }) {
-  const opacity    = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(14)).current;
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(opacity,    { toValue: 1, duration: 480, delay, easing: EASE_OUT, useNativeDriver: true }),
-      Animated.timing(translateY, { toValue: 0, duration: 480, delay, easing: EASE_OUT, useNativeDriver: true }),
-    ]).start();
-  }, []);
-  return <Animated.View style={{ opacity, transform: [{ translateY }] }}>{children}</Animated.View>;
-}
-
-// ─── Before→After pill ───────────────────────────────────────────────────────
-function BeforeAfterPill({ fromScore, toScore, visible }) {
-  const opacity = useRef(new Animated.Value(0)).current;
-  const scale   = useRef(new Animated.Value(0.85)).current;
+  const inventoryKey = audit ? JSON.stringify({ plants: audit.plants, zip_code: audit.zip_code }) : '';
+  const siteKey = audit ? JSON.stringify(audit.site) : '';
+  const additionsKey = audit ? JSON.stringify(audit.selected_species) : '';
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(opacity, { toValue: visible ? 1 : 0, duration: 220, easing: EASE_OUT, useNativeDriver: true }),
-      Animated.spring(scale,   { toValue: visible ? 1 : 0.85, useNativeDriver: true, tension: 140, friction: 8 }),
-    ]).start();
-  }, [visible]);
+    if (!audit) return;
+    const controller = new AbortController();
+    let active = true;
+    setScoreLoading(true);
+    setScoreError('');
+    setScore(null);
+    getScore(audit.plants, audit.zip_code, { additions: audit.selected_species, signal: controller.signal })
+      .then(answer => { if (active) setScore(answer.result); })
+      .catch(err => { if (active && err.name !== 'AbortError') setScoreError(err.message || 'Could not calculate the survey metrics.'); })
+      .finally(() => { if (active) setScoreLoading(false); });
+    return () => { active = false; controller.abort(); };
+  }, [inventoryKey, additionsKey, retryScore]);
 
-  const delta = toScore - fromScore;
+  useEffect(() => {
+    if (!audit) return;
+    const controller = new AbortController();
+    let active = true;
+    setRecsLoading(true);
+    setRecError('');
+    setRecs([]);
+    getPlantRecommendations(audit.zip_code, { plants: audit.plants, site: audit.site, signal: controller.signal })
+      .then(answer => { if (active) setRecs(Array.isArray(answer.result) ? answer.result : []); })
+      .catch(err => { if (active && err.name !== 'AbortError') setRecError(err.message || 'Could not load planting options.'); })
+      .finally(() => { if (active) setRecsLoading(false); });
+    return () => { active = false; controller.abort(); };
+  }, [inventoryKey, siteKey, retryRecs]);
 
-  return (
-    <Animated.View style={[ba.wrap, { opacity, transform: [{ scale }] }]}>
-      <Text style={[ba.score, { color: scoreColor(fromScore) }]}>{fromScore}</Text>
-      <Text style={ba.arrow}>  →  </Text>
-      <Text style={[ba.score, { color: scoreColor(toScore) }]}>{toScore}</Text>
-      {delta > 0 && <Text style={ba.delta}>  +{delta} pts</Text>}
-    </Animated.View>
-  );
-}
-
-const ba = StyleSheet.create({
-  wrap:  { flexDirection: 'row', alignItems: 'center', backgroundColor: '#eaf2e8', borderRadius: 14, paddingHorizontal: 20, paddingVertical: 11, marginTop: 16 },
-  score: { fontSize: 22, fontFamily: 'Fraunces_700Bold' },
-  arrow: { fontSize: 16, color: TEXT_MUTED },
-  delta: { fontSize: 14, fontFamily: 'DMSans_700Bold', color: SOFT_GREEN },
-});
-
-// ─── Pressable action card ────────────────────────────────────────────────────
-function ActionCard({ rec, index, onHoverIn, onHoverOut, boost }) {
-  const num   = String(index + 1).padStart(2, '0');
-  const scale = useRef(new Animated.Value(1)).current;
-
-  function pressIn() {
-    onHoverIn();
-    Animated.spring(scale, { toValue: 0.975, useNativeDriver: true, tension: 160, friction: 7 }).start();
+  function edit(patch, stale = false) {
+    const version = ++saveVersion.current;
+    setSaving(true);
+    setSaveError('');
+    return patchAudit(audit.id, { ...patch, ...(stale && audit.letter ? { letter_stale: true } : {}) }, sample)
+      .catch(err => { if (alive.current && version === saveVersion.current) setSaveError(err.message || 'Could not save edits. Export a copy before leaving.'); throw err; })
+      .finally(() => { if (alive.current && version === saveVersion.current) setSaving(false); });
   }
 
-  function pressOut() {
-    onHoverOut();
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 160, friction: 7 }).start();
+  function change(patch, stale = false) { edit(patch, stale).catch(() => {}); }
+
+  function toggleSpecies(name) {
+    if (!audit.selected_species.includes(name) && audit.selected_species.length >= 40) {
+      setLetterError('Select up to 40 species for one proposal. Remove a selection before adding another.');
+      return;
+    }
+    const selected_species = audit.selected_species.includes(name) ? audit.selected_species.filter(item => item !== name) : [...audit.selected_species, name];
+    setStatus('');
+    change({ selected_species }, true);
   }
 
-  return (
-    <FadeIn delay={index * 110}>
-      <Pressable onPressIn={pressIn} onPressOut={pressOut}>
-        <Animated.View style={[ac.card, { transform: [{ scale }] }]}>
-          <View style={ac.topRow}>
-            <Text style={ac.num}>{num}</Text>
-            <View style={ac.badgeRow}>
-              {boost != null && (
-                <View style={ac.boostBadge}>
-                  <Text style={ac.boostText}>+{boost} pts</Text>
-                </View>
-              )}
-              <View style={ac.badge}>
-                <Text style={ac.badgeText}>↑ Native Plant</Text>
-              </View>
-            </View>
-          </View>
-          <Text style={ac.problem}>{rec.problem}</Text>
-          <View style={ac.divider} />
-          <Text style={ac.label}>ACTION</Text>
-          <HighlightedText text={rec.action} plantName={rec.plant_name} style={ac.body} />
-          <View style={ac.divider} />
-          <Text style={ac.label}>ECOLOGICAL BENEFIT</Text>
-          <HighlightedText text={rec.impact} plantName={rec.plant_name} style={ac.body} />
-        </Animated.View>
-      </Pressable>
-    </FadeIn>
-  );
-}
-
-const ac = StyleSheet.create({
-  card: {
-    backgroundColor: CARD_BG, borderRadius: 16,
-    borderWidth: 1, borderColor: BORDER,
-    padding: 18, marginBottom: 14,
-  },
-  topRow:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  num:       { fontSize: 12, fontFamily: 'DMSans_700Bold', color: TEXT_MUTED, letterSpacing: 1 },
-  badgeRow:  { flexDirection: 'row', gap: 6, alignItems: 'center' },
-  boostBadge:{ backgroundColor: DARK_GREEN, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-  boostText: { fontSize: 11, fontFamily: 'DMSans_700Bold', color: CREAM },
-  badge:     { backgroundColor: '#eaf2e8', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-  badgeText: { fontSize: 11, fontFamily: 'DMSans_700Bold', color: SOFT_GREEN },
-  problem:  { fontSize: 17, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, lineHeight: 24, marginBottom: 14 },
-  divider:  { height: 1, backgroundColor: BORDER, marginVertical: 12 },
-  label:    { fontSize: 10, fontFamily: 'DMSans_700Bold', color: TEXT_MUTED, letterSpacing: 1.2, marginBottom: 5 },
-  body:     { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_BODY, lineHeight: 21 },
-});
-
-// ─── Letter Generator ────────────────────────────────────────────────────────
-function LetterGenerator({ recs, score, zipCode }) {
-  const [selected,      setSelected]      = useState(new Set([0, 1, 2]));
-  const [letterLoading, setLetterLoading] = useState(false);
-  const [letter,        setLetter]        = useState(null);
-  const [editedLetter,  setEditedLetter]  = useState('');
-  const [copied,        setCopied]        = useState(false);
-
-  function togglePlant(i) {
-    setSelected(prev => {
-      const next = new Set(prev);
-      next.has(i) ? next.delete(i) : next.add(i);
-      return next;
-    });
-    setLetter(null);
-    setEditedLetter('');
+  function backToAudit() {
+    if (navigation.canGoBack()) navigation.goBack();
+    else navigation.navigate('Main', { screen: 'EcoScan', params: { sample } });
   }
 
-  async function handleGenerate() {
-    const plantNames = recs.filter((_, i) => selected.has(i)).map(r => r.plant_name);
-    if (plantNames.length === 0) return;
-    setLetterLoading(true);
-    setLetter(null);
-    setEditedLetter('');
+  function cancelLetter() {
+    letterRequest.current?.abort();
+    letterRequest.current = null;
+    setGenerating(false);
+  }
+
+  async function createProposal() {
+    setReplaceVisible(false);
+    cancelLetter();
+    const controller = new AbortController();
+    letterRequest.current = controller;
+    setGenerating(true);
+    setLetterError('');
+    setStatus('');
     try {
-      const data = await generateLetter(plantNames, score, zipCode);
-      setLetter(data.result);
-      setEditedLetter(data.result);
-    } catch {
-      Alert.alert('Error', 'Could not generate letter. Please try again.');
+      const answer = await generateLetter({
+        plants: audit.plants, plant_names: audit.selected_species, zip_code: audit.zip_code,
+        site: audit.site, site_name: audit.site_name, survey_date: audit.survey_date,
+        is_sample: Boolean(audit.sample),
+        proposal: audit.proposal,
+      }, { signal: controller.signal });
+      if (letterRequest.current !== controller || controller.signal.aborted) return;
+      const letter = typeof answer.result === 'string' ? answer.result : answer.result?.letter;
+      if (!letter) throw new Error('The server returned an empty proposal. Please try again.');
+      await edit({ letter, letter_stale: false });
+      setStatus('Proposal generated and saved. Review the details before sharing.');
+    } catch (err) {
+      if (letterRequest.current === controller && err.name !== 'AbortError') setLetterError(err.message || 'Could not create the proposal. Your existing draft is preserved.');
     } finally {
-      setLetterLoading(false);
+      if (letterRequest.current === controller) { letterRequest.current = null; setGenerating(false); }
     }
   }
 
-  const anySelected = recs.some((_, i) => selected.has(i));
+  async function copyProposal() {
+    try { await Clipboard.setStringAsync(audit.letter); setStatus('Proposal copied to clipboard.'); }
+    catch { setStatus('Clipboard access was unavailable. Select the draft text or export the report instead.'); }
+  }
 
-  return (
-    <View style={styles.letterSection}>
-      <Text style={styles.letterTitle}>Draft Letter to Administration</Text>
-      <Text style={styles.letterSubtitle}>
-        Select plants to include, then generate a ready-to-personalise letter.
-      </Text>
+  async function exportReport() {
+    const report = buildAuditReport(audit, score);
+    try {
+      if (Platform.OS === 'web') {
+        const url = URL.createObjectURL(new Blob([report], { type: 'text/plain;charset=utf-8' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${audit.sample ? 'sample-' : ''}ecoloco-audit-${audit.survey_date}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } else await Share.share({ title: 'EcoLoco campus plant survey', message: report });
+      setStatus(Platform.OS === 'web' ? 'Report exported with observations, sources and your proposal.' : 'Report opened in the share sheet.');
+    } catch { setStatus('Could not export this report. Try again or copy your proposal.'); }
+  }
 
-      {recs.map((rec, i) => (
-        <TouchableOpacity key={i} style={styles.checkRow} onPress={() => togglePlant(i)}>
-          <View style={[styles.checkbox, selected.has(i) && styles.checkboxChecked]}>
-            {selected.has(i) && <Text style={styles.checkmark}>✓</Text>}
-          </View>
-          <Text style={styles.checkLabel} numberOfLines={1}>{rec.plant_name}</Text>
-        </TouchableOpacity>
-      ))}
+  function openSource(url) {
+    if (/^https?:\/\//i.test(url || '')) Linking.openURL(url).catch(() => setStatus('Could not open this source. Its URL is included in the exported report.'));
+  }
 
-      <TouchableOpacity
-        style={[styles.letterBtn, (!anySelected || letterLoading) && styles.letterBtnDisabled]}
-        onPress={handleGenerate}
-        disabled={!anySelected || letterLoading}
-      >
-        {letterLoading
-          ? <ActivityIndicator color={CREAM} size="small" />
-          : <Text style={styles.letterBtnText}>Generate Letter for Administration</Text>
-        }
-      </TouchableOpacity>
+  if (!audit) return <AuditPage><Text style={s.title}>Audit report</Text>{loadError ? <AuditNotice error>{loadError}</AuditNotice> : <ActivityIndicator accessibilityLabel="Opening audit report" color="#1e3a1e" />}<AuditButton secondary onPress={backToAudit}>Return to campus audit</AuditButton></AuditPage>;
 
-      {letter && (
-        <View style={styles.letterCard}>
-          <Text style={styles.letterEditHint}>Tap to edit — fill in the bracketed fields</Text>
-          <TextInput
-            multiline
-            scrollEnabled={false}
-            value={editedLetter}
-            onChangeText={setEditedLetter}
-            style={styles.letterInput}
-            textAlignVertical="top"
-          />
-          <TouchableOpacity
-            style={styles.copyBtn}
-            onPress={async () => {
-              await Clipboard.setStringAsync(editedLetter);
-              setCopied(true);
-              setTimeout(() => setCopied(false), 2000);
-            }}
-          >
-            <Text style={styles.copyBtnText}>{copied ? 'Copied!' : 'Copy Letter'}</Text>
-          </TouchableOpacity>
-          <Text style={styles.letterNote}>Review and personalise before sending.</Text>
+  const unavailableSelections = audit.selected_species.filter(name => !recs.some(rec => rec.scientific_name === name));
+  const canGenerate = audit.selected_species.length > 0 && !unavailableSelections.length && !recsLoading && !generating && !saving;
+  const proposalFields = [
+    ['location', 'Proposed planting location', 'West courtyard border'],
+    ['quantity', 'Proposed quantities', '3 coonties and 5 native wildflowers'],
+    ['budget', 'Budget and funding source', 'Estimate pending a nursery quote'],
+    ['maintenance', 'Maintenance responsibility and schedule', 'Who will water during establishment and school breaks?'],
+    ['student_name', 'Student or team name', 'Your name or club'],
+    ['school_name', 'School name', 'Your school'],
+    ['principal_name', 'Recipient name or role', 'Principal or facilities team'],
+  ];
+
+  return <AuditPage>
+    <View style={s.row}><Text accessibilityRole="header" style={[s.title, { flex: 1 }]}>Survey to proposal</Text><AuditButton secondary onPress={backToAudit} disabled={generating}>Edit audit</AuditButton></View>
+    <Text style={s.body}>{audit.site_name} · {audit.survey_date} · ZIP {audit.zip_code}</Text>
+    {audit.sample && <AuditNotice><Text style={s.label}>Sample audit — fictional demonstration</Text><Text style={s.body}>These observations illustrate the workflow. They are not evidence of a real campus survey or ecological improvement.</Text></AuditNotice>}
+    {saveError && <AuditNotice error><Text style={s.body}>{saveError}</Text><AuditButton secondary onPress={() => change({})}>Retry saving</AuditButton></AuditNotice>}
+    {status && <AuditNotice>{status}</AuditNotice>}
+    <Text accessibilityLiveRegion="polite" style={s.muted}>{saving ? 'Saving edits on this device…' : saveError ? 'Some edits have not saved.' : 'Audit, selected species and draft saved on this device.'}</Text>
+    <View style={s.card}>
+      <Text accessibilityRole="header" style={s.heading}>What your survey records</Text>
+      {scoreLoading && <View style={s.row}><ActivityIndicator color="#1e3a1e" /><Text style={s.body}>Checking unique species and their sources…</Text></View>}
+      {scoreError && <AuditNotice error><Text style={s.body}>{scoreError}</Text><AuditButton secondary onPress={() => setRetryScore(value => value + 1)}>Retry survey calculation</AuditButton></AuditNotice>}
+      {score && <>
+        <Text style={{ ...s.title, fontSize: 44 }}>{percent(score.native_share)}</Text>
+        <Text style={s.label}>Native share of verified taxa</Text>
+        <Text style={s.body}>{score.verified_species_count ? `${score.native_count} of ${score.verified_species_count} verified taxa are native.` : 'No plants currently have both a resolved identification and verified Florida status.'}</Text>
+        <Text style={s.muted}>A taxon is a species or a variety whose Florida status differs. Each is counted once.</Text>
+        <View style={s.row}>
+          <Text style={s.body}>{score.native_count} native</Text><Text style={s.body}>· {score.non_native_count} nonnative</Text><Text style={s.body}>· {score.invasive_count} invasive</Text>
         </View>
-      )}
+        <Text style={s.body}>{score.observation_count} observations · {score.unresolved_count} unresolved observations outside the denominator</Text>
+        <Text style={s.muted}>The three categories are separate; “nonnative” excludes invasive species here. Repeated photos or observations of one taxon count once.</Text>
+        <AuditNotice>This describes the species sampled in this surveyed area. It does not measure the whole campus’s biodiversity, plant abundance, habitat quality or wildlife population.</AuditNotice>
+        {score.summary && <Text style={s.body}>{score.summary}</Text>}
+        {(Array.isArray(score.limitations) ? score.limitations : score.limitations ? [score.limitations] : []).map((limitation, index) => <Text key={index} style={s.muted}>• {limitation}</Text>)}
+        {score.species?.map(plant => <View key={plant.taxon_id || plant.scientific_name} style={{ gap: 4, paddingTop: 9 }}>
+          <Text style={s.label}>{plant.plant_name || plant.scientific_name} · {plant.invasive_status}</Text>
+          <Text style={s.muted}>{plant.scientific_name} · {plant.observation_count} observation{plant.observation_count === 1 ? '' : 's'}</Text>
+          {plant.source_url && <TouchableOpacity accessibilityRole="link" onPress={() => openSource(plant.source_url)}><Text style={{ ...s.muted, textDecorationLine: 'underline' }}>Florida status source: {plant.source || 'view source'}{plant.verified_on ? ` · checked ${plant.verified_on}` : ''}</Text></TouchableOpacity>}
+        </View>)}
+        {score.unresolved?.length > 0 && <View style={{ gap: 8, marginTop: 8 }}>
+          <Text style={s.label}>Needs review</Text>
+          {score.unresolved.map((plant, index) => <Text key={index} style={s.body}>Observation {(plant.observation_index ?? index) + 1}: {plant.plant_name || plant.scientific_name || 'Unidentified plant'} — {plant.reason || 'Identification or status needs confirmation.'}</Text>)}
+          <AuditButton secondary onPress={backToAudit}>Review unresolved observations</AuditButton>
+        </View>}
+        {score.invasive_count > 0 && <Text style={s.muted}>A verified invasive classification describes the species. Ask school staff and a qualified local professional to confirm identity and a management plan before changing established vegetation.</Text>}
+      </>}
     </View>
-  );
-}
-
-// ─── AuditResultsScreen ───────────────────────────────────────────────────────
-export default function AuditResultsScreen({ route, navigation }) {
-  const { plants = [], zipCode } = route.params ?? {};
-
-  const [scoreData,    setScoreData]     = useState(null);
-  const [recs,         setRecs]          = useState([]);
-  const [loading,      setLoading]       = useState(true);
-  const [recsLoading,  setRecsLoading]   = useState(true);
-  const [showProjected,  setShowProjected]   = useState(false);
-  const [hovering,       setHovering]        = useState(null); // 0|1|2 = card index, 'all' = combined, null = none
-  const [viewAllExpanded,setViewAllExpanded] = useState(false);
-
-  const BOOST = { high: 8, medium: 6, low: 5 };
-
-  const { width } = useWindowDimensions();
-  const maxWidth   = Math.min(width, 960);
-
-  const [fontsLoaded] = useFonts({ Fraunces_700Bold, DMSans_400Regular, DMSans_700Bold });
-
-  useEffect(() => {
-    async function fetchAll() {
-      try {
-        const plantsPayload = plants.map(p => ({
-          name:             p.plant_name,
-          invasive_status:  p.invasive_status  ?? 'non-native',
-          wildlife_support: p.wildlife_support ?? 'low',
-        }));
-        const data = await getScore(plantsPayload);
-        setScoreData(data.result);
-      } catch (err) {
-        console.error('Score fetch error:', err);
-      } finally {
-        setLoading(false);
-      }
-
-      if (zipCode) {
-        try {
-          const recData = await getPlantRecommendations(zipCode);
-          setRecs(recData.result ?? []);
-        } catch (err) {
-          console.error('Recs fetch error:', err);
-        } finally {
-          setRecsLoading(false);
-        }
-      } else {
-        setRecsLoading(false);
-      }
-    }
-    fetchAll();
-  }, []);
-
-  // Combined projected score (top 3 actions only) — shown in subtitle + "all" hold
-  const projectedScore = (!recsLoading && recs.length > 0 && scoreData)
-    ? Math.min(100, scoreData.score + recs.slice(0, 3).reduce((sum, r) => sum + (BOOST[r.wildlife_support] ?? 5), 0))
-    : (scoreData?.projected_score ?? 0);
-
-  // Score preview: single card → that card's boost; 'all' → combined projected
-  const hoverScore = hovering === 'all'
-    ? projectedScore
-    : (hovering !== null && recs[hovering] && scoreData)
-      ? Math.min(100, scoreData.score + (BOOST[recs[hovering].wildlife_support] ?? 5))
-      : null;
-
-  const ringTarget = scoreData
-    ? (showProjected
-        ? (hovering !== null ? hoverScore : scoreData.score)
-        : scoreData.score)
-    : 0;
-
-  const ringLabel = showProjected
-    ? (hovering === 'all' ? 'all 3' : hovering !== null ? 'this action' : 'current')
-    : null;
-
-  const delta = scoreData ? projectedScore - scoreData.score : 0;
-
-  const onHoverOut = useCallback(() => setHovering(null), []);
-
-  if (!fontsLoaded) return <View style={styles.container} />;
-
-  return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={[styles.inner, { width: maxWidth }]}>
-
-        {/* ── Header ── */}
-        <View style={styles.header}>
-          <View style={styles.logoRow}>
-            <Image source={LOGO} style={styles.logoImg} />
-            <Text style={styles.logoText}>EcoLoco</Text>
-          </View>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backBtn}>← Back to EcoScan</Text>
+    <View style={s.card}>
+      <Text accessibilityRole="header" style={s.heading}>Choose additions for this site</Text>
+      <Text style={s.body}>Options use your recorded species and site conditions: {Object.entries(audit.site).map(([key, value]) => `${key}: ${value}`).join(' · ')}.</Text>
+      <Text style={s.muted}>Select species to include in your proposal. Benefits describe documented relationships, not wildlife measured at your school.</Text>
+      {recsLoading && <View style={s.row}><ActivityIndicator color="#1e3a1e" /><Text style={s.body}>Checking native plants against this site…</Text></View>}
+      {recError && <AuditNotice error><Text style={s.body}>{recError}</Text><AuditButton secondary onPress={() => setRetryRecs(value => value + 1)}>Retry planting options</AuditButton></AuditNotice>}
+      {!recsLoading && !recError && !recs.length && <AuditNotice>No additional catalog species meet these conditions. Review site conditions or ask local extension staff about other verified species. Do not change accurate site details just to get more results.</AuditNotice>}
+      {recs.map(rec => {
+        const selected = audit.selected_species.includes(rec.scientific_name);
+        return <View key={rec.taxon_id || rec.scientific_name} style={[s.card, { padding: 16, backgroundColor: selected ? '#eaf1e3' : '#fff' }]}>
+          <TouchableOpacity accessibilityRole="checkbox" accessibilityLabel={`Include ${rec.plant_name} in proposal`} aria-checked={selected} aria-disabled={generating} accessibilityState={{ checked: selected, disabled: generating }} disabled={generating} onPress={() => toggleSpecies(rec.scientific_name)} style={s.row}>
+            <Text style={{ fontSize: 24, color: '#1e3a1e' }}>{selected ? '☑' : '☐'}</Text><View style={{ flex: 1 }}><Text style={s.label}>{rec.plant_name}</Text><Text style={s.muted}>{rec.scientific_name}</Text></View>
           </TouchableOpacity>
-        </View>
-
-        <View style={styles.divider} />
-
-        {/* ── Loading ── */}
-        {loading && (
-          <View style={styles.centerSection}>
-            <ActivityIndicator color={SOFT_GREEN} size="large" />
-            <Text style={styles.loadingText}>Calculating your biodiversity score…</Text>
-          </View>
-        )}
-
-        {/* ── Results ── */}
-        {!loading && scoreData && (
-          <>
-            {/* Score ring + toggle */}
-            <View style={styles.scoreSection}>
-              <Text style={styles.pageTitle}>Biodiversity Score</Text>
-              <Text style={styles.plantCountLabel}>
-                {scoreData.plant_count} plant{scoreData.plant_count !== 1 ? 's' : ''} scanned
-              </Text>
-
-              <View style={styles.ringWrap}>
-                <ScoreRing targetScore={ringTarget} label={ringLabel} size={190} />
-                <Text style={[styles.scoreLabel, { color: scoreColor(ringTarget) }]}>
-                  {scoreLabel(ringTarget)}
-                </Text>
-              </View>
-
-              {/* Before→After pill — only visible when hovering in After Actions */}
-              {showProjected && (
-                <BeforeAfterPill
-                  fromScore={scoreData.score}
-                  toScore={hoverScore ?? scoreData.score}
-                  visible={hovering !== null}
-                />
-              )}
-
-              {/* Current / After Actions toggle */}
-              <View style={[styles.toggle, showProjected && { marginTop: 20 }]}>
-                <TouchableOpacity
-                  style={[styles.toggleBtn, !showProjected && styles.toggleActive]}
-                  onPress={() => { setShowProjected(false); setHovering(null); }}
-                >
-                  <Text style={[styles.toggleText, !showProjected && styles.toggleTextActive]}>
-                    Current
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.toggleBtn, showProjected && styles.toggleActive]}
-                  onPress={() => setShowProjected(true)}
-                >
-                  <Text style={[styles.toggleText, showProjected && styles.toggleTextActive]}>
-                    After Actions
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={styles.divider} />
-
-            {/* ── CURRENT view ── */}
-            {!showProjected && (
-              <FadeIn>
-                <View style={styles.section}>
-                  <View style={styles.insightCard}>
-                    <Text style={styles.insightText}>{scoreData.insight}</Text>
-                  </View>
-
-                  <Text style={styles.sectionTitle}>What's on campus</Text>
-
-                  {scoreData.breakdown.helping.length > 0 && (
-                    <View style={styles.bCard}>
-                      <View style={styles.bHeader}>
-                        <View style={[styles.dot, { backgroundColor: SOFT_GREEN }]} />
-                        <Text style={styles.bLabel}>Helping your ecosystem</Text>
-                        <View style={styles.bBadge}><Text style={styles.bBadgeText}>{scoreData.breakdown.helping.length}</Text></View>
-                      </View>
-                      {scoreData.breakdown.helping.map((name, i) => (
-                        <Text key={i} style={styles.bItem}>· {name}</Text>
-                      ))}
-                    </View>
-                  )}
-
-                  {scoreData.breakdown.hurting.length > 0 && (
-                    <View style={styles.bCard}>
-                      <View style={styles.bHeader}>
-                        <View style={[styles.dot, { backgroundColor: TERRACOTTA }]} />
-                        <Text style={styles.bLabel}>Hurting your ecosystem</Text>
-                        <View style={styles.bBadge}><Text style={styles.bBadgeText}>{scoreData.breakdown.hurting.length}</Text></View>
-                      </View>
-                      {scoreData.breakdown.hurting.map((name, i) => (
-                        <Text key={i} style={styles.bItem}>· {name}</Text>
-                      ))}
-                    </View>
-                  )}
-
-                  {scoreData.breakdown.helping.length === 0 && scoreData.breakdown.hurting.length === 0 && (
-                    <View style={styles.bCard}>
-                      <View style={styles.bHeader}>
-                        <View style={[styles.dot, { backgroundColor: AMBER }]} />
-                        <Text style={styles.bLabel}>Neutral plants — not actively helping or hurting</Text>
-                      </View>
-                      {plants.map((p, i) => (
-                        <Text key={i} style={styles.bItem}>· {p.plant_name}</Text>
-                      ))}
-                    </View>
-                  )}
-
-                  {delta > 0 && (
-                    <TouchableOpacity
-                      style={styles.afterHint}
-                      onPress={() => setShowProjected(true)}
-                    >
-                      <Text style={styles.afterHintText}>
-                        See how you could reach {projectedScore} →
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </FadeIn>
-            )}
-
-            {/* ── AFTER ACTIONS view ── */}
-            {showProjected && (
-              <FadeIn>
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Your 3-Action Plan</Text>
-                  <Text style={styles.sectionSubtitle}>
-                    All 3 actions together could raise your score from{' '}
-                    <Text style={{ fontFamily: 'DMSans_700Bold', color: scoreColor(scoreData.score) }}>{scoreData.score}</Text>
-                    {' → '}
-                    <Text style={{ fontFamily: 'DMSans_700Bold', color: scoreColor(projectedScore) }}>{projectedScore}</Text>
-                    {' '}(+{delta} pts). Hold any card to preview.
-                  </Text>
-
-                  {recsLoading && (
-                    <View style={[styles.centerSection, { paddingVertical: 32 }]}>
-                      <ActivityIndicator color={SOFT_GREEN} />
-                      <Text style={styles.loadingText}>Finding native plants for your area…</Text>
-                    </View>
-                  )}
-
-                  {!recsLoading && recs.length === 0 && (
-                    <View style={styles.insightCard}>
-                      <Text style={styles.insightText}>
-                        No recommendations found for this ZIP. Use the Recommendations tab for full results.
-                      </Text>
-                    </View>
-                  )}
-
-                  {!recsLoading && recs.slice(0, 3).map((rec, i) => (
-                    <ActionCard
-                      key={i}
-                      rec={rec}
-                      index={i}
-                      onHoverIn={() => setHovering(i)}
-                      onHoverOut={onHoverOut}
-                      boost={BOOST[rec.wildlife_support] ?? 5}
-                    />
-                  ))}
-
-                  {/* ── All 3 combined hold button ── */}
-                  {!recsLoading && recs.length >= 3 && (
-                    <Pressable
-                      onPressIn={() => setHovering('all')}
-                      onPressOut={() => setHovering(null)}
-                    >
-                      <View style={[styles.allBtn, hovering === 'all' && styles.allBtnActive]}>
-                        <Text style={[styles.allBtnText, hovering === 'all' && { color: CREAM }]}>
-                          {hovering === 'all'
-                            ? `All 3 together: ${scoreData.score} → ${projectedScore}  (+${delta} pts)`
-                            : `Hold to preview all 3 combined  (+${delta} pts)`}
-                        </Text>
-                      </View>
-                    </Pressable>
-                  )}
-
-                  {/* ── More high-impact natives ── */}
-                  {!recsLoading && recs.length > 3 && (
-                    <View style={styles.viewAllSection}>
-                      <TouchableOpacity
-                        style={styles.viewAllToggle}
-                        onPress={() => setViewAllExpanded(v => !v)}
-                      >
-                        <Text style={styles.viewAllToggleText}>
-                          {viewAllExpanded ? '▲ Hide' : '▼ More high-impact natives for your area'} ({recs.length - 3} more)
-                        </Text>
-                      </TouchableOpacity>
-
-                      {viewAllExpanded && (
-                        <>
-                          {recs.slice(3).map((rec, i) => (
-                            <View key={i} style={styles.viewAllItem}>
-                              <View style={{ flex: 1, marginRight: 10 }}>
-                                <Text style={styles.viewAllName}>{rec.plant_name}</Text>
-                                {rec.scientific_name
-                                  ? <Text style={styles.viewAllSci}>{rec.scientific_name}</Text>
-                                  : null}
-                                {rec.benefit
-                                  ? <Text style={styles.viewAllBenefit}>{rec.benefit}</Text>
-                                  : null}
-                              </View>
-                              <View style={[styles.supportPill, {
-                                backgroundColor: rec.wildlife_support === 'high' ? '#eaf2e8' : rec.wildlife_support === 'medium' ? '#faf3e0' : '#f5efec'
-                              }]}>
-                                <Text style={[styles.supportPillText, {
-                                  color: rec.wildlife_support === 'high' ? SOFT_GREEN : rec.wildlife_support === 'medium' ? AMBER : TERRACOTTA
-                                }]}>
-                                  {rec.wildlife_support === 'high' ? '↑ High' : rec.wildlife_support === 'medium' ? '→ Medium' : '↓ Low'} Wildlife
-                                </Text>
-                              </View>
-                            </View>
-                          ))}
-
-                          <TouchableOpacity
-                            style={styles.nwfLink}
-                            onPress={() => Linking.openURL('https://nativeplantfinder.nwf.org')}
-                          >
-                            <Text style={styles.nwfLinkText}>
-                              Looking for the complete native plant database for your exact location? Explore NWF's Native Plant Finder →
-                            </Text>
-                          </TouchableOpacity>
-                        </>
-                      )}
-                    </View>
-                  )}
-
-                  {/* ── Draft Letter ── */}
-                  {!recsLoading && recs.length >= 1 && (
-                    <LetterGenerator
-                      recs={recs.slice(0, 3)}
-                      score={scoreData.score}
-                      zipCode={zipCode}
-                    />
-                  )}
-                </View>
-              </FadeIn>
-            )}
-
-            <View style={styles.divider} />
-
-            {/* ── CTAs ── */}
-            <View style={styles.ctaSection}>
-              <TouchableOpacity
-                style={styles.ctaBtn}
-                onPress={() => navigation.navigate('Main', { screen: 'Recommend', params: { prefillZip: zipCode } })}
-              >
-                <Text style={styles.ctaBtnText}>Full Recommendations</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.ctaSecondary} onPress={() => navigation.goBack()}>
-                <Text style={styles.ctaSecondaryText}>Scan More Plants</Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
-
-        {/* ── Error ── */}
-        {!loading && !scoreData && (
-          <View style={styles.centerSection}>
-            <Text style={styles.loadingText}>Could not calculate score. Please try again.</Text>
-            <TouchableOpacity style={[styles.ctaBtn, { marginTop: 16 }]} onPress={() => navigation.goBack()}>
-              <Text style={styles.ctaBtnText}>Go Back</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-      </View>
-    </ScrollView>
-  );
+          <Text style={s.body}>{rec.benefit || rec.why}</Text>
+          {rec.suitability && <Text style={s.muted}>{rec.suitability}</Text>}
+          {rec.site_needs_confirmation && <Text style={s.label}>Check the unknown site conditions before purchasing.</Text>}
+          {rec.action && <Text style={s.muted}>{rec.action}</Text>}
+          {rec.source_url && <TouchableOpacity accessibilityRole="link" onPress={() => openSource(rec.source_url)}><Text style={{ ...s.muted, textDecorationLine: 'underline' }}>{rec.source || 'Status source'}{rec.verified_on ? ` · checked ${rec.verified_on}` : ''}</Text></TouchableOpacity>}
+          {rec.why_source_url && rec.why_source_url !== rec.source_url && <TouchableOpacity accessibilityRole="link" onPress={() => openSource(rec.why_source_url)}><Text style={{ ...s.muted, textDecorationLine: 'underline' }}>Wildlife benefit source</Text></TouchableOpacity>}
+        </View>;
+      })}
+      {!recsLoading && unavailableSelections.length > 0 && <AuditNotice error>
+        <Text style={s.body}>These saved selections are not among the current site options. Remove them or review the site before generating another proposal.</Text>
+        {unavailableSelections.map(name => <AuditButton key={name} secondary disabled={generating} onPress={() => toggleSpecies(name)}>Remove {name} from proposal</AuditButton>)}
+      </AuditNotice>}
+      {score?.projected && audit.selected_species.length > 0 && <AuditNotice>
+        <Text style={s.label}>Selected-species scenario</Text>
+        <Text style={s.body}>{percent(score.native_share)} → {percent(score.projected.native_share)} native share, if the selected new species are established and recorded in the same surveyed area.</Text>
+        <Text style={s.body}>{score.projected.native_count} of {score.projected.verified_species_count} unique verified taxa would be native.</Text>
+        <Text style={s.muted}>This recalculates the species inventory. It is not a predicted biodiversity or wildlife increase. Planting more individuals of an already recorded species does not change this metric.</Text>
+      </AuditNotice>}
+    </View>
+    <View style={s.card}>
+      <Text accessibilityRole="header" style={s.heading}>Build a school proposal</Text>
+      <Text style={s.body}>The draft requests permission and uses your survey facts. Fill in the practical details; leave anything unknown blank so it can be marked for review.</Text>
+      <Text style={s.label}>Selected additions: {audit.selected_species.join(', ') || 'None yet'}</Text>
+      {proposalFields.map(([key, label, placeholder]) => <AuditField key={key} label={label} placeholder={placeholder} value={audit.proposal[key] || ''} editable={!generating} maxLength={key === 'maintenance' ? 500 : 300} multiline={key === 'maintenance'} onChangeText={value => change({ proposal: { [key]: value } }, true)} />)}
+      <AuditButton disabled={!canGenerate} onPress={() => audit.letter ? setReplaceVisible(true) : createProposal()}>{generating ? 'Creating source-linked proposal…' : audit.letter ? 'Regenerate proposal from current details' : 'Generate school proposal'}</AuditButton>
+      {!audit.selected_species.length && <Text style={s.muted}>Choose at least one planting option above to generate the proposal.</Text>}
+      {generating && <AuditButton secondary onPress={cancelLetter}>Cancel proposal request</AuditButton>}
+      {letterError && <AuditNotice error>{letterError}</AuditNotice>}
+      {audit.letter_stale && audit.letter && <AuditNotice error><Text style={s.body}>Survey details or selections changed after this draft was generated. Regenerate it, or revise and review the text before sharing.</Text><AuditButton secondary disabled={generating} onPress={() => change({ letter_stale: false })}>I reviewed and updated this draft</AuditButton></AuditNotice>}
+      {audit.letter && <>
+        <Text style={s.label}>Editable proposal</Text>
+        <Text style={s.muted}>Edits save automatically on this device. Regeneration replaces your wording only after confirmation.</Text>
+        <TextInput accessibilityLabel="Editable school proposal" multiline value={audit.letter} onChangeText={letter => change({ letter })} editable={!generating} style={[s.input, { minHeight: 520, textAlignVertical: 'top', lineHeight: 23 }]} />
+        <AuditButton secondary onPress={copyProposal}>Copy proposal</AuditButton>
+      </>}
+    </View>
+    <AuditButton onPress={exportReport}>Export / share complete report</AuditButton>
+    <Text style={s.muted}>The portable text report includes recorded observations, source links, limitations and your editable proposal. Export a copy before starting a new audit. Nothing is sent to school staff automatically.</Text>
+    <Modal visible={replaceVisible} transparent animationType="fade" onRequestClose={() => setReplaceVisible(false)}>
+      <View style={s.modalShade}><View style={s.modal} accessibilityViewIsModal>
+        <Text style={s.heading}>Replace the saved draft?</Text><Text style={s.body}>Regenerating uses the current survey and proposal fields and replaces your draft edits. Copy or export the existing text first if you want to retain it.</Text>
+        <View style={s.row}><AuditButton secondary onPress={() => setReplaceVisible(false)}>Keep my draft</AuditButton><AuditButton onPress={createProposal}>Replace with new proposal</AuditButton></View>
+      </View></View>
+    </Modal>
+  </AuditPage>;
 }
-
-const styles = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: CREAM },
-  scrollContent:{ alignItems: 'center' },
-  inner:        { alignSelf: 'center', width: '100%' },
-
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 24, paddingTop: 52, paddingBottom: 16,
-  },
-  logoRow:  { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logoImg:  { width: 40, height: 40, resizeMode: 'contain' },
-  logoText: { fontSize: 20, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, letterSpacing: 0.3 },
-  backBtn:  { fontSize: 12, fontFamily: 'DMSans_400Regular', color: TEXT_BODY },
-
-  divider: { height: 1, backgroundColor: BORDER },
-
-  centerSection: { alignItems: 'center', paddingVertical: 60, gap: 14, paddingHorizontal: 24 },
-  loadingText:   { fontSize: 14, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, textAlign: 'center' },
-
-  scoreSection:    { alignItems: 'center', paddingTop: 32, paddingHorizontal: 24, paddingBottom: 28 },
-  pageTitle:       { fontSize: 34, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, marginBottom: 4 },
-  plantCountLabel: { fontSize: 12, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, marginBottom: 28 },
-  ringWrap:        { alignItems: 'center', gap: 14, marginBottom: 8 },
-  scoreLabel:      { fontSize: 22, fontFamily: 'Fraunces_700Bold' },
-
-  toggle: {
-    flexDirection: 'row', backgroundColor: LIGHT_BG,
-    borderRadius: 12, padding: 4, gap: 4, marginTop: 24,
-  },
-  toggleBtn:        { paddingHorizontal: 22, paddingVertical: 10, borderRadius: 10 },
-  toggleActive:     { backgroundColor: CREAM, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
-  toggleText:       { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED },
-  toggleTextActive: { fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
-
-  section:         { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 8 },
-  sectionTitle:    { fontSize: 22, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, marginBottom: 6 },
-  sectionSubtitle: { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, lineHeight: 19, marginBottom: 20 },
-
-  insightCard: {
-    backgroundColor: CARD_BG, borderRadius: 14,
-    borderWidth: 1, borderColor: BORDER,
-    padding: 18, marginBottom: 20,
-  },
-  insightText: { fontSize: 14, fontFamily: 'DMSans_400Regular', color: TEXT_BODY, lineHeight: 22, textAlign: 'center' },
-
-  bCard: {
-    backgroundColor: CARD_BG, borderRadius: 14,
-    borderWidth: 1, borderColor: BORDER,
-    padding: 16, marginBottom: 12,
-  },
-  bHeader:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  dot:        { width: 8, height: 8, borderRadius: 4 },
-  bLabel:     { flex: 1, fontSize: 13, fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
-  bBadge:     { backgroundColor: LIGHT_BG, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 },
-  bBadgeText: { fontSize: 11, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED },
-  bItem:      { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_BODY, lineHeight: 22, paddingLeft: 4 },
-
-  afterHint: { alignItems: 'center', marginTop: 8, paddingVertical: 12 },
-  afterHintText: { fontSize: 13, fontFamily: 'DMSans_700Bold', color: SOFT_GREEN },
-
-  allBtn: {
-    borderRadius: 12, borderWidth: 1.5, borderColor: DARK_GREEN,
-    paddingVertical: 15, alignItems: 'center', marginBottom: 4,
-  },
-  allBtnActive: { backgroundColor: DARK_GREEN },
-  allBtnText: { fontSize: 13, fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
-
-  viewAllSection: { marginTop: 8, marginBottom: 4 },
-  viewAllToggle:  { paddingVertical: 14, alignItems: 'center' },
-  viewAllToggleText: { fontSize: 13, fontFamily: 'DMSans_700Bold', color: SOFT_GREEN },
-  viewAllItem: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: CARD_BG, borderRadius: 10,
-    borderWidth: 1, borderColor: BORDER,
-    paddingHorizontal: 14, paddingVertical: 12, marginBottom: 8,
-  },
-  viewAllName:    { fontSize: 14, fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
-  viewAllSci:     { fontSize: 11, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, fontStyle: 'italic', marginTop: 2 },
-  viewAllBenefit: { fontSize: 12, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, lineHeight: 18, marginTop: 4 },
-  supportPill:     { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
-  supportPillText: { fontSize: 11, fontFamily: 'DMSans_700Bold' },
-
-  nwfLink: {
-    marginTop: 8, marginBottom: 16, paddingVertical: 14,
-    paddingHorizontal: 16, borderRadius: 10,
-    backgroundColor: '#eaf2e8', borderWidth: 1, borderColor: BORDER,
-    alignItems: 'center',
-  },
-  nwfLinkText: {
-    fontSize: 12, fontFamily: 'DMSans_400Regular', color: SOFT_GREEN,
-    textAlign: 'center', lineHeight: 18,
-  },
-
-  ctaSection: { padding: 24, paddingBottom: 52, alignItems: 'center', gap: 10 },
-  ctaBtn: {
-    backgroundColor: DARK_GREEN, borderRadius: 10,
-    paddingVertical: 15, alignItems: 'center', width: '100%',
-  },
-  ctaBtnText:       { fontSize: 15, fontFamily: 'DMSans_700Bold', color: CREAM },
-  ctaSecondary:     { paddingVertical: 10 },
-  ctaSecondaryText: { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED },
-
-  letterSection: {
-    marginTop: 28, paddingTop: 24, borderTopWidth: 1, borderTopColor: BORDER,
-  },
-  letterTitle: {
-    fontSize: 20, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, marginBottom: 6,
-  },
-  letterSubtitle: {
-    fontSize: 12, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED,
-    lineHeight: 18, marginBottom: 16,
-  },
-  checkRow: {
-    flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: 12,
-  },
-  checkbox: {
-    width: 22, height: 22, borderRadius: 6,
-    borderWidth: 1.5, borderColor: BORDER,
-    backgroundColor: CREAM, alignItems: 'center', justifyContent: 'center',
-  },
-  checkboxChecked:  { backgroundColor: SOFT_GREEN, borderColor: SOFT_GREEN },
-  checkmark:        { fontSize: 13, color: CREAM, fontFamily: 'DMSans_700Bold' },
-  checkLabel:       { flex: 1, fontSize: 14, fontFamily: 'DMSans_400Regular', color: DARK_GREEN },
-  letterBtn: {
-    marginTop: 12, backgroundColor: DARK_GREEN, borderRadius: 10,
-    paddingVertical: 15, alignItems: 'center',
-  },
-  letterBtnDisabled: { opacity: 0.45 },
-  letterBtnText:     { fontSize: 15, fontFamily: 'DMSans_700Bold', color: CREAM },
-  letterCard: {
-    marginTop: 16, backgroundColor: CARD_BG, borderRadius: 14,
-    borderWidth: 1, borderColor: BORDER, padding: 20,
-  },
-  letterEditHint: {
-    fontSize: 11, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED,
-    fontStyle: 'italic', marginBottom: 10,
-  },
-  letterInput: {
-    fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_BODY,
-    lineHeight: 22, backgroundColor: LIGHT_BG,
-    borderRadius: 8, padding: 12, minHeight: 520,
-  },
-  copyBtn: {
-    marginTop: 16, borderWidth: 1.5, borderColor: DARK_GREEN,
-    borderRadius: 10, paddingVertical: 12, alignItems: 'center',
-  },
-  copyBtnText: { fontSize: 13, fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
-  letterNote: {
-    marginTop: 10, fontSize: 11, fontFamily: 'DMSans_400Regular',
-    color: TEXT_MUTED, textAlign: 'center', fontStyle: 'italic',
-  },
-});

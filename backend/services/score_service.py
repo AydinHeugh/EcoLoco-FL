@@ -1,142 +1,145 @@
-def _name_hash(name):
-    h = 0
-    for ch in name:
-        h = (h * 31 + ord(ch)) & 0xFFFFFFFF
-    return (h % 1000) / 1000.0
+"""Describe a surveyed species mix without treating it as measured biodiversity."""
+
+from services.fl_plants_service import get_status
+
+METRIC_VERSION = "verified-native-share-v1"
+LIMITATIONS = [
+    "Taxa means species and any separately documented varieties or subspecies whose Florida statuses differ; synonymous names are counted once.",
+    "Native share describes verified unique taxa in this sample, not the whole campus's biodiversity, plant abundance, area covered, or wildlife populations.",
+    "Repeated photographs and additional individuals of an already recorded taxon do not change this species-presence metric.",
+    "Unresolved observations remain outside the denominator. Identification confirmation is separate from the evidence for a taxon's Florida status.",
+    "Projected removals mean that taxon is no longer present in the surveyed area; removing only one of several individuals does not remove a species from this metric.",
+]
 
 
-def _plant_score(status, support, name):
-    t = _name_hash(name)
-    if status == "native":
-        if support == "high":
-            lo, hi = 88, 95
-        elif support == "medium":
-            lo, hi = 70, 80
-        else:
-            lo, hi = 50, 62
-    elif status == "invasive":
-        lo, hi = 0, 12
-    else:  # non-native
-        lo, hi = 25, 35
-    return lo + t * (hi - lo)
+def _label(status):
+    if status.get("invasive") is True:
+        return "invasive"
+    if status.get("native") is True:
+        return "native"
+    if status.get("native") is False:
+        return "non-native"
+    return "unknown"
 
 
-def _action_boost(index):
-    t = _name_hash(f"action_{index}")
-    return round(5 + t * 3)  # 5–8 per action, 15–24 total for 3 actions
+def _verified(status):
+    return status.get("status_verified") is True and _label(status) != "unknown"
 
 
-def calculate_biodiversity_score(plants):
-    if not plants:
-        return {
-            "score": 0, "projected_score": 0,
-            "breakdown": {"helping": [], "hurting": [], "unidentified": []},
-            "insight": "No plants scanned.",
-            "bonuses_applied": [],
-            "plant_count": 0,
-        }
-
-    helping, hurting, unidentified = [], [], []
-    scores = []
-    native_names = set()
-    invasive_count = 0
-    unknown_count = 0
-
-    for plant in plants:
-        raw_status = plant.get("invasive_status", "").lower().strip()
-        support    = plant.get("wildlife_support", "low").lower().strip()
-        name       = plant.get("name", plant.get("plant_name", "Unknown plant"))
-
-        if raw_status not in ("native", "non-native", "invasive"):
-            raw_status = "unknown"
-        if support not in ("high", "medium", "low"):
-            support = "low"
-
-        if raw_status == "unknown":
-            scores.append(15)
-            unknown_count += 1
-            unidentified.append(name)
-            continue
-
-        s = _plant_score(raw_status, support, name)
-        scores.append(s)
-
-        if raw_status == "native":
-            native_names.add(name)
-            helping.append(name)
-        elif raw_status == "invasive":
-            invasive_count += 1
-            hurting.append(name)
-        else:  # non-native
-            if support == "high":
-                helping.append(name)
-            else:
-                hurting.append(name)
-
-    n = len(plants)
-    native_count = sum(
-        1 for p in plants
-        if p.get("invasive_status", "").lower().strip() == "native"
-    )
-    native_ratio = native_count / n
-
-    base_score = sum(scores) / n
-
-    # ── Bonuses / penalties ──────────────────────────────────────────────────
-    bonus = 0.0
-    bonuses_applied = []
-
-    if native_ratio > 0.60:
-        bonus += 5
-        bonuses_applied.append("Native ratio bonus: +5 pts")
-
-    if len(native_names) >= 5:
-        bonus += 3
-        bonuses_applied.append("Native diversity bonus: +3 pts")
-
-    if invasive_count > 0:
-        penalty = invasive_count * 3
-        bonus -= penalty
-        label = "invasive plant" if invasive_count == 1 else "invasive plants"
-        bonuses_applied.append(f"{invasive_count} {label}: -{penalty} pts")
-
-    if unknown_count > 0:
-        bonus -= unknown_count
-        label = "unknown plant" if unknown_count == 1 else "unknown plants"
-        bonuses_applied.append(f"{unknown_count} {label}: -{unknown_count} pts")
-
-    score = max(0, min(100, round(base_score + bonus)))
-
-    # ── Projected score ───────────────────────────────────────────────────────
-    # Each of the 3 recommended actions adds 10–14 pts, seeded by index
-    projected_score = min(100, score + sum(_action_boost(i) for i in range(3)))
-
-    # ── Insight ──────────────────────────────────────────────────────────────
-    if score >= 80:
-        insight = "Outstanding — your schoolyard is a genuine ecosystem asset."
-    elif score >= 65:
-        insight = "Good biodiversity. A few targeted native plantings could make it exceptional."
-    elif score >= 45:
-        if invasive_count > 0:
-            insight = "Moderate biodiversity. Removing invasive species and replacing with natives would help significantly."
-        else:
-            insight = "Moderate biodiversity. Adding more native species would boost your score and support local wildlife."
-    elif score >= 25:
-        if invasive_count > 0:
-            insight = "Low biodiversity. Prioritise removing invasive plants and replanting with natives."
-        else:
-            insight = "Low biodiversity. Focus on adding high-impact native species to your schoolyard."
-    else:
-        if invasive_count > 0:
-            insight = "Critical — invasive species are dominating. Targeted removal and replanting is urgent."
-        else:
-            insight = "Critical low biodiversity. Introduce native plants urgently to restore habitat value."
-
+def _species_record(status, observation=None):
+    observation = observation or {}
+    scientific_name = status.get("scientific_name") or observation.get("scientific_name") or ""
     return {
-        "score":           score,
-        "projected_score": projected_score,
-        "breakdown":       {"helping": helping, "hurting": hurting, "unidentified": unidentified},
-        "insight":         insight,
-        "bonuses_applied": bonuses_applied,
-        "plant_count":     n,
+        "scientific_name": scientific_name,
+        "plant_name": status.get("common_name") or observation.get("plant_name") or scientific_name,
+        "taxon_id": status.get("taxon_id") or scientific_name.casefold(),
+        "invasive_status": _label(status),
+        "source": status.get("source", "unknown"),
+        "source_url": status.get("source_url"),
+        "verified_on": status.get("verified_on"),
+        "status_scope": status.get("status_scope"),
+        "observation_count": 0,
     }
+
+
+def _metrics(species, unresolved, observation_count):
+    ordered = sorted(species, key=lambda plant: plant["scientific_name"].casefold())
+    counts = {label: sum(plant["invasive_status"] == label for plant in ordered)
+              for label in ("native", "non-native", "invasive")}
+    count = len(ordered)
+    share = round(100 * counts["native"] / count, 1) if count else None
+    summary = (
+        f"{counts['native']} of {count} verified unique taxa in the sample are native to Florida ({share:g}%)."
+        if count else "No observations yet have both a resolved identification and verified Florida status."
+    )
+    if unresolved:
+        summary += f" {len(unresolved)} observation(s) still need identification or status review."
+    return {
+        "metric_version": METRIC_VERSION,
+        "native_count": counts["native"],
+        "non_native_count": counts["non-native"],
+        "invasive_count": counts["invasive"],
+        "verified_species_count": count,
+        "unresolved_count": len(unresolved),
+        "observation_count": observation_count,
+        "native_share": share,
+        "species": ordered,
+        "unresolved": unresolved,
+        "summary": summary,
+        "limitations": list(LIMITATIONS),
+    }
+
+
+def calculate_biodiversity_score(plants, location="33431", additions=None, removals=None):
+    """Recheck source records, deduplicate canonical taxa, and apply explicit changes.
+
+    The historical callable name is retained for route compatibility; no biodiversity
+    score, bonus, or quality rating is produced. Nonnative and invasive counts are
+    disjoint categories, and unresolved_count counts observations rather than taxa.
+    """
+    statuses = {}
+
+    def resolve(name):
+        key = str(name or "").strip().casefold()
+        if key not in statuses:
+            statuses[key] = get_status(name, location)
+        return statuses[key]
+
+    unique, unresolved = {}, []
+    for index, plant in enumerate(plants):
+        name = str(plant.get("scientific_name") or "").strip()
+        status = resolve(name)
+        reason = None
+        if not name:
+            reason = "No species has been identified."
+        elif status.get("needs_taxon_confirmation"):
+            reason = "This taxon includes varieties with different Florida statuses; select the precise variety."
+        elif not (plant.get("user_confirmed") is True or plant.get("needs_confirmation") is False):
+            reason = "Identification needs confirmation before this observation can enter the species metric."
+        elif not _verified(status):
+            reason = "Florida status has not yet been verified for this taxon."
+        if reason:
+            unresolved.append({
+                "scientific_name": name,
+                "plant_name": plant.get("plant_name") or plant.get("name") or name or "Unidentified plant",
+                "reason": reason,
+                "observation_index": index,
+            })
+            continue
+        record = _species_record(status, plant)
+        existing = unique.setdefault(record["taxon_id"], record)
+        existing["observation_count"] += 1
+
+    result = _metrics(list(unique.values()), unresolved, len(plants))
+    projected = {key: dict(value) for key, value in unique.items()}
+    added, removed = [], []
+    removed_ids = set()
+    for name in removals or []:
+        status = resolve(name)
+        record = _species_record(status, {"scientific_name": name})
+        key = record["taxon_id"]
+        if key not in unique:
+            raise ValueError(f"Cannot project removal of {name}: it is not a verified taxon in this survey.")
+        if key not in removed_ids:
+            removed.append(projected.pop(key))
+            removed_ids.add(key)
+    for name in additions or []:
+        status = resolve(name)
+        if not _verified(status) or status.get("native") is not True or status.get("needs_taxon_confirmation"):
+            raise ValueError(f"Cannot project {name}: choose a precisely identified, verified Florida native.")
+        record = _species_record(status, {"scientific_name": name})
+        key = record["taxon_id"]
+        if key in removed_ids:
+            raise ValueError("The same taxon cannot be both added and removed in a projection.")
+        if key not in projected:
+            record["observation_count"] = 1
+            projected[key] = record
+            added.append(record)
+    projected_observations = len(plants) - sum(item["observation_count"] for item in removed) + len(added)
+    result["projected"] = {
+        **_metrics(list(projected.values()), unresolved, projected_observations),
+        "added_species": added,
+        "removed_species": removed,
+        "is_projection": True,
+    }
+    return result

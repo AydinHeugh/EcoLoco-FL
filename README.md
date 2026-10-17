@@ -1,104 +1,135 @@
 # EcoLoco-FL
 
-A tool for climate action, built for South Florida.
+EcoLoco helps students turn a campus plant survey into a practical planting proposal. Identify plants, review their Florida status and sources, record site conditions, choose native additions, and prepare an editable request for school review.
 
-EcoLoco helps students find out which plants on their campus help local wildlife and which ones hurt it. You scan plants with your phone, and the app tells you whether each one is native or invasive, gives your schoolyard a biodiversity score from 0 to 100, suggests native plants to add, and writes a letter you can send to your principal asking to plant them.
+This is the 2026 Congressional App Challenge entry for FL-22. The current pilot accepts five-digit ZIP codes beginning **330–334**. That defines the supported region; a ZIP does not establish an individual site's growing conditions.
 
-This is our entry for the 2026 Congressional App Challenge (FL-22). It started as EcoLoco and is being reworked around real Florida plant data.
+## What goes in and comes out
 
-**See how it all fits together:** https://aydinheugh.github.io/EcoLoco-FL/ (interactive map of the code, opens in any browser)
+Start with **Start a campus audit** on the home screen, or use **Explore a sample audit** to try the workflow. The sample is labeled as fictional and saved separately from a real survey.
 
-## What goes in and what comes out
+**For a plant:** provide one to five JPEG/PNG photos of the same plant and the site's ZIP. The app displays the proposed species, identification service, alternatives, and whether it needs confirmation. Florida status, wildlife relationships, source links, and source-check dates appear separately. You can retake photos, choose a supported alternative, or select a known species from the catalog. A photo identification and a source's classification of the named species are different kinds of evidence.
 
-**You give it:**
-- One to five photos of the same plant, taken with the camera or uploaded (the app sends one photo for now; picking several is coming)
-- Your 5-digit ZIP code
+**For a survey:** record its area and date, observations, and the site's sunlight, moisture, available space, and maintenance capacity. The report shows:
 
-**You get back, for each plant:**
-- Its common and scientific name, and how confident the identification is
-- Which service identified it, the other species it might be, and whether you should double-check it
-- Whether it's native, non-native, or invasive in South Florida
-- Where that verdict came from: the Florida invasive species list, our list of Florida natives, the USDA plant database, or an AI guess if none of those know the plant
-- One line on why it matters (for example, coontie is the only plant the Atala butterfly can lay its eggs on)
-- How much it supports wildlife (high, medium, or low)
-- Two practical things you can do about it
-- A note when the AI part was unavailable, in which case wildlife value and actions show as unknown but the plant and its native/invasive verdict still come back
+- Native, nonnative, and invasive counts for unique verified taxa, with unresolved observations kept visible outside the denominator. A taxon means a species or a separately documented variety/subspecies with a different status.
+- **Native share of verified taxa**: native taxa divided by all verified taxa in the sample. Synonyms and repeated photographs count once. This is not a campus biodiversity score, plant-abundance measure, or wildlife-population estimate.
+- Source-backed native additions that fit the recorded conditions and are absent from the verified inventory. Unknown conditions remain explicit. Options are alphabetical, not ranked by invented impact points.
+- A selected-species scenario recalculated from the proposed inventory. Planting another individual of a species already present does not change this metric.
+- An editable school proposal containing the survey facts, source links, chosen plants, location, quantities, budget, maintenance responsibility, and permission request. Changes to the underlying survey mark an existing draft as needing review.
+- A text report to download on web or open in the native share sheet, plus a copyable proposal.
 
-**After you scan a whole campus (the EcoScan tab):**
-- A biodiversity score from 0 to 100, plus a list of the plants helping and hurting it
-- A projected score showing how much planting the top recommendations would raise it
-- Native plants to add for your ZIP code
-- An editable letter to your principal that you can copy and send
+Audits and draft edits save on the current device. There is one real audit and one separate sample audit; starting a new audit replaces that slot after confirmation. Export before replacing work you want to keep. There is no account or cloud synchronization.
 
+## How the evidence works
 
-## What happens in between
+1. **Identify the photograph.** PlantNet returns candidate species. An unambiguous top result with a score of at least 0.80 and a lead greater than 0.15 is accepted without an extra identification step. Close results can be reviewed by an image model and still require user confirmation. If PlantNet is unavailable, the image-model fallback can provide candidates. If neither service succeeds, the observation remains unresolved and the manual catalog is available. Model scores are not measured accuracy rates.
+2. **Check Florida status.** Bundled, source-linked nonnative records and taxonomic exceptions are checked first, then the FISC invasive list, then the native catalog. Matching preserves important varieties, subspecies, hybrids, and synonyms. Known natives, nonnatives, and invasives retain their supported classifications even when explanation services are unavailable. Unsupported names may receive a separately labeled automated hypothesis; it does not become verified evidence.
+3. **Keep local status separate from national occurrence.** USDA occurrence and lower-48 nativity do not establish Florida nativity. The optional USDA helper is retained for distribution research; the active classification and recommendation flow does not depend on it.
+4. **Calculate from source records.** The server looks up each scientific name again; it does not trust submitted native/invasive labels. Only resolved identifications with sourced Florida status enter the fraction. Ambiguous broad firebush/ficus names still need the relevant taxon choice. Additions and removals use the same calculation; a projected removal means that taxon is no longer present in the surveyed area.
+5. **Build an actionable proposal.** Recommendations come from verified native catalog entries, filtered by inventory and site requirements. Proposal generation rechecks selected plants and uses a fixed factual template. Catalog lookup, survey calculation, recommendations, and proposals do not require paid model services. A running backend is still needed.
 
-1. **Identifying the plant.** The photos go to PlantNet, a plant identification service, which returns a ranked list of likely species with a score for each.
-   - If PlantNet is sure (top score 0.80 or higher, and clearly ahead of the next one), its answer is used.
-   - If it's unsure, OpenAI's image model (gpt-4o-mini) looks at the photos and picks between PlantNet's top guesses, taking your ZIP code into account. The result is marked as needing a double-check.
-   - If PlantNet can't be reached or finds nothing, OpenAI identifies the plant from the photos on its own.
-   - If both fail, the app gets an empty answer instead of an error.
-2. **Native or invasive.** The species name is checked in this order, and the first one that knows the plant wins:
-   - the full official Florida Invasive Species Council (FISC) 2026 list of 179 invasive plants, which ships with the backend;
-   - our own list of 22 South Florida natives, which also ships with the backend;
-   - the USDA PLANTS database online, which says whether the plant is native to Florida or was brought in from somewhere else (answers are remembered while the server runs);
-   - if none of them know it, the AI's guess, marked as such.
-3. **Wildlife value and actions.** OpenAI is asked how much the plant supports wildlife and what you can do about it. If it's invasive, the app always says to remove it and replace it with a native. If OpenAI is down or out of credits, the scan still returns the plant and its verdict, with wildlife value and actions marked unknown.
-4. **Scoring.** The biodiversity score is worked out with fixed rules, no AI: natives with high wildlife value score highest, invasives score lowest, and there are bonuses for having lots of natives and penalties for each invasive.
-5. **Recommendations and the letter.** OpenAI suggests native plants for your ZIP. Anything invasive, or that USDA says isn't native to Florida, gets filtered out. The letter is a fixed template, and OpenAI only writes one or two sentences about the plants you picked. Without OpenAI, recommendations come straight from our natives list and the letter uses each plant's "why it matters" line instead.
+The catalog includes Florida status sources, wildlife relationship sources, growing guidance, and verification dates. Its descriptive wildlife categories do not establish measured wildlife at a campus. FISC categories describe documented invasive effects and distribution; the FISC list is not itself a regulatory list. The app does not establish permission to remove vegetation or approve a planting.
 
-The invasive list is generated from the official FISC PDF by a script in `backend/scripts/`. The 22 natives and the "why it matters" lines are our own and still need checking against UF/IFAS before the demo.
+## Photos, saved work, and request limits
 
-## Finding your way around
+Prepared photos are sent through the backend to identification providers when you request identification. The backend decodes and checks JPEG/PNG data, strips metadata, resizes photos, and rejects remote image URLs. Each prepared upload is limited to 4 MB, with at most five photos and a 30 MB request limit. The picker accepts originals under 12 MB and prepares smaller copies before upload.
 
-| Folder | What's in it |
+Saved audits contain observations, notes, site details, and proposal text; photo payloads and photo URIs are excluded from persisted audit records. This local storage is not an encrypted vault. Exported reports contain the survey information and names you enter. Use school-approved photos, avoid unnecessary personal details, and clear or export an audit appropriately on shared devices.
+
+The client has deadlines, cancellation, inline errors, and retry controls. A recovery screen can reopen the app after a rendering failure without clearing saved audits; unsaved edits or staged photos may need to be added again. The backend returns JSON errors and has per-client and shared identification limits. These limits are held in one server process and reset when it restarts; a public deployment needs shared gateway limits if it uses several workers or instances. Aborted client requests may already have reached a provider.
+
+## Run locally
+
+Use Node.js 20.19 or newer and Python 3.11 or newer. The checked-in app uses Expo SDK 54 and its matching dependencies; reading the required [SDK 56 reference](https://docs.expo.dev/versions/v56.0.0/) does not migrate the project. Use a compatible Expo client or development build when checking a phone.
+
+**Backend**, from the `backend` folder:
+
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements-dev.txt
+cp .env.example .env
+.venv/bin/python app.py
+```
+
+On Windows, use `py` in place of `python3` and `.venv\Scripts\python` in place of `.venv/bin/python`. Copy the example file using your shell or file manager.
+
+Fill in the backend's provider keys for live photo identification. Obtain a PlantNet key from [PlantNet](https://my.plantnet.org/); the image-model fallback uses an OpenAI key. Never put provider keys in frontend configuration. Without provider keys, the manual catalog and the survey-to-proposal workflow still work. Keep development debug mode off for demonstrations and public hosting.
+
+The local server listens on `127.0.0.1:5000` by default. For a physical phone on the same trusted Wi-Fi, use a server bound to the computer's LAN interface and point the phone at that address. For example, from `backend`:
+
+```sh
+.venv/bin/python -m flask --app app run --host=0.0.0.0 --port=5000
+```
+
+**Frontend**, from the repository root:
+
+```sh
+npm ci
+cp .env.example .env
+npx expo start
+```
+
+Set `EXPO_PUBLIC_API_URL` in the root `.env` to the backend address, such as `http://127.0.0.1:5000` for a browser on this computer or `http://YOUR-LAN-IP:5000` for a phone. Restart Expo with `npx expo start --clear` after changing it, and clear the export cache when rebuilding. Press `w` for web. The public API URL is configuration, not a secret.
+
+## Before public hosting
+
+Use the backend's production requirements and HTTPS. The supplied Gunicorn configuration runs one worker with four threads and a 60-second worker timeout, keeping the in-process quota state shared within that server. From `backend` on a supported production host:
+
+```sh
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/gunicorn --config gunicorn.conf.py app:app
+```
+
+Set the server's `BIND` environment variable if the host requires a different listening interface or port. Configure the exact frontend origins allowed by the backend and rebuild the frontend with the public HTTPS API address. Keep provider credentials on the server, set provider budget limits, and configure identification quotas for the expected demo traffic. The built-in quotas are intended for a single-process pilot; put shared limits at the gateway before scaling to multiple workers. Do not blindly trust forwarded client-IP headers.
+
+Check the health endpoint, then test the app from a signed-out browser on another device/network. The repository does not provision hosting accounts or a public URL. Deployment still requires choosing a host and supplying credentials. Backend `.env.example` documents the supported settings.
+
+## Checks and validation
+
+From `backend`, run the tests without live provider calls:
+
+```sh
+.venv/bin/python -m pytest -q
+```
+
+From the repository root:
+
+```sh
+node --test frontend/tests/*.test.mjs
+npx expo install --check
+npx expo export --platform web --clear
+node docs/sync-architecture.mjs --check
+```
+
+GitHub Actions is configured to repeat the tests, dependency alignment, architecture check, and web/iOS/Android exports on pushes and pull requests. The workflow itself has not run on GitHub until this branch is pushed.
+
+Compatible dependency patches were applied. The current Expo/React Native dependency tree still reports 36 npm advisories (23 high and 13 moderate), largely in development/build tooling. Resolving the rest needs a separately tested framework/dependency update; forced changes would cross the current SDK compatibility boundary.
+
+Automated tests cover source matching, taxonomic exceptions, calculation invariants, selection/proposal rules, input bounds, failure handling, and frontend state/evidence logic. They do not measure live identification accuracy or establish real user or ecological outcomes. Camera permissions and upload behavior also need checks on actual iOS and Android devices. Record manual and field results in [the field-testing guide](docs/field-testing.md).
+
+To rebuild the FISC data from an official PDF, use `backend/scripts/build_fisc_list.py` with the development requirements installed. Review source metadata and catalog exceptions after regenerating it; do not replace a reviewed catalog without checking the resulting changes.
+
+## Find your way around
+
+| Location | Purpose |
 |---|---|
-| `frontend/` | The phone app. `screens/` has one file per screen, `navigation/` sets up the tabs, `services/` has the code that sends requests to the backend, and `styles/` has the colors. |
-| `backend/` | The Python server the app talks to. `app.py` lists the web addresses the app can call. `services/` does the actual work (identifying, looking up Florida status, scoring, writing the letter). `data/` holds the Florida plant lists. `scripts/` has the tool that rebuilds the invasive list from the official FISC PDF. `tests/` checks it all works. |
-| `assets/` | Images used in the app, the app icon and splash screen, and the official "Powered by Pl@ntNet" logo shown under identification results. |
-| `docs/` | The interactive architecture map (`architecture.html`), the script that keeps it matched to the code, and our written plans (`superpowers/plans/`). |
+| `frontend/screens/` | Home, identification, campus audit, report/proposal, and planting options. |
+| `frontend/components/` | Shared photo picker, evidence cards, site controls, and accessible audit controls. |
+| `frontend/services/` | Bounded server requests, local audit storage, and text-report creation. |
+| `frontend/utils/` and `frontend/tests/` | Photo/evidence rules and frontend regression checks. |
+| `backend/app.py` | Validated API routes, JSON errors, request limits, and health checks. |
+| `backend/services/` | Identification, Florida evidence, native-share calculations, site filtering, and proposals. |
+| `backend/data/` | Native records, nonnative exceptions, and the FISC list with source provenance. |
+| `backend/tests/` | Backend regression checks with mocked external services. |
+| `docs/implementation-plan.md` | Scope, shared contracts, acceptance checks, and work requiring the team. |
+| `docs/submission-guide.md` | Adaptable application answers and the 2:50 video plan; not a submitted application. |
+| `docs/field-testing.md` | Independent plant labels, accuracy/coverage metrics, user tasks, and school review records. |
 
-Files in the top folder:
-- `App.js` and `index.js` start the app. `app.json` holds app settings like the name, icon, and camera permission text.
-- `package.json` lists what the app needs installed.
-- `ARCHITECTURE.md` is the written version of the architecture map, with a glossary and a list of planned changes.
-- `CLAUDE.md` and `AGENTS.md` are instructions for the AI coding assistants we use on this project.
+`App.js`, `index.js`, and `app.json` start and configure the app. `AGENTS.md` and `CLAUDE.md` contain repository instructions.
 
-### Opening the architecture map
+The [interactive architecture map](docs/architecture.html) is the branch-local source of truth; it needs internet for its visualization libraries. [The hosted map](https://aydinheugh.github.io/EcoLoco-FL/) may show a different revision until this branch is published. After a structural change, update the map and run `node docs/sync-architecture.mjs` to check it and regenerate [ARCHITECTURE.md](ARCHITECTURE.md).
 
-- **Online:** go to https://aydinheugh.github.io/EcoLoco-FL/
-- **From a copy of the repo:** double-click `docs/architecture.html` to open it in your browser. It needs an internet connection.
+## Work still requiring the team
 
-Click any box to see what that part of the code does, step by step, and which parts it connects to. The **Glossary** button explains the colors. Dashed boxes are things we've planned but haven't built yet.
-
-## Running it yourself
-
-You'll need Node.js, Python 3, an OpenAI API key, and a free PlantNet API key from https://my.plantnet.org (without it, identification falls back to OpenAI only).
-
-**Backend** (from the `backend` folder):
-1. Create a file called `.env` with one key per line:
-   ```
-   OPENAI_API_KEY=your-openai-key
-   PLANTNET_API_KEY=your-plantnet-key
-   ```
-2. Set up Python and install what it needs:
-   ```
-   py -m venv venv
-   venv\Scripts\python -m pip install Flask flask-cors openai python-dotenv requests pytest
-   ```
-   On Mac or Linux, use `python3` instead of `py` and `venv/bin/python` instead of `venv\Scripts\python`.
-3. Start the server: `venv\Scripts\python app.py`. It runs on port 5000. Debug mode is off by default; while developing, add `ECOLOCO_DEV=1` to `.env` to get automatic reloading and detailed error pages. Never turn it on for a demo or a public server.
-
-**App** (from the top folder):
-1. Create a file called `.env` containing `EXPO_PUBLIC_API_URL=http://YOUR-COMPUTER-IP:5000`. If you're testing on a phone, use your computer's local network address, not `localhost`.
-2. Run `npm install`, then `npx expo start`.
-3. Scan the QR code with the Expo Go app, or press `w` to open it in a web browser.
-
-**Tests** (from the `backend` folder): `venv\Scripts\python -m pytest -v`. The tests don't need any API keys and never call OpenAI, PlantNet or USDA.
-
-**Rebuilding the invasive list** (from the `backend` folder, after `venv\Scripts\python -m pip install -r requirements-dev.txt`): `venv\Scripts\python scripts/build_fisc_list.py <link to the FISC PDF> data/fisc_list.json`.
-
-## Where things stand
-
-- Done: Florida plant lists drive the native/invasive verdict, every verdict comes with its source and a "why it matters" line, plants are identified by PlantNet with OpenAI as a backup, the full FISC invasive list and a USDA check are in place, scans keep working when OpenAI is down, results credit Pl@ntNet, and the backend has automated tests.
-- Next: let the app send several photos and ask the user to confirm unsure identifications, show the source and "why it matters" in the app, show "unknown" wildlife value and an AI-unavailable notice properly (the scan screen currently shows unknown values as Medium), double-check the plant lists against official sources, and put the backend online so the app works away from our computers.
+Run a permitted campus survey, obtain independent plant labels, test with target users, and have school staff review a proposal. Supply authentic personal motivation, student contributions, and learning. Record the demonstration, complete accurate application disclosures, verify eligibility, and submit. Plant survival and wildlife outcomes require later observation. The sample audit, automated checks, and document templates are not evidence that these activities have occurred.

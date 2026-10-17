@@ -56,3 +56,19 @@ def test_chat_bad_json_raises_ai_unavailable(monkeypatch):
     monkeypatch.setattr(openai_client, "_client", lambda: _fake_client("Sorry, I can't help with that."))
     with pytest.raises(openai_client.AIUnavailable):
         openai_client.chat("hi", json_reply=True)
+
+
+def test_client_has_short_timeout_and_no_automatic_retries(monkeypatch):
+    seen = {}
+    monkeypatch.setenv("OPENAI_API_KEY", "test-placeholder")
+    def client(**kwargs):
+        seen.update(kwargs)
+        return object()
+    monkeypatch.setattr(openai_client, "OpenAI", client)
+    openai_client._client.cache_clear()
+    try:
+        openai_client._client()
+        assert seen["timeout"] == 12.0
+        assert seen["max_retries"] == 0
+    finally:
+        openai_client._client.cache_clear()

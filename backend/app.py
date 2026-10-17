@@ -1,92 +1,149 @@
 import os
 
-from flask import Flask, request, jsonify
-from flask_cors import CORS
 from dotenv import load_dotenv
-from services import openai_client
-from services.ai_service import (
-    fallback_recommendations,
-    generate_letter,
-    generate_letter_without_ai,
-    get_plant_recommendations,
-    identify_plant,
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+from werkzeug.exceptions import HTTPException
+
+from services.ai_service import confirm_plant, generate_proposal, get_catalog, get_plant_recommendations, identify_plant
+from services.request_limits import RequestLimits
+from services.request_validation import (
+    location_field, plant_list, proposal_fields, site_fields, species_list, text_field, validate_images,
 )
-from services.score_service import calculate_biodiversity_score
+from services.score_service import METRIC_VERSION, calculate_biodiversity_score
 
 load_dotenv()
-
 app = Flask(__name__)
-CORS(app)
+app.config.update(
+    MAX_CONTENT_LENGTH=30 * 1024 * 1024,
+    RATE_LIMIT_ENABLED=True,
+    IDENTIFY_PER_MINUTE=int(os.getenv("IDENTIFY_PER_MINUTE", "6")),
+    IDENTIFY_TOTAL_PER_MINUTE=int(os.getenv("IDENTIFY_TOTAL_PER_MINUTE", "20")),
+    IDENTIFY_TOTAL_PER_DAY=int(os.getenv("IDENTIFY_TOTAL_PER_DAY", "200")),
+)
+allowed_origins = os.getenv(
+    "ALLOWED_ORIGINS", "http://localhost:8081,http://127.0.0.1:8081,http://localhost:4173,http://127.0.0.1:4173"
+).split(",")
+CORS(app, origins=[origin.strip() for origin in allowed_origins if origin.strip()], max_age=600)
+limits = RequestLimits()
 
 
 def debug_enabled():
     return os.getenv("ECOLOCO_DEV") == "1"
 
 
-def _valid_images(images):
-    return (
-        isinstance(images, list)
-        and 1 <= len(images) <= 5
-        and all(isinstance(image, str) and image for image in images)
-    )
+def _body():
+    if not request.is_json:
+        raise ValueError("Send an application/json request body.")
+    data = request.get_json()
+    if not isinstance(data, dict):
+        raise ValueError("The request body must be a JSON object.")
+    return data
+
+
+@app.errorhandler(ValueError)
+def validation_error(error):
+    return jsonify(error=str(error), code="invalid_request"), 400
+
+
+@app.errorhandler(HTTPException)
+def http_error(error):
+    messages = {413: "Upload is too large. Choose up to five photos, each no larger than 4 MB.",
+                400: "The request body is not valid JSON.", 404: "That endpoint does not exist.",
+                405: "That request method is not supported."}
+    return jsonify(error=messages.get(error.code, error.description), code=f"http_{error.code}"), error.code
+
+
+@app.errorhandler(Exception)
+def unexpected_error(error):
+    # Log error types without photos, input or provider credentials.
+    app.logger.error("%s failed (%s)", request.path, type(error).__name__)
+    return jsonify(error="This request could not be completed. Your saved audit is unchanged; please retry.", code="server_error"), 500
+
+
+@app.after_request
+def response_headers(response):
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify(result={"status": "ok", "api_version": "2", "metric_version": METRIC_VERSION})
 
 
 @app.route("/identify", methods=["POST"])
 def identify():
-    data = request.get_json()
+    data = _body()
+    location = location_field(data.get("location"))
     images = data.get("images")
     if images is None and data.get("image"):
         images = [data["image"]]
-    location = data.get("location")
+    if app.config["RATE_LIMIT_ENABLED"]:
+        retry = limits.check(
+            request.remote_addr or "unknown", app.config["IDENTIFY_PER_MINUTE"],
+            app.config["IDENTIFY_TOTAL_PER_MINUTE"], app.config["IDENTIFY_TOTAL_PER_DAY"],
+        )
+        if retry:
+            response = jsonify(error="Photo identification is temporarily at its request limit. You can still use the plant catalog and saved audits.", code="rate_limited", retry_after=retry)
+            response.headers["Retry-After"] = str(retry)
+            return response, 429
+    images = validate_images(images)
+    return jsonify(result=identify_plant(images, location))
 
-    if not _valid_images(images) or not location:
-        return jsonify({"error": "1 to 5 images and a location are required"}), 400
 
-    result = identify_plant(images, location)
-    return jsonify({"result": result})
+@app.route("/confirm", methods=["POST"])
+def confirm():
+    data = _body()
+    location = location_field(data.get("location"))
+    name = text_field(data.get("scientific_name"), "Species name", required=True)
+    return jsonify(result=confirm_plant(name, location))
+
+
+@app.route("/catalog", methods=["POST"])
+def catalog():
+    data = _body()
+    location = location_field(data.get("location"))
+    return jsonify(result=get_catalog(location))
 
 
 @app.route("/recommend", methods=["POST"])
 def recommend():
-    data = request.get_json()
-    location = data.get("location")
-
-    if not location:
-        return jsonify({"error": "location is required"}), 400
-
-    try:
-        result, ai_unavailable = get_plant_recommendations(location), False
-    except openai_client.AIUnavailable:
-        result, ai_unavailable = fallback_recommendations(location), True
-    return jsonify({"result": result, "ai_unavailable": ai_unavailable})
+    data = _body()
+    location = location_field(data.get("location"))
+    plants = plant_list(data.get("plants", []))
+    site = site_fields(data.get("site"))
+    return jsonify(result=get_plant_recommendations(location, plants=plants, site=site))
 
 
 @app.route("/score", methods=["POST"])
 def score():
-    data = request.get_json()
-    plants = data.get("plants")
-    if not plants:
-        return jsonify({"error": "plants list is required"}), 400
-    result = calculate_biodiversity_score(plants)
-    return jsonify({"result": result})
+    data = _body()
+    location = location_field(data.get("location"))
+    plants = plant_list(data.get("plants"))
+    additions = species_list(data.get("additions", []), "Proposed additions")
+    removals = species_list(data.get("removals", []), "Proposed removals")
+    return jsonify(result=calculate_biodiversity_score(plants, location, additions=additions, removals=removals))
 
 
 @app.route("/letter", methods=["POST"])
 def letter():
-    data       = request.get_json()
-    plant_names = data.get("plant_names")
-    score      = data.get("score")
-    zip_code   = data.get("zip_code")
-
-    if not plant_names or score is None or not zip_code:
-        return jsonify({"error": "plant_names, score, and zip_code are required"}), 400
-
-    try:
-        result, ai_unavailable = generate_letter(plant_names, score, zip_code), False
-    except openai_client.AIUnavailable:
-        result, ai_unavailable = generate_letter_without_ai(plant_names, score, zip_code), True
-    return jsonify({"result": result, "ai_unavailable": ai_unavailable})
+    data = _body()
+    if "is_sample" in data and not isinstance(data["is_sample"], bool):
+        raise ValueError("is_sample must be true or false.")
+    payload = {
+        "is_sample": data.get("is_sample", False),
+        "zip_code": location_field(data.get("zip_code")),
+        "plants": plant_list(data.get("plants", [])),
+        "plant_names": species_list(data.get("plant_names"), required=True),
+        "site": site_fields(data.get("site")),
+        "site_name": text_field(data.get("site_name"), "Survey area"),
+        "survey_date": text_field(data.get("survey_date"), "Survey date", 40),
+        "proposal": proposal_fields(data.get("proposal")),
+    }
+    return jsonify(result=generate_proposal(payload))
 
 
 if __name__ == "__main__":
-    app.run(debug=debug_enabled(), host='0.0.0.0')
+    app.run(debug=debug_enabled(), host="127.0.0.1", port=int(os.getenv("PORT", "5000")))

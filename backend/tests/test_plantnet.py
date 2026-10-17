@@ -60,7 +60,7 @@ def test_plantnet_request_matches_api(plantnet):
     assert call["files"][0][1][1] == JPEG
     assert call["files"][1][1][1] == JPEG + b"2"
     assert call["files"][0][1][2] == "image/jpeg"
-    assert call["timeout"]
+    assert call["timeout"] == (3, 12)
 
 
 def test_plantnet_parses_ranked_results(plantnet):
@@ -79,21 +79,29 @@ def test_plantnet_detects_png(plantnet):
     assert plantnet["post"][0]["files"][0][1][2] == "image/png"
 
 
-def test_plantnet_accepts_data_url_and_http_url(plantnet, monkeypatch):
-    fetched = []
+def test_plantnet_accepts_data_url(plantnet):
+    identify_with_plantnet([f"data:image/jpeg;base64,{b64(JPEG)}"])
+    assert plantnet["post"][0]["files"][0][1][1] == JPEG
 
-    def fake_get(url, **kwargs):
-        fetched.append(url)
-        response = FakeResponse()
-        response.content = PNG
-        return response
 
-    monkeypatch.setattr(requests, "get", fake_get)
-    identify_with_plantnet([f"data:image/jpeg;base64,{b64(JPEG)}", "https://example.com/leaf.png"])
-    files = plantnet["post"][0]["files"]
-    assert files[0][1][1] == JPEG
-    assert files[1][1][1] == PNG
-    assert fetched == ["https://example.com/leaf.png"]
+def test_plantnet_remote_urls_never_fetch(plantnet, monkeypatch):
+    def forbidden(*args, **kwargs):
+        pytest.fail("Remote image URLs must never be fetched")
+    monkeypatch.setattr(requests, "get", forbidden)
+    with pytest.raises(ValueError):
+        identify_with_plantnet(["http://127.0.0.1/internal"])
+    assert plantnet["post"] == []
+
+
+def test_plantnet_malformed_candidates_are_filtered_and_ranked(plantnet):
+    plantnet["response"] = FakeResponse(body={"results": [
+        None, {}, {"species": None},
+        plantnet_result("Low first", None, 0.2),
+        plantnet_result("Zamia integrifolia", "Coontie", 0.9),
+        plantnet_result("Zamia integrifolia", "Duplicate", 0.8),
+    ]})
+    result = identify_with_plantnet([b64(JPEG)])
+    assert [r["scientific_name"] for r in result] == ["Zamia integrifolia", "Low first"]
 
 
 def test_plantnet_rejects_non_jpeg_png(plantnet):

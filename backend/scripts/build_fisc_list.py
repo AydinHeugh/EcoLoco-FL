@@ -3,10 +3,12 @@
 Usage: python scripts/build_fisc_list.py <pdf path or URL> <output json>
 """
 import json
+import hashlib
 import re
 import sys
 import tempfile
 from pathlib import Path
+from datetime import date
 
 import requests
 
@@ -137,7 +139,15 @@ def _pdf_path(source):
 def main(source, out_path):
     out = Path(out_path)
     current = json.loads(out.read_text(encoding="utf-8")) if out.exists() else {"species": []}
-    official = parse_pdf(_pdf_path(source))
+    pdf_path = Path(_pdf_path(source))
+    try:
+        official = parse_pdf(pdf_path)
+        source_sha256 = hashlib.sha256(pdf_path.read_bytes()).hexdigest()
+    finally:
+        if source.startswith(("http://", "https://")):
+            pdf_path.unlink(missing_ok=True)
+    if not official:
+        raise ValueError("No FISC entries found; existing catalog was not changed")
     merged, unmatched = merge(official, current["species"])
     result = {
         "_comment": (
@@ -146,6 +156,8 @@ def main(source, out_path):
             "verify them against FISC and UF/IFAS before relying on them. Synonyms include older names a model may return."
         ),
         "source": source,
+        "verified_on": date.today().isoformat(),
+        "source_sha256": source_sha256,
         "species": merged,
     }
     out.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

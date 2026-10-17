@@ -1,0 +1,35 @@
+name: Verify EcoLoco
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      EXPO_PUBLIC_API_URL: http://127.0.0.1:5000
+      OPENAI_API_KEY: ''
+      PLANTNET_API_KEY: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+      - run: npm ci
+      - run: python -m pip install -r backend/requirements-dev.txt
+      - run: python -m pytest backend/tests -q
+      - run: npm test
+      - run: npx expo install --check
+      - run: node docs/sync-architecture.mjs --check
+      - run: npx expo export --platform all --clear

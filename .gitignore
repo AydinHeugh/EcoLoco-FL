@@ -49,3 +49,7 @@ __pycache__/
 #env
 .env
 backend/test_api.py
+
+# Local Python development environments and test caches
+.venv/
+.pytest_cache/

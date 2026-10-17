@@ -45,7 +45,7 @@ def test_identify_species_survives_missing_fields(model_reply):
         "source": "openai_fallback", "needs_confirmation": True}
 
 
-@pytest.mark.parametrize("value, expected", [(1.7, 1.0), (-0.2, 0.0), ("abc", 0.0), (None, 0.0)])
+@pytest.mark.parametrize("value, expected", [(1.7, 1.0), (-0.2, 0.0), ("abc", 0.0), (None, 0.0), (True, 0.0)])
 def test_confidence_is_clamped(model_reply, value, expected):
     model_reply["value"] = {"scientific_name": "X y", "common_name": "X", "confidence": value}
     assert identify_species("abc123", "33139")["confidence"] == expected
@@ -54,7 +54,6 @@ def test_confidence_is_clamped(model_reply, value, expected):
 @pytest.mark.parametrize("image, url", [
     ("abc123", "data:image/jpeg;base64,abc123"),
     ("data:image/png;base64,xyz", "data:image/png;base64,xyz"),
-    ("https://example.com/p.jpg", "https://example.com/p.jpg"),
 ])
 def test_image_is_sent_as_url(model_reply, image, url):
     identify_species(image, "33139")
@@ -215,3 +214,27 @@ def test_plantnet_failure_log_never_contains_key(plantnet, openai, caplog):
     identify_species("img", ZIP)
     assert "PlantNet" in caplog.text
     assert "test-key" not in caplog.text
+
+
+@pytest.mark.parametrize("image", ["http://127.0.0.1/internal", "https://example.com/p.jpg", "file:///etc/passwd"])
+def test_remote_image_urls_never_reach_providers(plantnet, openai, image):
+    with pytest.raises(ValueError):
+        identify_species(image, ZIP)
+    assert plantnet["images"] is None
+    assert openai["calls"] == []
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+def test_nonfinite_confidence_cannot_become_certain(model_reply, value):
+    model_reply["value"] = {"scientific_name": "Zamia integrifolia", "confidence": value}
+    result = identify_species("abc123", ZIP)
+    assert result["confidence"] == 0
+    assert result["needs_confirmation"] is True
+
+
+@pytest.mark.parametrize("reply", [[], None, "bad", 9])
+def test_malformed_vision_response_recovers(plantnet, openai, reply):
+    openai["reply"] = reply
+    result = identify_species("img", ZIP)
+    assert result["scientific_name"] == ""
+    assert result["needs_confirmation"] is True

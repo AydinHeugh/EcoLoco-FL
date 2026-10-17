@@ -1,401 +1,141 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  ActivityIndicator, TextInput, Alert, Image,
-  useWindowDimensions, Animated, Easing, Linking,
-} from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, TextInput, Image, useWindowDimensions } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Fraunces_700Bold } from '@expo-google-fonts/fraunces';
-import { DMSans_400Regular, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
+import { Fraunces_700Bold } from '@expo-google-fonts/fraunces/700Bold';
 import { getPlantRecommendations } from '../services/geminiService';
+import SiteConditions, { DEFAULT_SITE } from '../components/SiteConditions';
+import { EvidenceLink } from '../components/PlantEvidence';
 
-const CREAM      = '#f5f0e8';
-const DARK_GREEN = '#1e3a1e';
-const SOFT_GREEN = '#4a7a3a';
-const LIGHT_BG   = '#eaeee6';
-const TEXT_BODY  = '#4a4a3a';
-const TEXT_MUTED = '#7a7a6a';
-const BORDER     = '#d4cfc4';
-const CARD_BG    = '#fefcf8';
-
-const EASE_OUT = Easing.bezier(0.22, 1, 0.36, 1);
 const LOGO = require('../../assets/EcoLoco_logo.png');
+const readable = (value) => Array.isArray(value) ? value.join(', ') : typeof value === 'string' ? value : '';
 
-// ─── Highlight plant name in green ───────────────────────────────────────────
-function HighlightedText({ text, plantName, style }) {
-  if (!plantName || !text || !text.includes(plantName)) {
-    return <Text style={style}>{text}</Text>;
-  }
-  const parts = text.split(plantName);
-  return (
-    <Text style={style}>
-      {parts.map((part, i) => (
-        <React.Fragment key={i}>
-          {part}
-          {i < parts.length - 1 && (
-            <Text style={{ color: SOFT_GREEN, fontFamily: 'DMSans_700Bold' }}>{plantName}</Text>
-          )}
-        </React.Fragment>
-      ))}
-    </Text>
-  );
+export function RecommendationCard({ item }) {
+  const suitability = readable(item.suitability) || readable(item.suitability_explanation);
+  return <View style={styles.card}>
+    <Text style={styles.overline}>VERIFIED FLORIDA NATIVE</Text>
+    <Text accessibilityRole="header" style={styles.plantName}>{item.plant_name || item.common_name || item.scientific_name}</Text>
+    <Text style={styles.scientific}>{item.scientific_name}</Text>
+    <Text style={styles.label}>Why consider it</Text>
+    <Text style={styles.body}>{item.why || item.benefit || item.impact || 'Review the linked plant record before planning a planting.'}</Text>
+    {!!item.problem && <Text style={styles.hint}>{item.problem}</Text>}
+    <Text style={styles.label}>Proposed step</Text>
+    <Text style={styles.body}>{item.action || `Check the planting site with your school before choosing ${item.plant_name || item.scientific_name}.`}</Text>
+    {!!suitability && <View style={styles.notice}><Text style={styles.body}>{suitability}</Text></View>}
+    {!!item.site_requirements && <Text style={styles.hint}>{typeof item.site_requirements === 'string' ? item.site_requirements : Object.entries(item.site_requirements).map(([key, value]) => `${key.replaceAll('_', ' ')}: ${readable(value)}`).join(' · ')}</Text>}
+    {!!item.sun && <Text style={styles.hint}>Sun: {readable(item.sun)} · Moisture: {readable(item.moisture)}{item.min_space ? ` · Space: ${item.min_space}` : ''}{item.maintenance ? ` · Maintenance: ${item.maintenance}` : ''}</Text>}
+    {!!item.management_notes && <Text style={styles.hint}>{item.management_notes}</Text>}
+    <Text style={styles.hint}>Record: {item.source || 'Florida plant catalog'}{item.verified_on ? ` · checked ${item.verified_on}` : ''}</Text>
+    <EvidenceLink url={item.source_url}>Plant status and growing guidance</EvidenceLink>
+    <EvidenceLink url={item.why_source_url}>Wildlife relationship evidence</EvidenceLink>
+    <EvidenceLink url={item.requirements_source_url}>Planting requirements source</EvidenceLink>
+  </View>;
 }
 
-// ─── Wildlife support pill ────────────────────────────────────────────────────
-function SupportPill({ level }) {
-  const cfg = {
-    high:   { bg: '#eaf2e8', color: SOFT_GREEN,  label: '↑ High' },
-    medium: { bg: '#faf3e0', color: '#c49a3a',   label: '→ Medium' },
-    low:    { bg: '#f5efec', color: '#C97D5D',   label: '↓ Low' },
-  };
-  const c = cfg[level?.toLowerCase()] ?? cfg.medium;
-  return (
-    <View style={[sp.wrap, { backgroundColor: c.bg }]}>
-      <Text style={[sp.text, { color: c.color }]}>{c.label} Wildlife</Text>
-    </View>
-  );
-}
-
-const sp = StyleSheet.create({
-  wrap: { alignSelf: 'flex-start', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
-  text: { fontSize: 11, fontFamily: 'DMSans_700Bold' },
-});
-
-// ─── Bouncing dots loader ────────────────────────────────────────────────────
-function LoadingDots({ message }) {
-  const d0 = useRef(new Animated.Value(0)).current;
-  const d1 = useRef(new Animated.Value(0)).current;
-  const d2 = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const dot = (v, delay) => Animated.loop(
-      Animated.sequence([
-        Animated.delay(delay),
-        Animated.timing(v, { toValue: -9, duration: 280, easing: EASE_OUT, useNativeDriver: true }),
-        Animated.timing(v, { toValue: 0,  duration: 280, easing: EASE_OUT, useNativeDriver: true }),
-        Animated.delay(500),
-      ])
-    );
-    Animated.parallel([dot(d0, 0), dot(d1, 160), dot(d2, 320)]).start();
-  }, []);
-
-  return (
-    <View style={ld.wrap}>
-      <View style={ld.dots}>
-        {[d0, d1, d2].map((d, i) => (
-          <Animated.View key={i} style={[ld.dot, { transform: [{ translateY: d }] }]} />
-        ))}
-      </View>
-      <Text style={ld.text}>{message}</Text>
-    </View>
-  );
-}
-
-const ld = StyleSheet.create({
-  wrap: { alignItems: 'center', paddingVertical: 36, gap: 14 },
-  dots: { flexDirection: 'row', gap: 8, height: 20, alignItems: 'flex-end' },
-  dot:  { width: 8, height: 8, borderRadius: 4, backgroundColor: SOFT_GREEN },
-  text: { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED },
-});
-
-// ─── Skeleton card ───────────────────────────────────────────────────────────
-function SkeletonCard({ index }) {
-  const opacity = useRef(new Animated.Value(0.55)).current;
-
-  useEffect(() => {
-    const anim = Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacity, { toValue: 1,    duration: 750, delay: index * 180, useNativeDriver: true }),
-        Animated.timing(opacity, { toValue: 0.55, duration: 750, useNativeDriver: true }),
-      ])
-    );
-    anim.start();
-    return () => anim.stop();
-  }, []);
-
-  return (
-    <Animated.View style={[styles.card, { opacity }]}>
-      <View style={[styles.skLine, { width: 58, height: 9, marginBottom: 11 }]} />
-      <View style={[styles.skLine, { width: '72%', height: 20, marginBottom: 18 }]} />
-      <View style={styles.cardDivider} />
-      <View style={[styles.skLine, { width: 50, height: 9, marginBottom: 10, marginTop: 2 }]} />
-      <View style={[styles.skLine, { width: '90%', height: 13, marginBottom: 7 }]} />
-      <View style={[styles.skLine, { width: '62%', height: 13, marginBottom: 18 }]} />
-      <View style={styles.cardDivider} />
-      <View style={[styles.skLine, { width: 46, height: 9, marginBottom: 10, marginTop: 2 }]} />
-      <View style={[styles.skLine, { width: '82%', height: 13 }]} />
-    </Animated.View>
-  );
-}
-
-// ─── Animated result card ────────────────────────────────────────────────────
-function AnimatedCard({ item, index }) {
-  const opacity    = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(22)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(opacity,    { toValue: 1, duration: 520, delay: index * 110, easing: EASE_OUT, useNativeDriver: true }),
-      Animated.timing(translateY, { toValue: 0, duration: 520, delay: index * 110, easing: EASE_OUT, useNativeDriver: true }),
-    ]).start();
-  }, []);
-
-  return (
-    <Animated.View style={[styles.card, { opacity, transform: [{ translateY }] }]}>
-      <View style={styles.cardTopRow}>
-        <Text style={styles.cardLabel}>PROBLEM</Text>
-        <Text style={styles.cardNum}>{String(index + 1).padStart(2, '0')}</Text>
-      </View>
-      <Text style={styles.problemText}>{item.problem}</Text>
-      {item.wildlife_support && (
-        <View style={{ marginTop: 10 }}>
-          <SupportPill level={item.wildlife_support} />
-        </View>
-      )}
-
-      <View style={styles.cardDivider} />
-
-      <Text style={styles.cardLabel}>ACTION</Text>
-      <HighlightedText text={item.action} plantName={item.plant_name} style={styles.actionText} />
-
-      <View style={styles.cardDivider} />
-
-      <Text style={styles.cardLabel}>IMPACT</Text>
-      <HighlightedText text={item.impact} plantName={item.plant_name} style={styles.impactText} />
-    </Animated.View>
-  );
-}
-
-// ─── Screen ──────────────────────────────────────────────────────────────────
 export default function RecommendationScreen({ navigation, route }) {
-  const prefillZip = route?.params?.prefillZip ?? '';
-  const [zipCode,          setZipCode]         = useState(prefillZip);
-  const [loading,          setLoading]         = useState(false);
-  const [results,          setResults]         = useState(null);
-  const [viewAllExpanded,  setViewAllExpanded] = useState(false);
-
+  const [zipCode, setZipCode] = useState(route?.params?.prefillZip || '');
+  const [site, setSite] = useState({ ...DEFAULT_SITE, ...route?.params?.site });
+  const [results, setResults] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [expanded, setExpanded] = useState(false);
+  const request = useRef({ sequence: 0, controller: null });
+  const plants = route?.params?.plants || [];
+  const [fontsLoaded] = useFonts({ Fraunces_700Bold });
   const { width } = useWindowDimensions();
-  const maxWidth  = Math.min(width, 960);
 
-  const [fontsLoaded] = useFonts({ Fraunces_700Bold, DMSans_400Regular, DMSans_700Bold });
-
-  // Auto-run if navigated here with a ZIP pre-filled
+  const cancel = useCallback(() => {
+    request.current.sequence++;
+    request.current.controller?.abort();
+    setLoading(false);
+  }, []);
+  useFocusEffect(useCallback(() => () => cancel(), [cancel]));
   useEffect(() => {
-    if (prefillZip?.length === 5) {
-      setZipCode(prefillZip);
-      handleRecommend(prefillZip);
-    }
-  }, [prefillZip]);
-
-  async function handleRecommend(zip) {
-    const target = zip ?? zipCode;
-    if (target.length !== 5 || isNaN(target)) {
-      Alert.alert('Invalid ZIP', 'Please enter a valid 5-digit ZIP code.');
+    cancel();
+    if (route?.params?.prefillZip) setZipCode(route.params.prefillZip);
+    if (route?.params?.site) setSite({ ...DEFAULT_SITE, ...route.params.site });
+    setResults(null);
+    setError(null);
+  }, [route?.params, cancel]);
+  function changeZip(value) {
+    cancel();
+    setZipCode(value.replace(/[^0-9]/g, '').slice(0, 5));
+    setResults(null);
+    setError(null);
+  }
+  function changeSite(value) {
+    cancel();
+    setSite(value);
+    setResults(null);
+    setError(null);
+  }
+  async function recommend() {
+    if (!/^33[0-4]\d{2}$/.test(zipCode)) {
+      setError('Enter a South Florida ZIP beginning 330–334. This pilot uses verified Florida plant records.');
       return;
     }
+    cancel();
+    const id = request.current.sequence;
+    const controller = new AbortController();
+    request.current.controller = controller;
     setLoading(true);
+    setError(null);
     setResults(null);
+    setExpanded(false);
     try {
-      const data = await getPlantRecommendations(target);
-      setResults(data.result);
-    } catch (err) {
-      console.error(err);
-      Alert.alert('Error', 'Could not fetch recommendations. Try again.');
+      const data = await getPlantRecommendations(zipCode, { plants, site, signal: controller.signal });
+      if (id === request.current.sequence) setResults(data.result);
+    } catch (failure) {
+      if (id === request.current.sequence && !controller.signal.aborted) setError(failure.message || 'Could not load plant suggestions. Your site choices are still here; try again.');
     } finally {
-      setLoading(false);
+      if (id === request.current.sequence) setLoading(false);
     }
   }
+  const shown = Array.isArray(results) ? expanded ? results : results.slice(0, 3) : [];
 
-  if (!fontsLoaded) return <View style={styles.container} />;
-
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-      <View style={[styles.inner, { width: maxWidth }]}>
-
-        {/* ── Header ── */}
-        <View style={styles.header}>
-          <View style={styles.logoRow}>
-            <Image source={LOGO} style={styles.logoImg} />
-            <Text style={styles.logoText}>EcoLoco</Text>
-          </View>
-        </View>
-
-        <View style={styles.divider} />
-
-        {/* ── Title ── */}
-        <View style={styles.titleSection}>
-          <Text style={styles.pageTitle}>Recommendations</Text>
-          <Text style={styles.pageSubtitle}>
-            Enter your ZIP code to get native plant recommendations for your area.
-          </Text>
-        </View>
-
-        {/* ── Input + Button ── */}
-        <View style={styles.inputSection}>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter ZIP code"
-            placeholderTextColor={TEXT_MUTED}
-            keyboardType="numeric"
-            maxLength={5}
-            value={zipCode}
-            onChangeText={setZipCode}
-          />
-          <TouchableOpacity
-            style={[styles.btn, (zipCode.length !== 5 || loading) && styles.btnDisabled]}
-            onPress={() => handleRecommend()}
-            disabled={loading || zipCode.length !== 5}
-          >
-            {loading
-              ? <ActivityIndicator color={CREAM} size="small" />
-              : <Text style={styles.btnText}>Get Recommendations</Text>
-            }
-          </TouchableOpacity>
-        </View>
-
-        {/* ── Loading state ── */}
-        {loading && (
-          <View style={styles.resultsSection}>
-            <LoadingDots message="Finding plants for your area…" />
-            {[0, 1, 2].map(i => <SkeletonCard key={i} index={i} />)}
-          </View>
-        )}
-
-        {/* ── Results ── */}
-        {results && !loading && (
-          <View style={styles.resultsSection}>
-            <View style={styles.resultsHeader}>
-              <Text style={styles.resultsTitle}>Top Picks</Text>
-              <Text style={styles.resultsCount}>ranked by impact</Text>
-            </View>
-
-            {results.slice(0, 3).map((item, index) => (
-              <AnimatedCard key={index} item={item} index={index} />
-            ))}
-
-            {results.length > 3 && (
-              <View style={styles.viewAllSection}>
-                <TouchableOpacity
-                  style={styles.viewAllToggle}
-                  onPress={() => setViewAllExpanded(v => !v)}
-                >
-                  <Text style={styles.viewAllToggleText}>
-                    {viewAllExpanded ? '▲ Hide' : '▼ More high-impact natives for your area'} ({results.length - 3} more)
-                  </Text>
-                </TouchableOpacity>
-
-                {viewAllExpanded && (
-                  <>
-                    {results.slice(3).map((item, i) => (
-                      <View key={i} style={styles.viewAllItem}>
-                        <View style={styles.viewAllLeft}>
-                          <Text style={styles.viewAllName}>{item.plant_name}</Text>
-                          {item.scientific_name
-                            ? <Text style={styles.viewAllSci}>{item.scientific_name}</Text>
-                            : null}
-                          {item.benefit
-                            ? <Text style={styles.viewAllBenefit}>{item.benefit}</Text>
-                            : null}
-                        </View>
-                        {item.wildlife_support && <SupportPill level={item.wildlife_support} />}
-                      </View>
-                    ))}
-
-                    <TouchableOpacity
-                      style={styles.nwfLink}
-                      onPress={() => Linking.openURL('https://nativeplantfinder.nwf.org')}
-                    >
-                      <Text style={styles.nwfLinkText}>
-                        Looking for the complete native plant database for your exact location? Explore NWF's Native Plant Finder →
-                      </Text>
-                    </TouchableOpacity>
-                  </>
-                )}
-              </View>
-            )}
-          </View>
-        )}
-
+  return <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+    <View style={[styles.inner, { width: Math.min(width, 960) }]}>
+      <View style={styles.brand}><Image source={LOGO} style={styles.logo} accessibilityLabel="EcoLoco" /><Text style={styles.brandName}>EcoLoco</Text></View>
+      <View style={styles.content}>
+        <Text accessibilityRole="header" style={[styles.title, fontsLoaded && { fontFamily: 'Fraunces_700Bold' }]}>Plan a native planting.</Text>
+        <Text style={styles.subtitle}>Choose from sourced Florida natives using your site conditions. Read each plant’s requirements before asking your school to approve a planting.</Text>
+        <Text style={styles.label}>Planting ZIP code</Text>
+        <TextInput accessibilityLabel="Planting ZIP code" value={zipCode} onChangeText={changeZip} placeholder="e.g. 33431" placeholderTextColor="#777768" keyboardType="number-pad" maxLength={5} style={styles.input} />
+        <Text style={styles.hint}>South Florida pilot · ZIP prefixes 330–334. A ZIP defines our supported region; it does not reveal your soil or planting space.</Text>
+        <SiteConditions site={site} onChange={changeSite} />
+        {!!plants.length && <Text style={styles.hint}>Using {plants.length} recorded observation{plants.length === 1 ? '' : 's'} to look for suitable species additions.</Text>}
+        <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: loading }} aria-disabled={loading} disabled={loading} onPress={recommend} style={[styles.button, loading && styles.disabled]}>
+          {loading ? <ActivityIndicator color="#fffdf8" /> : <Text style={styles.buttonText}>Find planting options</Text>}
+        </TouchableOpacity>
+        {loading && <View style={styles.notice}><Text accessibilityLiveRegion="polite" style={styles.hint}>Checking sourced plants against your site conditions…</Text><TouchableOpacity accessibilityRole="button" onPress={cancel} style={styles.linkButton}><Text style={styles.link}>Cancel request</Text></TouchableOpacity></View>}
+        {!!error && <View style={styles.errorBox}><Text accessibilityLiveRegion="assertive" style={styles.error}>{error}</Text><TouchableOpacity accessibilityRole="button" onPress={recommend} style={styles.linkButton}><Text style={styles.link}>Try again</Text></TouchableOpacity></View>}
+        {Array.isArray(results) && <View style={styles.results}>
+          <Text accessibilityRole="header" style={styles.resultsTitle}>{results.length ? `${results.length} planting option${results.length === 1 ? '' : 's'}` : 'No catalog plants match these conditions yet'}</Text>
+          <Text style={styles.hint}>{results.length ? 'Options are listed alphabetically after matching your filters. These planning suggestions do not predict wildlife numbers or rank measured ecological impact.' : 'Review the conditions you entered or consult a local extension specialist. The catalog is deliberately limited to checked species.'}</Text>
+          {shown.map((item) => <RecommendationCard key={item.taxon_id || item.scientific_name} item={item} />)}
+          {results.length > 3 && <TouchableOpacity accessibilityRole="button" accessibilityState={{ expanded }} aria-expanded={expanded} onPress={() => setExpanded(!expanded)} style={styles.secondaryButton}><Text style={styles.secondaryText}>{expanded ? 'Show first three options' : `Show all ${results.length} options`}</Text></TouchableOpacity>}
+          <View style={styles.notice}><Text style={styles.hint}>For broader research, NWF lists documented host relationships by plant genus and region. Those numbers are not wildlife counts at your campus and should not be added across plants.</Text><EvidenceLink url="https://nativeplantfinder.nwf.org">Explore NWF Native Plant Finder</EvidenceLink></View>
+          <TouchableOpacity accessibilityRole="button" onPress={() => navigation.navigate('EcoScan', { sample: false })} style={styles.secondaryButton}><Text style={styles.secondaryText}>Build a campus audit and school proposal →</Text></TouchableOpacity>
+        </View>}
       </View>
-    </ScrollView>
-  );
+    </View>
+  </ScrollView>;
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: CREAM },
-  scrollContent: { alignItems: 'center' },
-  inner: { alignSelf: 'center' },
-
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 24, paddingTop: 52, paddingBottom: 16,
-  },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logoImg: { width: 40, height: 40, resizeMode: 'contain' },
-  logoText: { fontSize: 20, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, letterSpacing: 0.3 },
-
-
-  divider: { height: 1, backgroundColor: BORDER },
-
-  titleSection: { alignItems: 'center', paddingTop: 32, paddingBottom: 24, paddingHorizontal: 24 },
-  pageTitle: { fontSize: 34, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, marginBottom: 6 },
-  pageSubtitle: { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, textAlign: 'center' },
-
-  inputSection: { paddingHorizontal: 20, gap: 12, marginBottom: 8 },
-  input: {
-    backgroundColor: '#fff', color: TEXT_BODY, borderRadius: 10,
-    padding: 13, fontSize: 14, fontFamily: 'DMSans_400Regular',
-    borderWidth: 1, borderColor: BORDER,
-  },
-  btn: { backgroundColor: DARK_GREEN, borderRadius: 10, paddingVertical: 15, alignItems: 'center' },
-  btnDisabled: { opacity: 0.4 },
-  btnText: { fontSize: 15, fontFamily: 'DMSans_700Bold', color: CREAM },
-
-  resultsSection: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 48 },
-  resultsHeader: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'baseline', marginBottom: 20,
-  },
-  resultsTitle: { fontSize: 26, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN },
-  resultsCount: { fontSize: 12, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED },
-
-  card: {
-    backgroundColor: CARD_BG, borderRadius: 16,
-    borderWidth: 1, borderColor: BORDER,
-    padding: 20, marginBottom: 14,
-  },
-  cardTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  cardNum: { fontSize: 11, fontFamily: 'DMSans_400Regular', color: BORDER },
-  cardLabel: { fontSize: 10, fontFamily: 'DMSans_700Bold', color: SOFT_GREEN, letterSpacing: 1.5 },
-  cardDivider: { height: 1, backgroundColor: LIGHT_BG, marginVertical: 12 },
-  problemText: { fontSize: 19, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, lineHeight: 27 },
-  actionText: { fontSize: 14, fontFamily: 'DMSans_400Regular', color: TEXT_BODY, lineHeight: 22, marginTop: 5 },
-  impactText: { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, lineHeight: 20, marginTop: 5 },
-
-  skLine: { backgroundColor: LIGHT_BG, borderRadius: 4 },
-
-  viewAllSection: { marginTop: 4, marginBottom: 24 },
-  viewAllToggle: { paddingVertical: 14, alignItems: 'center' },
-  viewAllToggleText: { fontSize: 13, fontFamily: 'DMSans_700Bold', color: SOFT_GREEN },
-  viewAllItem: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: CARD_BG, borderRadius: 10,
-    borderWidth: 1, borderColor: BORDER,
-    paddingHorizontal: 14, paddingVertical: 12, marginBottom: 8,
-  },
-  viewAllLeft:    { flex: 1, marginRight: 10 },
-  viewAllName:    { fontSize: 14, fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
-  viewAllSci:     { fontSize: 11, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, fontStyle: 'italic', marginTop: 2 },
-  viewAllBenefit: { fontSize: 12, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, lineHeight: 18, marginTop: 4 },
-
-  nwfLink: {
-    marginTop: 8, marginBottom: 16, paddingVertical: 14,
-    paddingHorizontal: 16, borderRadius: 10,
-    backgroundColor: '#eaf2e8', borderWidth: 1, borderColor: BORDER,
-    alignItems: 'center',
-  },
-  nwfLinkText: {
-    fontSize: 12, fontFamily: 'DMSans_400Regular', color: SOFT_GREEN,
-    textAlign: 'center', lineHeight: 18,
-  },
+  container: { flex: 1, backgroundColor: '#f5f0e8' }, scrollContent: { alignItems: 'center' }, inner: { alignSelf: 'center' },
+  brand: { flexDirection: 'row', alignItems: 'center', padding: 24, paddingTop: 48, gap: 9, borderBottomWidth: 1, borderColor: '#d4cfc4' },
+  logo: { width: 40, height: 40 }, brandName: { fontWeight: '700', fontSize: 20, color: '#1e3a1e' },
+  content: { padding: 20, paddingBottom: 48, gap: 15 }, title: { fontSize: 32, fontWeight: '700', color: '#1e3a1e', marginTop: 10 },
+  subtitle: { fontSize: 15, lineHeight: 23, color: '#646454', marginBottom: 8 }, label: { fontWeight: '700', fontSize: 14, color: '#1e3a1e', marginTop: 4 },
+  input: { minHeight: 48, borderWidth: 1, borderColor: '#b9b5ab', backgroundColor: '#fffdf8', borderRadius: 10, padding: 13, fontSize: 16, color: '#1e3a1e' },
+  hint: { fontSize: 13, color: '#646454', lineHeight: 20 }, body: { fontSize: 14, color: '#4a4a3a', lineHeight: 23 },
+  button: { minHeight: 50, backgroundColor: '#1e3a1e', borderRadius: 10, alignItems: 'center', justifyContent: 'center', padding: 14 },
+  buttonText: { color: '#fffdf8', fontWeight: '700', fontSize: 15 }, disabled: { opacity: 0.5 },
+  secondaryButton: { padding: 14, minHeight: 48, borderWidth: 1, borderColor: '#1e3a1e', borderRadius: 10, alignItems: 'center', justifyContent: 'center' }, secondaryText: { color: '#1e3a1e', fontSize: 14, fontWeight: '600' },
+  notice: { backgroundColor: '#eaeee6', borderRadius: 10, padding: 14, gap: 7 }, errorBox: { backgroundColor: '#fce9e2', borderRadius: 10, padding: 14 }, error: { color: '#85331d', fontSize: 14, lineHeight: 22 },
+  linkButton: { minHeight: 44, justifyContent: 'center' }, link: { fontSize: 14, lineHeight: 21, textDecorationLine: 'underline', color: '#2f6026' },
+  results: { gap: 16, marginTop: 16 }, resultsTitle: { fontSize: 24, fontWeight: '700', color: '#1e3a1e' },
+  card: { backgroundColor: '#fffdf8', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#d4cfc4', gap: 9 },
+  overline: { fontSize: 11, fontWeight: '700', color: '#4a7a3a', letterSpacing: 1.2 }, plantName: { fontSize: 23, fontWeight: '700', color: '#1e3a1e' }, scientific: { fontSize: 15, fontStyle: 'italic', color: '#646454' },
 });

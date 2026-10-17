@@ -1,6 +1,6 @@
 # EcoLoco-FL Architecture
 
-Map of the whole app: Expo screens → API client → Flask routes → services → bundled data and external APIs.
+Map of the app: Expo screens → bounded API requests → validated Flask routes → sourced taxon evidence, survey calculations and proposals. Device storage preserves audit facts and draft edits; provider calls are limited to identification-related work.
 
 **Interactive version:** https://aydinheugh.github.io/EcoLoco-FL/ (or open
 [`docs/architecture.html`](docs/architecture.html) locally; it needs internet for the React Flow CDN). Drag nodes, pan and zoom, and click any node for a side panel
@@ -27,12 +27,12 @@ and the answer comes back the same way.
 | Color | Term | What it means | Where |
 |---|---|---|---|
 | green | **Screen / UI** | What the user sees and taps in the Expo app. | `frontend/screens/`, `frontend/navigation/AppNavigator.js` |
-| grey | **Device** | Phone features the app borrows: camera/photo library and clipboard. | `expo-image-picker`, `expo-clipboard` |
-| blue | **API client** | Small frontend functions that send requests over the internet to our backend. | `frontend/services/geminiService.js`, `plantService.js` |
+| grey | **Device** | Device features for photos, local audit persistence and report sharing. | `expo-image-picker`, image preparation, AsyncStorage, clipboard/share |
+| blue | **API client** | Frontend requests, audit storage and evidence/photo rules. | `frontend/services/`, `frontend/utils/` |
 | orange | **Flask route** | A backend URL that receives those requests — the front door of the Python server. | `backend/app.py` |
 | purple | **Service** | Backend functions that do the real work once a route gets a request. | `backend/services/*.py` |
-| teal | **Bundled data** | Data files shipped with the backend instead of fetched online. | `backend/data/*.json` (planned) |
-| red | **External API** | Outside services the backend calls: OpenAI, iNaturalist, OpenStreetMap Nominatim (ZIP → location), USDA later. | — |
+| teal | **Bundled data** | Data files shipped with the backend instead of fetched online. | `backend/data/*.json` |
+| red | **External API** | PlantNet and OpenAI for identification; USDA is optional distribution research and iNaturalist is unused legacy code. | — |
 
 ### Markers
 
@@ -49,22 +49,10 @@ and the answer comes back the same way.
 <!-- GENERATED:planned -->
 | Item | Status | Goal |
 |---|---|---|
-| `'Why it matters' line` | PLANNED | Show the one-line stake for every plant. The backend already returns `why` from /identify and /recommend; only the UI is missing. |
-| `Source receipt badge` | PLANNED | Show where each native/invasive verdict came from. The backend already returns `source` (FISC, fl_natives, USDA or unknown); only the UI is missing. |
-| `Before → after score jump` | PLANNED | Make score → projected_score the headline jump. Mostly built already (toggle + BeforeAfterPill); remaining: lead with it, and use one source of truth for projected_score (the screen recomputes it today). |
-| `identifyPlant()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
-| `getPlantRecommendations()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
-| `getScore()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
-| `generateLetter()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
-| `getLocalPlants()` (frontend/services/plantService.js) | DEAD | Delete plantService.js — the backend route it called has been removed. |
-| `Flask app (app.py)` (backend/app.py) | change planned | Deploy to a public host before the demo (today: localhost with debug=True). |
-| `get_plant_requests()` (backend/services/inat_service.py) | DEAD | Nothing calls it since the confidence nudge was removed. Repurpose it (e.g. a 'seen near you' count) or delete inat_service.py. |
-| `get_plant_recommendations()` (backend/services/ai_service.py) | change planned | Pick the candidates from fl_natives.json instead of asking GPT for the list; GPT would then only write the wording. |
-| `get_status()` (backend/services/fl_plants_service.py) | change planned | Add ZIP-specific regional lists behind the same get_status(). |
-| `fisc_list.json` (backend/data/fisc_list.json) | change planned | Verify the 22 curated "why" lines against FISC / UF-IFAS before the demo. |
-| `fl_natives.json` (backend/data/fl_natives.json) | change planned | Verify every entry against UF/IFAS and the Atlas of Florida Plants before the demo. |
-| `Multi-photo picker + confirm step` | PLANNED | Let users send 1–5 photos of one plant, and when `needs_confirmation` is true, ask them to pick from the candidates. The backend already accepts this. |
-| `Show "unknown" + AI-unavailable notice` | PLANNED | When `ai_unavailable` is true, show wildlife value as unknown and a short notice. Today the EcoScan cards show any unrecognised wildlife value as "Medium". |
+| `getLocalPlants()` (frontend/services/plantService.js) | DEAD | Remove this unused client when cleaning up legacy integrations. |
+| `Flask app` (backend/app.py) | change planned | Choose a public HTTPS host and configure credentials, allowed origins, budgets and shared gateway limits before external demonstrations. |
+| `get_plant_requests()` (backend/services/inat_service.py) | DEAD | Remove or separately redesign this legacy helper; do not use nearby sightings as identification confidence. |
+| `iNaturalist API` (backend/services/inat_service.py) | DEAD | Retire with the unused helper or design a separately scoped observation feature. |
 <!-- /GENERATED:planned -->
 
 ## Diagram
@@ -77,127 +65,263 @@ flowchart LR
     app["AppNavigator"]
     home["HomeScreen"]
     ident["IdentificationScreen"]
-    rec["RecommendationScreen"]
-    audit["AuditScreen (EcoScan)"]
+    audit["AuditScreen"]
     results["AuditResultsScreen"]
-    ui_why["'Why it matters' line<br/>PLANNED — goal: Show the one-line stake for every plant. The backend already returns `why` from /identify and /recommend; only the UI is missing."]
-    ui_receipt["Source receipt badge<br/>PLANNED — goal: Show where each native/invasive verdict came from. The backend already returns `source` (FISC, fl_natives, USDA or unknown); only the UI is missing."]
-    ui_jump["Before → after score jump<br/>PLANNED — goal: Make score → projected_score the headline jump. Mostly built already (toggle + BeforeAfterPill); remaining: lead with it, and use one source of truth for projected_score (the screen recomputes it today)."]
-    letter["LetterGenerator"]
-    ui_multiphoto["Multi-photo picker + confirm step<br/>PLANNED — goal: Let users send 1–5 photos of one plant, and when `needs_confirmation` is true, ask them to pick from the candidates. The backend already accepts this."]
-    ui_ai_unknown["Show #quot;unknown#quot; + AI-unavailable notice<br/>PLANNED — goal: When `ai_unavailable` is true, show wildlife value as unknown and a short notice. Today the EcoScan cards show any unrecognised wildlife value as #quot;Medium#quot;."]
+    rec["RecommendationScreen"]
+    photo["PhotoPicker"]
+    prepare["preparePickerAssets()"]
+    evidence["PlantEvidence"]
+    evidence_link["EvidenceLink"]
+    site["SiteConditions"]
+    button["AuditButton"]
+    field["AuditField"]
+    notice["AuditNotice"]
+    page["AuditPage"]
+    bootstrap["App"]
+    boundary["AppErrorBoundary"]
   end
   subgraph L_device["Device"]
     direction TB
     picker["expo-image-picker"]
-    clipboard["expo-clipboard"]
+    manipulator["expo-image-manipulator"]
+    clipboard["expo-clipboard / Share"]
+    storage_device["AsyncStorage"]
   end
   subgraph L_client["API client"]
     direction TB
+    client["createApiClient()"]
     c_identify["identifyPlant()"]
-    c_rec["getPlantRecommendations()"]
+    c_confirm["confirmPlant()"]
+    c_catalog["getCatalog()"]
     c_score["getScore()"]
+    c_rec["getPlantRecommendations()"]
     c_letter["generateLetter()"]
-    c_local["getLocalPlants()<br/>DEAD — Delete plantService.js — the backend route it called has been removed."]
+    c_local["getLocalPlants()<br/>DEAD — Remove this unused client when cleaning up legacy integrations."]
+    empty["createEmptyAudit()"]
+    store["createAuditStore()"]
+    load["loadAudit()"]
+    save["saveAudit()"]
+    patch["patchAudit()"]
+    subscribe["subscribeAudit()"]
+    flush["flushAudit()"]
+    report["buildAuditReport()"]
+    u_review["identificationNeedsConfirmation()"]
+    u_status["taxonomyStatus()"]
+    u_provider["identificationProvider()"]
+    u_url["safeEvidenceUrl()"]
+    u_candidates["confirmationCandidates()"]
+    u_count["ensurePhotoCount()"]
+    u_files["validatePhotoFiles()"]
+    u_bytes["base64ByteLength()"]
+    catalog_search["Catalog name search"]
   end
   subgraph L_route["Flask routes"]
     direction TB
-    flask["Flask app (app.py)"]
+    flask["Flask app"]
+    r_health["GET /health"]
     r_identify["POST /identify"]
+    r_confirm["POST /confirm"]
+    r_catalog["POST /catalog"]
     r_recommend["POST /recommend"]
     r_score["POST /score"]
     r_letter["POST /letter"]
+    gunicorn["Gunicorn pilot server"]
   end
   subgraph L_svc["Services"]
     direction TB
-    s_inat["get_plant_requests()<br/>DEAD — Nothing calls it since the confidence nudge was removed. Repurpose it (e.g. a 'seen near you' count) or delete inat_service.py."]
     s_identify["identify_plant()"]
+    s_confirm["confirm_plant()"]
+    s_catalog["get_catalog()"]
     s_rec["get_plant_recommendations()"]
     s_score["calculate_biodiversity_score()"]
-    s_letter["generate_letter()"]
-    s_fl["get_status()"]
-    s_species["identify_species()"]
+    s_proposal["generate_proposal()"]
     s_assess["assess_plant()"]
-    s_plantnet["identify_with_plantnet()"]
-    s_usda["florida_status()"]
-    s_bundled["bundled_natives()"]
     s_fallback_rec["fallback_recommendations()"]
+    s_letter["generate_letter()"]
     s_letter_noai["generate_letter_without_ai()"]
+    s_species["identify_species()"]
+    s_plantnet["identify_with_plantnet()"]
+    s_chat["chat()"]
+    s_fl["get_status()"]
+    s_scope["supported_location()"]
+    s_bundled["bundled_natives()"]
+    s_bundled_all["bundled_catalog()"]
+    s_usda["florida_distribution()"]
+    s_usda_guard["florida_status()"]
+    s_inat["get_plant_requests()<br/>DEAD — Remove or separately redesign this legacy helper; do not use nearby sightings as identification confidence."]
+    v_text["text_field()"]
+    v_location["location_field()"]
+    v_plants["plant_list()"]
+    v_species["species_list()"]
+    v_site["site_fields()"]
+    v_proposal["proposal_fields()"]
+    v_images["validate_images()"]
+    limits["RequestLimits.check()"]
   end
   subgraph L_data["Bundled data"]
     direction TB
+    d_exceptions["fl_non_natives.json"]
     d_fisc["fisc_list.json"]
     d_natives["fl_natives.json"]
     fisc_builder["build_fisc_list.py"]
   end
   subgraph L_ext["External APIs"]
     direction TB
-    inat["iNaturalist API"]
-    openai["OpenAI (gpt-4o-mini)"]
-    usda["USDA PLANTS"]
     plantnet["PlantNet API"]
+    openai["OpenAI model API"]
+    usda["USDA PLANTS distribution API"]
+    inat["iNaturalist API<br/>DEAD — Retire with the unused helper or design a separately scoped observation feature."]
+    ci_checks["Repository verification"]
   end
-  app -->|"tab: Home"| home
-  app -->|"tab: Identify"| ident
-  app -->|"tab: Recommend"| rec
-  app -->|"tab: EcoScan"| audit
-  app -->|"stack screen: AuditResults"| results
-  home -->|"navigate('Camera')"| ident
-  home -->|"navigate('Recommend')"| rec
-  ident -->|"navigate('Recommend', {prefillZip})"| rec
-  audit -->|"navigate('AuditResults', {plants[], zipCode})"| results
-  results -->|"navigate(Main → Recommend, {prefillZip})"| rec
-  results -->|"renders LetterGenerator {recs, score, zipCode}"| letter
-  ident -->|"launchCamera / launchImageLibrary → {uri, base64}"| picker
-  audit -->|"launchCamera / launchImageLibrary → {uri, base64}"| picker
-  letter -->|"setStringAsync(editedLetter)"| clipboard
-  ident -.->|"renders result.why"| ui_why
-  rec -.->|"renders item.why"| ui_why
-  ident -.->|"renders result.source"| ui_receipt
-  audit -.->|"renders plant.source"| ui_receipt
-  results -.->|"score → projected_score"| ui_jump
-  ident -->|"identifyPlant(photo.base64, zipCode)"| c_identify
-  audit -->|"identifyPlant(photo.base64, zipCode) per scan"| c_identify
-  rec -->|"getPlantRecommendations(zip)"| c_rec
-  results -->|"getPlantRecommendations(zipCode)"| c_rec
-  results -->|"getScore([{name, invasive_status, wildlife_support}])"| c_score
-  letter -->|"generateLetter(plantNames[], score, zipCode)"| c_letter
-  c_identify -->|"POST /identify {image, location}"| r_identify
-  c_rec -->|"POST /recommend {location}"| r_recommend
-  c_score -->|"POST /score {plants}"| r_score
-  c_letter -->|"POST /letter {plant_names, score, zip_code}"| r_letter
-  flask -->|"registers"| r_identify
-  flask -->|"registers"| r_recommend
-  flask -->|"registers"| r_score
-  flask -->|"registers"| r_letter
-  r_identify -->|"identify_plant(image, location)"| s_identify
-  r_recommend -->|"get_plant_recommendations(location)"| s_rec
-  r_score -->|"calculate_biodiversity_score(plants)"| s_score
-  r_letter -->|"generate_letter(plant_names, score, zip_code)"| s_letter
-  s_inat -.->|"GET /v2/observations q=name → ≤100 points"| inat
-  s_rec -->|"ZIP → 11 ranked natives (JSON)"| openai
-  s_letter -->|"plant list + ZIP → 1–2 benefit sentences"| openai
-  s_fl -->|"match scientific_name"| d_fisc
-  s_fl -->|"match scientific_name"| d_natives
-  s_identify -->|"identify_species(images, location) → names, confidence, candidates, source, needs_confirmation"| s_species
-  s_identify -->|"get_status(scientific_name, zip) → native, invasive, source, why"| s_fl
-  s_identify -->|"assess_plant(species, status, zip)"| s_assess
-  s_species -->|"unsure: pick from PlantNet's top 5 · PlantNet failed: identify from photos"| openai
-  s_assess -->|"names + ZIP + known status → wildlife, actions, status guess"| openai
-  s_rec -->|"get_status() per plant → drop invasives, add source + why"| s_fl
-  ident -.->|"sends images[], reads needs_confirmation"| ui_multiphoto
-  audit -.->|"sends images[], reads needs_confirmation"| ui_multiphoto
-  s_species -->|"identify_with_plantnet(images) → ranked species + scores"| s_plantnet
-  s_plantnet -->|"POST /v2/identify/all (1–5 photos) → results[]"| plantnet
-  ident -.->|"reads ai_unavailable"| ui_ai_unknown
-  audit -.->|"reads ai_unavailable"| ui_ai_unknown
-  s_fl -->|"florida_status(name) → native / introduced / None"| s_usda
-  s_usda -->|"search → profile → FL distribution"| usda
-  r_recommend -->|"AIUnavailable → fallback_recommendations(location)"| s_fallback_rec
-  r_letter -->|"AIUnavailable → generate_letter_without_ai(...)"| s_letter_noai
-  s_fallback_rec -->|"bundled_natives() → first 11"| s_bundled
-  s_letter_noai -->|"bundled_natives() → why lines"| s_bundled
-  fisc_builder -->|"writes 179 species from the official PDF"| d_fisc
+  app -->|"screen navigation"| home
+  app -->|"screen navigation"| ident
+  app -->|"screen navigation"| audit
+  app -->|"screen navigation"| rec
+  app -->|"screen navigation"| results
+  home -->|"start/resume real survey or sample mode"| audit
+  home -->|"identify one plant"| ident
+  home -->|"explore planting options"| rec
+  ident -->|"ZIP and planting context"| rec
+  audit -->|"audit ID + sample flag after saves flush"| results
+  ident -->|"photos + error/change callbacks"| photo
+  ident -->|"plant result + confirm/retake callbacks"| evidence
+  audit -->|"photos + error/change callbacks"| photo
+  audit -->|"plant result + confirm/retake callbacks"| evidence
+  audit -->|"site conditions + edit callback"| site
+  rec -->|"site conditions + edit callback"| site
+  audit -->|"shared accessible audit controls"| button
+  audit -->|"shared accessible audit controls"| field
+  audit -->|"shared accessible audit controls"| notice
+  audit -->|"shared accessible audit controls"| page
+  results -->|"shared accessible audit controls"| button
+  results -->|"shared accessible audit controls"| field
+  results -->|"shared accessible audit controls"| notice
+  results -->|"shared accessible audit controls"| page
+  photo -->|"camera/library assets"| picker
+  photo -->|"prepare selected assets"| prepare
+  prepare -->|"resize → JPEG/base64"| manipulator
+  photo -->|"validate photos before preparation"| u_count
+  photo -->|"validate photos before preparation"| u_files
+  prepare -->|"check prepared upload size"| u_bytes
+  evidence -->|"interpret evidence fields"| u_review
+  evidence -->|"interpret evidence fields"| u_status
+  evidence -->|"interpret evidence fields"| u_provider
+  evidence -->|"interpret evidence fields"| u_candidates
+  evidence -->|"source URLs"| evidence_link
+  evidence_link -->|"HTTPS source link"| u_url
+  results -->|"edited proposal or exported report"| clipboard
+  ident -->|"images[] + location + abort signal"| c_identify
+  ident -->|"chosen scientific name + location"| c_confirm
+  audit -->|"images[] + location + abort signal"| c_identify
+  audit -->|"chosen scientific name + location"| c_confirm
+  audit -->|"supported location"| c_catalog
+  rec -->|"location + observed taxa + site"| c_rec
+  results -->|"location + observed taxa + site"| c_rec
+  results -->|"observations + selected additions"| c_score
+  results -->|"survey + selections + proposal details + sample flag"| c_letter
+  c_identify -->|"shared bounded JSON request"| client
+  c_identify -->|"POST documented payload → {result} or {error, code}"| r_identify
+  c_confirm -->|"shared bounded JSON request"| client
+  c_confirm -->|"POST documented payload → {result} or {error, code}"| r_confirm
+  c_catalog -->|"shared bounded JSON request"| client
+  c_catalog -->|"POST documented payload → {result} or {error, code}"| r_catalog
+  c_rec -->|"shared bounded JSON request"| client
+  c_rec -->|"POST documented payload → {result} or {error, code}"| r_recommend
+  c_score -->|"shared bounded JSON request"| client
+  c_score -->|"POST documented payload → {result} or {error, code}"| r_score
+  c_letter -->|"shared bounded JSON request"| client
+  c_letter -->|"POST documented payload → {result} or {error, code}"| r_letter
+  audit -->|"new real/sample audit"| empty
+  audit -->|"matching audit ID and real/sample slot"| load
+  audit -->|"matching audit ID and real/sample slot"| patch
+  audit -->|"matching audit ID and real/sample slot"| subscribe
+  results -->|"matching audit ID and real/sample slot"| load
+  results -->|"matching audit ID and real/sample slot"| patch
+  results -->|"matching audit ID and real/sample slot"| subscribe
+  audit -->|"initial or reset audit"| save
+  audit -->|"wait before report navigation"| flush
+  results -->|"saved audit + server metrics"| report
+  load -->|"delegate to shared store"| store
+  save -->|"delegate to shared store"| store
+  patch -->|"delegate to shared store"| store
+  subscribe -->|"delegate to shared store"| store
+  flush -->|"delegate to shared store"| store
+  store -->|"serialized JSON without photos"| storage_device
+  flask -->|"register endpoint"| r_health
+  flask -->|"register endpoint"| r_identify
+  flask -->|"register endpoint"| r_confirm
+  flask -->|"register endpoint"| r_catalog
+  flask -->|"register endpoint"| r_recommend
+  flask -->|"register endpoint"| r_score
+  flask -->|"register endpoint"| r_letter
+  r_identify -->|"validate site ZIP"| v_location
+  r_confirm -->|"validate site ZIP"| v_location
+  r_catalog -->|"validate site ZIP"| v_location
+  r_recommend -->|"validate site ZIP"| v_location
+  r_score -->|"validate site ZIP"| v_location
+  r_letter -->|"validate site ZIP"| v_location
+  r_recommend -->|"validate observation list"| v_plants
+  r_score -->|"validate observation list"| v_plants
+  r_letter -->|"validate observation list"| v_plants
+  r_recommend -->|"validate site conditions"| v_site
+  r_letter -->|"validate site conditions"| v_site
+  r_score -->|"validate selected taxon lists"| v_species
+  r_letter -->|"validate selected taxon lists"| v_species
+  r_letter -->|"validate practical plan"| v_proposal
+  r_letter -->|"validate survey area/date"| v_text
+  r_confirm -->|"validate scientific name"| v_text
+  r_identify -->|"validate and sanitize photos"| v_images
+  r_identify -->|"check client/shared identification quotas"| limits
+  v_location -->|"bounded textual fields"| v_text
+  v_plants -->|"bounded textual fields"| v_text
+  v_species -->|"bounded textual fields"| v_text
+  v_proposal -->|"bounded textual fields"| v_text
+  r_identify -->|"validated input → result"| s_identify
+  r_confirm -->|"validated input → result"| s_confirm
+  r_catalog -->|"validated input → result"| s_catalog
+  r_recommend -->|"validated input → result"| s_rec
+  r_score -->|"validated input → result"| s_score
+  r_letter -->|"validated input → result"| s_proposal
+  s_identify -->|"photos + location → candidate identity/review state"| s_species
+  s_identify -->|"proposed scientific name → Florida evidence"| s_fl
+  s_identify -->|"only unsupported taxa → tentative explanation"| s_assess
+  s_confirm -->|"selected exact taxon → refreshed evidence"| s_fl
+  s_confirm -->|"precise alternatives for ambiguous taxa"| s_bundled_all
+  s_catalog -->|"all sourced choices"| s_bundled_all
+  s_catalog -->|"fresh status for each option"| s_confirm
+  s_rec -->|"verified current inventory"| s_score
+  s_rec -->|"reviewed native candidates"| s_bundled
+  s_rec -->|"revalidate each exact taxon"| s_fl
+  s_score -->|"scientific names, additions and removals → canonical source records"| s_fl
+  s_proposal -->|"site-constrained eligible selections"| s_rec
+  s_proposal -->|"revalidate submitted selections"| s_fl
+  s_proposal -->|"survey facts + selected inventory scenario"| s_score
+  s_fallback_rec -->|"same inventory/site algorithm"| s_rec
+  s_letter -->|"selected names + ZIP, ignore obsolete score"| s_proposal
+  s_letter_noai -->|"compatibility delegation"| s_letter
+  s_fl -->|"verify pilot location"| s_scope
+  s_fl -->|"read source records and exact taxon aliases"| d_exceptions
+  s_fl -->|"read source records and exact taxon aliases"| d_fisc
+  s_fl -->|"read source records and exact taxon aliases"| d_natives
+  s_bundled_all -->|"read source records and exact taxon aliases"| d_exceptions
+  s_bundled_all -->|"read source records and exact taxon aliases"| d_fisc
+  s_bundled_all -->|"read source records and exact taxon aliases"| d_natives
+  s_bundled -->|"deep-copy native entries"| d_natives
+  fisc_builder -->|"reviewed PDF import"| d_fisc
+  s_species -->|"photo bytes → ranked candidates"| s_plantnet
+  s_plantnet -->|"bounded multipart image request"| plantnet
+  s_species -->|"candidate adjudication or image fallback"| s_chat
+  s_assess -->|"unverified explanatory hypothesis"| s_chat
+  s_chat -->|"bounded model request"| openai
+  s_usda -->|"optional occurrence/profile research"| usda
+  s_inat -.->|"legacy observation query"| inat
+  bootstrap -->|"wrap app rendering"| boundary
+  boundary -->|"render or recover navigation"| app
+  gunicorn -->|"serve app:app with one worker"| flask
+  ident -->|"search names and synonyms"| catalog_search
+  audit -->|"search names and synonyms"| catalog_search
+  ci_checks -->|"test and export bundles"| app
+  ci_checks -->|"test bounded API and evidence contracts"| flask
   classDef ui fill:#e3f2e1,stroke:#2e7d32,color:#12301a
   classDef device fill:#eceff1,stroke:#607d8b,color:#263238
   classDef client fill:#e1effa,stroke:#1e6fb8,color:#0d2d4d
@@ -207,14 +331,13 @@ flowchart LR
   classDef ext fill:#fde4e1,stroke:#c0392b,color:#4a0f08
   classDef planned stroke-dasharray:6 4,stroke-width:2px
   classDef dead fill:#f3f3f3,stroke:#9e9e9e,color:#616161,stroke-dasharray:3 3
-  class app,home,ident,rec,audit,results,ui_why,ui_receipt,ui_jump,letter,ui_multiphoto,ui_ai_unknown ui
-  class picker,clipboard device
-  class c_identify,c_rec,c_score,c_letter,c_local client
-  class flask,r_identify,r_recommend,r_score,r_letter route
-  class s_inat,s_identify,s_rec,s_score,s_letter,s_fl,s_species,s_assess,s_plantnet,s_usda,s_bundled,s_fallback_rec,s_letter_noai svc
-  class d_fisc,d_natives,fisc_builder data
-  class inat,openai,usda,plantnet ext
-  class ui_why,ui_receipt,ui_jump,ui_multiphoto,ui_ai_unknown planned
-  class c_local,s_inat dead
+  class app,home,ident,audit,results,rec,photo,prepare,evidence,evidence_link,site,button,field,notice,page,bootstrap,boundary ui
+  class picker,manipulator,clipboard,storage_device device
+  class client,c_identify,c_confirm,c_catalog,c_score,c_rec,c_letter,c_local,empty,store,load,save,patch,subscribe,flush,report,u_review,u_status,u_provider,u_url,u_candidates,u_count,u_files,u_bytes,catalog_search client
+  class flask,r_health,r_identify,r_confirm,r_catalog,r_recommend,r_score,r_letter,gunicorn route
+  class s_identify,s_confirm,s_catalog,s_rec,s_score,s_proposal,s_assess,s_fallback_rec,s_letter,s_letter_noai,s_species,s_plantnet,s_chat,s_fl,s_scope,s_bundled,s_bundled_all,s_usda,s_usda_guard,s_inat,v_text,v_location,v_plants,v_species,v_site,v_proposal,v_images,limits svc
+  class d_exceptions,d_fisc,d_natives,fisc_builder data
+  class plantnet,openai,usda,inat,ci_checks ext
+  class c_local,s_inat,inat dead
 ```
 <!-- /GENERATED:mermaid -->

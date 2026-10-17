@@ -144,14 +144,11 @@
       "file": "frontend/navigation/AppNavigator.js",
       "symbol": "export default function AppNavigator",
       "col": 0,
-      "row": 3,
-      "what": "The app's map of screens: decides which screen is showing and how you move between them.",
+      "row": 0,
+      "what": "Connect the tab screens and saved audit report.",
       "how": [
-        "`index.js` registers `App.js` with Expo; `App.js` just renders `AppNavigator`.",
-        "Wraps everything in a `NavigationContainer` with a native stack navigator.",
-        "Stack screen 1, `Main`, is a bottom tab bar with four tabs: Home, Identify (`IdentificationScreen`), EcoScan (`AuditScreen`), Recommend (`RecommendationScreen`).",
-        "Stack screen 2, `AuditResults`, slides over the tabs when an audit is finished.",
-        "Tab icons come from Ionicons; the bar is styled dark green."
+        "Register Home, Identify, EcoScan and Recommend tabs.",
+        "Open AuditResults above the tabs with an audit ID and sample flag."
       ]
     },
     {
@@ -163,13 +160,11 @@
       "symbol": "export default function HomeScreen",
       "col": 1,
       "row": 0,
-      "what": "Landing page that explains what EcoLoco does and links into the tools.",
+      "what": "Lead into a campus survey or a clearly labeled sample.",
       "how": [
-        "Fades the 'Welcome to EcoLoco' headline in word by word, then fades up each section.",
-        "Shows four feature rows (Identify Plants, Support Pollinators, Grow with Confidence, Help Your Ecosystem) using images from `assets/`.",
-        "'Identify Plants' link → `navigate('Camera')` (the Identify tab).",
-        "'Grow with Confidence' link → `navigate('Recommend')`.",
-        "Makes no API calls."
+        "Open EcoScan with the real/sample mode flag.",
+        "Explain Survey → Review → Propose and the ZIP-prefix pilot scope.",
+        "Link standalone identification and planting options without making provider requests."
       ]
     },
     {
@@ -178,55 +173,33 @@
       "layer": "ui",
       "status": "live",
       "file": "frontend/screens/IdentificationScreen.js",
-      "symbol": "async function handleIdentify",
+      "symbol": "export default function IdentificationScreen",
       "col": 1,
-      "row": 1.5,
-      "what": "Identify a single plant from a photo and see whether it helps or hurts the local ecosystem.",
+      "row": 1.35,
+      "what": "Identify one plant and review separate identification and status evidence.",
       "how": [
-        "You type a 5-digit ZIP and pick a photo: Take Photo (camera) or Upload Photo (library) via expo-image-picker with `base64: true`. On web you can also drag-and-drop an image; a `FileReader` turns it into base64.",
-        "The Identify button only enables when there's a photo and a 5-digit ZIP.",
-        "`handleIdentify()` calls `identifyPlant(photo.base64, zipCode)` and shows loading dots.",
-        "Renders the result: name, scientific name, native/invasive badge, wildlife support, confidence, and suggested actions. (It still shows `inat_note` if present, but the backend no longer sends one.)",
-        "'Get native plant recommendations for ZIP' → `navigate('Recommend', {prefillZip})`.",
-        "Under the result, a \"Plant identification powered by Pl@ntNet\" credit with the official logo links to plantnet.org (opened with `expo-linking`).",
-        "Errors show inline under the photo."
-      ]
-    },
-    {
-      "id": "rec",
-      "label": "RecommendationScreen",
-      "layer": "ui",
-      "status": "live",
-      "file": "frontend/screens/RecommendationScreen.js",
-      "symbol": "async function handleRecommend",
-      "col": 1,
-      "row": 3,
-      "what": "Lists the best native plants to add for a ZIP code.",
-      "how": [
-        "If opened with `route.params.prefillZip`, fills the ZIP box and runs automatically.",
-        "`handleRecommend(zip)` rejects anything that isn't exactly 5 digits.",
-        "Calls `getPlantRecommendations(zip)` and shows skeleton cards while waiting.",
-        "The top 3 come back with problem / action / impact text and are shown as large cards; the other 8 have a one-line benefit and sit behind 'View all'.",
-        "Network errors show an alert."
+        "Validate a supported ZIP; prepare one to five photos of the same plant.",
+        "Call identifyPlant with cancellation; ignore stale responses after input changes.",
+        "Show source links, candidate choices, uncertainty and provider availability.",
+        "Confirm a candidate through a new server lookup or retake photos; link planting options."
       ]
     },
     {
       "id": "audit",
-      "label": "AuditScreen (EcoScan)",
+      "label": "AuditScreen",
       "layer": "ui",
       "status": "live",
       "file": "frontend/screens/AuditScreen.js",
-      "symbol": "async function scanPlant",
+      "symbol": "export default function AuditScreen",
       "col": 1,
-      "row": 4.5,
-      "what": "The campus audit: scan many plants one after another, then score the whole schoolyard.",
+      "row": 2.7,
+      "what": "Collect a persistent survey with sources, site conditions and reviewable observations.",
       "how": [
-        "Requires a 5-digit ZIP before scanning. The ZIP and the scanned plants live in module-level variables so they survive switching tabs.",
-        "`scanPlant(source)` asks for camera or photo-library permission, then opens expo-image-picker.",
-        "Adds a loading card right away, then calls `identifyPlant(photo.base64, zipCode)`.",
-        "If confidence is under 70%, it removes the card and asks 'Add anyway' or 'Discard'; otherwise it fills the card in.",
-        "Each card shows a status badge, wildlife-support pill and confidence; cards can be deleted.",
-        "Finish → `navigate('AuditResults', {plants: identified, zipCode})`. 'New audit' clears the list after a confirm."
+        "Load the real or sample audit from separate device-storage slots; subscribe to changes.",
+        "Record area, date, ZIP and site conditions; use photos or search the sourced catalog.",
+        "Preview identification, confirm alternatives through the server, and add resolved or unresolved observations.",
+        "Persist facts and notes without photo data; show save failures and explicit reset confirmation.",
+        "Flush pending saves before navigating to the report with the audit ID."
       ]
     },
     {
@@ -235,53 +208,167 @@
       "layer": "ui",
       "status": "live",
       "file": "frontend/screens/AuditResultsScreen.js",
-      "symbol": "async function fetchAll",
+      "symbol": "export default function AuditResultsScreen",
       "col": 1,
-      "row": 6,
-      "what": "Turns the scanned plants into a biodiversity score, the top fixes, and a letter to the principal.",
+      "row": 4.050000000000001,
+      "what": "Turn the saved survey into a source-linked, editable proposal.",
       "how": [
-        "Receives `plants[]` and `zipCode` from AuditScreen via route params.",
-        "`fetchAll()` maps each plant to `{name, invasive_status, wildlife_support}` (missing values default to 'non-native' / 'low') and calls `getScore()`.",
-        "Then, if there's a ZIP, calls `getPlantRecommendations(zipCode)`.",
-        "Shows a score ring that counts up, the helping / hurting / unidentified breakdown, and the insight sentence.",
-        "Projected score: the screen recomputes it itself as score + a boost per top-3 recommendation (high 8, medium 6, low 5, max 100). It only uses the backend's `projected_score` while recommendations are still loading.",
-        "Hovering an action card previews that one card's boost; a Current/Projected toggle swaps the ring and shows the `BeforeAfterPill` (old → new, +N pts).",
-        "Renders `LetterGenerator` with the recommendations, score and ZIP.",
-        "'See all recommendations' → Recommend tab with `prefillZip`."
+        "Load the matching saved audit; calculate the current metric and selected-additions scenario on the server.",
+        "Request native options using inventory and site conditions; keep request failures separate and retryable.",
+        "Persist choices and practical proposal details; generate a factual draft and preserve user edits.",
+        "Mark drafts stale after evidence or planning changes and confirm before regeneration.",
+        "Export a text report or native share sheet; label sample data throughout."
       ]
     },
     {
-      "id": "ui_why",
-      "label": "'Why it matters' line",
+      "id": "rec",
+      "label": "RecommendationScreen",
       "layer": "ui",
-      "status": "planned",
-      "file": null,
-      "symbol": null,
-      "col": 2,
-      "row": 0.8,
-      "goal": "Show the one-line stake for every plant. The backend already returns `why` from /identify and /recommend; only the UI is missing.",
-      "what": "A single sentence under each plant name saying why this plant matters in South Florida.",
+      "status": "live",
+      "file": "frontend/screens/RecommendationScreen.js",
+      "symbol": "export default function RecommendationScreen",
+      "col": 1,
+      "row": 5.4,
+      "what": "Browse native options against real site constraints.",
       "how": [
-        "Read `result.why` from /identify and `why` from each /recommend item.",
-        "Show it under the plant name on IdentificationScreen and on each recommendation card.",
-        "Examples: Brazilian pepper → crowds out Everglades natives; coontie → only host plant of the Atala butterfly."
+        "Accept supported ZIP, site conditions and optional observed plants.",
+        "Cancel requests and clear old options when inputs change.",
+        "Render complete alphabetically ordered cards with sources, requirements and unknown-site notices.",
+        "Show the first three options, with a control to expand the complete returned set."
       ]
     },
     {
-      "id": "ui_receipt",
-      "label": "Source receipt badge",
+      "id": "photo",
+      "label": "PhotoPicker",
       "layer": "ui",
-      "status": "planned",
-      "file": null,
-      "symbol": null,
+      "status": "live",
+      "file": "frontend/components/PhotoPicker.js",
+      "symbol": "export default function PhotoPicker",
       "col": 2,
-      "row": 2,
-      "goal": "Show where each native/invasive verdict came from. The backend already returns `source` (FISC, fl_natives, USDA or unknown); only the UI is missing.",
-      "what": "A small badge next to the native/invasive verdict that cites its source.",
+      "row": 0,
+      "what": "Select and prepare one to five photos of one plant.",
       "how": [
-        "Read `result.source` from /identify.",
-        "Show it next to the status badge on IdentificationScreen and on each AuditScreen card.",
-        "If `source` is 'unknown', label the verdict 'unverified (AI guess)' instead of presenting it as fact."
+        "Handle camera permission, library selection and web drag/drop.",
+        "Validate original file type/size/count, then prepare JPEG copies.",
+        "Ignore late preparation results after the picker changes or unmounts; show inline errors."
+      ]
+    },
+    {
+      "id": "prepare",
+      "label": "preparePickerAssets()",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/PhotoPicker.js",
+      "symbol": "function preparePickerAssets",
+      "col": 2,
+      "row": 1.35,
+      "what": "Prepare bounded JPEG uploads.",
+      "how": [
+        "Resize large images to a 1600-pixel longest edge.",
+        "Compress and encode copies, reject prepared photos over 4 MB, and release manipulator resources."
+      ]
+    },
+    {
+      "id": "evidence",
+      "label": "PlantEvidence",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/PlantEvidence.js",
+      "symbol": "export default function PlantEvidence",
+      "col": 2,
+      "row": 2.7,
+      "what": "Explain what is identified, what is sourced, and what needs review.",
+      "how": [
+        "Render provider and candidate evidence separately from Florida status.",
+        "Offer confirmation/retake controls for unresolved identification.",
+        "Show dated status and wildlife links, taxonomic cautions and FISC distribution limits.",
+        "Keep unverified automated hypotheses outside verified labels; retain PlantNet credit."
+      ]
+    },
+    {
+      "id": "evidence_link",
+      "label": "EvidenceLink",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/PlantEvidence.js",
+      "symbol": "export function EvidenceLink",
+      "col": 2,
+      "row": 4.050000000000001,
+      "what": "Open source evidence safely.",
+      "how": [
+        "Accept HTTPS links through the shared URL validator.",
+        "Render an accessible link and a readable failure state when opening fails."
+      ]
+    },
+    {
+      "id": "site",
+      "label": "SiteConditions",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/SiteConditions.js",
+      "symbol": "export default function SiteConditions",
+      "col": 2,
+      "row": 5.4,
+      "what": "Record sunlight, moisture, available space and care capacity.",
+      "how": [
+        "Offer labeled radio controls with selected states.",
+        "Keep unknown conditions explicit and pass edits to the screen."
+      ]
+    },
+    {
+      "id": "button",
+      "label": "AuditButton",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/AuditUI.js",
+      "symbol": "export function AuditButton",
+      "col": 2,
+      "row": 6.75,
+      "what": "Accessible primary/secondary action.",
+      "how": [
+        "Expose button role and disabled state."
+      ]
+    },
+    {
+      "id": "field",
+      "label": "AuditField",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/AuditUI.js",
+      "symbol": "export function AuditField",
+      "col": 2,
+      "row": 8.1,
+      "what": "Labeled editable survey/proposal field.",
+      "how": [
+        "Pass the visible label to the input accessibility label."
+      ]
+    },
+    {
+      "id": "notice",
+      "label": "AuditNotice",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/AuditUI.js",
+      "symbol": "export function AuditNotice",
+      "col": 2,
+      "row": 9.45,
+      "what": "Visible information and errors.",
+      "how": [
+        "Announce changing messages through a polite live region."
+      ]
+    },
+    {
+      "id": "page",
+      "label": "AuditPage",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/AuditUI.js",
+      "symbol": "export function AuditPage",
+      "col": 2,
+      "row": 10.799999999999999,
+      "what": "Scrollable audit page shared by survey and report.",
+      "how": [
+        "Keep a readable content width and preserve keyboard interaction."
       ]
     },
     {
@@ -291,61 +378,72 @@
       "status": "live",
       "file": "package.json",
       "symbol": "\"expo-image-picker\"",
-      "col": 2,
-      "row": 3.3,
-      "what": "Expo module that opens the phone camera or photo library and returns the image.",
+      "col": 0,
+      "row": 1.35,
+      "what": "Access the camera and photo library.",
       "how": [
-        "`requestCameraPermissionsAsync()` / `requestMediaLibraryPermissionsAsync()` ask the OS for permission.",
-        "`launchCameraAsync` / `launchImageLibraryAsync({base64: true, quality: 0.8})` return `{canceled, assets: [{uri, base64}]}`.",
-        "Screens keep `uri` to show the photo and send `base64` to the backend."
+        "Return selected image assets; request camera access on native devices."
       ]
     },
     {
-      "id": "ui_jump",
-      "label": "Before → after score jump",
-      "layer": "ui",
-      "status": "planned",
-      "file": null,
-      "symbol": null,
-      "col": 2,
-      "row": 5,
-      "goal": "Make score → projected_score the headline jump. Mostly built already (toggle + BeforeAfterPill); remaining: lead with it, and use one source of truth for projected_score (the screen recomputes it today).",
-      "what": "Show the current score jumping to the projected score as the main payoff of an audit.",
-      "how": [
-        "Reuse `ScoreRing` and `BeforeAfterPill` from AuditResultsScreen.",
-        "Animate once from `score` to `projected_score` when results load, instead of hiding it behind a toggle.",
-        "Pick one formula: either trust the backend's `projected_score` or move the screen's per-recommendation boost into score_service."
-      ]
-    },
-    {
-      "id": "letter",
-      "label": "LetterGenerator",
-      "layer": "ui",
+      "id": "manipulator",
+      "label": "expo-image-manipulator",
+      "layer": "device",
       "status": "live",
-      "file": "frontend/screens/AuditResultsScreen.js",
-      "symbol": "function LetterGenerator",
-      "col": 2,
-      "row": 6.4,
-      "what": "Drafts an editable letter to the school admin asking to plant the recommended natives.",
+      "file": "package.json",
+      "symbol": "\"expo-image-manipulator\"",
+      "col": 0,
+      "row": 2.7,
+      "what": "Prepare resized JPEG copies.",
       "how": [
-        "The top 3 recommendations are pre-selected; tapping a plant toggles it and clears any old letter.",
-        "`handleGenerate()` collects the selected plant names and calls `generateLetter(plantNames, score, zipCode)`.",
-        "Shows the letter in an editable text box with [PRINCIPAL_NAME], [SCHOOL_NAME] and [STUDENT_NAME] placeholders.",
-        "Copy writes the edited text with `Clipboard.setStringAsync` and shows 'Copied' for 2 seconds."
+        "Render and encode picker assets for upload without changing the originals."
       ]
     },
     {
       "id": "clipboard",
-      "label": "expo-clipboard",
+      "label": "expo-clipboard / Share",
+      "layer": "device",
+      "status": "live",
+      "file": "frontend/screens/AuditResultsScreen.js",
+      "symbol": "Clipboard.setStringAsync",
+      "col": 0,
+      "row": 4.050000000000001,
+      "what": "Copy or export the user-reviewed proposal/report.",
+      "how": [
+        "Copy draft text to the clipboard.",
+        "Download plain text on web or use the native share sheet."
+      ]
+    },
+    {
+      "id": "storage_device",
+      "label": "AsyncStorage",
       "layer": "device",
       "status": "live",
       "file": "package.json",
-      "symbol": "\"expo-clipboard\"",
-      "col": 2,
-      "row": 7.6,
-      "what": "Expo module that copies text to the system clipboard.",
+      "symbol": "\"@react-native-async-storage/async-storage\"",
+      "col": 0,
+      "row": 5.4,
+      "what": "Persist the current real and sample audits on this device.",
       "how": [
-        "`setStringAsync(text)` copies the edited letter so students can paste it into an email."
+        "Store JSON audit facts and edited drafts in separate keys.",
+        "No account, server database or cross-device synchronization is provided."
+      ]
+    },
+    {
+      "id": "client",
+      "label": "createApiClient()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/services/geminiService.js",
+      "symbol": "function createApiClient",
+      "col": 3,
+      "row": 0,
+      "what": "Bound and validate HTTP requests to the configured backend.",
+      "how": [
+        "Require a valid EXPO_PUBLIC_API_URL and send JSON POST requests.",
+        "Race the exchange against cancellation/deadline; abort and normalize readable failures.",
+        "Check status and JSON response shape; expose rate-limit information and clear timers.",
+        "Default deadline is 15 seconds; identification allows 60 seconds."
       ]
     },
     {
@@ -354,31 +452,43 @@
       "layer": "client",
       "status": "live",
       "file": "frontend/services/geminiService.js",
-      "symbol": "export async function identifyPlant",
+      "symbol": "function identifyPlant",
       "col": 3,
-      "row": 1.5,
-      "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
-      "what": "Sends a photo and ZIP to the backend and returns the identification.",
+      "row": 1.35,
+      "what": "Submit one to five prepared photos.",
       "how": [
-        "POSTs JSON `{image: base64, location: zip}` to `${EXPO_PUBLIC_API_URL}/identify`.",
-        "`parseResponse()` reads the JSON; if the HTTP status isn't OK it throws `data.error`.",
-        "Returns `{result: {...}}`; screens read `data.result`."
+        "Send images and location to /identify with a 60-second client deadline.",
+        "Use the shared cancellation, deadline and JSON error handling."
       ]
     },
     {
-      "id": "c_rec",
-      "label": "getPlantRecommendations()",
+      "id": "c_confirm",
+      "label": "confirmPlant()",
       "layer": "client",
       "status": "live",
       "file": "frontend/services/geminiService.js",
-      "symbol": "export async function getPlantRecommendations",
+      "symbol": "function confirmPlant",
       "col": 3,
-      "row": 3,
-      "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
-      "what": "Asks the backend for native plants to add for a ZIP.",
+      "row": 2.7,
+      "what": "Resolve a chosen species again.",
       "how": [
-        "POSTs `{location: zip}` to `/recommend`.",
-        "Throws on non-OK responses; returns `{result: [11 plants]}`."
+        "Send scientific_name and location to /confirm; do not fabricate confidence.",
+        "Use the shared cancellation, deadline and JSON error handling."
+      ]
+    },
+    {
+      "id": "c_catalog",
+      "label": "getCatalog()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/services/geminiService.js",
+      "symbol": "function getCatalog",
+      "col": 3,
+      "row": 4.050000000000001,
+      "what": "Load sourced choices for manual identification.",
+      "how": [
+        "Send location to /catalog; return verified native and nonnative options.",
+        "Use the shared cancellation, deadline and JSON error handling."
       ]
     },
     {
@@ -387,14 +497,28 @@
       "layer": "client",
       "status": "live",
       "file": "frontend/services/geminiService.js",
-      "symbol": "export async function getScore",
+      "symbol": "function getScore",
       "col": 3,
-      "row": 4.8,
-      "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
-      "what": "Sends the audited plants to the backend and gets the biodiversity score back.",
+      "row": 5.4,
+      "what": "Get current and projected native share.",
       "how": [
-        "POSTs `{plants: [{name, invasive_status, wildlife_support}]}` to `/score`.",
-        "Throws on non-OK responses; returns `{result: {score, projected_score, breakdown, insight, bonuses_applied, plant_count}}`."
+        "Send bounded observation fields, location and explicit additions/removals to /score.",
+        "Use the shared cancellation, deadline and JSON error handling."
+      ]
+    },
+    {
+      "id": "c_rec",
+      "label": "getPlantRecommendations()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/services/geminiService.js",
+      "symbol": "function getPlantRecommendations",
+      "col": 3,
+      "row": 6.75,
+      "what": "Get site-filtered native additions.",
+      "how": [
+        "Send observed plant facts, location and site conditions to /recommend.",
+        "Use the shared cancellation, deadline and JSON error handling."
       ]
     },
     {
@@ -403,14 +527,13 @@
       "layer": "client",
       "status": "live",
       "file": "frontend/services/geminiService.js",
-      "symbol": "export async function generateLetter",
+      "symbol": "function generateLetter",
       "col": 3,
-      "row": 6.4,
-      "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
-      "what": "Asks the backend to write the letter to the school admin.",
+      "row": 8.1,
+      "what": "Create the factual proposal.",
       "how": [
-        "POSTs `{plant_names, score, zip_code}` to `/letter`.",
-        "Throws on non-OK responses; returns `{result: 'letter text'}`."
+        "Send observations, selections, site, survey details, sample flag and practical proposal fields to /letter.",
+        "Use the shared cancellation, deadline and JSON error handling."
       ]
     },
     {
@@ -419,33 +542,162 @@
       "layer": "client",
       "status": "dead",
       "file": "frontend/services/plantService.js",
-      "symbol": "export async function getLocalPlants",
+      "symbol": "function getLocalPlants",
       "col": 3,
-      "row": 8,
-      "goal": "Delete plantService.js — the backend route it called has been removed.",
-      "what": "Leftover call to an endpoint that no longer exists.",
+      "row": 9.45,
+      "what": "Legacy client with no active route.",
       "how": [
-        "POSTs `{location}` to `/get_local_plants_endpoints`.",
-        "That route no longer exists in app.py, so this would 404.",
-        "Nothing imports this function."
+        "It still refers to a removed endpoint and is not used by the current screens."
+      ],
+      "goal": "Remove this unused client when cleaning up legacy integrations."
+    },
+    {
+      "id": "empty",
+      "label": "createEmptyAudit()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/services/auditStorage.js",
+      "symbol": "function createEmptyAudit",
+      "col": 4,
+      "row": 0,
+      "what": "Create a versioned real or sample survey.",
+      "how": [
+        "Assign an ID and local survey date, unknown site conditions, empty observations and a blank proposal."
+      ]
+    },
+    {
+      "id": "store",
+      "label": "createAuditStore()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/services/auditStorage.js",
+      "symbol": "function createAuditStore",
+      "col": 4,
+      "row": 1.35,
+      "what": "Coordinate cached audit edits and ordered persistence.",
+      "how": [
+        "Keep real and sample slots separate; validate stored data on load.",
+        "Publish edits to subscribers and serialize writes so older saves cannot overwrite newer work.",
+        "Keep the audit ID stable during edits; merge site/proposal fields and record update time.",
+        "Exclude photo payloads and URIs from persisted observations; expose save failures."
+      ]
+    },
+    {
+      "id": "load",
+      "label": "loadAudit()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/services/auditStorage.js",
+      "symbol": "export const loadAudit",
+      "col": 4,
+      "row": 2.7,
+      "what": "Load one saved audit.",
+      "how": [
+        "Wait for writes, read the matching real/sample slot and validate its version."
+      ]
+    },
+    {
+      "id": "save",
+      "label": "saveAudit()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/services/auditStorage.js",
+      "symbol": "export const saveAudit",
+      "col": 4,
+      "row": 4.050000000000001,
+      "what": "Save a newly created or reset audit.",
+      "how": [
+        "Clean observation photo fields, update cache/subscribers and persist the selected slot."
+      ]
+    },
+    {
+      "id": "patch",
+      "label": "patchAudit()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/services/auditStorage.js",
+      "symbol": "export const patchAudit",
+      "col": 4,
+      "row": 5.4,
+      "what": "Persist a change to the current audit.",
+      "how": [
+        "Reject a stale audit ID; merge edits and queue an ordered write."
+      ]
+    },
+    {
+      "id": "subscribe",
+      "label": "subscribeAudit()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/services/auditStorage.js",
+      "symbol": "export const subscribeAudit",
+      "col": 4,
+      "row": 6.75,
+      "what": "Keep screens synchronized with local audit edits.",
+      "how": [
+        "Register a listener and return its unsubscribe function."
+      ]
+    },
+    {
+      "id": "flush",
+      "label": "flushAudit()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/services/auditStorage.js",
+      "symbol": "export const flushAudit",
+      "col": 4,
+      "row": 8.1,
+      "what": "Wait for audit persistence before proceeding.",
+      "how": [
+        "Return the pending write promise so navigation can detect failed saves."
+      ]
+    },
+    {
+      "id": "report",
+      "label": "buildAuditReport()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/services/auditStorage.js",
+      "symbol": "function buildAuditReport",
+      "col": 4,
+      "row": 9.45,
+      "what": "Build a portable text record of observations and the proposal.",
+      "how": [
+        "Include survey scope, exact metric counts, sources and unresolved observation notes.",
+        "Include selected additions, conditional inventory scenario and stale-draft notice.",
+        "Label sample reports prominently; do not claim measured campus biodiversity or wildlife improvement."
       ]
     },
     {
       "id": "flask",
-      "label": "Flask app (app.py)",
+      "label": "Flask app",
       "layer": "route",
       "status": "live",
       "file": "backend/app.py",
       "symbol": "app = Flask(__name__)",
-      "col": 4,
+      "col": 5,
       "row": 0,
-      "goal": "Deploy to a public host before the demo (today: localhost with debug=True).",
-      "what": "The Python web server that exposes the API the app talks to.",
+      "what": "Receive bounded requests and return predictable JSON.",
       "how": [
-        "`load_dotenv()` reads `OPENAI_API_KEY` and `PLANTNET_API_KEY` from `backend/.env`.",
-        "Creates the Flask app and turns on CORS so the Expo web build can call it.",
-        "Registers the four routes: /identify, /recommend, /score, /letter.",
-        "`app.run(host='0.0.0.0')` with debug mode only when `ECOLOCO_DEV=1` (`debug_enabled()`); debug is off by default, so crashes never show the code-revealing debug page."
+        "Configure body size and allowed origins; keep debug mode opt-in.",
+        "Validate input before providers run; return JSON validation, HTTP and unexpected-error responses.",
+        "Add no-store and nosniff headers; avoid logging photo content or credentials."
+      ],
+      "goal": "Choose a public HTTPS host and configure credentials, allowed origins, budgets and shared gateway limits before external demonstrations."
+    },
+    {
+      "id": "r_health",
+      "label": "GET /health",
+      "layer": "route",
+      "status": "live",
+      "file": "backend/app.py",
+      "symbol": "def health(",
+      "col": 5,
+      "row": 1.35,
+      "what": "Return API health and the metric version.",
+      "how": [
+        "No provider calls or credentials are needed.",
+        "Return {result: ...} on success or {error, code} with an appropriate HTTP status on failure."
       ]
     },
     {
@@ -455,13 +707,42 @@
       "status": "live",
       "file": "backend/app.py",
       "symbol": "def identify(",
-      "col": 4,
-      "row": 1.5,
-      "what": "API endpoint for identifying one plant.",
+      "col": 5,
+      "row": 2.7,
+      "what": "Identify a bounded photo set.",
       "how": [
-        "Reads `images` (a list of 1–5 non-empty strings) or, for the current app, a single `image`, plus `location`.",
-        "Returns 400 if the photos or the location are missing or invalid (0 or more than 5 photos, empty or non-text entries).",
-        "Calls `identify_plant(images, location)` and returns `{result}`."
+        "Validate ZIP and one to five JPEG/PNG images, apply identification limits, then call identify_plant.",
+        "Return {result: ...} on success or {error, code} with an appropriate HTTP status on failure."
+      ]
+    },
+    {
+      "id": "r_confirm",
+      "label": "POST /confirm",
+      "layer": "route",
+      "status": "live",
+      "file": "backend/app.py",
+      "symbol": "def confirm(",
+      "col": 5,
+      "row": 4.050000000000001,
+      "what": "Refresh evidence for the selected taxon.",
+      "how": [
+        "Validate location and scientific_name, then call confirm_plant.",
+        "Return {result: ...} on success or {error, code} with an appropriate HTTP status on failure."
+      ]
+    },
+    {
+      "id": "r_catalog",
+      "label": "POST /catalog",
+      "layer": "route",
+      "status": "live",
+      "file": "backend/app.py",
+      "symbol": "def catalog(",
+      "col": 5,
+      "row": 5.4,
+      "what": "Return manual-identification options.",
+      "how": [
+        "Validate location, then call get_catalog.",
+        "Return {result: ...} on success or {error, code} with an appropriate HTTP status on failure."
       ]
     },
     {
@@ -471,14 +752,12 @@
       "status": "live",
       "file": "backend/app.py",
       "symbol": "def recommend(",
-      "col": 4,
-      "row": 3,
-      "what": "API endpoint for native plant recommendations.",
+      "col": 5,
+      "row": 6.75,
+      "what": "Return suitable native additions.",
       "how": [
-        "Reads `location`; 400 if missing.",
-        "Calls `get_plant_recommendations(location)`.",
-        "If OpenAI is unavailable (`AIUnavailable`), returns `fallback_recommendations(location)` from the bundled natives list instead.",
-        "Returns `{result: [...], ai_unavailable}`."
+        "Validate location, observations and site enums, then call get_plant_recommendations.",
+        "Return {result: ...} on success or {error, code} with an appropriate HTTP status on failure."
       ]
     },
     {
@@ -488,12 +767,12 @@
       "status": "live",
       "file": "backend/app.py",
       "symbol": "def score(",
-      "col": 4,
-      "row": 4.8,
-      "what": "API endpoint for the biodiversity score.",
+      "col": 5,
+      "row": 8.1,
+      "what": "Return current and selected-scenario metrics.",
       "how": [
-        "Reads `plants`; 400 if missing or empty.",
-        "Calls `calculate_biodiversity_score(plants)` and returns `{result}`."
+        "Validate location, observations and addition/removal lists, then recalculate from source records.",
+        "Return {result: ...} on success or {error, code} with an appropriate HTTP status on failure."
       ]
     },
     {
@@ -503,30 +782,12 @@
       "status": "live",
       "file": "backend/app.py",
       "symbol": "def letter(",
-      "col": 4,
-      "row": 6.4,
-      "what": "API endpoint for the letter to the school admin.",
-      "how": [
-        "Reads `plant_names`, `score`, `zip_code`; 400 if any is missing (a score of 0 is allowed).",
-        "Calls `generate_letter(...)`; if OpenAI is unavailable, uses `generate_letter_without_ai(...)` instead.",
-        "Returns `{result: letter text, ai_unavailable}`."
-      ]
-    },
-    {
-      "id": "s_inat",
-      "label": "get_plant_requests()",
-      "layer": "svc",
-      "status": "dead",
-      "file": "backend/services/inat_service.py",
-      "symbol": "def get_plant_requests(",
       "col": 5,
-      "row": 8,
-      "goal": "Nothing calls it since the confidence nudge was removed. Repurpose it (e.g. a 'seen near you' count) or delete inat_service.py.",
-      "what": "Fetches recent iNaturalist sightings of a plant so we can see if it's found near the user.",
+      "row": 9.45,
+      "what": "Return a factual editable proposal.",
       "how": [
-        "GET `api.inaturalist.org/v2/observations` with `q=<name>`, `iconic_taxa=Plantae`, has a location, newest first, up to 100.",
-        "Turns each 'lat,lng' string into numbers, with `observed_on` and `place_guess`.",
-        "On any request error, prints it and returns `[]`. No timeout is set on this request."
+        "Validate observations, selected names, site, survey details, sample flag and proposal text before generate_proposal.",
+        "Return {result: ...} on success or {error, code} with an appropriate HTTP status on failure."
       ]
     },
     {
@@ -536,17 +797,46 @@
       "status": "live",
       "file": "backend/services/ai_service.py",
       "symbol": "def identify_plant(",
-      "col": 5,
-      "row": 1.5,
-      "what": "The identification pipeline: works out what the plant is, whether it is native or invasive (from Florida data), and what to do about it.",
+      "col": 6,
+      "row": 0,
+      "what": "Join identification to sourced Florida evidence.",
       "how": [
-        "`identify_species(images, location)` returns the species, confidence, other candidates, which service identified it, and whether the user should confirm it.",
-        "`get_status(scientific_name, zip)` checks the FISC list, the bundled natives, then USDA PLANTS.",
-        "`assess_plant(species, status, zip)` asks OpenAI for wildlife support + reason, conservation status, two actions, and its own native/invasive guess. When the status is known, the prompt tells the model to treat it as fact.",
-        "If OpenAI is unavailable (`AIUnavailable`: no credits, network error, or a malformed reply), the scan still returns: wildlife support, conservation status and reason become `unknown`, actions are empty (invasives still get the two fixed removal actions), and `ai_unavailable` is true.",
-        "Status: if our data knows the plant (FISC, fl_natives or USDA), that answer wins: invasive, native, or non-native. Only when `source` is `unknown` does it use the model's guess, or `unknown` if OpenAI is down.",
-        "Cleans model values to the allowed lists (e.g. `HIGH` → `high`).",
-        "Returns `plant_name, scientific_name, is_native, invasive_status, endangered_status, wildlife_support, wildlife_support_reason, confidence, candidates, id_source, needs_confirmation, source, why, actions, ai_unavailable`."
+        "Obtain candidate species from identify_species and recheck the proposed name with get_status.",
+        "Use bundled evidence without model explanations when available.",
+        "For an unsupported taxon, optionally obtain a separately labeled hypothesis; keep verified status unknown.",
+        "Return confidence, review flags, canonical identity, source links, documented relationships and actions."
+      ]
+    },
+    {
+      "id": "s_confirm",
+      "label": "confirm_plant()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/ai_service.py",
+      "symbol": "def confirm_plant(",
+      "col": 6,
+      "row": 1.35,
+      "what": "Record the user-selected identity and refresh status evidence.",
+      "how": [
+        "Look the exact taxon up again and return a complete plant record.",
+        "Mark user confirmation without inventing a confidence percentage.",
+        "Keep a necessary variety/subspecies distinction unresolved until a precise taxon is selected."
+      ]
+    },
+    {
+      "id": "s_catalog",
+      "label": "get_catalog()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/ai_service.py",
+      "symbol": "def get_catalog(",
+      "col": 6,
+      "row": 2.7,
+      "what": "Return sourced manual-selection choices.",
+      "how": [
+        "Build entries from the combined catalog and refreshed status.",
+        "Deduplicate canonical identities and exclude entries without verified status.",
+        "Mark catalog browsing as unconfirmed; only a selection confirms an observation."
       ]
     },
     {
@@ -556,16 +846,14 @@
       "status": "live",
       "file": "backend/services/ai_service.py",
       "symbol": "def get_plant_recommendations(",
-      "col": 5,
-      "row": 3,
-      "goal": "Pick the candidates from fl_natives.json instead of asking GPT for the list; GPT would then only write the wording.",
-      "what": "Produces the ranked list of native plants to recommend for a ZIP.",
+      "col": 6,
+      "row": 4.050000000000001,
+      "what": "Filter verified native candidates using the inventory and site.",
       "how": [
-        "One OpenAI call: 'For ZIP X, return 11 native plants ranked by ecological impact.' A reply that isn't a list counts as OpenAI being unavailable.",
-        "Entries 1–3 in full: `plant_name, scientific_name, wildlife_support, problem, action, impact`; entries 4–11 compact with `benefit`.",
-        "Runs `get_status()` on all plants at once (in parallel, since USDA lookups take about a second each).",
-        "Drops anything on the FISC invasive list or confirmed non-native by USDA, and adds `source` and `why` to the rest.",
-        "Raises `AIUnavailable` when OpenAI fails, so the route can switch to `fallback_recommendations`."
+        "Calculate the verified survey inventory; exclude taxa already represented.",
+        "Require a recommendable native record and a precise unambiguous status.",
+        "Filter sunlight, moisture, mature space and maintenance conflicts.",
+        "Return complete cards with source links, practical actions, site requirements and explicit unknown conditions, sorted alphabetically."
       ]
     },
     {
@@ -575,156 +863,34 @@
       "status": "live",
       "file": "backend/services/score_service.py",
       "symbol": "def calculate_biodiversity_score(",
-      "col": 5,
-      "row": 4.8,
-      "what": "Turns a list of plants into a 0–100 biodiversity score, with no network or AI involved.",
+      "col": 6,
+      "row": 5.4,
+      "what": "Calculate verified-native-share-v1 without arbitrary bonuses.",
       "how": [
-        "Each plant gets base points from status + wildlife support: native high 88–95, medium 70–80, low 50–62; non-native 25–35; invasive 0–12; unknown 15. Where it lands in the range comes from a hash of the plant's name, so the same plant always scores the same.",
-        "Averages those points.",
-        "Bonuses and penalties: +5 if over 60% native, +3 for 5+ different natives, −3 per invasive, −1 per unknown. Clamped to 0–100.",
-        "`projected_score` = score + three 'action boosts' of 5–8 points each (also from a hash), max 100.",
-        "Sorts plants into helping / hurting / unidentified (non-natives with high support count as helping) and picks an insight sentence by score band and whether invasives are present."
+        "Recheck exact scientific names against server source records, ignoring incoming status labels.",
+        "Keep unresolved identity/status observations outside the denominator.",
+        "Deduplicate canonical taxa and count disjoint native, nonnative and invasive categories.",
+        "Calculate native/verified taxa × 100, or null when no verified taxa exist.",
+        "Apply explicit native additions and full-taxon removals and recompute using identical rules.",
+        "Return current/projected counts, observation coverage, sources, unresolved reasons and limitations."
       ]
     },
     {
-      "id": "s_letter",
-      "label": "generate_letter()",
+      "id": "s_proposal",
+      "label": "generate_proposal()",
       "layer": "svc",
       "status": "live",
       "file": "backend/services/ai_service.py",
-      "symbol": "def generate_letter(",
-      "col": 5,
-      "row": 6.4,
-      "what": "Writes the letter asking the school to plant the chosen natives.",
-      "how": [
-        "Joins the plant names naturally ('A', 'A and B', 'A, B, and C').",
-        "One `openai_client.chat()` call writes only 1–2 sentences about which wildlife those plants support in the ZIP; if that fails, the route uses `generate_letter_without_ai` instead.",
-        "Drops that into a fixed template with the score and ZIP and the [PRINCIPAL_NAME], [SCHOOL_NAME], [STUDENT_NAME] placeholders.",
-        "Returns the letter as plain text."
-      ]
-    },
-    {
-      "id": "inat",
-      "label": "iNaturalist API",
-      "layer": "ext",
-      "status": "live",
-      "file": "backend/services/inat_service.py",
-      "symbol": "api.inaturalist.org/v2/observations",
+      "symbol": "def generate_proposal(",
       "col": 6,
-      "row": 8,
-      "what": "Public database of citizen-science plant and animal sightings.",
+      "row": 6.75,
+      "what": "Create a factual school proposal from the current survey.",
       "how": [
-        "`GET /v2/observations` returns recent observations with coordinates.",
-        "No API key; we send a custom User-Agent."
-      ]
-    },
-    {
-      "id": "s_fl",
-      "label": "get_status()",
-      "layer": "svc",
-      "status": "live",
-      "file": "backend/services/fl_plants_service.py",
-      "symbol": "def get_status(",
-      "col": 6,
-      "row": 3.2,
-      "goal": "Add ZIP-specific regional lists behind the same get_status().",
-      "what": "The status seam: answers \"is this plant native or invasive in South Florida, and says who.\"",
-      "how": [
-        "Loads `fisc_list.json` and `fl_natives.json` once (cached), indexed by lower-cased scientific name and synonyms.",
-        "Normalises the name: trims, collapses whitespace, ignores case; retries with just the first two words so author names or varieties still match.",
-        "FISC first → `{native: false, invasive: true, source: 'FISC', why}` (`why` is null for species without a curated line).",
-        "Then the bundled natives → `{native: true, invasive: false, source: 'fl_natives', why}`.",
-        "Then USDA PLANTS (`usda_service.florida_status`): native → `{native: true, invasive: false, source: 'USDA'}`; introduced → `{native: false, invasive: false, source: 'USDA'}`.",
-        "USDA errors are logged by type and treated as unknown → `{native: null, invasive: null, source: 'unknown', why: null}`."
-      ]
-    },
-    {
-      "id": "openai",
-      "label": "OpenAI (gpt-4o-mini)",
-      "layer": "ext",
-      "status": "live",
-      "file": "backend/services/openai_client.py",
-      "symbol": "def chat(",
-      "col": 7,
-      "row": 1.2,
-      "what": "Cloud AI model, reached only through `openai_client.chat()`.",
-      "how": [
-        "`chat(content, json_reply=False)` sends one user message (text, or text + images) to gpt-4o-mini at temperature 0.",
-        "With `json_reply=True` it strips Markdown code fences and parses the reply.",
-        "Any failure (missing key, no credits, network, bad JSON) is raised as one `AIUnavailable` error carrying only the error type, so every caller can fall back the same way.",
-        "The client is created on first use, so importing services (tests, CI) needs no API key.",
-        "Used five ways: break ties between PlantNet's candidates, identify photos when PlantNet fails, assess the plant, list recommendations, write the letter sentences."
-      ]
-    },
-    {
-      "id": "d_fisc",
-      "label": "fisc_list.json",
-      "layer": "data",
-      "status": "live",
-      "file": "backend/data/fisc_list.json",
-      "symbol": null,
-      "col": 7,
-      "row": 2.7,
-      "goal": "Verify the 22 curated \"why\" lines against FISC / UF-IFAS before the demo.",
-      "what": "The complete official Florida Invasive Species Council 2026 list: 179 species (85 Category I, 94 Category II).",
-      "how": [
-        "One entry per species: `scientific_name, common_name, synonyms[], fisc_category (I/II), zones (N/C/S), why`.",
-        "Generated by `build_fisc_list.py` from the official PDF; don't hand-edit.",
-        "22 common species keep a curated one-line `why` (Everglades, flooding, hurricanes, fire…); the rest have `why: null`."
-      ]
-    },
-    {
-      "id": "d_natives",
-      "label": "fl_natives.json",
-      "layer": "data",
-      "status": "live",
-      "file": "backend/data/fl_natives.json",
-      "symbol": null,
-      "col": 7,
-      "row": 3.7,
-      "goal": "Verify every entry against UF/IFAS and the Atlas of Florida Plants before the demo.",
-      "what": "Bundled list of 22 South Florida native plants with their wildlife payoff, shipped with the backend.",
-      "how": [
-        "One entry per species: `scientific_name, common_name, synonyms[], why` (e.g. coontie → only host plant of the Atala butterfly).",
-        "Used to confirm 'native' in /identify and to add `why` in /recommend.",
-        "A `_comment` flags it as starter data, including that non-native African firebush (Hamelia patens var. glabra) would match the native firebush entry."
-      ]
-    },
-    {
-      "id": "usda",
-      "label": "USDA PLANTS",
-      "layer": "ext",
-      "status": "live",
-      "file": "backend/services/usda_service.py",
-      "symbol": "plantsservices.sc.egov.usda.gov/api",
-      "col": 8,
-      "row": 3.2,
-      "what": "US Department of Agriculture plant database, used as the last check for Florida nativity.",
-      "how": [
-        "No official API docs; these are the routes plants.usda.gov itself calls.",
-        "`GET /PlantSearch?searchText=` → matching plants with their USDA symbol.",
-        "`GET /PlantProfile?symbol=` → profile with `NativeStatuses` (e.g. L48 native/introduced).",
-        "`POST /PlantProfile/getDownloadDistributionDocumentation` → CSV of states and counties where the plant is recorded."
-      ]
-    },
-    {
-      "id": "s_species",
-      "label": "identify_species()",
-      "layer": "svc",
-      "status": "live",
-      "file": "backend/services/identification_service.py",
-      "symbol": "def identify_species(",
-      "col": 6,
-      "row": 0.6,
-      "what": "Turns 1–5 photos of one plant into a species: PlantNet first, OpenAI to break ties or as a backup, always in the same shape.",
-      "how": [
-        "Accepts one photo or a list of 1–5; anything else raises an error (the route rejects it first).",
-        "Asks PlantNet via `identify_with_plantnet(images)` for a ranked list of species with scores.",
-        "Confident = top score ≥ 0.80 and more than 0.15 ahead of the runner-up. If PlantNet is confident, its answer is used (`source: plantnet`).",
-        "If PlantNet is unsure, OpenAI sees the photos, the ZIP and PlantNet's top 5 and must pick one of them (`source: openai_adjudicated`, `needs_confirmation: true`). An answer outside the list, or an OpenAI error, keeps PlantNet's top match instead.",
-        "If PlantNet fails or finds nothing, OpenAI vision identifies the photos on its own (`source: openai_fallback`), and the same confidence rule sets `needs_confirmation`.",
-        "If everything fails it returns empty names with `source: none` instead of crashing. Failures are logged by error type only, never the raw message (PlantNet's URL contains the API key).",
-        "Returns `{scientific_name, common_name, confidence, candidates, source, needs_confirmation}`; `candidates` are the other possibilities with their scores."
+        "Revalidate selected taxa against site-filtered native choices; reject unsupported selections.",
+        "Recalculate inventory and selected additions on the server.",
+        "Build sourced survey facts, unresolved items, plant benefits and a conditional inventory scenario.",
+        "Include quantities, budget, location, maintenance and permission request; retain placeholders for unknown details.",
+        "Label sample proposals and avoid invented ecological or campus-wide conclusions."
       ]
     },
     {
@@ -735,13 +901,70 @@
       "file": "backend/services/ai_service.py",
       "symbol": "def assess_plant(",
       "col": 6,
-      "row": 1.9,
-      "what": "Asks the model for the parts our data doesn't cover: wildlife value, conservation status and actions.",
+      "row": 8.1,
+      "what": "Get a tentative explanation for an unsupported taxon.",
       "how": [
-        "Builds a prompt with the plant's names and ZIP. If `get_status` knew the plant, adds \"Florida records (FISC/fl_natives) list it as invasive/native here; treat that as fact.\"",
-        "Asks for `wildlife_support`, a one-sentence reason, `endangered_status`, `is_native` + `invasive_status` (used only as a fallback), and two actions.",
-        "Returns the parsed JSON; `identify_plant` cleans and merges it.",
-        "A reply that isn't a JSON object raises `AIUnavailable`, so `identify_plant` degrades instead of crashing."
+        "Send the name, location and verification state to the bounded model client.",
+        "Require a JSON object; suggestions remain separate from sourced facts and never authorize removal."
+      ]
+    },
+    {
+      "id": "s_fallback_rec",
+      "label": "fallback_recommendations()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/ai_service.py",
+      "symbol": "def fallback_recommendations(",
+      "col": 6,
+      "row": 9.45,
+      "what": "Compatibility wrapper for deterministic recommendations.",
+      "how": [
+        "Delegate to the same verified inventory/site filtering; no model call is required."
+      ]
+    },
+    {
+      "id": "s_letter",
+      "label": "generate_letter()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/ai_service.py",
+      "symbol": "def generate_letter(",
+      "col": 6,
+      "row": 10.799999999999999,
+      "what": "Compatibility wrapper for older letter callers.",
+      "how": [
+        "Ignore obsolete numeric scores and call generate_proposal with selected species and ZIP."
+      ]
+    },
+    {
+      "id": "s_letter_noai",
+      "label": "generate_letter_without_ai()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/ai_service.py",
+      "symbol": "def generate_letter_without_ai(",
+      "col": 6,
+      "row": 12.149999999999999,
+      "what": "Compatibility wrapper for old outage handling.",
+      "how": [
+        "Use the factual generate_letter path; the current proposal route already avoids model services."
+      ]
+    },
+    {
+      "id": "s_species",
+      "label": "identify_species()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/identification_service.py",
+      "symbol": "def identify_species(",
+      "col": 7,
+      "row": 0,
+      "what": "Choose a photo identification with explicit review state.",
+      "how": [
+        "Try PlantNet; accept a top score at least 0.80 with at least a 0.15 lead.",
+        "For a close result, ask image reasoning to choose among supplied candidates; still require review.",
+        "When PlantNet fails, use image reasoning as fallback; apply confidence/ambiguity review rules.",
+        "If both fail, retain an unresolved result rather than a fabricated identity."
       ]
     },
     {
@@ -752,64 +975,59 @@
       "file": "backend/services/identification_service.py",
       "symbol": "def identify_with_plantnet(",
       "col": 7,
-      "row": -0.4,
-      "what": "Sends the photos to PlantNet and returns its ranked list of species.",
+      "row": 1.35,
+      "what": "Send prepared photo bytes to PlantNet.",
       "how": [
-        "Reads `PLANTNET_API_KEY`; raises if it isn't set.",
-        "Turns each photo into bytes (base64, `data:` URL, or downloads an http(s) URL) and checks it is JPEG or PNG, the only formats PlantNet accepts.",
-        "POSTs them as repeated `images` fields to `/v2/identify/all` with `api-key`, `nb-results=5`, `lang=en`; organs default to auto.",
-        "Raises on any HTTP error; otherwise returns `[{scientific_name, common_name, confidence}]` from `results[].species` and `score`, best first."
+        "Decode and bound JPEG/PNG image data; never fetch a remote image URL.",
+        "Submit up to five images with the server-side key and 3-second connect/12-second read timeouts.",
+        "Normalize candidate scientific/common names and scores."
       ]
     },
     {
-      "id": "plantnet",
-      "label": "PlantNet API",
-      "layer": "ext",
-      "status": "live",
-      "file": "backend/services/identification_service.py",
-      "symbol": "my-api.plantnet.org/v2/identify/all",
-      "col": 8,
-      "row": -0.4,
-      "what": "Plant identification service trained on botanical photos.",
-      "how": [
-        "`POST /v2/identify/{project}` with up to 5 JPEG/PNG photos of the same plant (50 MB total).",
-        "Returns `results[]` sorted by score (0–1), each with the species' scientific and common names.",
-        "Needs a free API key from my.plantnet.org, passed as the `api-key` query parameter."
-      ]
-    },
-    {
-      "id": "ui_multiphoto",
-      "label": "Multi-photo picker + confirm step",
-      "layer": "ui",
-      "status": "planned",
-      "file": null,
-      "symbol": null,
-      "col": 2,
-      "row": -0.4,
-      "goal": "Let users send 1–5 photos of one plant, and when `needs_confirmation` is true, ask them to pick from the candidates. The backend already accepts this.",
-      "what": "Lets the user add several photos of the same plant and confirm unsure identifications.",
-      "how": [
-        "Allow up to 5 photos per plant (leaf, flower, bark…) and send them as `images` to /identify.",
-        "If the result has `needs_confirmation: true`, show the top match and the `candidates` and let the user pick.",
-        "Show which service identified it (`id_source`)."
-      ]
-    },
-    {
-      "id": "s_usda",
-      "label": "florida_status()",
+      "id": "s_chat",
+      "label": "chat()",
       "layer": "svc",
       "status": "live",
-      "file": "backend/services/usda_service.py",
-      "symbol": "def florida_status(",
+      "file": "backend/services/openai_client.py",
+      "symbol": "def chat(",
       "col": 7,
-      "row": 3.2,
-      "what": "Asks USDA PLANTS whether a plant is native to Florida.",
+      "row": 2.7,
+      "what": "Call the configured image/text model with bounded work.",
       "how": [
-        "Searches USDA by the two-word scientific name (author names make USDA's search return nothing) and picks the result with the same name.",
-        "Reads the plant's profile; synonyms resolve to the accepted name there.",
-        "If its lower-48 status isn't native → `introduced`.",
-        "If it is native in the US, downloads its state distribution and checks for Florida: present → `native`, absent → `introduced` (native elsewhere, not here).",
-        "Not found → `None`. Answers are cached in memory; network errors are raised, not cached."
+        "Create the client lazily so imports and offline tests need no credentials.",
+        "Use gpt-4o-mini, a 12-second timeout, no automatic retries and a 1200-token reply limit.",
+        "Parse the optional JSON reply and convert failures into AIUnavailable."
+      ]
+    },
+    {
+      "id": "s_fl",
+      "label": "get_status()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/fl_plants_service.py",
+      "symbol": "def get_status(",
+      "col": 7,
+      "row": 4.050000000000001,
+      "what": "Resolve exact taxon evidence for the supported pilot.",
+      "how": [
+        "Reject unsupported locations without inferring regional status.",
+        "Normalize known author citations and synonyms while preserving consequential ranks/hybrids.",
+        "Check sourced nonnative exceptions, FISC invasives, then natives.",
+        "Return canonical identity, provenance, dates, cautions and source-backed status; unsupported names stay unverified."
+      ]
+    },
+    {
+      "id": "s_scope",
+      "label": "supported_location()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/fl_plants_service.py",
+      "symbol": "def supported_location(",
+      "col": 7,
+      "row": 5.4,
+      "what": "Check the explicit pilot area.",
+      "how": [
+        "Accept exactly five digits with prefixes 330–334; do not infer site suitability."
       ]
     },
     {
@@ -819,43 +1037,227 @@
       "status": "live",
       "file": "backend/services/fl_plants_service.py",
       "symbol": "def bundled_natives(",
-      "col": 6,
-      "row": 6.2,
-      "what": "Returns the bundled South Florida natives list, in file order.",
+      "col": 7,
+      "row": 6.75,
+      "what": "Read the reviewed native catalog.",
       "how": [
-        "Reads `fl_natives.json` once (cached) and returns its species entries for the AI-free fallbacks."
+        "Return a deep copy of bundled records so callers cannot mutate shared evidence."
       ]
     },
     {
-      "id": "s_fallback_rec",
-      "label": "fallback_recommendations()",
+      "id": "s_bundled_all",
+      "label": "bundled_catalog()",
       "layer": "svc",
       "status": "live",
-      "file": "backend/services/ai_service.py",
-      "symbol": "def fallback_recommendations(",
-      "col": 5,
-      "row": 7.6,
-      "what": "Recommendations without AI, taken from the bundled natives list.",
+      "file": "backend/services/fl_plants_service.py",
+      "symbol": "def bundled_catalog(",
+      "col": 7,
+      "row": 8.1,
+      "what": "Combine source-linked native and nonnative choices.",
       "how": [
-        "Takes the first 11 natives from `bundled_natives()`.",
-        "The first 3 get `problem`, `action` and `impact` (impact = the native's `why`); the rest get `benefit`.",
-        "Each has `source: fl_natives`, its `why`, and `wildlife_support: unknown`."
+        "Read explicit exceptions before FISC and native records.",
+        "Attach verified source metadata, deduplicate exact names and return independent copies."
       ]
     },
     {
-      "id": "s_letter_noai",
-      "label": "generate_letter_without_ai()",
+      "id": "s_usda",
+      "label": "florida_distribution()",
       "layer": "svc",
       "status": "live",
-      "file": "backend/services/ai_service.py",
-      "symbol": "def generate_letter_without_ai(",
-      "col": 5,
-      "row": 8.8,
-      "what": "The same letter, with the benefit sentence built from our data instead of OpenAI.",
+      "file": "backend/services/usda_service.py",
+      "symbol": "def florida_distribution(",
+      "col": 7,
+      "row": 9.45,
+      "what": "Optional occurrence research, outside active classification.",
       "how": [
-        "Looks up each chosen plant by common name in the bundled natives and uses its `why` line (\"Coontie: The only host plant of…\").",
-        "If none match, uses a generic sentence about food and shelter for pollinators and birds.",
-        "Fills the same template as `generate_letter`."
+        "Require an exact rank-aware USDA search match; retrieve profile and Florida distribution evidence.",
+        "Cache bounded results for 24 hours and return occurrence, lower-48 status and scope limitations.",
+        "Missing/malformed exports stay unknown; no Florida-native status is inferred."
+      ]
+    },
+    {
+      "id": "s_usda_guard",
+      "label": "florida_status()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/usda_service.py",
+      "symbol": "def florida_status(",
+      "col": 7,
+      "row": 10.799999999999999,
+      "what": "Compatibility guard against invalid local-nativity inference.",
+      "how": [
+        "Return None because the retained USDA endpoints do not establish Florida nativity."
+      ]
+    },
+    {
+      "id": "s_inat",
+      "label": "get_plant_requests()",
+      "layer": "svc",
+      "status": "dead",
+      "file": "backend/services/inat_service.py",
+      "symbol": "def get_plant_requests(",
+      "col": 7,
+      "row": 12.149999999999999,
+      "what": "Unused nearby-observation integration.",
+      "how": [
+        "No current identification, score or recommendation flow calls this helper."
+      ],
+      "goal": "Remove or separately redesign this legacy helper; do not use nearby sightings as identification confidence."
+    },
+    {
+      "id": "v_text",
+      "label": "text_field()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/request_validation.py",
+      "symbol": "def text_field(",
+      "col": 8,
+      "row": 0,
+      "what": "Bound textual input.",
+      "how": [
+        "Require strings within the field length limit and reject unsupported control characters."
+      ]
+    },
+    {
+      "id": "v_location",
+      "label": "location_field()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/request_validation.py",
+      "symbol": "def location_field(",
+      "col": 8,
+      "row": 1.35,
+      "what": "Require a supported pilot ZIP.",
+      "how": [
+        "Validate five digits and prefixes 330–334; return clear errors otherwise."
+      ]
+    },
+    {
+      "id": "v_plants",
+      "label": "plant_list()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/request_validation.py",
+      "symbol": "def plant_list(",
+      "col": 8,
+      "row": 2.7,
+      "what": "Bound observation payloads.",
+      "how": [
+        "Allow up to 300 objects; validate names, flags, confidence ranges and supported categories."
+      ]
+    },
+    {
+      "id": "v_species",
+      "label": "species_list()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/request_validation.py",
+      "symbol": "def species_list(",
+      "col": 8,
+      "row": 4.050000000000001,
+      "what": "Bound explicit selections.",
+      "how": [
+        "Validate at most 40 species strings; require a nonempty set when the route needs it."
+      ]
+    },
+    {
+      "id": "v_site",
+      "label": "site_fields()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/request_validation.py",
+      "symbol": "def site_fields(",
+      "col": 8,
+      "row": 5.4,
+      "what": "Validate site choices.",
+      "how": [
+        "Accept only documented enum values and fill omitted conditions with unknown."
+      ]
+    },
+    {
+      "id": "v_proposal",
+      "label": "proposal_fields()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/request_validation.py",
+      "symbol": "def proposal_fields(",
+      "col": 8,
+      "row": 6.75,
+      "what": "Bound practical proposal details.",
+      "how": [
+        "Keep allowed planning/recipient fields with their text limits."
+      ]
+    },
+    {
+      "id": "v_images",
+      "label": "validate_images()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/request_validation.py",
+      "symbol": "def validate_images(",
+      "col": 8,
+      "row": 8.1,
+      "what": "Validate photos before any provider receives them.",
+      "how": [
+        "Require one to five real JPEG/PNG images with 4 MB input and 20-million-pixel bounds; reject URLs, malformed data and unsupported types. Decode, orient, strip metadata and resize before provider upload."
+      ]
+    },
+    {
+      "id": "limits",
+      "label": "RequestLimits.check()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/request_limits.py",
+      "symbol": "class RequestLimits",
+      "col": 8,
+      "row": 9.45,
+      "what": "Apply in-process quotas to paid identification.",
+      "how": [
+        "Use a lock and bounded client buckets to check per-client minute, shared minute and shared day limits.",
+        "Return the wait until the relevant bucket resets and include Retry-After in 429 responses.",
+        "Limits reset on process restart and are not shared across workers; deployment must account for that."
+      ]
+    },
+    {
+      "id": "d_exceptions",
+      "label": "fl_non_natives.json",
+      "layer": "data",
+      "status": "live",
+      "file": "backend/data/fl_non_natives.json",
+      "symbol": null,
+      "col": 9,
+      "row": 0,
+      "what": "Source-linked nonnative records and taxonomic exceptions.",
+      "how": [
+        "Document precise alternatives, revised classifications, provenance and management limits before generic list matching."
+      ]
+    },
+    {
+      "id": "d_fisc",
+      "label": "fisc_list.json",
+      "layer": "data",
+      "status": "live",
+      "file": "backend/data/fisc_list.json",
+      "symbol": null,
+      "col": 9,
+      "row": 1.35,
+      "what": "Bundled official FISC invasive evidence.",
+      "how": [
+        "Store listed taxa, categories, known distribution zones, synonyms and source metadata; the list is not regulatory."
+      ]
+    },
+    {
+      "id": "d_natives",
+      "label": "fl_natives.json",
+      "layer": "data",
+      "status": "live",
+      "file": "backend/data/fl_natives.json",
+      "symbol": null,
+      "col": 9,
+      "row": 2.7,
+      "what": "Reviewed native candidates and site requirements.",
+      "how": [
+        "Store exact taxa, source URLs/dates, wildlife relationships, growing requirements and recommendable flags."
       ]
     },
     {
@@ -866,355 +1268,1008 @@
       "file": "backend/scripts/build_fisc_list.py",
       "symbol": "def parse_pdf(",
       "col": 9,
-      "row": 1.6,
-      "what": "Script that rebuilds fisc_list.json from the official FISC PDF.",
+      "row": 4.050000000000001,
+      "what": "Rebuild the FISC list from the official PDF.",
       "how": [
-        "Downloads the PDF (or reads a local copy) and finds the Category I and II pages.",
-        "Splits each page's two side-by-side tables at the header columns and reads rows between the table's drawn borders, so wrapped names stay together.",
-        "Cleans names: removes footnote marks and turns `Genus (=Other) epithet` into a name plus synonym; keeps only rows with a valid N/C/S zone.",
-        "Merges in the curated `why` lines and synonyms by matching any name, and reports curated species missing from the official list.",
-        "Run: `venv\\Scripts\\python scripts/build_fisc_list.py <pdf or URL> data/fisc_list.json` (needs pdfplumber from requirements-dev.txt)."
+        "Parse listed species and classifications, then write the versioned data file.",
+        "Review provenance and separate taxonomic exceptions after regeneration."
       ]
     },
     {
-      "id": "ui_ai_unknown",
-      "label": "Show \"unknown\" + AI-unavailable notice",
-      "layer": "ui",
-      "status": "planned",
-      "file": null,
-      "symbol": null,
-      "col": 2,
-      "row": 8.8,
-      "goal": "When `ai_unavailable` is true, show wildlife value as unknown and a short notice. Today the EcoScan cards show any unrecognised wildlife value as \"Medium\".",
-      "what": "Makes degraded results honest in the app.",
+      "id": "plantnet",
+      "label": "PlantNet API",
+      "layer": "ext",
+      "status": "live",
+      "file": "backend/services/identification_service.py",
+      "symbol": "my-api.plantnet.org/v2/identify/all",
+      "col": 10,
+      "row": 0,
+      "what": "Return candidate species for submitted plant photos.",
       "how": [
-        "Handle `wildlife_support: \"unknown\"` in the support pill instead of defaulting to Medium.",
-        "Show a one-line notice when a scan, recommendation list or letter has `ai_unavailable: true`."
+        "Receive prepared photo data and return ranked candidates; the server retains the provider key."
+      ]
+    },
+    {
+      "id": "openai",
+      "label": "OpenAI model API",
+      "layer": "ext",
+      "status": "live",
+      "file": "backend/services/openai_client.py",
+      "symbol": "MODEL = \"gpt-4o-mini\"",
+      "col": 10,
+      "row": 1.35,
+      "what": "Compare photo candidates or supply a fallback identification/explanation.",
+      "how": [
+        "Called only in identification-related paths, not deterministic metrics, catalog selection or proposals."
+      ]
+    },
+    {
+      "id": "usda",
+      "label": "USDA PLANTS distribution API",
+      "layer": "ext",
+      "status": "live",
+      "file": "backend/services/usda_service.py",
+      "symbol": "plantsservices.sc.egov.usda.gov/api",
+      "col": 10,
+      "row": 2.7,
+      "what": "Optional taxon distribution research.",
+      "how": [
+        "Not used as a Florida-native classifier or in the active audit request path."
+      ]
+    },
+    {
+      "id": "inat",
+      "label": "iNaturalist API",
+      "layer": "ext",
+      "status": "dead",
+      "file": "backend/services/inat_service.py",
+      "symbol": "api.inaturalist.org/v2/observations",
+      "col": 10,
+      "row": 4.050000000000001,
+      "what": "Legacy external integration.",
+      "how": [
+        "Referenced only by the unused observations helper."
+      ],
+      "goal": "Retire with the unused helper or design a separately scoped observation feature."
+    },
+    {
+      "id": "u_review",
+      "label": "identificationNeedsConfirmation()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/utils/plantEvidence.js",
+      "symbol": "function identificationNeedsConfirmation",
+      "col": 11,
+      "row": 0,
+      "what": "Decide whether to show an identification review.",
+      "how": [
+        "Respect taxon ambiguity before user confirmation; otherwise inspect confirmation flags, identity and confidence."
+      ]
+    },
+    {
+      "id": "u_status",
+      "label": "taxonomyStatus()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/utils/plantEvidence.js",
+      "symbol": "function taxonomyStatus",
+      "col": 11,
+      "row": 1.35,
+      "what": "Render supported Florida status labels.",
+      "how": [
+        "Require status_verified; distinguish native, invasive, nonnative and unverified."
+      ]
+    },
+    {
+      "id": "u_provider",
+      "label": "identificationProvider()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/utils/plantEvidence.js",
+      "symbol": "function identificationProvider",
+      "col": 11,
+      "row": 2.7,
+      "what": "Describe the actual identification path.",
+      "how": [
+        "Translate provider/manual/sample identifiers into understandable text."
+      ]
+    },
+    {
+      "id": "u_url",
+      "label": "safeEvidenceUrl()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/utils/plantEvidence.js",
+      "symbol": "function safeEvidenceUrl",
+      "col": 11,
+      "row": 4.050000000000001,
+      "what": "Validate evidence links.",
+      "how": [
+        "Accept HTTPS URLs and reject malformed or other schemes."
+      ]
+    },
+    {
+      "id": "u_candidates",
+      "label": "confirmationCandidates()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/utils/plantEvidence.js",
+      "symbol": "function confirmationCandidates",
+      "col": 11,
+      "row": 5.4,
+      "what": "Build a unique list of review choices.",
+      "how": [
+        "Include the primary name and candidates, deduplicating normalized scientific names."
+      ]
+    },
+    {
+      "id": "u_count",
+      "label": "ensurePhotoCount()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/utils/photoInput.js",
+      "symbol": "function ensurePhotoCount",
+      "col": 11,
+      "row": 6.75,
+      "what": "Enforce photo-count bounds.",
+      "how": [
+        "Require at least one new image and no more than five combined photos."
+      ]
+    },
+    {
+      "id": "u_files",
+      "label": "validatePhotoFiles()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/utils/photoInput.js",
+      "symbol": "function validatePhotoFiles",
+      "col": 11,
+      "row": 8.1,
+      "what": "Validate browser-selected originals.",
+      "how": [
+        "Require JPEG/PNG MIME types, nonempty size and at most 12 MB per original."
+      ]
+    },
+    {
+      "id": "u_bytes",
+      "label": "base64ByteLength()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/utils/photoInput.js",
+      "symbol": "function base64ByteLength",
+      "col": 11,
+      "row": 9.45,
+      "what": "Measure prepared image payload size.",
+      "how": [
+        "Remove data-URL metadata and account for base64 padding before comparing upload bounds."
+      ]
+    },
+    {
+      "id": "bootstrap",
+      "label": "App",
+      "layer": "ui",
+      "status": "live",
+      "file": "App.js",
+      "symbol": "export default function App",
+      "col": 0,
+      "row": 6.75,
+      "what": "Start navigation inside a recoverable rendering boundary.",
+      "how": [
+        "Render AppErrorBoundary around AppNavigator.",
+        "The boundary can remount navigation while leaving device storage intact."
+      ]
+    },
+    {
+      "id": "boundary",
+      "label": "AppErrorBoundary",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/AppErrorBoundary.js",
+      "symbol": "export default class AppErrorBoundary",
+      "col": 0,
+      "row": 8.1,
+      "what": "Recover from a screen render failure without clearing saved audits.",
+      "how": [
+        "Catch a descendant rendering exception and show a readable recovery view.",
+        "Reset the boundary to reopen navigation.",
+        "Explain that saved audit/proposal data remains but unsaved photos or edits may need to be added again."
+      ]
+    },
+    {
+      "id": "gunicorn",
+      "label": "Gunicorn pilot server",
+      "layer": "route",
+      "status": "live",
+      "file": "backend/gunicorn.conf.py",
+      "symbol": "workers = 1",
+      "col": 5,
+      "row": 10.8,
+      "what": "Serve the pilot with one shared in-process request-budget state.",
+      "how": [
+        "Run one gthread worker with four threads and a 60-second timeout.",
+        "Read the listening address from BIND, otherwise use 127.0.0.1:5000.",
+        "Use a public HTTPS host or reverse proxy; process restarts reset built-in quotas.",
+        "Move quotas to shared gateway storage before using multiple workers or instances."
+      ]
+    },
+    {
+      "id": "catalog_search",
+      "label": "Catalog name search",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/utils/catalogSearch.js",
+      "symbol": "export function matchesCatalogQuery",
+      "col": 3,
+      "row": 11,
+      "what": "Find canonical records using common names, scientific names or documented synonyms.",
+      "how": [
+        "Search only string values from catalog names and synonym arrays.",
+        "Keep the selected record canonical; never infer taxonomy from a free-text match."
+      ]
+    },
+    {
+      "id": "ci_checks",
+      "label": "Repository verification",
+      "layer": "ext",
+      "status": "live",
+      "file": ".github/workflows/verify.yml",
+      "symbol": "name: Verify EcoLoco",
+      "col": 9,
+      "row": 12,
+      "what": "Configure repeatable checks for pushes and pull requests.",
+      "how": [
+        "Install locked frontend dependencies and pinned Python requirements without provider keys.",
+        "Run backend and frontend regressions, Expo dependency alignment and architecture checks.",
+        "Export web, iOS and Android bundles. First remote execution requires publishing the branch."
       ]
     }
   ],
   "edges": [
     {
-      "from": "app",
       "to": "home",
-      "label": "tab: Home"
+      "label": "screen navigation",
+      "from": "app"
     },
     {
-      "from": "app",
       "to": "ident",
-      "label": "tab: Identify"
+      "label": "screen navigation",
+      "from": "app"
     },
     {
-      "from": "app",
-      "to": "rec",
-      "label": "tab: Recommend"
-    },
-    {
-      "from": "app",
       "to": "audit",
-      "label": "tab: EcoScan"
+      "label": "screen navigation",
+      "from": "app"
     },
     {
-      "from": "app",
+      "to": "rec",
+      "label": "screen navigation",
+      "from": "app"
+    },
+    {
       "to": "results",
-      "label": "stack screen: AuditResults"
+      "label": "screen navigation",
+      "from": "app"
     },
     {
-      "from": "home",
+      "to": "audit",
+      "label": "start/resume real survey or sample mode",
+      "from": "home"
+    },
+    {
       "to": "ident",
-      "label": "navigate('Camera')"
+      "label": "identify one plant",
+      "from": "home"
     },
     {
-      "from": "home",
       "to": "rec",
-      "label": "navigate('Recommend')"
+      "label": "explore planting options",
+      "from": "home"
     },
     {
-      "from": "ident",
       "to": "rec",
-      "label": "navigate('Recommend', {prefillZip})"
+      "label": "ZIP and planting context",
+      "from": "ident"
     },
     {
-      "from": "audit",
       "to": "results",
-      "label": "navigate('AuditResults', {plants[], zipCode})",
-      "detail": "Only identified plants (not still-loading cards) are passed."
+      "label": "audit ID + sample flag after saves flush",
+      "from": "audit"
     },
     {
-      "from": "results",
-      "to": "rec",
-      "label": "navigate(Main → Recommend, {prefillZip})"
+      "to": "photo",
+      "label": "photos + error/change callbacks",
+      "from": "ident"
     },
     {
-      "from": "results",
-      "to": "letter",
-      "label": "renders LetterGenerator {recs, score, zipCode}"
+      "to": "evidence",
+      "label": "plant result + confirm/retake callbacks",
+      "from": "ident"
     },
     {
-      "from": "ident",
+      "to": "photo",
+      "label": "photos + error/change callbacks",
+      "from": "audit"
+    },
+    {
+      "to": "evidence",
+      "label": "plant result + confirm/retake callbacks",
+      "from": "audit"
+    },
+    {
+      "to": "site",
+      "label": "site conditions + edit callback",
+      "from": "audit"
+    },
+    {
+      "to": "site",
+      "label": "site conditions + edit callback",
+      "from": "rec"
+    },
+    {
+      "to": "button",
+      "label": "shared accessible audit controls",
+      "from": "audit"
+    },
+    {
+      "to": "field",
+      "label": "shared accessible audit controls",
+      "from": "audit"
+    },
+    {
+      "to": "notice",
+      "label": "shared accessible audit controls",
+      "from": "audit"
+    },
+    {
+      "to": "page",
+      "label": "shared accessible audit controls",
+      "from": "audit"
+    },
+    {
+      "to": "button",
+      "label": "shared accessible audit controls",
+      "from": "results"
+    },
+    {
+      "to": "field",
+      "label": "shared accessible audit controls",
+      "from": "results"
+    },
+    {
+      "to": "notice",
+      "label": "shared accessible audit controls",
+      "from": "results"
+    },
+    {
+      "to": "page",
+      "label": "shared accessible audit controls",
+      "from": "results"
+    },
+    {
       "to": "picker",
-      "label": "launchCamera / launchImageLibrary → {uri, base64}"
+      "label": "camera/library assets",
+      "from": "photo"
     },
     {
-      "from": "audit",
-      "to": "picker",
-      "label": "launchCamera / launchImageLibrary → {uri, base64}"
+      "to": "prepare",
+      "label": "prepare selected assets",
+      "from": "photo"
     },
     {
-      "from": "letter",
+      "to": "manipulator",
+      "label": "resize → JPEG/base64",
+      "from": "prepare"
+    },
+    {
+      "to": "u_count",
+      "label": "validate photos before preparation",
+      "from": "photo"
+    },
+    {
+      "to": "u_files",
+      "label": "validate photos before preparation",
+      "from": "photo"
+    },
+    {
+      "to": "u_bytes",
+      "label": "check prepared upload size",
+      "from": "prepare"
+    },
+    {
+      "to": "u_review",
+      "label": "interpret evidence fields",
+      "from": "evidence"
+    },
+    {
+      "to": "u_status",
+      "label": "interpret evidence fields",
+      "from": "evidence"
+    },
+    {
+      "to": "u_provider",
+      "label": "interpret evidence fields",
+      "from": "evidence"
+    },
+    {
+      "to": "u_candidates",
+      "label": "interpret evidence fields",
+      "from": "evidence"
+    },
+    {
+      "to": "evidence_link",
+      "label": "source URLs",
+      "from": "evidence"
+    },
+    {
+      "to": "u_url",
+      "label": "HTTPS source link",
+      "from": "evidence_link"
+    },
+    {
       "to": "clipboard",
-      "label": "setStringAsync(editedLetter)"
+      "label": "edited proposal or exported report",
+      "from": "results"
     },
     {
-      "from": "ident",
-      "to": "ui_why",
-      "label": "renders result.why",
-      "status": "planned"
-    },
-    {
-      "from": "rec",
-      "to": "ui_why",
-      "label": "renders item.why",
-      "status": "planned"
-    },
-    {
-      "from": "ident",
-      "to": "ui_receipt",
-      "label": "renders result.source",
-      "status": "planned"
-    },
-    {
-      "from": "audit",
-      "to": "ui_receipt",
-      "label": "renders plant.source",
-      "status": "planned"
-    },
-    {
-      "from": "results",
-      "to": "ui_jump",
-      "label": "score → projected_score",
-      "status": "planned"
-    },
-    {
-      "from": "ident",
       "to": "c_identify",
-      "label": "identifyPlant(photo.base64, zipCode)"
+      "label": "images[] + location + abort signal",
+      "from": "ident"
     },
     {
-      "from": "audit",
+      "to": "c_confirm",
+      "label": "chosen scientific name + location",
+      "from": "ident"
+    },
+    {
       "to": "c_identify",
-      "label": "identifyPlant(photo.base64, zipCode) per scan",
-      "detail": "Result under 70% confidence → 'Add anyway' / 'Discard' prompt."
+      "label": "images[] + location + abort signal",
+      "from": "audit"
     },
     {
-      "from": "rec",
+      "to": "c_confirm",
+      "label": "chosen scientific name + location",
+      "from": "audit"
+    },
+    {
+      "to": "c_catalog",
+      "label": "supported location",
+      "from": "audit"
+    },
+    {
       "to": "c_rec",
-      "label": "getPlantRecommendations(zip)"
+      "label": "location + observed taxa + site",
+      "from": "rec"
     },
     {
-      "from": "results",
       "to": "c_rec",
-      "label": "getPlantRecommendations(zipCode)"
+      "label": "location + observed taxa + site",
+      "from": "results"
     },
     {
-      "from": "results",
       "to": "c_score",
-      "label": "getScore([{name, invasive_status, wildlife_support}])"
+      "label": "observations + selected additions",
+      "from": "results"
     },
     {
-      "from": "letter",
       "to": "c_letter",
-      "label": "generateLetter(plantNames[], score, zipCode)"
+      "label": "survey + selections + proposal details + sample flag",
+      "from": "results"
     },
     {
-      "from": "c_identify",
+      "to": "client",
+      "label": "shared bounded JSON request",
+      "from": "c_identify"
+    },
+    {
       "to": "r_identify",
-      "label": "POST /identify {image, location}",
-      "detail": "Sends one photo today; the route also accepts `images` (1–5). Returns {result: plant_name, scientific_name, is_native, invasive_status, endangered_status, wildlife_support, wildlife_support_reason, confidence, candidates[], id_source, needs_confirmation, source, why, actions[]}."
+      "label": "POST documented payload → {result} or {error, code}",
+      "from": "c_identify"
     },
     {
-      "from": "c_rec",
+      "to": "client",
+      "label": "shared bounded JSON request",
+      "from": "c_confirm"
+    },
+    {
+      "to": "r_confirm",
+      "label": "POST documented payload → {result} or {error, code}",
+      "from": "c_confirm"
+    },
+    {
+      "to": "client",
+      "label": "shared bounded JSON request",
+      "from": "c_catalog"
+    },
+    {
+      "to": "r_catalog",
+      "label": "POST documented payload → {result} or {error, code}",
+      "from": "c_catalog"
+    },
+    {
+      "to": "client",
+      "label": "shared bounded JSON request",
+      "from": "c_rec"
+    },
+    {
       "to": "r_recommend",
-      "label": "POST /recommend {location}",
-      "detail": "Returns {result: [up to 11 × {plant_name, scientific_name, wildlife_support, problem/action/impact or benefit, source, why}]}. FISC-listed invasives are dropped. Also returns ai_unavailable: true when the list came from the bundled natives because OpenAI was down."
+      "label": "POST documented payload → {result} or {error, code}",
+      "from": "c_rec"
     },
     {
-      "from": "c_score",
+      "to": "client",
+      "label": "shared bounded JSON request",
+      "from": "c_score"
+    },
+    {
       "to": "r_score",
-      "label": "POST /score {plants}",
-      "detail": "Returns {result: score, projected_score, breakdown{helping, hurting, unidentified}, insight, bonuses_applied, plant_count}."
+      "label": "POST documented payload → {result} or {error, code}",
+      "from": "c_score"
     },
     {
-      "from": "c_letter",
+      "to": "client",
+      "label": "shared bounded JSON request",
+      "from": "c_letter"
+    },
+    {
       "to": "r_letter",
-      "label": "POST /letter {plant_names, score, zip_code}",
-      "detail": "Returns {result: letter text, ai_unavailable}."
+      "label": "POST documented payload → {result} or {error, code}",
+      "from": "c_letter"
     },
     {
-      "from": "flask",
+      "to": "empty",
+      "label": "new real/sample audit",
+      "from": "audit"
+    },
+    {
+      "to": "load",
+      "label": "matching audit ID and real/sample slot",
+      "from": "audit"
+    },
+    {
+      "to": "patch",
+      "label": "matching audit ID and real/sample slot",
+      "from": "audit"
+    },
+    {
+      "to": "subscribe",
+      "label": "matching audit ID and real/sample slot",
+      "from": "audit"
+    },
+    {
+      "to": "load",
+      "label": "matching audit ID and real/sample slot",
+      "from": "results"
+    },
+    {
+      "to": "patch",
+      "label": "matching audit ID and real/sample slot",
+      "from": "results"
+    },
+    {
+      "to": "subscribe",
+      "label": "matching audit ID and real/sample slot",
+      "from": "results"
+    },
+    {
+      "to": "save",
+      "label": "initial or reset audit",
+      "from": "audit"
+    },
+    {
+      "to": "flush",
+      "label": "wait before report navigation",
+      "from": "audit"
+    },
+    {
+      "to": "report",
+      "label": "saved audit + server metrics",
+      "from": "results"
+    },
+    {
+      "to": "store",
+      "label": "delegate to shared store",
+      "from": "load"
+    },
+    {
+      "to": "store",
+      "label": "delegate to shared store",
+      "from": "save"
+    },
+    {
+      "to": "store",
+      "label": "delegate to shared store",
+      "from": "patch"
+    },
+    {
+      "to": "store",
+      "label": "delegate to shared store",
+      "from": "subscribe"
+    },
+    {
+      "to": "store",
+      "label": "delegate to shared store",
+      "from": "flush"
+    },
+    {
+      "to": "storage_device",
+      "label": "serialized JSON without photos",
+      "from": "store"
+    },
+    {
+      "to": "r_health",
+      "label": "register endpoint",
+      "from": "flask"
+    },
+    {
       "to": "r_identify",
-      "label": "registers"
+      "label": "register endpoint",
+      "from": "flask"
     },
     {
-      "from": "flask",
+      "to": "r_confirm",
+      "label": "register endpoint",
+      "from": "flask"
+    },
+    {
+      "to": "r_catalog",
+      "label": "register endpoint",
+      "from": "flask"
+    },
+    {
       "to": "r_recommend",
-      "label": "registers"
+      "label": "register endpoint",
+      "from": "flask"
     },
     {
-      "from": "flask",
       "to": "r_score",
-      "label": "registers"
+      "label": "register endpoint",
+      "from": "flask"
     },
     {
-      "from": "flask",
       "to": "r_letter",
-      "label": "registers"
+      "label": "register endpoint",
+      "from": "flask"
     },
     {
-      "from": "r_identify",
+      "to": "v_location",
+      "label": "validate site ZIP",
+      "from": "r_identify"
+    },
+    {
+      "to": "v_location",
+      "label": "validate site ZIP",
+      "from": "r_confirm"
+    },
+    {
+      "to": "v_location",
+      "label": "validate site ZIP",
+      "from": "r_catalog"
+    },
+    {
+      "to": "v_location",
+      "label": "validate site ZIP",
+      "from": "r_recommend"
+    },
+    {
+      "to": "v_location",
+      "label": "validate site ZIP",
+      "from": "r_score"
+    },
+    {
+      "to": "v_location",
+      "label": "validate site ZIP",
+      "from": "r_letter"
+    },
+    {
+      "to": "v_plants",
+      "label": "validate observation list",
+      "from": "r_recommend"
+    },
+    {
+      "to": "v_plants",
+      "label": "validate observation list",
+      "from": "r_score"
+    },
+    {
+      "to": "v_plants",
+      "label": "validate observation list",
+      "from": "r_letter"
+    },
+    {
+      "to": "v_site",
+      "label": "validate site conditions",
+      "from": "r_recommend"
+    },
+    {
+      "to": "v_site",
+      "label": "validate site conditions",
+      "from": "r_letter"
+    },
+    {
+      "to": "v_species",
+      "label": "validate selected taxon lists",
+      "from": "r_score"
+    },
+    {
+      "to": "v_species",
+      "label": "validate selected taxon lists",
+      "from": "r_letter"
+    },
+    {
+      "to": "v_proposal",
+      "label": "validate practical plan",
+      "from": "r_letter"
+    },
+    {
+      "to": "v_text",
+      "label": "validate survey area/date",
+      "from": "r_letter"
+    },
+    {
+      "to": "v_text",
+      "label": "validate scientific name",
+      "from": "r_confirm"
+    },
+    {
+      "to": "v_images",
+      "label": "validate and sanitize photos",
+      "from": "r_identify"
+    },
+    {
+      "to": "limits",
+      "label": "check client/shared identification quotas",
+      "from": "r_identify"
+    },
+    {
+      "to": "v_text",
+      "label": "bounded textual fields",
+      "from": "v_location"
+    },
+    {
+      "to": "v_text",
+      "label": "bounded textual fields",
+      "from": "v_plants"
+    },
+    {
+      "to": "v_text",
+      "label": "bounded textual fields",
+      "from": "v_species"
+    },
+    {
+      "to": "v_text",
+      "label": "bounded textual fields",
+      "from": "v_proposal"
+    },
+    {
       "to": "s_identify",
-      "label": "identify_plant(image, location)"
+      "label": "validated input → result",
+      "from": "r_identify"
     },
     {
-      "from": "r_recommend",
+      "to": "s_confirm",
+      "label": "validated input → result",
+      "from": "r_confirm"
+    },
+    {
+      "to": "s_catalog",
+      "label": "validated input → result",
+      "from": "r_catalog"
+    },
+    {
       "to": "s_rec",
-      "label": "get_plant_recommendations(location)"
+      "label": "validated input → result",
+      "from": "r_recommend"
     },
     {
-      "from": "r_score",
       "to": "s_score",
-      "label": "calculate_biodiversity_score(plants)"
+      "label": "validated input → result",
+      "from": "r_score"
     },
     {
-      "from": "r_letter",
-      "to": "s_letter",
-      "label": "generate_letter(plant_names, score, zip_code)"
+      "to": "s_proposal",
+      "label": "validated input → result",
+      "from": "r_letter"
     },
     {
-      "from": "s_inat",
-      "to": "inat",
-      "label": "GET /v2/observations q=name → ≤100 points",
-      "status": "dead"
-    },
-    {
-      "from": "s_rec",
-      "to": "openai",
-      "label": "ZIP → 11 ranked natives (JSON)"
-    },
-    {
-      "from": "s_letter",
-      "to": "openai",
-      "label": "plant list + ZIP → 1–2 benefit sentences"
-    },
-    {
-      "from": "s_fl",
-      "to": "d_fisc",
-      "label": "match scientific_name"
-    },
-    {
-      "from": "s_fl",
-      "to": "d_natives",
-      "label": "match scientific_name"
-    },
-    {
-      "from": "s_identify",
       "to": "s_species",
-      "label": "identify_species(images, location) → names, confidence, candidates, source, needs_confirmation"
+      "label": "photos + location → candidate identity/review state",
+      "from": "s_identify"
     },
     {
-      "from": "s_identify",
       "to": "s_fl",
-      "label": "get_status(scientific_name, zip) → native, invasive, source, why"
+      "label": "proposed scientific name → Florida evidence",
+      "from": "s_identify"
     },
     {
-      "from": "s_identify",
       "to": "s_assess",
-      "label": "assess_plant(species, status, zip)"
+      "label": "only unsupported taxa → tentative explanation",
+      "from": "s_identify"
     },
     {
-      "from": "s_species",
-      "to": "openai",
-      "label": "unsure: pick from PlantNet's top 5 · PlantNet failed: identify from photos",
-      "detail": "Adjudication sends the photos, ZIP and PlantNet's candidates and accepts only a name from that list. Fallback uses the calibrated vision prompt and returns names, confidence and other candidates."
-    },
-    {
-      "from": "s_assess",
-      "to": "openai",
-      "label": "names + ZIP + known status → wildlife, actions, status guess"
-    },
-    {
-      "from": "s_rec",
       "to": "s_fl",
-      "label": "get_status() per plant → drop invasives, add source + why"
+      "label": "selected exact taxon → refreshed evidence",
+      "from": "s_confirm"
     },
     {
-      "from": "ident",
-      "to": "ui_multiphoto",
-      "label": "sends images[], reads needs_confirmation",
-      "status": "planned"
+      "to": "s_bundled_all",
+      "label": "precise alternatives for ambiguous taxa",
+      "from": "s_confirm"
     },
     {
-      "from": "audit",
-      "to": "ui_multiphoto",
-      "label": "sends images[], reads needs_confirmation",
-      "status": "planned"
+      "to": "s_bundled_all",
+      "label": "all sourced choices",
+      "from": "s_catalog"
     },
     {
-      "from": "s_species",
-      "to": "s_plantnet",
-      "label": "identify_with_plantnet(images) → ranked species + scores"
+      "to": "s_confirm",
+      "label": "fresh status for each option",
+      "from": "s_catalog"
     },
     {
-      "from": "s_plantnet",
-      "to": "plantnet",
-      "label": "POST /v2/identify/all (1–5 photos) → results[]"
+      "to": "s_score",
+      "label": "verified current inventory",
+      "from": "s_rec"
     },
     {
-      "from": "ident",
-      "to": "ui_ai_unknown",
-      "label": "reads ai_unavailable",
-      "status": "planned"
-    },
-    {
-      "from": "audit",
-      "to": "ui_ai_unknown",
-      "label": "reads ai_unavailable",
-      "status": "planned"
-    },
-    {
-      "from": "s_fl",
-      "to": "s_usda",
-      "label": "florida_status(name) → native / introduced / None"
-    },
-    {
-      "from": "s_usda",
-      "to": "usda",
-      "label": "search → profile → FL distribution"
-    },
-    {
-      "from": "r_recommend",
-      "to": "s_fallback_rec",
-      "label": "AIUnavailable → fallback_recommendations(location)"
-    },
-    {
-      "from": "r_letter",
-      "to": "s_letter_noai",
-      "label": "AIUnavailable → generate_letter_without_ai(...)"
-    },
-    {
-      "from": "s_fallback_rec",
       "to": "s_bundled",
-      "label": "bundled_natives() → first 11"
+      "label": "reviewed native candidates",
+      "from": "s_rec"
     },
     {
-      "from": "s_letter_noai",
-      "to": "s_bundled",
-      "label": "bundled_natives() → why lines"
+      "to": "s_fl",
+      "label": "revalidate each exact taxon",
+      "from": "s_rec"
     },
     {
-      "from": "fisc_builder",
+      "to": "s_fl",
+      "label": "scientific names, additions and removals → canonical source records",
+      "from": "s_score"
+    },
+    {
+      "to": "s_rec",
+      "label": "site-constrained eligible selections",
+      "from": "s_proposal"
+    },
+    {
+      "to": "s_fl",
+      "label": "revalidate submitted selections",
+      "from": "s_proposal"
+    },
+    {
+      "to": "s_score",
+      "label": "survey facts + selected inventory scenario",
+      "from": "s_proposal"
+    },
+    {
+      "to": "s_rec",
+      "label": "same inventory/site algorithm",
+      "from": "s_fallback_rec"
+    },
+    {
+      "to": "s_proposal",
+      "label": "selected names + ZIP, ignore obsolete score",
+      "from": "s_letter"
+    },
+    {
+      "to": "s_letter",
+      "label": "compatibility delegation",
+      "from": "s_letter_noai"
+    },
+    {
+      "to": "s_scope",
+      "label": "verify pilot location",
+      "from": "s_fl"
+    },
+    {
+      "to": "d_exceptions",
+      "label": "read source records and exact taxon aliases",
+      "from": "s_fl"
+    },
+    {
       "to": "d_fisc",
-      "label": "writes 179 species from the official PDF"
+      "label": "read source records and exact taxon aliases",
+      "from": "s_fl"
+    },
+    {
+      "to": "d_natives",
+      "label": "read source records and exact taxon aliases",
+      "from": "s_fl"
+    },
+    {
+      "to": "d_exceptions",
+      "label": "read source records and exact taxon aliases",
+      "from": "s_bundled_all"
+    },
+    {
+      "to": "d_fisc",
+      "label": "read source records and exact taxon aliases",
+      "from": "s_bundled_all"
+    },
+    {
+      "to": "d_natives",
+      "label": "read source records and exact taxon aliases",
+      "from": "s_bundled_all"
+    },
+    {
+      "to": "d_natives",
+      "label": "deep-copy native entries",
+      "from": "s_bundled"
+    },
+    {
+      "to": "d_fisc",
+      "label": "reviewed PDF import",
+      "from": "fisc_builder"
+    },
+    {
+      "to": "s_plantnet",
+      "label": "photo bytes → ranked candidates",
+      "from": "s_species"
+    },
+    {
+      "to": "plantnet",
+      "label": "bounded multipart image request",
+      "from": "s_plantnet"
+    },
+    {
+      "to": "s_chat",
+      "label": "candidate adjudication or image fallback",
+      "from": "s_species"
+    },
+    {
+      "to": "s_chat",
+      "label": "unverified explanatory hypothesis",
+      "from": "s_assess"
+    },
+    {
+      "to": "openai",
+      "label": "bounded model request",
+      "from": "s_chat"
+    },
+    {
+      "to": "usda",
+      "label": "optional occurrence/profile research",
+      "from": "s_usda"
+    },
+    {
+      "to": "inat",
+      "label": "legacy observation query",
+      "status": "dead",
+      "from": "s_inat"
+    },
+    {
+      "from": "bootstrap",
+      "to": "boundary",
+      "label": "wrap app rendering"
+    },
+    {
+      "from": "boundary",
+      "to": "app",
+      "label": "render or recover navigation"
+    },
+    {
+      "from": "gunicorn",
+      "to": "flask",
+      "label": "serve app:app with one worker"
+    },
+    {
+      "from": "ident",
+      "to": "catalog_search",
+      "label": "search names and synonyms"
+    },
+    {
+      "from": "audit",
+      "to": "catalog_search",
+      "label": "search names and synonyms"
+    },
+    {
+      "from": "ci_checks",
+      "to": "app",
+      "label": "test and export bundles"
+    },
+    {
+      "from": "ci_checks",
+      "to": "flask",
+      "label": "test bounded API and evidence contracts"
     }
   ]
 }
@@ -1232,19 +2287,19 @@ const G = JSON.parse(document.getElementById('graph-data').textContent);
 const BY_ID = Object.fromEntries(G.nodes.map(n => [n.id, n]));
 // Keep `desc` in step with the Glossary in ARCHITECTURE.md.
 const LAYERS = {
-  ui:     { name: 'Screen / UI',  color: '#2e7d32', where: 'frontend/screens/, AppNavigator.js',
+  ui:     { name: 'Screen / UI',  color: '#2e7d32', where: 'frontend/screens/, frontend/components/, AppNavigator.js',
             desc: 'What the user sees and taps in the Expo app.' },
-  device: { name: 'Device',       color: '#607d8b', where: 'expo-image-picker, expo-clipboard',
-            desc: 'Phone features the app borrows: camera / photo library and clipboard.' },
-  client: { name: 'API client',   color: '#1e6fb8', where: 'frontend/services/',
-            desc: 'Small frontend functions that send requests over the internet to our backend.' },
+  device: { name: 'Device',       color: '#607d8b', where: 'photo picker, image preparation, clipboard/share, local storage',
+            desc: 'Device features for photos, local audit persistence and report sharing.' },
+  client: { name: 'API client',   color: '#1e6fb8', where: 'frontend/services/, frontend/utils/',
+            desc: 'Frontend requests, audit storage and evidence/photo rules.' },
   route:  { name: 'Flask route',  color: '#c77800', where: 'backend/app.py',
             desc: 'A backend URL that receives those requests — the front door of the Python server.' },
   svc:    { name: 'Service',      color: '#7b3fa0', where: 'backend/services/',
             desc: 'Backend functions that do the real work once a route gets a request.' },
-  data:   { name: 'Bundled data', color: '#00897b', where: 'backend/data/*.json (planned)',
+  data:   { name: 'Bundled data', color: '#00897b', where: 'backend/data/*.json',
             desc: 'Data files shipped with the backend instead of fetched online.' },
-  ext:    { name: 'External API', color: '#c0392b', where: 'OpenAI, iNaturalist, Nominatim, USDA (later)',
+  ext:    { name: 'External API', color: '#c0392b', where: 'PlantNet, OpenAI; optional USDA and unused iNaturalist',
             desc: 'Outside services the backend calls over the internet.' },
 };
 const MARKERS = [

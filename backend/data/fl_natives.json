@@ -1,50 +1,656 @@
 {
-  "_comment": "STARTER DATA — VERIFY BEFORE THE DEMO. South Florida native plants with a one-line wildlife payoff. Check every name and claim against UF/IFAS, the Atlas of Florida Plants (https://florida.plantatlas.usf.edu/) and the Florida Native Plant Society before relying on it. Note: the non-native Hamelia patens var. glabra ('African firebush') is also sold as firebush and would match the native entry here. Synonyms are older or alternate names a model may return.",
-  "source": "EcoLoco curated South Florida natives",
+  "_comment": "Source-checked Florida classifications and a bounded South Florida pilot planting catalog. Verified dates record review of the linked evidence, not guarantees of plant identification or unchanged taxonomy.",
+  "source": "Florida Native Plant Society profiles with UF/IFAS and Kew clarifications",
+  "verified_on": "2026-10-17",
+  "scope": "Florida nativity; preliminary school-landscape suggestions within the 330–334 ZIP pilot. Site suitability is conditional, not inferred from ZIP alone.",
+  "planning_method": "Sun and moisture are conservatively simplified from each linked profile. Wet means consistently wet soil; occasional inundation alone is not mapped to wet. Space is a planning estimate from mature spread: small generally up to 4 ft, medium up to 10 ft, large above 10 ft; vines need managed support. Maintenance is an app planning estimate from growth and care notes, not an official rating. All new plantings need establishment care and school/facilities approval.",
+  "wildlife_method": "Documented means a cited feeding, host or shelter relationship. It is neither a high/medium/low ranking nor a count of animals that will visit a site. Unknown indicates this catalog has not checked a relationship, not that the plant has no ecological value.",
   "species": [
-    { "scientific_name": "Zamia integrifolia", "common_name": "Coontie", "synonyms": ["Zamia pumila", "Zamia floridana"],
-      "why": "The only host plant of the Atala butterfly, which was once thought extinct in Florida." },
-    { "scientific_name": "Hamelia patens", "common_name": "Firebush", "synonyms": [],
-      "why": "Tubular red flowers feed hummingbirds and zebra longwing butterflies, and its berries feed songbirds." },
-    { "scientific_name": "Muhlenbergia capillaris", "common_name": "Muhly grass", "synonyms": ["Muhlenbergia filipes"],
-      "why": "Drought-tolerant native grass that shelters ground-feeding birds and holds soil without fertilizer or irrigation." },
-    { "scientific_name": "Asclepias tuberosa", "common_name": "Butterfly milkweed", "synonyms": [],
-      "why": "Native milkweed that monarch and queen butterfly caterpillars need to survive." },
-    { "scientific_name": "Asclepias incarnata", "common_name": "Swamp milkweed", "synonyms": [],
-      "why": "Wet-soil native milkweed that hosts monarch and queen butterfly caterpillars." },
-    { "scientific_name": "Serenoa repens", "common_name": "Saw palmetto", "synonyms": [],
-      "why": "Flowers feed hundreds of pollinator species, and its berries feed bears, deer and birds." },
-    { "scientific_name": "Sabal palmetto", "common_name": "Cabbage palm", "synonyms": [],
-      "why": "Florida's state tree: it rides out hurricanes and its fruit feeds birds, raccoons and bats." },
-    { "scientific_name": "Quercus virginiana", "common_name": "Southern live oak", "synonyms": [],
-      "why": "Keystone tree that feeds hundreds of caterpillar species, the food nesting birds raise their young on." },
-    { "scientific_name": "Coccoloba uvifera", "common_name": "Sea grape", "synonyms": [],
-      "why": "Holds dunes together against storm erosion, and its fruit feeds birds and other wildlife." },
-    { "scientific_name": "Conocarpus erectus", "common_name": "Buttonwood", "synonyms": [],
-      "why": "Salt-tolerant coastal tree that buffers storm surge and shelters wading birds." },
-    { "scientific_name": "Rhizophora mangle", "common_name": "Red mangrove", "synonyms": [],
-      "why": "Its roots break storm surge and shelter the juvenile fish that support Florida's fisheries." },
-    { "scientific_name": "Psychotria nervosa", "common_name": "Wild coffee", "synonyms": [],
-      "why": "Shade-tolerant shrub whose flowers feed pollinators and whose red berries feed birds." },
-    { "scientific_name": "Chrysobalanus icaco", "common_name": "Cocoplum", "synonyms": [],
-      "why": "Salt-tolerant hedge whose fruit feeds birds and small mammals." },
-    { "scientific_name": "Callicarpa americana", "common_name": "American beautyberry", "synonyms": [],
-      "why": "Purple berries feed mockingbirds and other songbirds through fall and winter." },
-    { "scientific_name": "Bursera simaruba", "common_name": "Gumbo limbo", "synonyms": [],
-      "why": "One of the most hurricane-tolerant native trees, and its fruit fuels migrating birds." },
-    { "scientific_name": "Passiflora suberosa", "common_name": "Corkystem passionflower", "synonyms": [],
-      "why": "Host plant for the zebra longwing, Florida's state butterfly, and the gulf fritillary." },
-    { "scientific_name": "Coreopsis leavenworthii", "common_name": "Leavenworth's tickseed", "synonyms": [],
-      "why": "A Florida state wildflower (Coreopsis) that feeds native bees and butterflies." },
-    { "scientific_name": "Spartina bakeri", "common_name": "Sand cordgrass", "synonyms": ["Sporobolus bakeri"],
-      "why": "Clumping grass that filters runoff and holds pond and ditch banks in place." },
-    { "scientific_name": "Tripsacum dactyloides", "common_name": "Fakahatchee grass", "synonyms": [],
-      "why": "Host plant for skipper butterflies, and its dense clumps hold soil on slopes." },
-    { "scientific_name": "Ilex vomitoria", "common_name": "Yaupon holly", "synonyms": [],
-      "why": "Tough, salt-tolerant shrub whose winter berries feed birds when other food is scarce." },
-    { "scientific_name": "Myrcianthes fragrans", "common_name": "Simpson's stopper", "synonyms": [],
-      "why": "Fragrant flowers feed pollinators and its orange berries feed birds; a hurricane-tolerant hedge." },
-    { "scientific_name": "Salvia coccinea", "common_name": "Scarlet sage", "synonyms": [],
-      "why": "Reseeding nectar plant for hummingbirds and butterflies." }
+    {
+      "scientific_name": "Zamia integrifolia",
+      "common_name": "Coontie",
+      "taxon_id": "zamia integrifolia",
+      "synonyms": [
+        "Zamia floridana"
+      ],
+      "native": true,
+      "invasive": false,
+      "recommendable": true,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/zamia-integrifolia",
+      "why_source_url": "https://ask.ifas.ufl.edu/publication/IN326",
+      "requirements_source_url": "https://www.fnps.org/plant/zamia-integrifolia",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "full",
+        "part"
+      ],
+      "moisture": [
+        "dry",
+        "average"
+      ],
+      "min_space": "medium",
+      "maintenance": "low",
+      "wildlife_support": "documented",
+      "wildlife_support_basis": "Documented relationship in the linked source; not a measured campus outcome or comparative ranking.",
+      "why": "Coontie is the Atala butterfly's only Florida-native larval host. Atala caterpillars can also use some nonnative cycads; planting coontie does not guarantee their arrival.",
+      "suitability_notes": "Slow-growing cycad, typically 3–5 ft wide. Use nursery-grown plants in well-drained soil. Seeds, foliage and roots are toxic; choose a school-approved location. Water during establishment.",
+      "taxonomy_notes": "Zamia floridana is an older name for Florida coontie. Zamia pumila is not automatically merged: Kew accepts a separate Greater Antillean species under that name, while some Florida references use it differently.",
+      "taxonomy_source_url": "https://powo.science.kew.org/taxon/urn:lsid:ipni.org:names:270561-2"
+    },
+    {
+      "scientific_name": "Hamelia patens var. patens",
+      "common_name": "Florida firebush",
+      "taxon_id": "hamelia patens var. patens",
+      "synonyms": [
+        "Hamelia patens"
+      ],
+      "native": true,
+      "invasive": false,
+      "recommendable": true,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/hamelia-patens",
+      "why_source_url": "https://www.fnps.org/plant/hamelia-patens",
+      "requirements_source_url": "https://www.fnps.org/plant/hamelia-patens",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "full",
+        "part"
+      ],
+      "moisture": [
+        "average"
+      ],
+      "min_space": "medium",
+      "maintenance": "moderate",
+      "wildlife_support": "documented",
+      "wildlife_support_basis": "Documented relationship in the linked source; not a measured campus outcome or comparative ranking.",
+      "why": "Florida firebush offers nectar to hummingbirds and butterflies, while its fruits are eaten by birds and small mammals.",
+      "suitability_notes": "Allow about 10 ft of mature width or plan selective pruning. Water until established. Obtain the Florida-native variety from a nursery that can confirm its identity.",
+      "taxonomy_notes": "The unqualified species name does not distinguish the native variety from nonnative var. glabra. Confirm the variety before counting a photographed plant as native.",
+      "taxonomy_source_url": "https://blogs.ifas.ufl.edu/duvalco/2025/06/13/4-flowering-shrubs-for-your-florida-friendly-yard/"
+    },
+    {
+      "scientific_name": "Muhlenbergia capillaris",
+      "common_name": "Muhly grass",
+      "taxon_id": "muhlenbergia capillaris",
+      "synonyms": [],
+      "native": true,
+      "invasive": false,
+      "recommendable": true,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/muhlenbergia-capillaris",
+      "why_source_url": "https://www.fnps.org/plant/muhlenbergia-capillaris",
+      "requirements_source_url": "https://www.fnps.org/plant/muhlenbergia-capillaris",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "full",
+        "part"
+      ],
+      "moisture": [
+        "dry",
+        "average"
+      ],
+      "min_space": "small",
+      "maintenance": "low",
+      "wildlife_support": "documented",
+      "wildlife_support_basis": "Documented relationship in the linked source; not a measured campus outcome or comparative ranking.",
+      "why": "Muhly grass forms shelter for small animals, and small birds feed on its seeds.",
+      "suitability_notes": "Clumps reach about 3.5 ft wide. Drought tolerance applies after establishment; irrigation needs depend on soil, weather and establishment. Occasional inundation tolerance is not a recommendation for continuously wet soil.",
+      "taxonomy_notes": "The FNPS profile includes several infraspecific forms; nursery stock is commonly var. capillaris. Muhlenbergia filipes is not silently treated as an identical species."
+    },
+    {
+      "scientific_name": "Asclepias tuberosa",
+      "common_name": "Butterfly milkweed",
+      "taxon_id": "asclepias tuberosa",
+      "synonyms": [
+        "Asclepias tuberosa subsp. rolfsii",
+        "Asclepias tuberosa var. rolfsii",
+        "Asclepias rolfsii"
+      ],
+      "native": true,
+      "invasive": false,
+      "recommendable": true,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/asclepias-tuberosa",
+      "why_source_url": "https://www.fnps.org/plant/asclepias-tuberosa",
+      "requirements_source_url": "https://www.fnps.org/plant/asclepias-tuberosa",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "full"
+      ],
+      "moisture": [
+        "dry",
+        "average"
+      ],
+      "min_space": "small",
+      "maintenance": "moderate",
+      "wildlife_support": "documented",
+      "wildlife_support_basis": "Documented relationship in the linked source; not a measured campus outcome or comparative ranking.",
+      "why": "A larval host for monarch, queen and soldier butterflies; its flowers also attract bees and other pollinators.",
+      "suitability_notes": "Typically 0.5–1.5 ft wide. Choose Florida-provenance stock and well-drained soil; establishment can be difficult. Seasonal dormancy is normal. Keep milkweed away from places where children or pets may ingest it.",
+      "taxonomy_notes": "Kew explicitly records subsp. rolfsii as native to Florida and var. rolfsii/Asclepias rolfsii as synonyms. This survey aggregates those names at species level; it does not discard arbitrary subspecies.",
+      "taxonomy_source_url": "https://powo.science.kew.org/taxon/21318-2"
+    },
+    {
+      "scientific_name": "Asclepias incarnata",
+      "common_name": "Swamp milkweed",
+      "taxon_id": "asclepias incarnata",
+      "synonyms": [],
+      "native": true,
+      "invasive": false,
+      "recommendable": true,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/asclepias-incarnata",
+      "why_source_url": "https://www.fnps.org/plant/asclepias-incarnata",
+      "requirements_source_url": "https://www.fnps.org/plant/asclepias-incarnata",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "full",
+        "part"
+      ],
+      "moisture": [
+        "wet"
+      ],
+      "min_space": "small",
+      "maintenance": "moderate",
+      "wildlife_support": "documented",
+      "wildlife_support_basis": "Documented relationship in the linked source; not a measured campus outcome or comparative ranking.",
+      "why": "Swamp milkweed is a host for monarch and queen caterpillars and a nectar resource for pollinators, including native bees.",
+      "suitability_notes": "Typically 1.5–2 ft wide. Needs consistently moist to wet soil; do not substitute it into a dry bed. Seasonal dormancy is normal. Toxic if ingested; placement needs school review."
+    },
+    {
+      "scientific_name": "Serenoa repens",
+      "common_name": "Saw palmetto",
+      "taxon_id": "serenoa repens",
+      "synonyms": [],
+      "native": true,
+      "invasive": false,
+      "recommendable": true,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/serenoa-repens",
+      "why_source_url": "https://www.fnps.org/plant/serenoa-repens",
+      "requirements_source_url": "https://www.fnps.org/plant/serenoa-repens",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "full",
+        "part"
+      ],
+      "moisture": [
+        "dry",
+        "average"
+      ],
+      "min_space": "medium",
+      "maintenance": "low",
+      "wildlife_support": "documented",
+      "wildlife_support_basis": "Documented relationship in the linked source; not a measured campus outcome or comparative ranking.",
+      "why": "Saw palmetto is a host for monk and palmetto skippers and provides nectar for bees and butterflies.",
+      "suitability_notes": "A spreading, clonal palm with sharp leaf stalks; allow up to 10 ft of width and keep away from walkways. Use nursery-grown plants and provide establishment water."
+    },
+    {
+      "scientific_name": "Sabal palmetto",
+      "common_name": "Cabbage palm",
+      "taxon_id": "sabal palmetto",
+      "synonyms": [],
+      "native": true,
+      "invasive": false,
+      "recommendable": true,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/sabal-palmetto",
+      "why_source_url": "https://www.fnps.org/plant/sabal-palmetto",
+      "requirements_source_url": "https://www.fnps.org/plant/sabal-palmetto",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "full",
+        "part",
+        "shade"
+      ],
+      "moisture": [
+        "dry",
+        "average"
+      ],
+      "min_space": "large",
+      "maintenance": "moderate",
+      "wildlife_support": "documented",
+      "wildlife_support_basis": "Documented relationship in the linked source; not a measured campus outcome or comparative ranking.",
+      "why": "Flowers attract pollinators; seeds feed small mammals, and the palm offers nesting or roosting habitat to birds and bats.",
+      "suitability_notes": "A large palm with a 10–20 ft crown. Fronds and flower stalks fall; facilities staff should approve placement and long-term care. Retaining habitat features depends on site safety."
+    },
+    {
+      "scientific_name": "Quercus virginiana",
+      "common_name": "Southern live oak",
+      "taxon_id": "quercus virginiana",
+      "synonyms": [],
+      "native": true,
+      "invasive": false,
+      "recommendable": true,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/quercus-virginiana",
+      "why_source_url": "https://www.fnps.org/plant/quercus-virginiana",
+      "requirements_source_url": "https://www.fnps.org/plant/quercus-virginiana",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "full",
+        "part",
+        "shade"
+      ],
+      "moisture": [
+        "dry",
+        "average"
+      ],
+      "min_space": "large",
+      "maintenance": "moderate",
+      "wildlife_support": "documented",
+      "wildlife_support_basis": "Documented relationship in the linked source; not a measured campus outcome or comparative ranking.",
+      "why": "Live oak hosts several butterfly caterpillars. Its acorns feed birds and mammals, and its branches provide nesting habitat.",
+      "suitability_notes": "A long-lived tree with a potential 40–100 ft crown. Requires a large permanent planting area, utility clearance and facilities review; a small garden bed is unsuitable."
+    },
+    {
+      "scientific_name": "Coccoloba uvifera",
+      "common_name": "Sea grape",
+      "taxon_id": "coccoloba uvifera",
+      "synonyms": [],
+      "native": true,
+      "invasive": false,
+      "recommendable": true,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/coccoloba-uvifera",
+      "why_source_url": "https://www.fnps.org/plant/coccoloba-uvifera",
+      "requirements_source_url": "https://www.fnps.org/plant/coccoloba-uvifera",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "full",
+        "part"
+      ],
+      "moisture": [
+        "dry",
+        "average"
+      ],
+      "min_space": "large",
+      "maintenance": "moderate",
+      "wildlife_support": "documented",
+      "wildlife_support_basis": "Documented relationship in the linked source; not a measured campus outcome or comparative ranking.",
+      "why": "Sea grape flowers attract bees and butterflies; its fruit feeds birds and other wildlife.",
+      "suitability_notes": "Can spread to about 35 ft wide. Coastal salt spray tolerance does not mean tolerance of flooding. Male and female plants are needed for fruit, and leaf litter needs space."
+    },
+    {
+      "scientific_name": "Conocarpus erectus",
+      "common_name": "Buttonwood",
+      "taxon_id": "conocarpus erectus",
+      "synonyms": [],
+      "native": true,
+      "invasive": false,
+      "recommendable": true,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/conocarpus-erectus",
+      "why_source_url": "https://www.fnps.org/plant/conocarpus-erectus",
+      "requirements_source_url": "https://www.fnps.org/plant/conocarpus-erectus",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "full"
+      ],
+      "moisture": [
+        "dry",
+        "average"
+      ],
+      "min_space": "large",
+      "maintenance": "moderate",
+      "wildlife_support": "documented",
+      "wildlife_support_basis": "Documented relationship in the linked source; not a measured campus outcome or comparative ranking.",
+      "why": "Buttonwood provides nectar and is a host for martial scrub-hairstreak and tantalus sphinx caterpillars.",
+      "suitability_notes": "Potentially 20–40 ft wide as a tree. Confirm room, soil and intended pruning before choosing a hedge or tree form. Coastal occurrence alone does not establish suitability for a wet garden."
+    },
+    {
+      "scientific_name": "Rhizophora mangle",
+      "common_name": "Red mangrove",
+      "taxon_id": "rhizophora mangle",
+      "synonyms": [],
+      "native": true,
+      "invasive": false,
+      "recommendable": false,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/rhizophora-mangle",
+      "why_source_url": "https://www.fnps.org/plant/rhizophora-mangle",
+      "requirements_source_url": "https://www.fnps.org/plant/rhizophora-mangle",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "full"
+      ],
+      "moisture": [
+        "wet"
+      ],
+      "min_space": "large",
+      "maintenance": "moderate",
+      "wildlife_support": "documented",
+      "wildlife_support_basis": "Documented relationship in the linked source; not a measured campus outcome or comparative ranking.",
+      "why": "Red mangrove is a host for mangrove skipper caterpillars and provides cover for fish, birds and other animals in suitable shoreline habitat.",
+      "suitability_notes": "Classification only: specialized shoreline habitat and protected mangrove management require qualified review. Excluded from ordinary school-garden recommendations."
+    },
+    {
+      "scientific_name": "Psychotria nervosa",
+      "common_name": "Wild coffee",
+      "taxon_id": "psychotria nervosa",
+      "synonyms": [],
+      "native": true,
+      "invasive": false,
+      "recommendable": true,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/psychotria-nervosa",
+      "why_source_url": "https://www.fnps.org/plant/psychotria-nervosa",
+      "requirements_source_url": "https://www.fnps.org/plant/psychotria-nervosa",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "part",
+        "shade"
+      ],
+      "moisture": [
+        "average"
+      ],
+      "min_space": "small",
+      "maintenance": "low",
+      "wildlife_support": "documented",
+      "wildlife_support_basis": "Documented relationship in the linked source; not a measured campus outcome or comparative ranking.",
+      "why": "Wild coffee flowers are nectar resources for butterflies and other pollinators; birds eat its fruit.",
+      "suitability_notes": "Typically 1.5–3 ft wide. Suited to partial sun or shade; avoid constant full sun and prolonged dryness. Water until established. It is not a coffee substitute."
+    },
+    {
+      "scientific_name": "Chrysobalanus icaco",
+      "common_name": "Cocoplum",
+      "taxon_id": "chrysobalanus icaco",
+      "synonyms": [],
+      "native": true,
+      "invasive": false,
+      "recommendable": true,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/chrysobalanus-icaco",
+      "why_source_url": "https://www.fnps.org/plant/chrysobalanus-icaco",
+      "requirements_source_url": "https://www.fnps.org/plant/chrysobalanus-icaco",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "full",
+        "part"
+      ],
+      "moisture": [
+        "dry",
+        "average"
+      ],
+      "min_space": "large",
+      "maintenance": "moderate",
+      "wildlife_support": "documented",
+      "wildlife_support_basis": "Documented relationship in the linked source; not a measured campus outcome or comparative ranking.",
+      "why": "Cocoplum attracts pollinators, supplies fruit to birds and other wildlife, and forms dense cover.",
+      "suitability_notes": "The species can reach 10–20 ft wide. Hedge size depends on the form and pruning; allow mature room instead of assuming every nursery cultivar stays small."
+    },
+    {
+      "scientific_name": "Callicarpa americana",
+      "common_name": "American beautyberry",
+      "taxon_id": "callicarpa americana",
+      "synonyms": [],
+      "native": true,
+      "invasive": false,
+      "recommendable": true,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/callicarpa-americana",
+      "why_source_url": "https://www.fnps.org/plant/callicarpa-americana",
+      "requirements_source_url": "https://www.fnps.org/plant/callicarpa-americana",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "full",
+        "part"
+      ],
+      "moisture": [
+        "dry",
+        "average"
+      ],
+      "min_space": "medium",
+      "maintenance": "moderate",
+      "wildlife_support": "documented",
+      "wildlife_support_basis": "Documented relationship in the linked source; not a measured campus outcome or comparative ranking.",
+      "why": "Beautyberry flowers attract pollinators and its fruits feed birds including catbirds, mockingbirds and robins.",
+      "suitability_notes": "Typically 3–6 ft wide. Allow a natural shrub shape; seasonal cutback may improve form and flowering. Provide establishment water."
+    },
+    {
+      "scientific_name": "Bursera simaruba",
+      "common_name": "Gumbo limbo",
+      "taxon_id": "bursera simaruba",
+      "synonyms": [],
+      "native": true,
+      "invasive": false,
+      "recommendable": true,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/bursera-simaruba",
+      "why_source_url": "https://www.fnps.org/plant/bursera-simaruba",
+      "requirements_source_url": "https://www.fnps.org/plant/bursera-simaruba",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "full",
+        "part"
+      ],
+      "moisture": [
+        "dry",
+        "average"
+      ],
+      "min_space": "large",
+      "maintenance": "moderate",
+      "wildlife_support": "documented",
+      "wildlife_support_basis": "Documented relationship in the linked source; not a measured campus outcome or comparative ranking.",
+      "why": "Gumbo limbo hosts dingy purplewing caterpillars, attracts insect pollinators, and produces fruit eaten by flycatchers.",
+      "suitability_notes": "A large shade tree, often 20–30 ft wide and potentially wider. Plan permanent clearance and long-term tree care with facilities staff."
+    },
+    {
+      "scientific_name": "Passiflora suberosa",
+      "common_name": "Corkystem passionflower",
+      "taxon_id": "passiflora suberosa",
+      "synonyms": [],
+      "native": true,
+      "invasive": false,
+      "recommendable": true,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/passiflora-suberosa",
+      "why_source_url": "https://www.fnps.org/plant/passiflora-suberosa",
+      "requirements_source_url": "https://www.fnps.org/plant/passiflora-suberosa",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "full",
+        "part"
+      ],
+      "moisture": [
+        "dry",
+        "average"
+      ],
+      "min_space": "medium",
+      "maintenance": "moderate",
+      "wildlife_support": "documented",
+      "wildlife_support_basis": "Documented relationship in the linked source; not a measured campus outcome or comparative ranking.",
+      "why": "A larval host for gulf fritillary, julia and zebra longwing butterflies; its flowers are pollinated by bees.",
+      "suitability_notes": "A vine that can reach about 15 ft. Provide an approved trellis or managed groundcover space and monitor spreading growth. Allow caterpillars to eat leaves."
+    },
+    {
+      "scientific_name": "Coreopsis leavenworthii",
+      "common_name": "Leavenworth's tickseed",
+      "taxon_id": "coreopsis leavenworthii",
+      "synonyms": [],
+      "native": true,
+      "invasive": false,
+      "recommendable": true,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/coreopsis-leavenworthii",
+      "why_source_url": "https://www.fnps.org/plant/coreopsis-leavenworthii",
+      "requirements_source_url": "https://www.fnps.org/plant/coreopsis-leavenworthii",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "full"
+      ],
+      "moisture": [
+        "average"
+      ],
+      "min_space": "small",
+      "maintenance": "moderate",
+      "wildlife_support": "documented",
+      "wildlife_support_basis": "Documented relationship in the linked source; not a measured campus outcome or comparative ranking.",
+      "why": "Tickseed flowers supply nectar and pollen to native bees, wasps and small butterflies.",
+      "suitability_notes": "Typically 0.5–1.5 ft wide. Use a sunny, moist but unflooded bed. This annual or short-lived perennial reseeds, so plan seasonal management."
+    },
+    {
+      "scientific_name": "Spartina bakeri",
+      "common_name": "Sand cordgrass",
+      "taxon_id": "spartina bakeri",
+      "synonyms": [
+        "Sporobolus bakeri"
+      ],
+      "native": true,
+      "invasive": false,
+      "recommendable": false,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/spartina-bakeri",
+      "why_source_url": "https://www.fnps.org/plant/spartina-bakeri",
+      "requirements_source_url": "https://www.fnps.org/plant/spartina-bakeri",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "full"
+      ],
+      "moisture": [
+        "average"
+      ],
+      "min_space": "medium",
+      "maintenance": "moderate",
+      "wildlife_support": "unknown",
+      "wildlife_support_basis": "No species-specific wildlife relationship verified in this catalog.",
+      "why": "A Florida-native clumping grass associated with wet prairies and marsh edges. This catalog has not verified a species-specific wildlife relationship.",
+      "suitability_notes": "Classification only until wildlife benefit and site requirements receive a fuller review. Large clumps require space; occasional inundation does not mean permanently submerged planting.",
+      "taxonomy_source_url": "https://powo.science.kew.org/taxon/urn:lsid:ipni.org:names:77144708-1",
+      "taxonomy_notes": "Kew accepts Sporobolus bakeri with Spartina bakeri as its synonym. Both resolve to the same survey taxon."
+    },
+    {
+      "scientific_name": "Tripsacum dactyloides",
+      "common_name": "Fakahatchee grass",
+      "taxon_id": "tripsacum dactyloides",
+      "synonyms": [],
+      "native": true,
+      "invasive": false,
+      "recommendable": true,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/tripsacum-dactyloides",
+      "why_source_url": "https://www.fnps.org/plant/tripsacum-dactyloides",
+      "requirements_source_url": "https://www.fnps.org/plant/tripsacum-dactyloides",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "full",
+        "part"
+      ],
+      "moisture": [
+        "average"
+      ],
+      "min_space": "small",
+      "maintenance": "low",
+      "wildlife_support": "documented",
+      "wildlife_support_basis": "Documented relationship in the linked source; not a measured campus outcome or comparative ranking.",
+      "why": "Fakahatchee grass is a host for several skipper butterflies and provides cover for small animals.",
+      "suitability_notes": "Typically 2–4 ft wide and 4–6 ft tall. Useful in a moist planting area with room for upright clumps. Water until established; clean up cold-damaged growth as needed."
+    },
+    {
+      "scientific_name": "Ilex vomitoria",
+      "common_name": "Yaupon holly",
+      "taxon_id": "ilex vomitoria",
+      "synonyms": [],
+      "native": true,
+      "invasive": false,
+      "recommendable": false,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/ilex-vomitoria",
+      "why_source_url": "https://www.fnps.org/plant/ilex-vomitoria",
+      "requirements_source_url": "https://www.fnps.org/plant/ilex-vomitoria",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "full",
+        "part"
+      ],
+      "moisture": [
+        "dry",
+        "average"
+      ],
+      "min_space": "medium",
+      "maintenance": "moderate",
+      "wildlife_support": "documented",
+      "wildlife_support_basis": "Documented relationship in the linked source; not a measured campus outcome or comparative ranking.",
+      "why": "Yaupon flowers are visited by bees, and birds eat the fruits on female plants.",
+      "suitability_notes": "Classification only in this South Florida pilot: the FNPS profile lists suitability through zone 10A, while pilot ZIP areas also include warmer zones. Female plants need a nearby male for fruit."
+    },
+    {
+      "scientific_name": "Myrcianthes fragrans",
+      "common_name": "Simpson's stopper",
+      "taxon_id": "myrcianthes fragrans",
+      "synonyms": [],
+      "native": true,
+      "invasive": false,
+      "recommendable": true,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/myrcianthes-fragrans",
+      "why_source_url": "https://www.fnps.org/plant/myrcianthes-fragrans",
+      "requirements_source_url": "https://www.fnps.org/plant/myrcianthes-fragrans",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "full",
+        "part"
+      ],
+      "moisture": [
+        "dry",
+        "average"
+      ],
+      "min_space": "large",
+      "maintenance": "moderate",
+      "wildlife_support": "documented",
+      "wildlife_support_basis": "Documented relationship in the linked source; not a measured campus outcome or comparative ranking.",
+      "why": "Simpson's stopper flowers attract bees and butterflies, and its fruits feed birds.",
+      "suitability_notes": "Mature width varies from about 3 to 15 ft. Confirm the nursery form and allow room for suckers and seedlings; do not assume a small cultivar from species identity alone."
+    },
+    {
+      "scientific_name": "Phyla nodiflora",
+      "common_name": "Frogfruit",
+      "taxon_id": "phyla nodiflora",
+      "synonyms": [],
+      "native": true,
+      "invasive": false,
+      "recommendable": true,
+      "source": "Florida Native Plant Society",
+      "source_url": "https://www.fnps.org/plant/phyla-nodiflora",
+      "why_source_url": "https://www.fnps.org/plant/phyla-nodiflora",
+      "requirements_source_url": "https://www.fnps.org/plant/phyla-nodiflora",
+      "verified_on": "2026-10-17",
+      "status_scope": "Florida",
+      "sun": [
+        "full",
+        "part"
+      ],
+      "moisture": [
+        "average"
+      ],
+      "min_space": "small",
+      "maintenance": "low",
+      "wildlife_support": "documented",
+      "wildlife_support_basis": "Documented relationship in the linked source; not a measured campus outcome or comparative ranking.",
+      "why": "Frogfruit hosts common buckeye, phaon crescent and white peacock caterpillars and offers nectar to many butterflies.",
+      "suitability_notes": "Low, spreading groundcover, about 6 inches tall. Use in low-traffic areas; it is not a play-field replacement. Edge the planting to manage spread and water during establishment."
+    }
   ]
 }
