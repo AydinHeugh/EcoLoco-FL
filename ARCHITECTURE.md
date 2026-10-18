@@ -79,6 +79,14 @@ flowchart LR
     page["AuditPage"]
     bootstrap["App"]
     boundary["AppErrorBoundary"]
+    home_entry["Entry"]
+    home_feature["FeatureRow"]
+    audit_details["revealSiteDetails()"]
+    site_selection["selectValue()"]
+    plant_option["PlantOption"]
+    recommendation_card["RecommendationCard"]
+    scan_another["scanAnotherPlant()"]
+    remove_photo["removePhoto()"]
   end
   subgraph L_device["Device"]
     direction TB
@@ -114,6 +122,7 @@ flowchart LR
     u_files["validatePhotoFiles()"]
     u_bytes["base64ByteLength()"]
     catalog_search["Catalog name search"]
+    evidence_text["evidenceText()"]
   end
   subgraph L_route["Flask routes"]
     direction TB
@@ -179,20 +188,19 @@ flowchart LR
   app -->|"screen navigation"| rec
   app -->|"screen navigation"| results
   home -->|"start/resume real survey or sample mode"| audit
-  home -->|"identify one plant"| ident
+  home -->|"Scan a plant / Identification → Camera"| ident
   home -->|"explore planting options"| rec
   ident -->|"ZIP and planting context"| rec
   audit -->|"audit ID + sample flag after saves flush"| results
   ident -->|"photos + error/change callbacks"| photo
   ident -->|"plant result + confirm/retake callbacks"| evidence
   audit -->|"photos + error/change callbacks"| photo
-  audit -->|"plant result + confirm/retake callbacks"| evidence
+  audit -->|"compact plant record + confirm callback + field-note child"| evidence
   audit -->|"site conditions + edit callback"| site
   rec -->|"site conditions + edit callback"| site
   audit -->|"shared accessible audit controls"| button
   audit -->|"shared accessible audit controls"| field
   audit -->|"shared accessible audit controls"| notice
-  audit -->|"shared accessible audit controls"| page
   results -->|"shared accessible audit controls"| button
   results -->|"shared accessible audit controls"| field
   results -->|"shared accessible audit controls"| notice
@@ -322,6 +330,18 @@ flowchart LR
   audit -->|"search names and synonyms"| catalog_search
   ci_checks -->|"test and export bundles"| app
   ci_checks -->|"test bounded API and evidence contracts"| flask
+  home -->|"hero entry"| home_entry
+  home -->|"feature content and navigation"| home_feature
+  home_feature -->|"reduced-motion-aware section entry"| home_entry
+  audit -->|"finish validation → missing field message"| audit_details
+  site -->|"selected site field/value"| site_selection
+  results -->|"native option, selected state, callbacks"| plant_option
+  rec -->|"native option record"| recommendation_card
+  recommendation_card -->|"status, wildlife and growing sources"| evidence_link
+  evidence -->|"provider field → safe readable text"| evidence_text
+  ident -->|"retake / Scan another plant"| scan_another
+  scan_another -->|"new photoSession remount"| photo
+  photo -->|"selected photo index"| remove_photo
   classDef ui fill:#e3f2e1,stroke:#2e7d32,color:#12301a
   classDef device fill:#eceff1,stroke:#607d8b,color:#263238
   classDef client fill:#e1effa,stroke:#1e6fb8,color:#0d2d4d
@@ -331,9 +351,9 @@ flowchart LR
   classDef ext fill:#fde4e1,stroke:#c0392b,color:#4a0f08
   classDef planned stroke-dasharray:6 4,stroke-width:2px
   classDef dead fill:#f3f3f3,stroke:#9e9e9e,color:#616161,stroke-dasharray:3 3
-  class app,home,ident,audit,results,rec,photo,prepare,evidence,evidence_link,site,button,field,notice,page,bootstrap,boundary ui
+  class app,home,ident,audit,results,rec,photo,prepare,evidence,evidence_link,site,button,field,notice,page,bootstrap,boundary,home_entry,home_feature,audit_details,site_selection,plant_option,recommendation_card,scan_another,remove_photo ui
   class picker,manipulator,clipboard,storage_device device
-  class client,c_identify,c_confirm,c_catalog,c_score,c_rec,c_letter,c_local,empty,store,load,save,patch,subscribe,flush,report,u_review,u_status,u_provider,u_url,u_candidates,u_count,u_files,u_bytes,catalog_search client
+  class client,c_identify,c_confirm,c_catalog,c_score,c_rec,c_letter,c_local,empty,store,load,save,patch,subscribe,flush,report,u_review,u_status,u_provider,u_url,u_candidates,u_count,u_files,u_bytes,catalog_search,evidence_text client
   class flask,r_health,r_identify,r_confirm,r_catalog,r_recommend,r_score,r_letter,gunicorn route
   class s_identify,s_confirm,s_catalog,s_rec,s_score,s_proposal,s_assess,s_fallback_rec,s_letter,s_letter_noai,s_species,s_plantnet,s_chat,s_fl,s_scope,s_bundled,s_bundled_all,s_usda,s_usda_guard,s_inat,v_text,v_location,v_plants,v_species,v_site,v_proposal,v_images,limits svc
   class d_exceptions,d_fisc,d_natives,fisc_builder data

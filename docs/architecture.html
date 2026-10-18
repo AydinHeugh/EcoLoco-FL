@@ -160,11 +160,12 @@
       "symbol": "export default function HomeScreen",
       "col": 1,
       "row": 0,
-      "what": "Lead into a campus survey or a clearly labeled sample.",
+      "what": "Welcome page with photo scanning first and links to the other tools.",
       "how": [
-        "Open EcoScan with the real/sample mode flag.",
-        "Explain Survey → Review → Propose and the ZIP-prefix pilot scope.",
-        "Link standalone identification and planting options without making provider requests."
+        "Show the EcoLoco welcome, Scan a plant action, and sample-audit link.",
+        "Use alternating image/text rows for identification, pollinators, native planting and EcoScan.",
+        "Animate entry only when reduced motion is not requested; retain readable font fallbacks.",
+        "Navigate to Camera, Recommend or real/sample EcoScan without making provider calls."
       ]
     },
     {
@@ -176,12 +177,15 @@
       "symbol": "export default function IdentificationScreen",
       "col": 1,
       "row": 1.35,
-      "what": "Identify one plant and review separate identification and status evidence.",
+      "what": "Identify one plant from a prominent photo preview and review its evidence.",
       "how": [
-        "Validate a supported ZIP; prepare one to five photos of the same plant.",
-        "Call identifyPlant with cancellation; ignore stale responses after input changes.",
-        "Show source links, candidate choices, uncertainty and provider availability.",
-        "Confirm a candidate through a new server lookup or retake photos; link planting options."
+        "Keep the photo controls and supported ZIP close to the identification action.",
+        "Disable Identify until photos and a supported ZIP are present; show concise loading and recovery text.",
+        "Call identifyPlant with cancellation; ignore stale results after photo, location or screen changes.",
+        "Lead results with the species/status and expand Review match or Details & sources when needed.",
+        "Confirm a candidate through a fresh server lookup, retake photos, or search sourced catalog choices.",
+        "Link planting options with the observed result and open EcoScan for several plants.",
+        "Scan another plant cancels active work and clears the stage while preserving the ZIP."
       ]
     },
     {
@@ -193,13 +197,15 @@
       "symbol": "export default function AuditScreen",
       "col": 1,
       "row": 2.7,
-      "what": "Collect a persistent survey with sources, site conditions and reviewable observations.",
+      "what": "Collect a saved EcoScan with photo controls first and supporting details on demand.",
       "how": [
-        "Load the real or sample audit from separate device-storage slots; subscribe to changes.",
-        "Record area, date, ZIP and site conditions; use photos or search the sourced catalog.",
-        "Preview identification, confirm alternatives through the server, and add resolved or unresolved observations.",
-        "Persist facts and notes without photo data; show save failures and explicit reset confirmation.",
-        "Flush pending saves before navigating to the report with the audit ID."
+        "Load real/sample audit slots separately and subscribe to saved edits.",
+        "Lead with ZIP, a large photo preview, camera/upload controls and optional known-plant selection.",
+        "Preview identification and save resolved or unresolved observations; render saved plants in compact evidence rows.",
+        "Keep area, date and the four site selectors under Site details; expand and scroll there when Finish audit finds missing required information.",
+        "Place observation notes inside the plant evidence details; preserve sources, confirmation and delete controls.",
+        "Persist facts without photo payloads; show brief save errors and confirm New scan resets.",
+        "Flush saves before opening results with the audit ID and sample flag."
       ]
     },
     {
@@ -211,13 +217,14 @@
       "symbol": "export default function AuditResultsScreen",
       "col": 1,
       "row": 4.050000000000001,
-      "what": "Turn the saved survey into a source-linked, editable proposal.",
+      "what": "Present the verified survey metric, native choices and editable letter in compact sections.",
       "how": [
-        "Load the matching saved audit; calculate the current metric and selected-additions scenario on the server.",
-        "Request native options using inventory and site conditions; keep request failures separate and retryable.",
-        "Persist choices and practical proposal details; generate a factual draft and preserve user edits.",
-        "Mark drafts stale after evidence or planning changes and confirm before regeneration.",
-        "Export a text report or native share sheet; label sample data throughout."
+        "Load the saved audit and request the same server-calculated native-share metric and selected-additions scenario.",
+        "Keep the previous calculation while additions refresh; label stale scenarios and disable complete-report export until the result matches current inputs. Clear obsolete inventory results.",
+        "Keep source inventory, limitations and unresolved reasons under Sources & survey details.",
+        "Show three native options first, expand further choices on demand, and put growing evidence behind each option’s details control.",
+        "Keep practical planning and recipient fields under optional Personalize letter; preserve factual generation, saved edits, stale-draft review and regeneration confirmation.",
+        "Export the complete report or copy the letter; label sample observations and do not send anything automatically."
       ]
     },
     {
@@ -229,12 +236,12 @@
       "symbol": "export default function RecommendationScreen",
       "col": 1,
       "row": 5.4,
-      "what": "Browse native options against real site constraints.",
+      "what": "Browse three concise native options first, with growing evidence available on demand.",
       "how": [
-        "Accept supported ZIP, site conditions and optional observed plants.",
-        "Cancel requests and clear old options when inputs change.",
-        "Render complete alphabetically ordered cards with sources, requirements and unknown-site notices.",
-        "Show the first three options, with a control to expand the complete returned set."
+        "Accept supported ZIP, optional observed plants and four compact site selectors.",
+        "Cancel and clear old options when ZIP or site inputs change; call the unchanged recommendation API.",
+        "Render alphabetically ordered plant cards with a short benefit and a Growing details & sources disclosure.",
+        "Expand additional returned plants and the explanation of selection rules without changing the site filters."
       ]
     },
     {
@@ -246,11 +253,12 @@
       "symbol": "export default function PhotoPicker",
       "col": 2,
       "row": 0,
-      "what": "Select and prepare one to five photos of one plant.",
+      "what": "Show a large first photo with additional thumbnails and direct camera/upload actions.",
       "how": [
-        "Handle camera permission, library selection and web drag/drop.",
-        "Validate original file type/size/count, then prepare JPEG copies.",
-        "Ignore late preparation results after the picker changes or unmounts; show inline errors."
+        "Handle camera permissions, library selection and web drag/drop without changing upload bounds.",
+        "Validate original photo type, size and count, then prepare JPEG copies.",
+        "Show the first photo in the main preview and additional photos as removable thumbnails.",
+        "Keep count/preparation state visible, prevent changes while disabled, and ignore late preparation results after inputs change or unmount."
       ]
     },
     {
@@ -277,12 +285,13 @@
       "symbol": "export default function PlantEvidence",
       "col": 2,
       "row": 2.7,
-      "what": "Explain what is identified, what is sourced, and what needs review.",
+      "what": "Show plant identity/status first, with review and supporting records expandable.",
       "how": [
-        "Render provider and candidate evidence separately from Florida status.",
-        "Offer confirmation/retake controls for unresolved identification.",
-        "Show dated status and wildlife links, taxonomic cautions and FISC distribution limits.",
-        "Keep unverified automated hypotheses outside verified labels; retain PlantNet credit."
+        "Accept compact and children props so the audit can render shorter rows with field notes inside details.",
+        "Keep verified, unverified and tentative-match labels accurate; expose Review match when identification needs confirmation.",
+        "Expand candidate choices with guarded confirmation/retake callbacks; do not fabricate confidence for user selections.",
+        "Keep provider, dated status/wildlife sources, taxonomy notes, separate hypotheses and management guidance under Details & sources.",
+        "Retain PlantNet attribution and available source records during explanation outages; show readable font fallbacks."
       ]
     },
     {
@@ -309,10 +318,12 @@
       "symbol": "export default function SiteConditions",
       "col": 2,
       "row": 5.4,
-      "what": "Record sunlight, moisture, available space and care capacity.",
+      "what": "Choose sunlight, moisture, space and care in four compact selectors.",
       "how": [
-        "Offer labeled radio controls with selected states.",
-        "Keep unknown conditions explicit and pass edits to the screen."
+        "Measure available width and arrange four columns on wider panels or two on smaller ones.",
+        "Use labeled native HTML selects on web with visible focus treatment.",
+        "Use a dismissible modal with selected radio choices on iOS/Android.",
+        "Keep unknown values explicit, preserve disabled state, and pass only existing site enum values to the screen."
       ]
     },
     {
@@ -324,9 +335,10 @@
       "symbol": "export function AuditButton",
       "col": 2,
       "row": 6.75,
-      "what": "Accessible primary/secondary action.",
+      "what": "Shared accessible action with screen-specific style overrides.",
       "how": [
-        "Expose button role and disabled state."
+        "Expose button role, aria-disabled and accessibility disabled state.",
+        "Apply optional container/text style overrides while retaining disabled styling."
       ]
     },
     {
@@ -1468,11 +1480,11 @@
       "symbol": "export default class AppErrorBoundary",
       "col": 0,
       "row": 8.1,
-      "what": "Recover from a screen render failure without clearing saved audits.",
+      "what": "Reopen navigation after a rendering failure without clearing saved data.",
       "how": [
-        "Catch a descendant rendering exception and show a readable recovery view.",
-        "Reset the boundary to reopen navigation.",
-        "Explain that saved audit/proposal data remains but unsaved photos or edits may need to be added again."
+        "Catch rendering exceptions and show concise recovery text with font fallbacks.",
+        "Reset the boundary on Reopen EcoLoco while leaving saved audit storage intact.",
+        "Explain that unsaved edits may need to be added again."
       ]
     },
     {
@@ -1522,6 +1534,143 @@
         "Run backend and frontend regressions, Expo dependency alignment and architecture checks.",
         "Export web, iOS and Android bundles. First remote execution requires publishing the branch."
       ]
+    },
+    {
+      "id": "home_entry",
+      "label": "Entry",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/screens/HomeScreen.js",
+      "symbol": "function Entry",
+      "col": 0,
+      "row": 9.45,
+      "what": "Animate home sections while respecting reduced motion.",
+      "how": [
+        "Check the device reduced-motion preference before starting opacity/vertical movement.",
+        "Leave content visible if reduced motion is enabled or the preference request fails; stop animation on unmount."
+      ]
+    },
+    {
+      "id": "home_feature",
+      "label": "FeatureRow",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/screens/HomeScreen.js",
+      "symbol": "function FeatureRow",
+      "col": 0,
+      "row": 10.8,
+      "what": "Render alternating home illustrations and concise copy.",
+      "how": [
+        "Arrange image/text order using reverse and compact props.",
+        "Render an optional navigation action and pass the section through Entry."
+      ]
+    },
+    {
+      "id": "audit_details",
+      "label": "revealSiteDetails()",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/screens/AuditScreen.js",
+      "symbol": "function revealSiteDetails",
+      "col": 2,
+      "row": 12.15,
+      "what": "Reveal required survey fields when finishing needs more information.",
+      "how": [
+        "Set the missing-area or invalid-date message and open Site details.",
+        "On the next frame, scroll the audit page to the details section so the field can be corrected."
+      ]
+    },
+    {
+      "id": "site_selection",
+      "label": "selectValue()",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/SiteConditions.js",
+      "symbol": "function selectValue",
+      "col": 2,
+      "row": 13.5,
+      "what": "Apply a compact site-selector choice.",
+      "how": [
+        "Ignore changes while disabled, merge the chosen enum into the existing site, and call onChange.",
+        "Close the native options dialog after a selection."
+      ]
+    },
+    {
+      "id": "plant_option",
+      "label": "PlantOption",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/screens/AuditResultsScreen.js",
+      "symbol": "function PlantOption",
+      "col": 2,
+      "row": 14.85,
+      "what": "Select a proposed native addition without expanding all of its evidence.",
+      "how": [
+        "Render the name, brief benefit and selected checkbox state.",
+        "Keep suitability, requirements and sources behind Details & sources.",
+        "Delegate selection and source-opening to the report screen; respect disabled generation state."
+      ]
+    },
+    {
+      "id": "recommendation_card",
+      "label": "RecommendationCard",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/screens/RecommendationScreen.js",
+      "symbol": "function RecommendationCard",
+      "col": 2,
+      "row": 16.2,
+      "what": "Present a native option and expandable growing evidence.",
+      "how": [
+        "Show a short benefit with a site-check-needed indicator when appropriate.",
+        "Expand the complete benefit, growing needs, management/action notes and dated evidence links."
+      ]
+    },
+    {
+      "id": "evidence_text",
+      "label": "evidenceText()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/utils/plantEvidence.js",
+      "symbol": "function evidenceText",
+      "col": 11,
+      "row": 10.8,
+      "what": "Normalize values before rendering plant evidence as text.",
+      "how": [
+        "Return safe readable primitive or string-array values and omit malformed objects.",
+        "Keep provider data from being rendered directly as an invalid text child."
+      ]
+    },
+    {
+      "id": "scan_another",
+      "label": "scanAnotherPlant()",
+      "file": "frontend/screens/IdentificationScreen.js",
+      "symbol": "function scanAnotherPlant",
+      "layer": "ui",
+      "status": "live",
+      "col": 2,
+      "row": 17.55,
+      "what": "Start a fresh photo identification while preserving the location.",
+      "how": [
+        "Cancel identification and catalog requests and clear their results, search text, photos and errors.",
+        "Increment photoSession to remount the picker so an earlier pending selection cannot repopulate the new stage.",
+        "Scroll to the top and retain the current ZIP."
+      ]
+    },
+    {
+      "id": "remove_photo",
+      "label": "removePhoto()",
+      "file": "frontend/components/PhotoPicker.js",
+      "symbol": "const removePhoto =",
+      "layer": "ui",
+      "status": "live",
+      "col": 2,
+      "row": 18.9,
+      "what": "Remove a selected preview photo.",
+      "how": [
+        "Filter the indexed asset from the photos array and notify the parent.",
+        "Use the existing disabled/preparing controls to prevent conflicting interaction."
+      ]
     }
   ],
   "edges": [
@@ -1557,7 +1706,7 @@
     },
     {
       "to": "ident",
-      "label": "identify one plant",
+      "label": "Scan a plant / Identification → Camera",
       "from": "home"
     },
     {
@@ -1592,7 +1741,7 @@
     },
     {
       "to": "evidence",
-      "label": "plant result + confirm/retake callbacks",
+      "label": "compact plant record + confirm callback + field-note child",
       "from": "audit"
     },
     {
@@ -1617,11 +1766,6 @@
     },
     {
       "to": "notice",
-      "label": "shared accessible audit controls",
-      "from": "audit"
-    },
-    {
-      "to": "page",
       "label": "shared accessible audit controls",
       "from": "audit"
     },
@@ -2270,6 +2414,66 @@
       "from": "ci_checks",
       "to": "flask",
       "label": "test bounded API and evidence contracts"
+    },
+    {
+      "from": "home",
+      "to": "home_entry",
+      "label": "hero entry"
+    },
+    {
+      "from": "home",
+      "to": "home_feature",
+      "label": "feature content and navigation"
+    },
+    {
+      "from": "home_feature",
+      "to": "home_entry",
+      "label": "reduced-motion-aware section entry"
+    },
+    {
+      "from": "audit",
+      "to": "audit_details",
+      "label": "finish validation → missing field message"
+    },
+    {
+      "from": "site",
+      "to": "site_selection",
+      "label": "selected site field/value"
+    },
+    {
+      "from": "results",
+      "to": "plant_option",
+      "label": "native option, selected state, callbacks"
+    },
+    {
+      "from": "rec",
+      "to": "recommendation_card",
+      "label": "native option record"
+    },
+    {
+      "from": "recommendation_card",
+      "to": "evidence_link",
+      "label": "status, wildlife and growing sources"
+    },
+    {
+      "from": "evidence",
+      "to": "evidence_text",
+      "label": "provider field → safe readable text"
+    },
+    {
+      "from": "ident",
+      "to": "scan_another",
+      "label": "retake / Scan another plant"
+    },
+    {
+      "from": "scan_another",
+      "to": "photo",
+      "label": "new photoSession remount"
+    },
+    {
+      "from": "photo",
+      "to": "remove_photo",
+      "label": "selected photo index"
     }
   ]
 }

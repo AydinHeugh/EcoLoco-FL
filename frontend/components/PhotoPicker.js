@@ -1,5 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, ActivityIndicator } from 'react-native';
+import { useFonts } from 'expo-font';
+import { DMSans_400Regular } from '@expo-google-fonts/dm-sans/400Regular';
+import { DMSans_700Bold } from '@expo-google-fonts/dm-sans/700Bold';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import { MAX_PHOTOS, MAX_PREPARED_BYTES, MAX_UPLOAD_BYTES, ensurePhotoCount, validatePhotoFiles, base64ByteLength } from '../utils/photoInput';
@@ -44,6 +48,7 @@ async function readDroppedFile(file) {
 }
 
 export default function PhotoPicker({ photos = [], onChange, onError, disabled = false }) {
+  const [fontsLoaded] = useFonts({ DMSans_400Regular, DMSans_700Bold });
   const [dropNode, setDropNode] = useState(null);
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -121,33 +126,39 @@ export default function PhotoPicker({ photos = [], onChange, onError, disabled =
   }, [dropNode]);
 
   const unavailable = disabled || busy || photos.length >= MAX_PHOTOS;
+  const removePhoto = (index) => onChange(photos.filter((_, i) => i !== index));
   return <View ref={setDropNode} style={[styles.box, dragging && styles.dragging]}>
-    <Text style={styles.heading}>Photos of one plant · {photos.length}/{MAX_PHOTOS}</Text>
-    <Text style={styles.hint}>Include the whole plant and clear leaves, flowers or fruit. Up to five photos; each original under 12 MB.{Platform.OS === 'web' ? ' Use JPEG/PNG files. Drag images here or choose Upload photos.' : ' Photos are resized and converted to JPEG for identification.'}</Text>
-    {!!photos.length && <View style={styles.photos}>{photos.map((photo, index) => <View key={`${photo.uri}-${index}`} style={styles.photo}>
-      <Image source={{ uri: photo.uri }} style={styles.thumbnail} resizeMode="cover" accessibilityLabel={`Plant photo ${index + 1}`} />
-      <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Remove photo ${index + 1}`} disabled={disabled || busy} accessibilityState={{ disabled: disabled || busy }} aria-disabled={disabled || busy} onPress={() => onChange(photos.filter((_, i) => i !== index))} style={styles.remove}><Text style={styles.removeText}>Remove {index + 1}</Text></TouchableOpacity>
+    <View style={styles.caption}><Text style={[styles.hint, fontsLoaded && styles.sans]}>Up to 5 photos of the same plant.</Text><Text style={[styles.count, fontsLoaded && styles.sans]}>{photos.length}/{MAX_PHOTOS}</Text></View>
+    <View style={styles.lead}>
+      {photos.length ? <><Image source={{ uri: photos[0].uri }} style={styles.leadImage} resizeMode="cover" accessibilityLabel="Plant photo 1" />
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Remove photo 1" disabled={disabled || busy} accessibilityState={{ disabled: disabled || busy }} aria-disabled={disabled || busy} onPress={() => removePhoto(0)} style={[styles.remove, styles.leadRemove]}><Ionicons name="close" size={20} color="#1e3a1e" /></TouchableOpacity></>
+        : <View style={styles.empty}><Ionicons name={dragging ? 'download-outline' : 'leaf-outline'} size={42} color="#7d9272" /><Text style={[styles.emptyText, fontsLoaded && styles.sans]}>{dragging ? 'Drop photos here' : 'Add a plant photo'}</Text></View>}
+    </View>
+    {photos.length > 1 && <View style={styles.photos}>{photos.slice(1).map((photo, index) => <View key={`${photo.uri}-${index}`} style={styles.photo}>
+      <Image source={{ uri: photo.uri }} style={styles.thumbnail} resizeMode="cover" accessibilityLabel={`Plant photo ${index + 2}`} />
+      <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Remove photo ${index + 2}`} disabled={disabled || busy} accessibilityState={{ disabled: disabled || busy }} aria-disabled={disabled || busy} onPress={() => removePhoto(index + 1)} style={styles.remove}><Ionicons name="close" size={16} color="#1e3a1e" /></TouchableOpacity>
     </View>)}</View>}
-    {busy && <View style={styles.busy}><ActivityIndicator color="#1e3a1e" /><Text accessibilityLiveRegion="polite" style={styles.hint}>Preparing photos…</Text></View>}
+    {busy && <View style={styles.busy}><ActivityIndicator color="#1e3a1e" /><Text accessibilityLiveRegion="polite" style={[styles.hint, fontsLoaded && styles.sans]}>Preparing photos…</Text></View>}
     <View style={styles.buttons}>
-      <TouchableOpacity accessibilityRole="button" accessibilityLabel="Take a plant photo" accessibilityState={{ disabled: unavailable }} aria-disabled={unavailable} disabled={unavailable} onPress={() => choose(true)} style={[styles.button, unavailable && styles.disabled]}><Text style={styles.buttonText}>Take photo</Text></TouchableOpacity>
-      <TouchableOpacity accessibilityRole="button" accessibilityLabel="Upload plant photos" accessibilityState={{ disabled: unavailable }} aria-disabled={unavailable} disabled={unavailable} onPress={() => choose(false)} style={[styles.button, styles.filled, unavailable && styles.disabled]}><Text style={[styles.buttonText, styles.lightText]}>Upload photos</Text></TouchableOpacity>
+      <TouchableOpacity accessibilityRole="button" accessibilityLabel="Take a plant photo" accessibilityState={{ disabled: unavailable }} aria-disabled={unavailable} disabled={unavailable} onPress={() => choose(true)} style={[styles.button, styles.filled, unavailable && styles.disabled]}><Ionicons name="camera-outline" size={20} color="#fffdf8" /><Text style={[styles.buttonText, styles.lightText, fontsLoaded && styles.sansBold]}>Take photo</Text></TouchableOpacity>
+      <TouchableOpacity accessibilityRole="button" accessibilityLabel="Upload plant photos" accessibilityState={{ disabled: unavailable }} aria-disabled={unavailable} disabled={unavailable} onPress={() => choose(false)} style={[styles.button, unavailable && styles.disabled]}><Ionicons name="image-outline" size={20} color="#1e3a1e" /><Text style={[styles.buttonText, fontsLoaded && styles.sansBold]}>Upload</Text></TouchableOpacity>
     </View>
   </View>;
 }
 
 const styles = StyleSheet.create({
-  box: { padding: 16, borderWidth: 1, borderColor: '#b9c3ad', borderStyle: 'dashed', borderRadius: 16, backgroundColor: '#fffdf8', gap: 12 },
+  box: { gap: 12 },
   dragging: { backgroundColor: '#e3eedb', borderColor: '#1e3a1e' },
-  heading: { color: '#1e3a1e', fontWeight: '700', fontSize: 16 },
-  hint: { color: '#646454', fontSize: 13, lineHeight: 20 },
-  photos: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  photo: { width: 120 },
-  thumbnail: { width: 120, height: 100, borderRadius: 10 },
-  remove: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  removeText: { fontSize: 12, color: '#80452b', textDecorationLine: 'underline' },
+  sans: { fontFamily: 'DMSans_400Regular' }, sansBold: { fontFamily: 'DMSans_700Bold' },
+  caption: { flexDirection: 'row', gap: 8, justifyContent: 'space-between', alignItems: 'center' },
+  hint: { color: '#646454', fontSize: 12, lineHeight: 19, flexShrink: 1 }, count: { color: '#646454', fontSize: 12 },
+  lead: { width: '100%', height: 260, borderRadius: 16, backgroundColor: '#eaeee6', overflow: 'hidden', borderWidth: 1, borderColor: '#d9dfd2' },
+  leadImage: { width: '100%', height: '100%' }, empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 }, emptyText: { fontSize: 14, color: '#646454' },
+  photos: { flexDirection: 'row', gap: 10 }, photo: { flex: 1, maxWidth: 96, height: 76, borderRadius: 10, overflow: 'hidden' },
+  thumbnail: { width: '100%', height: '100%' },
+  remove: { position: 'absolute', top: 0, right: 0, width: 44, height: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,253,248,0.92)', borderBottomLeftRadius: 12 }, leadRemove: { top: 8, right: 8, borderRadius: 22 },
   buttons: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  button: { flex: 1, minWidth: 115, minHeight: 48, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#1e3a1e', alignItems: 'center', justifyContent: 'center' },
+  button: { flex: 1, minWidth: 115, minHeight: 48, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#1e3a1e', flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' },
   filled: { backgroundColor: '#1e3a1e' },
   buttonText: { fontSize: 14, fontWeight: '600', color: '#1e3a1e' },
   lightText: { color: '#fffdf8' },

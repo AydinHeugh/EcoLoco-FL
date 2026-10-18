@@ -6,20 +6,22 @@ This is the 2026 Congressional App Challenge entry for FL-22. The current pilot 
 
 ## What goes in and comes out
 
-Start with **Start a campus audit** on the home screen, or use **Explore a sample audit** to try the workflow. The sample is labeled as fictional and saved separately from a real survey.
+Use **Scan a plant** on the home screen for identification, **EcoScan** for a campus survey, or **Explore a sample audit** to try the workflow. The sample is labeled as fictional and saved separately from a real survey.
 
-**For a plant:** provide one to five JPEG/PNG photos of the same plant and the site's ZIP. The app displays the proposed species, identification service, alternatives, and whether it needs confirmation. Florida status, wildlife relationships, source links, and source-check dates appear separately. You can retake photos, choose a supported alternative, or select a known species from the catalog. A photo identification and a source's classification of the named species are different kinds of evidence.
+**For a plant:** provide one to five JPEG/PNG photos of the same plant and the site's ZIP. The first photo gets a large preview, with additional photos below it. Results lead with the name and Florida status; **Review match** opens uncertain identification choices, and **Details & sources** opens the supporting records. You can retake photos, choose a supported alternative, or select a known species from the catalog. **Scan another plant** clears the current result and photos while keeping the ZIP. A photo identification and a source's classification of the named species are different kinds of evidence.
 
-**For a survey:** record its area and date, observations, and the site's sunlight, moisture, available space, and maintenance capacity. The report shows:
+**For a survey:** EcoScan opens with ZIP and photo controls. Add plants, then open **Site details** for the area, date, sunlight, moisture, available space, and maintenance capacity. Four compact selectors use dropdowns on web and selection dialogs on phones. Unknown conditions can stay unset. **Finish audit** opens the required area/date fields if either needs attention. Each saved plant has expandable evidence and a field note. The report shows:
 
 - Native, nonnative, and invasive counts for unique verified taxa, with unresolved observations kept visible outside the denominator. A taxon means a species or a separately documented variety/subspecies with a different status.
 - **Native share of verified taxa**: native taxa divided by all verified taxa in the sample. Synonyms and repeated photographs count once. This is not a campus biodiversity score, plant-abundance measure, or wildlife-population estimate.
-- Source-backed native additions that fit the recorded conditions and are absent from the verified inventory. Unknown conditions remain explicit. Options are alphabetical, not ranked by invented impact points.
+- Source-backed native additions that fit the recorded conditions and are absent from the verified inventory. The first three appear initially; expand the list for more, or a plant's details for growing guidance and sources. Unknown conditions remain explicit. Options are alphabetical, not ranked by invented impact points.
 - A selected-species scenario recalculated from the proposed inventory. Planting another individual of a species already present does not change this metric.
-- An editable school proposal containing the survey facts, source links, chosen plants, location, quantities, budget, maintenance responsibility, and permission request. Changes to the underlying survey mark an existing draft as needing review.
+- An editable school proposal containing the survey facts, source links, chosen plants, location, quantities, budget, maintenance responsibility, and permission request. **Personalize letter** opens optional planning and recipient fields; blank fields become placeholders. Changes to the underlying survey mark an existing draft as needing review.
 - A text report to download on web or open in the native share sheet, plus a copyable proposal.
 
-Audits and draft edits save on the current device. There is one real audit and one separate sample audit; starting a new audit replaces that slot after confirmation. Export before replacing work you want to keep. There is no account or cloud synchronization.
+The report keeps survey evidence under **Sources & survey details**. When selected plants change, the previous scenario stays labeled while recalculating; complete-report export waits for a result matching the current selections.
+
+Audits and draft edits save on the current device. There is one real audit and one separate sample audit; starting a new scan replaces that slot after confirmation. Export before replacing work you want to keep. There is no account or cloud synchronization.
 
 ## How the evidence works
 
