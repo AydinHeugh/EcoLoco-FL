@@ -148,6 +148,7 @@ flowchart LR
     d_why["why_this_matters.json"]
     d_zip_counties["fl_zip_counties.json"]
     zip_builder["build_zip_counties.py"]
+    d_non_natives["fl_non_natives.json"]
   end
   subgraph L_ext["External APIs"]
     direction TB
@@ -266,6 +267,7 @@ flowchart LR
   zip_builder -->|"writes 1,013 Florida ZIPs"| d_zip_counties
   results -->|"forgetScannedPlant(id) on Remove"| audit
   s_county -->|"ZIP → county"| d_zip_counties
+  s_fl -->|"not native per the Atlas"| d_non_natives
   classDef ui fill:#e3f2e1,stroke:#2e7d32,color:#12301a
   classDef device fill:#eceff1,stroke:#607d8b,color:#263238
   classDef client fill:#e1effa,stroke:#1e6fb8,color:#0d2d4d
@@ -280,7 +282,7 @@ flowchart LR
   class c_identify,c_rec,c_letter,c_local,c_plan,c_user_message,c_locate,c_nearby client
   class flask,r_identify,r_recommend,r_letter,r_plan,r_locate,r_nearby route
   class s_identify,s_letter,s_fl,s_species,s_plantnet,s_usda,s_resolve,s_option,s_common_name,s_summary,s_plan,s_guard,s_letter_facts,s_round,s_geocode,s_reverse,s_seen,s_with_plan,s_zip_center,s_region,s_county svc
-  class d_fisc,d_natives,fisc_builder,d_recs,d_nwf,d_terms,d_why,d_zip_counties,zip_builder data
+  class d_fisc,d_natives,fisc_builder,d_recs,d_nwf,d_terms,d_why,d_zip_counties,zip_builder,d_non_natives data
   class openai,usda,plantnet,nominatim,inaturalist,usf_atlas ext
   class c_local dead
 ```

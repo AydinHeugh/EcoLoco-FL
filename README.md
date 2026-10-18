@@ -50,7 +50,8 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
    - If PlantNet can't be reached, OpenAI identifies the plant from the photos on its own, using the same rules.
 2. **Native or invasive.** Any name for the plant (scientific name, older name, or common name like "Florida arrowroot") is turned into one species first, so every spelling gets the same answer. Then it's checked in this order, and the first one that knows the plant wins:
    - the full official Florida Invasive Species Council (FISC) 2026 list of 179 invasive plants, which ships with the backend;
-   - our own list of 22 South Florida natives, which also ships with the backend;
+   - our own list of 21 South Florida natives, which also ships with the backend;
+   - a short list of plants the USF Atlas says are not native to Florida (for now, tropical sage);
    - the USDA PLANTS database online, which says whether the plant is native to Florida or was brought in from somewhere else (answers are remembered while the server runs);
    - if none of them know it, the plant is shown as unknown.
 3. **Facts about the plant.** Everything shown about a plant comes from our own data files, each fact with a link to where it came from (the Institute for Regional Conservation's Natives for Your Neighborhood, UF/IFAS, the ASPCA, or the FISC list). The AI doesn't write facts about plants. If we don't have facts for a plant, the app says so.
@@ -59,9 +60,9 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 6. **Your location.** A typed address or ZIP, or your rounded location, is turned into a ZIP code using OpenStreetMap's free Nominatim service (no more than one request a second, as its rules ask). The ZIP's county comes from a table of every Florida ZIP code built from the 2020 Census; a ZIP the table doesn't know (like a PO box) is treated as outside Palm Beach County. The same rounded location is used to ask iNaturalist which plants have been seen nearby. Neither is stored.
 7. **The letter.** The letter is built from the plan. OpenAI may only reword the opening paragraph, and its version is thrown away if it adds a plant or animal name, or changes a number. Without OpenAI, the letter still works.
 
-The invasive list is generated from the official FISC PDF by a script in `backend/scripts/`. The 22 natives and the "why it matters" lines are our own and still need checking against UF/IFAS before the demo.
+The invasive list is generated from the official FISC PDF by a script in `backend/scripts/`. The 21 natives and the "why it matters" lines are our own and still need checking against UF/IFAS before the demo.
 
-**Before a plant can be recommended,** a teammate checks it in the USF Atlas of Florida Plants (https://florida.plantatlas.usf.edu) to make sure it's native to Palm Beach County, checks its facts and its "replaces" pairing, then changes `"verified": false` to `true` for that plant in `backend/data/fl_recommendations.json`, adding who checked it and when. All 31 plants have been checked this way (see `docs/plant-checklist.md`).
+**Before a plant can be recommended,** a teammate checks it in the USF Atlas of Florida Plants (https://florida.plantatlas.usf.edu) to make sure it's native to Palm Beach County, checks its facts and its "replaces" pairing, then changes `"verified": false` to `true` for that plant in `backend/data/fl_recommendations.json`, adding who checked it and when. All 30 plants have been checked this way (see `docs/plant-checklist.md`). Tropical sage was taken off the list after its Atlas page showed it isn't native.
 
 ## Finding your way around
 

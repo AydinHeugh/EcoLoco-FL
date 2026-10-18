@@ -13,7 +13,7 @@ def _load(name):
 def _patterns():
     terms = _load("nature_terms.json")
     names = set()
-    for filename in ("fisc_list.json", "fl_natives.json", "fl_recommendations.json"):
+    for filename in ("fisc_list.json", "fl_natives.json", "fl_non_natives.json", "fl_recommendations.json"):
         for entry in _load(filename)["species"]:
             names.update(n.lower() for n in [entry["scientific_name"], entry.get("common_name"),
                                               *entry.get("common_names", []), *entry.get("synonyms", [])] if n)

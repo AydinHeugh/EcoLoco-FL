@@ -26,7 +26,7 @@ DATA = Path(__file__).resolve().parents[1] / "data"
 def _data_texts():
     import json
     load = lambda name: json.loads((DATA / name).read_text(encoding="utf-8"))
-    for name in ("fisc_list.json", "fl_natives.json"):
+    for name in ("fisc_list.json", "fl_natives.json", "fl_non_natives.json"):
         for entry in load(name)["species"]:
             yield f"{name}:{entry['scientific_name']}", entry.get("why") or ""
     for line in load("why_this_matters.json")["lines"]:

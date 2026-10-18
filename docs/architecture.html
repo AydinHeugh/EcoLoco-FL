@@ -516,10 +516,11 @@
       "goal": "Add ZIP-specific regional lists behind the same get_status().",
       "what": "The status seam: answers \"is this plant native or invasive in South Florida, and says who.\"",
       "how": [
-        "Looks the name up with `resolve()`, so synonyms and common names reach the same species, then checks that species in `fisc_list.json` and `fl_natives.json` (loaded once, cached).",
+        "Looks the name up with `resolve()`, so synonyms and common names reach the same species, then checks that species in `fisc_list.json`, `fl_natives.json` and `fl_non_natives.json` (loaded once, cached).",
         "Names `resolve()` doesn't know go straight to USDA unchanged.",
         "FISC first → `{native: false, invasive: true, source: 'FISC', why}` (`why` is null for species without a curated line).",
         "Then the bundled natives → `{native: true, invasive: false, source: 'fl_natives', why}`.",
+        "Then plants the USF Atlas lists as not native → `{native: false, invasive: false, source: 'atlas', why}`, so USDA can't call them native.",
         "Then USDA PLANTS (`usda_service.florida_status`): native → `{native: true, invasive: false, source: 'USDA'}`; introduced → `{native: false, invasive: false, source: 'USDA'}`.",
         "USDA errors are logged by type and treated as unknown → `{native: null, invasive: null, source: 'unknown', why: null}`."
       ]
@@ -569,7 +570,7 @@
       "col": 7,
       "row": 3.9,
       "goal": "Verify every entry against UF/IFAS and the Atlas of Florida Plants before the demo.",
-      "what": "Bundled list of 22 South Florida native plants with their wildlife payoff, shipped with the backend.",
+      "what": "Bundled list of 21 South Florida native plants with their wildlife payoff, shipped with the backend.",
       "how": [
         "One entry per species: `scientific_name, common_name, synonyms[], why` (e.g. coontie → only host plant of the Atala butterfly).",
         "Used to confirm 'native' in /identify and to add `why` in /recommend.",
@@ -831,14 +832,14 @@
       "symbol": null,
       "col": 7,
       "row": 5.6,
-      "what": "31 South Florida native plants EcoLoco can recommend, each fact with its source.",
+      "what": "30 South Florida native plants EcoLoco can recommend, each fact with its source.",
       "how": [
         "Each entry: names, plant type, effort (easy / medium / big), sun, size, what it helps (with the animals named), what it offers (caterpillar food, nectar, fruit, shelter), bloom months, how to buy it (the name to ask for and look-alikes to avoid), up to 2 watch-outs and up to 2 questions to look into.",
         "Facts come from IRC Natives for Your Neighborhood, UF/IFAS, ASPCA and the FISC list, each with a link.",
         "`replaces` pairs a plant with FISC invasives it can stand in for, with a plain reason. These pairings are EcoLoco suggestions for the team to review.",
         "Every Palm Beach County prohibited invasive has at least one replacement (a test checks this).",
         "`atlas_url`: that plant's own species page in the USF Atlas of Florida Plants.",
-        "Only entries with `verified: true` are recommended. All 31 were checked against the USF Atlas and their sources (docs/plant-checklist.md) and carry `checked_by` and `checked_on`."
+        "Only entries with `verified: true` are recommended. All 30 were checked against the USF Atlas and their sources (docs/plant-checklist.md) and carry `checked_by` and `checked_on`. Tropical sage was dropped after the Atlas listed it as Not Native."
       ]
     },
     {
@@ -1316,6 +1317,21 @@
       "what": "Gives the Florida county for a ZIP code.",
       "how": [
         "Looks the ZIP up in `fl_zip_counties.json` (loaded once) and returns the county name, like \"Palm Beach\", or `None` if the file doesn't know it."
+      ]
+    },
+    {
+      "id": "d_non_natives",
+      "label": "fl_non_natives.json",
+      "layer": "data",
+      "status": "live",
+      "file": "backend/data/fl_non_natives.json",
+      "symbol": null,
+      "col": 7,
+      "row": 3.9,
+      "what": "Plants the USF Atlas lists as Not Native, each with its Atlas page.",
+      "how": [
+        "Checked after our natives list and before USDA, so a USDA \"native\" answer can't override the Atlas.",
+        "Today: tropical sage (Salvia coccinea), also called scarlet sage or blood sage."
       ]
     }
   ],
@@ -1867,6 +1883,11 @@
       "from": "s_county",
       "to": "d_zip_counties",
       "label": "ZIP → county"
+    },
+    {
+      "from": "s_fl",
+      "to": "d_non_natives",
+      "label": "not native per the Atlas"
     }
   ]
 }
