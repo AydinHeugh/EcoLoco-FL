@@ -60,7 +60,7 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 
 The invasive list is generated from the official FISC PDF by a script in `backend/scripts/`. The 22 natives and the "why it matters" lines are our own and still need checking against UF/IFAS before the demo.
 
-**Before a plant can be recommended,** a teammate checks it in the USF Atlas of Florida Plants (https://florida.plantatlas.usf.edu) to make sure it's native to Palm Beach County, checks its facts and its "replaces" pairing, then changes `"verified": false` to `true` for that plant in `backend/data/fl_recommendations.json`, adding who checked it and when. 30 of the 31 plants have been checked this way (see `docs/plant-checklist.md`). Sunshine mimosa is on hold, so the app won't suggest it yet.
+**Before a plant can be recommended,** a teammate checks it in the USF Atlas of Florida Plants (https://florida.plantatlas.usf.edu) to make sure it's native to Palm Beach County, checks its facts and its "replaces" pairing, then changes `"verified": false` to `true` for that plant in `backend/data/fl_recommendations.json`, adding who checked it and when. All 31 plants have been checked this way (see `docs/plant-checklist.md`).
 
 ## Finding your way around
 
@@ -114,4 +114,4 @@ You'll need Node.js, Python 3, an OpenAI API key, and a free PlantNet API key fr
 ## Where things stand
 
 - Done: Florida plant lists drive the native/invasive verdict, every verdict comes with its source and a "why it matters" line, plants are identified by PlantNet with OpenAI as a backup, the full FISC invasive list and a USDA check are in place, scans keep working when OpenAI is down, unsure matches are confirmed by the user instead of guessed, every fact in the app shows its source, all text is written in plain language and fits a phone screen, results credit Pl@ntNet, and the backend has automated tests.
-- Next: decide on sunshine mimosa, double-check the plant lists against official sources, and put the backend online so the app works away from our computers.
+- Next: double-check the plant lists against official sources, and put the backend online so the app works away from our computers.
