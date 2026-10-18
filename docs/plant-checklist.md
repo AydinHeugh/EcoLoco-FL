@@ -1,6 +1,6 @@
 # Plant checklist
 
-Source-review worksheet for the 31 imported records in `backend/data/fl_recommendations.json`. This is not the active recommendation catalog, and its `verified` flag alone cannot make a plant recommendable. The app rechecks exact Florida status, taxonomic ambiguity, South Florida coverage, the verified inventory, and site conditions against the active catalogs. Blank checkboxes below remain a worksheet, not evidence of a completed campus review.
+Source-review worksheet for the 31 imported records in `backend/data/fl_recommendations.json`. This is not the active recommendation catalog, and its `verified` flag alone cannot make a plant recommendable. The app rechecks exact Florida status, taxonomic ambiguity, Palm Beach County planting coverage, the verified inventory, and site conditions against the active catalogs. Blank checkboxes below remain a worksheet, not evidence of a completed campus review.
 
 The source review on October 17, 2026 found **Salvia coccinea listed as Not Native in the USF Atlas**. Its facts are retained for reference, but the app excludes it from native planting recommendations. A source-page check does not confirm suitability at a particular school.
 

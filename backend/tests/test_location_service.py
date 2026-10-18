@@ -4,7 +4,7 @@ import pytest
 import requests
 
 from services import location_service
-from services.location_service import county, geocode, in_south_florida, reverse_zip, round_coords, seen_near, zip_center
+from services.location_service import county, geocode, plantings_checked, reverse_zip, round_coords, seen_near, zip_center
 
 
 class FakeResponse:
@@ -148,15 +148,16 @@ def test_geocode_rejects_invalid_queries_without_network(calls, query):
 def test_invalid_zip_inputs_are_safe_and_do_not_call_provider(calls, zip_code):
     assert zip_center(zip_code) is None
     assert county(zip_code) is None
-    assert in_south_florida(zip_code) is False
+    assert plantings_checked(zip_code) is False
     assert calls["calls"] == []
 
 
-def test_county_mapping_preserves_south_florida_and_normalizes_whitespace(calls):
+def test_county_mapping_limits_planting_advice_and_normalizes_whitespace(calls):
     assert county(" 33401 ") == "Palm Beach"
-    assert in_south_florida("34990") is True
+    assert plantings_checked("34990") is False
+    assert plantings_checked("33431") is True
     assert county("32301") == "Leon"
-    assert in_south_florida("32301") is False
+    assert plantings_checked("32301") is False
     assert calls["calls"] == []
 
 

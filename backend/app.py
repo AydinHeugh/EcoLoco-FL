@@ -6,7 +6,7 @@ from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 
 from services.ai_service import confirm_plant, generate_proposal, get_catalog, get_plant_recommendations, identify_plant
-from services.location_service import geocode, in_south_florida, reverse_zip, round_coords, seen_near, zip_center
+from services.location_service import geocode, plantings_checked, reverse_zip, round_coords, seen_near, zip_center
 from services.plan_service import build_plan
 from services.request_limits import RequestLimits
 from services.request_validation import (
@@ -117,7 +117,7 @@ def recommend():
     location = location_field(data.get("location"))
     plants = plant_list(data.get("plants", []))
     site = site_fields(data.get("site"))
-    return jsonify(result=get_plant_recommendations(location, plants=plants, site=site), south_florida=in_south_florida(location))
+    return jsonify(result=get_plant_recommendations(location, plants=plants, site=site), plantings_checked=plantings_checked(location))
 
 
 @app.route("/plan", methods=["POST"])
@@ -129,7 +129,7 @@ def plan():
     additions = species_list(data.get("additions", []), "Proposed additions")
     removals = species_list(data.get("removals", []), "Proposed removals")
     return jsonify(result=build_plan(plants, location, site=site, additions=additions, removals=removals),
-                   south_florida=in_south_florida(location))
+                   plantings_checked=plantings_checked(location))
 
 
 def _location_limit():
@@ -164,7 +164,7 @@ def locate():
     if not place or not place.get("zip"):
         return jsonify(error="We couldn't find a Florida ZIP for that place. Enter your school's ZIP directly.", code="place_not_found"), 400
     location = location_field(place["zip"])
-    return jsonify(result={**place, "zip": location}, south_florida=in_south_florida(location))
+    return jsonify(result={**place, "zip": location}, plantings_checked=plantings_checked(location))
 
 
 @app.route("/nearby", methods=["POST"])

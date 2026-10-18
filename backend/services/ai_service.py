@@ -3,7 +3,7 @@
 from services import openai_client
 from services.fl_plants_service import _normalize, bundled_catalog, bundled_natives, get_status
 from services.identification_service import identify_species
-from services.location_service import in_south_florida
+from services.location_service import plantings_checked
 from services.plan_service import rank_recommendations
 from services.score_service import calculate_biodiversity_score
 
@@ -17,7 +17,7 @@ SITE_OPTIONS = {
     "maintenance": ("low", "moderate", "unknown"),
 }
 SPACE_ORDER = {"small": 0, "medium": 1, "large": 2}
-SCOPE_NOTE = "This pilot uses Florida status records and South Florida planting guidance; a ZIP code alone does not establish suitability at a particular site."
+SCOPE_NOTE = "This pilot uses Florida status records and Palm Beach County planting guidance; a ZIP code alone does not establish suitability at a particular site."
 PLANT_FACT_FIELDS = ("atlas_url", "atlas_verified", "atlas_checked_on", "sun_description", "helps", "buying", "watch_out", "growing_source", "mature_size",
                      "plant_type", "effort", "offers", "bloom_months", "replaces", "look_into", "removal_safety")
 
@@ -299,7 +299,7 @@ def _recommendation(entry, status, site, audit):
 
 def get_plant_recommendations(location, plants=None, site=None):
     """Filter sourced natives by observed taxa and actual site constraints."""
-    if not in_south_florida(location):
+    if not plantings_checked(location):
         return []
     site = _site(site)
     audit = calculate_biodiversity_score(plants or [], location)

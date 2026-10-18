@@ -235,7 +235,7 @@ def test_plan_returns_same_metrics_as_score_without_auto_applying_options(client
     payload = {"location": ZIP, "plants": [observed("Zamia integrifolia"), observed("Schinus terebinthifolius")]}
     planned = client.post("/plan", json=payload).get_json()
     scored = client.post("/score", json=payload).get_json()["result"]
-    assert planned["south_florida"] is True
+    assert planned["plantings_checked"] is True
     assert planned["result"]["summary"]["native_share"] == scored["native_share"] == 50
     assert planned["result"]["summary"]["projected"] == scored["projected"]
     assert planned["result"]["add"] and planned["result"]["selected_additions"] == []
@@ -263,7 +263,7 @@ def test_locate_zip_keeps_working_without_remote_coordinates(client, monkeypatch
     response = client.post("/locate", json={"query": ZIP})
     assert response.status_code == 200
     assert response.get_json()["result"] == {"zip": ZIP, "lat": None, "lon": None}
-    assert response.get_json()["south_florida"] is True
+    assert response.get_json()["plantings_checked"] is True
 
 
 def test_locate_place_revalidates_provider_zip(client, monkeypatch):

@@ -45,7 +45,7 @@ export default function AuditResultsScreen({ navigation, route }) {
   const [scoreError, setScoreError] = useState('');
   const [scoreLoading, setScoreLoading] = useState(false);
   const [recs, setRecs] = useState([]);
-  const [southFlorida, setSouthFlorida] = useState(null);
+  const [plantingsChecked, setPlantingsChecked] = useState(null);
   const [recError, setRecError] = useState('');
   const [recsLoading, setRecsLoading] = useState(false);
   const [retryScore, setRetryScore] = useState(0);
@@ -112,10 +112,10 @@ export default function AuditResultsScreen({ navigation, route }) {
     setRecsLoading(true);
     setRecError('');
     setRecs([]);
-    setSouthFlorida(null);
+    setPlantingsChecked(null);
     setAllOptions(false);
     getPlantRecommendations(audit.zip_code, { plants: audit.plants, site: audit.site, signal: controller.signal })
-      .then(answer => { if (active) { setRecs(Array.isArray(answer.result) ? answer.result : []); setSouthFlorida(answer.south_florida); } })
+      .then(answer => { if (active) { setRecs(Array.isArray(answer.result) ? answer.result : []); setPlantingsChecked(answer.plantings_checked); } })
       .catch(err => { if (active && err.name !== 'AbortError') setRecError(err.message || 'Could not load planting options.'); })
       .finally(() => { if (active) setRecsLoading(false); });
     return () => { active = false; controller.abort(); };
@@ -268,7 +268,7 @@ export default function AuditResultsScreen({ navigation, route }) {
       <Text style={s.muted}>Choose native additions for your letter.</Text>
       {recsLoading && <ActivityIndicator accessibilityLabel="Finding native additions" color="#1e3a1e" />}
       {recError && <AuditNotice error><Text style={s.body}>{recError}</Text><AuditButton secondary onPress={() => setRetryRecs(value => value + 1)}>Try again</AuditButton></AuditNotice>}
-      {!recsLoading && !recError && !recs.length && <AuditNotice>{southFlorida === false ? 'Planting options currently cover South Florida only.' : 'No new catalog plants match this site. Check your site details or ask local extension staff.'}</AuditNotice>}
+      {!recsLoading && !recError && !recs.length && <AuditNotice>{plantingsChecked === false ? 'Planting options currently cover Palm Beach County only.' : 'No new catalog plants match this site. Check your site details or ask local extension staff.'}</AuditNotice>}
       {shownRecs.map(rec => <PlantOption key={rec.taxon_id || rec.scientific_name} item={rec} selected={audit.selected_species.includes(rec.scientific_name)} disabled={generating} onSelect={() => toggleSpecies(rec.scientific_name)} onSource={openSource} />)}
       {recs.length > 3 && <TouchableOpacity accessibilityRole="button" accessibilityState={{ expanded: allOptions }} aria-expanded={allOptions} onPress={() => setAllOptions(!allOptions)} style={ui.disclosure}><Text style={ui.link}>{allOptions ? 'Show less −' : `Show ${recs.length - 3} more ${recs.length === 4 ? 'option' : 'options'} +`}</Text></TouchableOpacity>}
       {!recsLoading && !recError && unavailableSelections.length > 0 && <AuditNotice error><Text style={s.body}>Some saved choices no longer match this site.</Text>{unavailableSelections.map(name => <AuditButton key={name} secondary disabled={generating} onPress={() => toggleSpecies(name)}>Remove {name}</AuditButton>)}</AuditNotice>}

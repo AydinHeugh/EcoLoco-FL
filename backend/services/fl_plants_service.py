@@ -13,7 +13,7 @@ SOURCES = {
     "fisc_list.json": "FISC",
     "fl_natives.json": "fl_natives",
 }
-SCOPE = "Florida-wide status evidence. Site suitability and South Florida planting guidance are assessed separately."
+SCOPE = "Florida-wide status evidence. Site suitability and Palm Beach County planting guidance are assessed separately."
 EVIDENCE_FIELDS = (
     "wildlife_support", "wildlife_support_basis", "why_source_url", "taxonomy_notes", "taxonomy_source_url",
     "management_notes", "recommendable", "invasion_assessment", "additional_source_url", "fisc_category",

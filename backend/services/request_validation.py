@@ -38,7 +38,7 @@ def location_field(value):
     if not re.fullmatch(r"[0-9]{5}", value):
         raise ValueError("Enter a five-digit US ZIP code.")
     if not supported_location(value):
-        raise ValueError("Choose a Florida ZIP code included in the app's county lookup. Planting suggestions cover South Florida only.")
+        raise ValueError("Choose a Florida ZIP code included in the app's county lookup. Planting suggestions are checked for Palm Beach County only.")
     return value
 
 

@@ -241,7 +241,7 @@
         "Accept a five-digit ZIP, optional observed plants and four compact site selectors; the server checks Florida lookup membership.",
         "Cancel and clear old options when ZIP or site inputs change; call the recommendation API.",
         "Show three planning-ranked native cards first, with growing guidance and source-linked facts in expanded details.",
-        "Use south_florida=false to distinguish regional coverage from site filters yielding no matches; expand more returned options on request."
+        "Use plantings_checked=false to distinguish regional coverage from site filters yielding no matches; expand more returned options on request."
       ]
     },
     {
@@ -770,7 +770,7 @@
       "what": "Return suitable native additions.",
       "how": [
         "Validate location, observations and site enums, then call get_plant_recommendations.",
-        "Return {result: ranked options, south_florida: boolean}; Florida locations outside the planting region receive an empty option list."
+        "Return {result: ranked options, plantings_checked: boolean}; Florida locations outside the planting region receive an empty option list."
       ]
     },
     {
@@ -864,7 +864,7 @@
       "row": 4.050000000000001,
       "what": "Filter and prioritize sourced native planting options.",
       "how": [
-        "Require a ZIP mapped to one of the 12 supported South Florida counties.",
+        "Require a ZIP mapped to Palm Beach County, where planting recommendations have been checked.",
         "Calculate the verified inventory; exclude already-present taxa and require precise, recommendable native records.",
         "Filter sunlight, moisture, mature space and maintenance conflicts; leave unknown site conditions explicit.",
         "Build source-linked fact cards and pass them to rank_recommendations; retain the flat array contract."
@@ -1131,7 +1131,7 @@
       "what": "Validate a supported Florida ZIP.",
       "how": [
         "Require five ASCII digits and supported_location membership.",
-        "Return a clear error for missing lookup entries; South Florida planting coverage is assessed separately."
+        "Return a clear error for missing lookup entries; Palm Beach County planting coverage is assessed separately."
       ]
     },
     {
@@ -1657,7 +1657,7 @@
       "row": 13.35,
       "file": "backend/data/fl_recommendations.json",
       "symbol": null,
-      "what": "Imported source-linked South Florida planting facts.",
+      "what": "Imported source-linked planting facts.",
       "how": [
         "Retain source URLs, recorded verification metadata, growth, wildlife, purchasing cautions and suggested replacements.",
         "Reviewed copies of supported exact taxa enrich the active native catalog; this file does not independently determine Florida status."
@@ -1863,7 +1863,7 @@
       "what": "Return sourced planning options and an explicit selected scenario.",
       "how": [
         "Validate observations, Florida ZIP, site enums and addition/removal lists.",
-        "Call build_plan; return ranked planting options, management-review cards and strict native-share summary with the South Florida coverage flag."
+        "Call build_plan; return ranked planting options, management-review cards and strict native-share summary with the Palm Beach County planting coverage flag."
       ]
     },
     {
@@ -1879,7 +1879,7 @@
       "how": [
         "Bound query text or validate and round coordinates; apply the separate shared location budget.",
         "For a valid direct ZIP, keep the ZIP even if its coordinate lookup fails; otherwise geocode text or reverse-geocode coordinates.",
-        "Validate returned ZIP membership and return rounded coordinates, ZIP and South Florida coverage; unresolved places receive a clear JSON error."
+        "Validate returned ZIP membership and return rounded coordinates, ZIP and Palm Beach County planting coverage; unresolved places receive a clear JSON error."
       ]
     },
     {
@@ -2019,17 +2019,17 @@
       ]
     },
     {
-      "id": "s_south",
-      "label": "in_south_florida()",
+      "id": "s_plantings",
+      "label": "plantings_checked()",
       "layer": "svc",
       "status": "live",
       "file": "backend/services/location_service.py",
-      "symbol": "def in_south_florida(",
+      "symbol": "def plantings_checked(",
       "col": 7,
       "row": 17.55,
-      "what": "Apply the 12-county planting-guidance boundary.",
+      "what": "Apply the checked Palm Beach County planting boundary.",
       "how": [
-        "Check the ZIP’s mapped county against Palm Beach, Broward, Miami-Dade, Martin, Monroe, Collier, Lee, Hendry, Glades, Okeechobee, St. Lucie and Charlotte."
+        "Check that the ZIP’s mapped county is Palm Beach; Florida identification and status coverage remain broader."
       ]
     },
     {
@@ -3093,7 +3093,7 @@
     },
     {
       "from": "r_locate",
-      "to": "s_south",
+      "to": "s_plantings",
       "label": "returned ZIP coverage"
     },
     {
@@ -3113,17 +3113,17 @@
     },
     {
       "from": "r_recommend",
-      "to": "s_south",
+      "to": "s_plantings",
       "label": "ZIP coverage flag"
     },
     {
       "from": "r_plan",
-      "to": "s_south",
+      "to": "s_plantings",
       "label": "ZIP coverage flag"
     },
     {
       "from": "s_rec",
-      "to": "s_south",
+      "to": "s_plantings",
       "label": "ZIP planting boundary"
     },
     {
@@ -3153,7 +3153,7 @@
     },
     {
       "from": "s_plan",
-      "to": "s_south",
+      "to": "s_plantings",
       "label": "ZIP coverage flag"
     },
     {
@@ -3197,7 +3197,7 @@
       "label": "ZIP → dominant county"
     },
     {
-      "from": "s_south",
+      "from": "s_plantings",
       "to": "s_county",
       "label": "ZIP county membership"
     },

@@ -4,7 +4,7 @@ from functools import cache
 from pathlib import Path
 
 from services.fl_plants_service import get_status
-from services.location_service import in_south_florida
+from services.location_service import plantings_checked
 from services.score_service import calculate_biodiversity_score
 from services.summary_service import from_metrics
 
@@ -120,4 +120,4 @@ def build_plan(plants, location="33431", *, site=None, additions=None, removals=
     return {"remove": management, "management_review": management, "add": choices[:MAX_ADDS],
             "selected_additions": metrics["projected"]["added_species"], "selected_removals": metrics["projected"]["removed_species"],
             "gaps": sorted(gaps), "gap_note": "Relationships not yet documented in this verified inventory; not measured absences on campus.",
-            "summary": from_metrics(metrics), "south_florida": in_south_florida(location), "ranking_basis": RANKING_BASIS}
+            "summary": from_metrics(metrics), "plantings_checked": plantings_checked(location), "ranking_basis": RANKING_BASIS}

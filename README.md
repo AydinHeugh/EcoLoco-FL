@@ -2,7 +2,7 @@
 
 EcoLoco helps students turn a campus plant survey into a practical planting proposal. Identify plants, review their Florida status and sources, record site conditions, choose native additions, and prepare an editable request for school review.
 
-This is the 2026 Congressional App Challenge entry for FL-22. Identification and surveys accept Florida ZIP codes present in the bundled county lookup. Some postal-only or recently created ZIP codes are missing. Planting suggestions cover 12 South Florida counties: Palm Beach, Broward, Miami-Dade, Martin, Monroe, Collier, Lee, Hendry, Glades, Okeechobee, St. Lucie, and Charlotte. A ZIP does not establish an individual site's growing conditions.
+This is the 2026 Congressional App Challenge entry for FL-22. Identification and surveys accept Florida ZIP codes present in the bundled county lookup. Some postal-only or recently created ZIP codes are missing. Planting suggestions are checked for Palm Beach County only; other supported Florida ZIPs can still identify plants and calculate survey metrics. A ZIP does not establish an individual site's growing conditions.
 
 ## What goes in and comes out
 

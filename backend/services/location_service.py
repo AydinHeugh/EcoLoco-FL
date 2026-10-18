@@ -20,10 +20,7 @@ NOMINATIM_LOCK_TIMEOUT = 0.25
 MAX_QUERY_LENGTH = 200
 NEARBY_KM = 5
 NEARBY_COUNT = 5
-SOUTH_FLORIDA = {
-    "Palm Beach", "Broward", "Miami-Dade", "Martin", "Monroe", "Collier",
-    "Lee", "Hendry", "Glades", "Okeechobee", "St. Lucie", "Charlotte",
-}
+PLANTING_COUNTIES = {"Palm Beach"}
 
 _lock = threading.Lock()
 _last_call = [0.0]
@@ -42,8 +39,8 @@ def county(zip_code):
     return _zip_counties().get(zip_code.strip())
 
 
-def in_south_florida(zip_code):
-    return county(zip_code) in SOUTH_FLORIDA
+def plantings_checked(zip_code):
+    return county(zip_code) in PLANTING_COUNTIES
 
 
 def round_coords(lat, lon):

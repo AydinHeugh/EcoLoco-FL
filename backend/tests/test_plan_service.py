@@ -59,7 +59,7 @@ def test_plan_rejects_unverified_or_unsuitable_selected_additions(name, site):
 
 def test_northern_florida_keeps_inventory_and_management_without_planting_advice():
     plan = build_plan([PEPPER, COONTIE], "32301")
-    assert plan["south_florida"] is False
+    assert plan["plantings_checked"] is False
     assert plan["add"] == [] and len(plan["remove"]) == 1
     assert plan["summary"]["percent_native"] == plan["summary"]["percent_native_with_plan"] == 50
     with pytest.raises(ValueError):

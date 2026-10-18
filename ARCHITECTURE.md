@@ -182,7 +182,7 @@ flowchart LR
     s_common["common_name()"]
     s_plant_option["plant_option()"]
     s_county["county()"]
-    s_south["in_south_florida()"]
+    s_plantings["plantings_checked()"]
     s_coords["round_coords()"]
     s_geocode["geocode()"]
     s_zip_center["zip_center()"]
@@ -399,19 +399,19 @@ flowchart LR
   r_locate -->|"place query"| s_geocode
   r_locate -->|"supported direct ZIP"| s_zip_center
   r_locate -->|"rounded coordinates"| s_reverse
-  r_locate -->|"returned ZIP coverage"| s_south
+  r_locate -->|"returned ZIP coverage"| s_plantings
   r_nearby -->|"coordinate validation/rounding"| s_coords
   r_nearby -->|"same separate location budget"| limits
   r_nearby -->|"rounded coordinates"| s_nearby
-  r_recommend -->|"ZIP coverage flag"| s_south
-  r_plan -->|"ZIP coverage flag"| s_south
-  s_rec -->|"ZIP planting boundary"| s_south
+  r_recommend -->|"ZIP coverage flag"| s_plantings
+  r_plan -->|"ZIP coverage flag"| s_plantings
+  s_rec -->|"ZIP planting boundary"| s_plantings
   s_rec -->|"site-filtered cards + verified audit + ZIP"| s_rank
   s_plan -->|"inventory/site options; revalidate selected additions"| s_rec
   s_plan -->|"observations + explicit changes"| s_score
   s_plan -->|"authoritative current/projected metrics"| s_summary_metrics
   s_plan -->|"sourced management facts and selected taxa"| s_fl
-  s_plan -->|"ZIP coverage flag"| s_south
+  s_plan -->|"ZIP coverage flag"| s_plantings
   s_rank -->|"verified inventory and suggested replacement taxa"| s_fl
   s_rank -->|"regional genus reference"| d_nwf
   s_summary -->|"plants + location + explicit changes"| s_score
@@ -420,7 +420,7 @@ flowchart LR
   s_scope -->|"exact supported ZIP membership"| d_zip
   v_location -->|"supported Florida ZIP"| s_scope
   s_county -->|"ZIP → dominant county"| d_zip
-  s_south -->|"ZIP county membership"| s_county
+  s_plantings -->|"ZIP county membership"| s_county
   s_common -->|"strict canonical name"| s_resolve
   s_resolve -->|"scientific names, common names and synonyms"| d_exceptions
   s_resolve -->|"scientific names, common names and synonyms"| d_fisc
@@ -456,7 +456,7 @@ flowchart LR
   class picker,manipulator,clipboard,storage_device device
   class client,c_identify,c_confirm,c_catalog,c_score,c_rec,c_letter,c_local,empty,store,load,save,patch,subscribe,flush,report,u_review,u_status,u_provider,u_url,u_candidates,u_count,u_files,u_bytes,catalog_search,evidence_text,c_plan,c_locate,c_nearby,u_suggested,u_match,u_atlas,u_extra_facts client
   class flask,r_health,r_identify,r_confirm,r_catalog,r_recommend,r_score,r_letter,gunicorn,r_plan,r_locate,r_nearby route
-  class s_identify,s_confirm,s_catalog,s_rec,s_score,s_proposal,s_assess,s_fallback_rec,s_letter,s_letter_noai,s_species,s_plantnet,s_chat,s_fl,s_scope,s_bundled,s_bundled_all,s_usda,s_usda_guard,v_text,v_location,v_plants,v_species,v_site,v_proposal,v_images,limits,s_rank,s_plan,s_summary_metrics,s_summary,s_resolve,s_common,s_plant_option,s_county,s_south,s_coords,s_geocode,s_zip_center,s_reverse,s_nearby,s_name_guard svc
+  class s_identify,s_confirm,s_catalog,s_rec,s_score,s_proposal,s_assess,s_fallback_rec,s_letter,s_letter_noai,s_species,s_plantnet,s_chat,s_fl,s_scope,s_bundled,s_bundled_all,s_usda,s_usda_guard,v_text,v_location,v_plants,v_species,v_site,v_proposal,v_images,limits,s_rank,s_plan,s_summary_metrics,s_summary,s_resolve,s_common,s_plant_option,s_county,s_plantings,s_coords,s_geocode,s_zip_center,s_reverse,s_nearby,s_name_guard svc
   class d_exceptions,d_fisc,d_natives,fisc_builder,d_recommendations,d_nwf,d_why,d_zip,d_terms,zip_builder data
   class plantnet,openai,usda,ci_checks,nominatim,inat ext
   class c_local dead
