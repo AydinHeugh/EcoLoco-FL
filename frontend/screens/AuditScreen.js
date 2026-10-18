@@ -75,7 +75,13 @@ function PlantCard({ plant, onDelete, onPick, onNone }) {
           <Text style={[styles.plantName, { flex: 1 }]} numberOfLines={2}>
             {noMatch ? 'Not identified' : choosing ? 'Not sure yet' : plant.plant_name}
           </Text>
-          <TouchableOpacity onPress={onDelete} hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }} style={styles.deleteBtn}>
+          <TouchableOpacity
+            onPress={onDelete}
+            hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
+            style={styles.deleteBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Remove this plant"
+          >
             <View style={styles.deleteBtnInner}>
               <Text style={styles.deleteBtnText}>✕</Text>
             </View>
@@ -105,6 +111,10 @@ function PlantCard({ plant, onDelete, onPick, onNone }) {
 let _savedPlants = [];
 let _savedPlace  = null;
 
+export function forgetScannedPlant(id) {
+  _savedPlants = _savedPlants.filter(p => p._id !== id);
+}
+
 // ─── AuditScreen ─────────────────────────────────────────────────────────────
 export default function AuditScreen({ navigation }) {
   const [place,   setPlace]   = useState(_savedPlace);
@@ -115,6 +125,9 @@ export default function AuditScreen({ navigation }) {
   // Keep module vars in sync so state is restored on remount
   useEffect(() => { _savedPlants = plants; }, [plants]);
   useEffect(() => { _savedPlace = place; }, [place]);
+  useEffect(() => navigation.addListener('focus', () => {
+    setPlants(prev => prev.filter(p => p.loading || _savedPlants.some(s => s._id === p._id)));
+  }), [navigation]);
   const zipCode = place?.zip ?? '';
 
   const { width } = useWindowDimensions();
@@ -237,6 +250,7 @@ export default function AuditScreen({ navigation }) {
           <Text style={styles.pageSubtitle}>
             Scan the plants around campus to see how many are native to Florida, and what to change.
           </Text>
+          <Text style={styles.realOnly}>Only scan real plants growing outdoors.</Text>
         </View>
 
         {/* ── ZIP Input ── */}
@@ -332,6 +346,7 @@ const styles = StyleSheet.create({
   titleSection: { alignItems: 'center', paddingTop: 32, paddingBottom: 24, paddingHorizontal: 24 },
   pageTitle:    { fontSize: 34, fontFamily: FONTS.heading, color: COLORS.darkGreen, marginBottom: 6 },
   pageSubtitle: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', lineHeight: 19 },
+  realOnly:     { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, textAlign: 'center', marginTop: 10 },
 
   zipSection: { paddingHorizontal: 20, marginBottom: 8 },
   zipLocked: {

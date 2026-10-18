@@ -37,7 +37,8 @@
         {
           "locationWhenInUsePermission": "EcoLoco uses your location once to find your school's ZIP code and plants seen nearby. It is rounded to about 1 km and never saved."
         }
-      ]
+      ],
+      "expo-web-browser"
     ]
   }
 }

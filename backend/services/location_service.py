@@ -1,11 +1,14 @@
+import json
 import logging
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from functools import cache
 
 import requests
 
 from services.fl_plants_service import plant_option
+from services.species_service import DATA_DIR
 
 log = logging.getLogger(__name__)
 
@@ -14,11 +17,28 @@ NOMINATIM = "https://nominatim.openstreetmap.org"
 INATURALIST = "https://api.inaturalist.org/v1/observations/species_counts"
 NEARBY_KM = 5
 NEARBY_COUNT = 5
+SOUTH_FLORIDA = {
+    "Palm Beach", "Broward", "Miami-Dade", "Martin", "Monroe", "Collier",
+    "Lee", "Hendry", "Glades", "Okeechobee", "St. Lucie", "Charlotte",
+}
 
 _lock = threading.Lock()
 _last_call = [0.0]
 _now = time.monotonic
 _sleep = time.sleep
+
+
+@cache
+def _zip_counties():
+    return json.loads((DATA_DIR / "fl_zip_counties.json").read_text(encoding="utf-8"))["zips"]
+
+
+def county(zip_code):
+    return _zip_counties().get(zip_code)
+
+
+def in_south_florida(zip_code):
+    return county(zip_code) in SOUTH_FLORIDA
 
 
 def round_coords(lat, lon):

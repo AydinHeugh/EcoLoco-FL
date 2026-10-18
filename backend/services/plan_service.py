@@ -98,7 +98,7 @@ def _nwf_effect(rec):
     return None
 
 
-def build_plan(plants):
+def build_plan(plants, south_florida=True):
     base = summarize(plants)
     by_name = {rec["scientific_name"]: rec for rec in _all_entries()}
     scanned = [dict(by_name.get(p["scientific_name"], {}), scientific_name=p["scientific_name"])
@@ -111,7 +111,7 @@ def build_plan(plants):
             invasives.setdefault(p["scientific_name"], p)
             scans[p["scientific_name"]] += 1
 
-    recs = [rec for rec in _recommendations() if rec.get("verified") is True]
+    recs = [rec for rec in _recommendations() if rec.get("verified") is True] if south_florida else []
     ranked = sorted(recs, key=lambda r: _rank_key(r, gaps, missing, invasives.keys()))
     known, native = base["known"], base["counts"]["native"]
 
@@ -163,4 +163,4 @@ def build_plan(plants):
         add.append(card)
 
     return {"remove": remove, "add": add, "gaps": sorted(gaps), "summary": with_plan(base, fillers, replaced),
-            "why_this_matters": _load("why_this_matters.json")["lines"]}
+            "why_this_matters": _load("why_this_matters.json")["lines"], "south_florida": south_florida}

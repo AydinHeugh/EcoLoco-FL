@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import StatusBadge from './StatusBadge';
 import SourceLine from './SourceLine';
+import AtlasButton from './AtlasButton';
 import { COLORS, FONTS } from '../theme';
 
 const SHOWN = 2;
+export const NOT_SOUTH_FLORIDA = 'Planting recommendations are only checked for South Florida so far.';
 
 function addRows(card) {
   const buying = card.buying ?? {};
@@ -21,17 +23,17 @@ function addRows(card) {
   ];
 }
 
-function removeRows(card, replacementName) {
+function removeRows(card, replacementName, southFlorida) {
   return [
     { label: 'Why', text: card.why ?? "It is on Florida's official list of invasive plants.", source: { name: card.source_label } },
     { label: 'Safety', text: card.removal_safety?.text, source: card.removal_safety?.source },
-    { label: 'Replace with', text: replacementName ?? 'No replacement is ready yet. Our team is still checking plants.' },
+    southFlorida && { label: 'Replace with', text: replacementName ?? 'No replacement is ready yet. Our team is still checking plants.' },
   ];
 }
 
-export default function PlanCard({ card, kind, replacementName }) {
+export default function PlanCard({ card, kind, replacementName, southFlorida = true }) {
   const [open, setOpen] = useState(false);
-  const rows = (kind === 'remove' ? removeRows(card, replacementName) : addRows(card)).filter(r => r.text);
+  const rows = (kind === 'remove' ? removeRows(card, replacementName, southFlorida) : addRows(card)).filter(r => r?.text);
   const shown = open ? rows : rows.slice(0, SHOWN);
 
   return (
@@ -54,6 +56,7 @@ export default function PlanCard({ card, kind, replacementName }) {
           <Text style={styles.more}>{open ? 'Less' : 'More'}</Text>
         </TouchableOpacity>
       )}
+      {kind === 'add' && <AtlasButton url={card.atlas_url} />}
     </View>
   );
 }

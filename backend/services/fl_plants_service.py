@@ -85,6 +85,8 @@ def plant_option(scientific_name, common_name, confidence, zip_code):
     for key in ("helps", "watch_out"):
         if key in facts:
             option[key] = facts[key]
+    if facts.get("verified") is True and facts.get("atlas_url"):
+        option["atlas_url"] = facts["atlas_url"]
     if safety := _by_name("fisc_list.json").get(canonical, {}).get("removal_safety"):
         option["removal_safety"] = safety
     return option

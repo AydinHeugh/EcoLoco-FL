@@ -68,3 +68,27 @@ def test_scores_name_their_real_source(path, phrase):
 def test_match_label_names_openai_for_fallback_scores():
     text = (FRONTEND / "components" / "CandidatePicker.js").read_text(encoding="utf-8")
     assert "openai_fallback" in text and "'OpenAI'" in text and "'PlantNet'" in text
+
+
+def test_ecoscan_asks_for_real_outdoor_plants():
+    assert "Only scan real plants growing outdoors." in (FRONTEND / "screens" / "AuditScreen.js").read_text(encoding="utf-8")
+
+
+def test_outside_south_florida_message_is_exact():
+    text = (FRONTEND / "components" / "PlanCard.js").read_text(encoding="utf-8")
+    assert "'Planting recommendations are only checked for South Florida so far.'" in text
+
+
+def test_atlas_button_opens_in_app_browser_only_with_a_link():
+    text = (FRONTEND / "components" / "AtlasButton.js").read_text(encoding="utf-8")
+    assert "WebBrowser.openBrowserAsync(url)" in text
+    assert "if (!url) return null;" in text
+    assert "See where it grows" in text
+    for screen in ("components/PlanCard.js", "screens/IdentificationScreen.js"):
+        assert "<AtlasButton url=" in (FRONTEND / screen).read_text(encoding="utf-8")
+
+
+def test_results_list_has_a_remove_button_that_rebuilds_the_plan():
+    text = (FRONTEND / "screens" / "AuditResultsScreen.js").read_text(encoding="utf-8")
+    assert "onPress={() => removePlant(i)}" in text
+    assert "}, [scanned, attempt]);" in text
