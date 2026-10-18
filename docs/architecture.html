@@ -236,6 +236,7 @@
         "Starts with a `ScreenHeader` photo banner, with \"New Scan\" in its corner.",
         "Under the title it says \"Only scan real plants growing outdoors.\"",
         "Uses `LocationPicker` for the school's location before scanning. The place lives in module-level variables (memory only) so it survives switching tabs.",
+        "Once plants are added, the location shows as \"📍 ZIP …\" with a \"Change\" link that opens `LocationPicker` again; scanned plants are kept, and the new ZIP is used for the plan.",
         "\"Add plant\" makes an empty card. Each card holds up to 5 photos of that one plant: \"Take photo\" adds one from the camera, \"Upload photos\" adds several at once (expo-image-picker, multi-select up to the room left). Photos can be removed before scanning.",
         "\"Scan this plant\" scans one card; \"Scan all (N)\" scans every card that has photos, 3 at a time, each calling `identifyPlant(photos, zipCode)`. A card that fails keeps its photos and shows the error.",
         "While a card scans, its photos dim and it shows the `ScanningLeaf` animation with the progress text. Results pop in with a haptic.",

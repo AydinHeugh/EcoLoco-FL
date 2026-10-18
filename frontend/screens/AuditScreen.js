@@ -170,6 +170,7 @@ export default function AuditScreen({ navigation }) {
   const [place,   setPlace]   = useState(_savedPlace);
   const [plants,  setPlants]  = useState(_savedPlants);
   const [message, setMessage] = useState(null);
+  const [changingPlace, setChangingPlace] = useState(false);
 
   useEffect(() => { _savedPlants = plants; }, [plants]);
   useEffect(() => { _savedPlace = place; rememberPlace(place); }, [place]);
@@ -305,9 +306,23 @@ export default function AuditScreen({ navigation }) {
         <View style={styles.zipSection}>
           {plants.length === 0 ? (
             <LocationPicker place={place} onChange={setPlace} />
+          ) : changingPlace ? (
+            <View style={styles.changePlace}>
+              <LocationPicker place={place} onChange={found => { setPlace(found); setChangingPlace(false); }} />
+              <Text style={styles.zipLockedSub}>Your scanned plants stay as they are.</Text>
+              <TouchableOpacity onPress={() => setChangingPlace(false)} accessibilityRole="button">
+                <Text style={styles.zipChange}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <View style={styles.zipLocked}>
-              <Text style={styles.zipLockedText}>📍 ZIP {zipCode}</Text>
+              <View style={styles.zipLockedLeft}>
+                <Text style={styles.zipLockedText}>📍 ZIP {zipCode}</Text>
+                <TouchableOpacity onPress={() => setChangingPlace(true)} accessibilityRole="button"
+                  accessibilityLabel="Change location" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Text style={styles.zipChange}>Change</Text>
+                </TouchableOpacity>
+              </View>
               <Text style={styles.zipLockedSub}>{done.length} of {plants.length} plant{plants.length !== 1 ? 's' : ''} scanned</Text>
             </View>
           )}
@@ -398,6 +413,9 @@ const styles = StyleSheet.create({
   },
   zipLockedText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
   zipLockedSub:  { fontSize: TYPE.caption, fontFamily: FONTS.bodyMedium, color: COLORS.textMuted },
+  zipLockedLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  zipChange:     { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.softGreen, textDecorationLine: 'underline', textAlign: 'center' },
+  changePlace:   { gap: 10, paddingVertical: 8 },
 
   listSection: { paddingHorizontal: 20, paddingTop: 16, gap: 14 },
 

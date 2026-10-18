@@ -230,3 +230,8 @@ def test_recommend_uses_the_last_place_from_other_tabs():
 def test_quick_loads_do_not_flash():
     for screen in ("RecommendationScreen.js", "AuditResultsScreen.js"):
         assert "useDelayedFlag(" in (FRONTEND / "screens" / screen).read_text(encoding="utf-8")
+
+
+def test_ecoscan_location_can_change_after_scanning():
+    text = (FRONTEND / "screens" / "AuditScreen.js").read_text(encoding="utf-8")
+    assert "setChangingPlace(true)" in text and "Your scanned plants stay as they are." in text
