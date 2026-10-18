@@ -369,7 +369,6 @@ export default function IdentificationScreen({ navigation }) {
                 options={result.options}
                 suggested={result.suggested}
                 idSource={result.id_source}
-                suggestedConfidence={result.suggested_confidence}
                 onPick={setPicked}
                 onNone={() => setPicked(-1)}
               />

@@ -135,3 +135,9 @@ def test_site_filters_are_on_both_planting_screens():
         assert f"'{label}'" in filters or f'"{label}"' in filters
     for screen in ("RecommendationScreen.js", "AuditResultsScreen.js"):
         assert "<SiteFilters" in (FRONTEND / "screens" / screen).read_text(encoding="utf-8")
+
+
+def test_openai_pick_shows_no_number():
+    picker = (FRONTEND / "components" / "CandidatePicker.js").read_text(encoding="utf-8")
+    assert "\" · OpenAI's pick\"" in picker
+    assert "sure)" not in picker and "suggestedConfidence" not in picker

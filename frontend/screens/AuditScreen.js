@@ -174,7 +174,6 @@ function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan,
               options={r.options}
               suggested={r.suggested}
               idSource={r.id_source}
-              suggestedConfidence={r.suggested_confidence}
               onPick={onPick}
               onNone={onNone}
             />

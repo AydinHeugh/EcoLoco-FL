@@ -16,12 +16,6 @@ export function matchText(idSource, confidence) {
 
 export const NO_MATCH_TEXT = "Couldn't identify this. Try a close-up of one leaf, or a flower";
 
-export function aiPickText(suggestedConfidence) {
-  return suggestedConfidence == null
-    ? "OpenAI's pick"
-    : `OpenAI's pick (${Math.round(suggestedConfidence * 100)}% sure)`;
-}
-
 export function agreedName(options) {
   return options.map(o => o.plant_name).join(' or ');
 }
@@ -71,7 +65,7 @@ export function AgreedStatus({ options, onPickOne }) {
   );
 }
 
-export default function CandidatePicker({ options, suggested = 0, idSource, suggestedConfidence, onPick, onNone }) {
+export default function CandidatePicker({ options, suggested = 0, idSource, onPick, onNone }) {
   const aiPick = idSource === 'openai_adjudicated' ? suggested : null;
   return (
     <View style={styles.wrap}>
@@ -86,7 +80,7 @@ export default function CandidatePicker({ options, suggested = 0, idSource, sugg
               {sharesName(option, options) ? ` (${option.scientific_name})` : ''}
             </Text>
             <Text style={styles.match}>
-              {matchText(idSource, option.confidence)}{i === aiPick ? ` · ${aiPickText(suggestedConfidence)}` : ''}
+              {matchText(idSource, option.confidence)}{i === aiPick ? " · OpenAI's pick" : ''}
             </Text>
           </View>
           <StatusBadge status={option.status} label={option.status_label} />
