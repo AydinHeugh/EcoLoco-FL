@@ -77,7 +77,7 @@ export default function RecommendationScreen({ navigation, route }) {
   }
   async function recommend() {
     if (!/^33[0-4]\d{2}$/.test(zipCode)) {
-      setError('Enter a South Florida ZIP beginning 330–334. This pilot uses verified Florida plant records.');
+      setError('Enter a South Florida ZIP beginning 330–334.');
       return;
     }
     cancel();
@@ -103,11 +103,11 @@ export default function RecommendationScreen({ navigation, route }) {
     <View style={[styles.inner, { width: Math.min(width, 960) }]}>
       <View style={styles.brand}><Image source={LOGO} style={styles.logo} accessibilityLabel="EcoLoco" /><Text style={styles.brandName}>EcoLoco</Text></View>
       <View style={styles.content}>
-        <Text accessibilityRole="header" style={[styles.title, fontsLoaded && { fontFamily: 'Fraunces_700Bold' }]}>Recommendations</Text>
-        <Text style={styles.subtitle}>Native plants for your space. A little local change goes a long way.</Text>
+        <Text accessibilityRole="header" style={[styles.title, width < 360 && { fontSize: 28 }, fontsLoaded && { fontFamily: 'Fraunces_700Bold' }]}>Recommendations</Text>
+        <Text style={styles.subtitle}>Native plants for your space.</Text>
         <Text style={styles.label}>Planting ZIP code</Text>
         <TextInput accessibilityLabel="Planting ZIP code" value={zipCode} onChangeText={changeZip} placeholder="e.g. 33431" placeholderTextColor="#777768" keyboardType="number-pad" maxLength={5} style={styles.input} />
-        <Text style={styles.hint}>South Florida · ZIP codes beginning 330–334</Text>
+        <Text style={styles.hint}>South Florida · ZIP 330–334</Text>
         <SiteConditions site={site} onChange={changeSite} />
         {!!plants.length && <Text style={styles.hint}>Finding additions to your {plants.length} recorded plant{plants.length === 1 ? '' : 's'}.</Text>}
         <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: loading }} aria-disabled={loading} disabled={loading} onPress={recommend} style={[styles.button, loading && styles.disabled]}>
@@ -119,7 +119,7 @@ export default function RecommendationScreen({ navigation, route }) {
           <Text accessibilityRole="header" style={styles.resultsTitle}>{results.length ? 'A greener place to start' : 'No matches yet'}</Text>
           <Text style={styles.hint}>{results.length ? `${results.length} options for your site · listed alphabetically` : 'Check your site details or ask local extension staff for more options.'}</Text>
           {shown.map((item) => <RecommendationCard key={item.taxon_id || item.scientific_name} item={item} />)}
-          {results.length > 3 && <TouchableOpacity accessibilityRole="button" accessibilityState={{ expanded }} aria-expanded={expanded} onPress={() => setExpanded(!expanded)} style={styles.secondaryButton}><Text style={styles.secondaryText}>{expanded ? 'Show less' : `Show ${results.length - 3} more plants`}</Text></TouchableOpacity>}
+          {results.length > 3 && <TouchableOpacity accessibilityRole="button" accessibilityState={{ expanded }} aria-expanded={expanded} onPress={() => setExpanded(!expanded)} style={styles.secondaryButton}><Text style={styles.secondaryText}>{expanded ? 'Show less' : `Show ${results.length - 3} more ${results.length === 4 ? 'plant' : 'plants'}`}</Text></TouchableOpacity>}
           <TouchableOpacity accessibilityRole="button" accessibilityState={{ expanded: aboutOpen }} aria-expanded={aboutOpen} onPress={() => setAboutOpen(!aboutOpen)} style={styles.linkButton}><Text style={styles.link}>{aboutOpen ? 'Hide how we choose −' : 'How we choose these plants +'}</Text></TouchableOpacity>
           {aboutOpen && <View style={styles.notice}><Text style={styles.hint}>Options use verified Florida records and your site conditions. Wildlife benefits describe documented relationships, not measured results at your school. Review growing requirements with your school before planting.</Text><EvidenceLink url="https://nativeplantfinder.nwf.org">Explore NWF Native Plant Finder</EvidenceLink></View>}
           <TouchableOpacity accessibilityRole="button" onPress={() => navigation.navigate('EcoScan', { sample: false })} style={styles.secondaryButton}><Text style={styles.secondaryText}>Start an EcoScan →</Text></TouchableOpacity>
