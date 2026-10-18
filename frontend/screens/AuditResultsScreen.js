@@ -10,6 +10,7 @@ import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS } from '../theme';
 import StatusBadge from '../components/StatusBadge';
 import PercentRing from '../components/PercentRing';
 import PlanCard, { NOT_CHECKED_HERE } from '../components/PlanCard';
+import SiteFilters, { ANY_SITE } from '../components/SiteFilters';
 import SourceLine from '../components/SourceLine';
 import StatusBars from '../components/StatusBars';
 import CaterpillarBars from '../components/CaterpillarBars';
@@ -81,7 +82,7 @@ function LetterGenerator({ plan, zipCode }) {
 
 export default function AuditResultsScreen({ route, navigation }) {
   const { plants = [], zipCode, lat, lon } = route.params ?? {};
-  const [request,  setRequest]  = useState({ plants, skip: [] });
+  const [request,  setRequest]  = useState({ plants, skip: [], site: ANY_SITE });
   const [plan,     setPlan]     = useState(null);
   const [planFor,  setPlanFor]  = useState(null);
   const [loading,  setLoading]  = useState(true);
@@ -97,7 +98,7 @@ export default function AuditResultsScreen({ route, navigation }) {
   useEffect(() => {
     let current = true;
     setError(null);
-    getPlan(request.plants.map(p => ({ scientific_name: p.scientific_name, plant_name: p.plant_name })), zipCode, request.skip)
+    getPlan(request.plants.map(p => ({ scientific_name: p.scientific_name, plant_name: p.plant_name })), zipCode, request.skip, request.site)
       .then(data => { if (current) { setPlan(data.result); setPlanFor(request); } })
       .catch(err => { if (current) setError(userMessage(err, 'Could not check your plants. Check your connection and try again.')); })
       .finally(() => { if (current) setLoading(false); });
@@ -177,17 +178,23 @@ export default function AuditResultsScreen({ route, navigation }) {
               ))}
               {plan.plantings_checked === false
                 ? <Text style={styles.mutedText}>{NOT_CHECKED_HERE}</Text>
-                : plan.add.length === 0
-                  ? <Text style={styles.mutedText}>No plants are ready to recommend yet. Our team is still checking each one.</Text>
-                  : (
-                    <>
-                      <Text style={styles.sectionNote}>Untick a plant to leave it out of your letter and the "with the plan" numbers.</Text>
-                      {plan.add.map(card => (
-                        <PlanCard key={card.scientific_name} card={card} kind="add"
-                          inLetter={card.in_letter !== false} onToggleLetter={stale ? null : () => toggleLetter(card.scientific_name)} />
-                      ))}
-                    </>
-                  )}
+                : (
+                  <>
+                    <SiteFilters site={request.site} hidden={plan.hidden_by_site ?? 0} disabled={stale}
+                      onChange={site => setRequest({ ...planFor, site })} />
+                    {plan.add.length === 0
+                      ? <Text style={styles.mutedText}>{plan.hidden_by_site > 0 ? 'No checked plants fit all of those choices. Try setting one back to Any.' : 'No plants are ready to recommend yet. Our team is still checking each one.'}</Text>
+                      : (
+                        <>
+                          <Text style={styles.sectionNote}>Untick a plant to leave it out of your letter and the "with the plan" numbers.</Text>
+                          {plan.add.map(card => (
+                            <PlanCard key={card.scientific_name} card={card} kind="add"
+                              inLetter={card.in_letter !== false} onToggleLetter={stale ? null : () => toggleLetter(card.scientific_name)} />
+                          ))}
+                        </>
+                      )}
+                  </>
+                )}
               <TouchableOpacity onPress={() => Linking.openURL(NURSERY_URL)}>
                 <Text style={styles.link}>Find a native plant nursery near you (plantrealflorida.org) →</Text>
               </TouchableOpacity>

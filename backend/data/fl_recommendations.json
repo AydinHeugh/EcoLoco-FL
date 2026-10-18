@@ -73,6 +73,27 @@
           "why": "A low plant for the same shady beds."
         }
       ],
+      "moisture": {
+        "value": [
+          "dry",
+          "average"
+        ],
+        "basis": "Soils: Moist, well-drained sandy or limestone soils, with or without humusy top layer. Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Zamiinte"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "low",
+        "basis": "Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Zamiinte"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2105",
       "verified": true,
       "checked_by": "Aydin",
@@ -149,6 +170,26 @@
           "why": "A bird and butterfly shrub for the same sunny spot."
         }
       ],
+      "moisture": {
+        "value": [
+          "average"
+        ],
+        "basis": "Soils: Moist, well-drained sandy or limestone soils, with humusy top layer. Drought Tolerance: Moderate to high; plants growing in extremely dry soils may die during extended periods of drought.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Hamepate"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "moderate",
+        "basis": "Drought Tolerance: Moderate to high; plants growing in extremely dry soils may die during extended periods of drought.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Hamepate"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2723",
       "verified": true,
       "checked_by": "Aydin",
@@ -208,6 +249,26 @@
           "why": "A big shade tree for the open spots where Australian pine grows."
         }
       ],
+      "moisture": {
+        "value": [
+          "average"
+        ],
+        "basis": "Soils: Moist to rarely innundated, well-drained to moderately well-drained sandy, limestone or organic soils, with humusy top layer. Drought Tolerance: Moderate; generally requires moist soils, but tolerant of short periods of drought once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Quervirg"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "moderate",
+        "basis": "Drought Tolerance: Moderate; generally requires moist soils, but tolerant of short periods of drought once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Quervirg"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3904",
       "verified": true,
       "checked_by": "Aydin",
@@ -267,6 +328,27 @@
           "why": "A berry shrub that can fill the same spot."
         }
       ],
+      "moisture": {
+        "value": [
+          "dry",
+          "average"
+        ],
+        "basis": "Soils: Moist, well-drained sandy, limestone or organic soils, usually with a humusy top layer. Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Callamer"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "low",
+        "basis": "Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Callamer"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3546",
       "verified": true,
       "checked_by": "Aydin",
@@ -319,6 +401,27 @@
           "why": "A low, spreading groundcover for the same sunny ground."
         }
       ],
+      "moisture": {
+        "value": [
+          "dry",
+          "average"
+        ],
+        "basis": "Soils: Moist to dry, well-drained sandy soils, without humus. Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Mimostri"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "low",
+        "basis": "Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Mimostri"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2162",
       "verified": true,
       "checked_by": "Aydin",
@@ -379,6 +482,26 @@
           "why": "A shade-loving shrub for spots where umbrella trees pop up."
         }
       ],
+      "moisture": {
+        "value": [
+          "average"
+        ],
+        "basis": "Soils: Moist, well-drained sandy or limestone soils, with humusy top layer. Drought Tolerance: Moderate; generally requires moist soils, but tolerant of short periods of drought once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Psycnerv"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "moderate",
+        "basis": "Drought Tolerance: Moderate; generally requires moist soils, but tolerant of short periods of drought once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Psycnerv"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2811",
       "verified": true,
       "checked_by": "Aydin",
@@ -447,6 +570,26 @@
           "why": "A tall berry shrub for the same spot."
         }
       ],
+      "moisture": {
+        "value": [
+          "average"
+        ],
+        "basis": "Soils: Moist, well-drained sandy or limestone soils, with humusy top layer. Drought Tolerance: Moderate; generally requires moist soils, but tolerant of short periods of drought once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Ardiesca"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "moderate",
+        "basis": "Drought Tolerance: Moderate; generally requires moist soils, but tolerant of short periods of drought once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Ardiesca"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/760",
       "verified": true,
       "checked_by": "Aydin",
@@ -509,6 +652,27 @@
           "why": "A hedge shrub for the same spot, with fruit wildlife eats."
         }
       ],
+      "moisture": {
+        "value": [
+          "average",
+          "wet"
+        ],
+        "basis": "Soils: Seasonally inundated to moist, well-drained to poorly-drained sandy, limestone, or organic freshwater soils, with humusy top layer. Drought Tolerance: Moderate to low; requires moist to wet soils, but tolerant of short periods of drought once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Chryicac"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "moderate",
+        "basis": "Drought Tolerance: Moderate to low; requires moist to wet soils, but tolerant of short periods of drought once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Chryicac"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2765",
       "verified": true,
       "checked_by": "Aydin",
@@ -568,6 +732,27 @@
           "why": "Handles salty wind near the coast, where Australian pine often grows."
         }
       ],
+      "moisture": {
+        "value": [
+          "dry",
+          "average"
+        ],
+        "basis": "Soils: Moist, well-drained sandy or limestone soils, with humusy top layer. Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Coccuvif"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "low",
+        "basis": "Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Coccuvif"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3791",
       "verified": true,
       "checked_by": "Aydin",
@@ -629,6 +814,26 @@
           "why": "A medium tree with fruit birds eat, for the spots where carrotwood grows."
         }
       ],
+      "moisture": {
+        "value": [
+          "average"
+        ],
+        "basis": "Soils: Moist, well-drained sandy or limestone soils, with humusy top layer. Drought Tolerance: Moderate; generally requires moist soils, but tolerant of short periods of drought once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Coccdive"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "moderate",
+        "basis": "Drought Tolerance: Moderate; generally requires moist soils, but tolerant of short periods of drought once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Coccdive"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3579",
       "verified": true,
       "checked_by": "Aydin",
@@ -694,6 +899,27 @@
           "why": "A native tree for spots where umbrella trees grow."
         }
       ],
+      "moisture": {
+        "value": [
+          "dry",
+          "average"
+        ],
+        "basis": "Soils: Moist, well-drained sandy or limestone soils, with humusy top layer. Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Burssima"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "low",
+        "basis": "Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Burssima"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/727",
       "verified": true,
       "checked_by": "Aydin",
@@ -759,6 +985,27 @@
           "why": "Grows well in the same wet, low spots."
         }
       ],
+      "moisture": {
+        "value": [
+          "average",
+          "wet"
+        ],
+        "basis": "Soils: Wet to moist, poorly-drained to seasonally inundated organic freshwater soils, with a humusy top layer. Drought Tolerance: Low; requires moist to wet soils and is intolerant of long periods of drought.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Acerrubr"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "moderate",
+        "basis": "Drought Tolerance: Low; requires moist to wet soils and is intolerant of long periods of drought.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Acerrubr"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2120",
       "verified": true,
       "checked_by": "Aydin",
@@ -833,6 +1080,27 @@
           "why": "A berry tree for birds where Brazilian pepper grew."
         }
       ],
+      "moisture": {
+        "value": [
+          "average",
+          "wet"
+        ],
+        "basis": "Soils: Wet to moist, moderately well-drained to poorly-drained organic or sandy soils, often with acid pH. Drought Tolerance: Moderate to low; requires moist to wet soils, but tolerant of short periods of drought once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Ilexcass"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "moderate",
+        "basis": "Drought Tolerance: Moderate to low; requires moist to wet soils, but tolerant of short periods of drought once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Ilexcass"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3866",
       "verified": true,
       "checked_by": "Aydin",
@@ -883,6 +1151,28 @@
           "why": "A tall needle tree for the same open, sandy spots."
         }
       ],
+      "moisture": {
+        "value": [
+          "dry",
+          "average",
+          "wet"
+        ],
+        "basis": "Soils: Moist to seasonally wet, well-drained sandy or limestone soils, without humus. Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Pinuellidens"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "low",
+        "basis": "Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Pinuellidens"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3239",
       "verified": true,
       "checked_by": "Aydin",
@@ -941,6 +1231,26 @@
           "why": "A berry shrub for a hedge where Brazilian pepper was."
         }
       ],
+      "moisture": {
+        "value": [
+          "average"
+        ],
+        "basis": "Soils: Moist to rarely innundated, well-drained to moderately well-drained limestone or sandy soils, with humusy top layer. Drought Tolerance: Moderate; generally requires moist soils, but tolerant of short periods of drought once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Myrcfrag"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "moderate",
+        "basis": "Drought Tolerance: Moderate; generally requires moist soils, but tolerant of short periods of drought once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Myrcfrag"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2832",
       "verified": true,
       "checked_by": "Aydin",
@@ -1010,6 +1320,27 @@
           "why": "The native kind of the same plant."
         }
       ],
+      "moisture": {
+        "value": [
+          "dry",
+          "average"
+        ],
+        "basis": "Soils: Moist, well-drained sandy or limestone soils, without humus. Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Stacjama"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "low",
+        "basis": "Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Stacjama"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/703",
       "verified": true,
       "checked_by": "Aydin",
@@ -1077,6 +1408,27 @@
           "why": "A yellow-flowered groundcover for the same sunny spots."
         }
       ],
+      "moisture": {
+        "value": [
+          "dry",
+          "average"
+        ],
+        "basis": "Soils: Moist, well-drained sandy soils, without humus. Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Helidebidebi"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "low",
+        "basis": "Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Helidebidebi"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/660",
       "verified": true,
       "checked_by": "Aydin",
@@ -1129,6 +1481,27 @@
           "why": "A native wild petunia instead of the invasive Mexican petunia."
         }
       ],
+      "moisture": {
+        "value": [
+          "dry",
+          "average"
+        ],
+        "basis": "Soils: Moist, well-drained sandy soils, without humus. Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Ruelcaro"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "low",
+        "basis": "Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Ruelcaro"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/812",
       "verified": true,
       "checked_by": "Aydin",
@@ -1193,6 +1566,27 @@
           "why": "A native climber instead of Old World climbing fern."
         }
       ],
+      "moisture": {
+        "value": [
+          "dry",
+          "average"
+        ],
+        "basis": "Soils: Moist, well-drained sandy or limestone soils, with or without humusy top layer. Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Passsube"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "low",
+        "basis": "Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Passsube"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2080",
       "verified": true,
       "checked_by": "Aydin",
@@ -1252,6 +1646,27 @@
           "why": "A native vine for the spots where air potato climbs."
         }
       ],
+      "moisture": {
+        "value": [
+          "dry",
+          "average"
+        ],
+        "basis": "Soils: Moist, well-drained sandy or limestone soils, with or without humusy top layer. Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Passinca"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "low",
+        "basis": "Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Passinca"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3464",
       "verified": true,
       "checked_by": "Aydin",
@@ -1302,6 +1717,27 @@
       "look_into": [
         "Is there a damp spot near a drain or pond on campus?"
       ],
+      "moisture": {
+        "value": [
+          "average",
+          "wet"
+        ],
+        "basis": "Soils: Moist to wet, moderately well-drained to poorly-drained sandy, organic, or limestone soils, with humusy top layer. Drought Tolerance: Moderate to low; requires moist to wet soils, but tolerant of short periods of drought once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Tripdact"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "moderate",
+        "basis": "Drought Tolerance: Moderate to low; requires moist to wet soils, but tolerant of short periods of drought once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Tripdact"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3607",
       "verified": true,
       "checked_by": "Aydin",
@@ -1349,6 +1785,27 @@
       "look_into": [
         "Could a row of it border a walkway or parking lot?"
       ],
+      "moisture": {
+        "value": [
+          "average",
+          "wet"
+        ],
+        "basis": "Soils: Wet to moist, seasonally inundated freshwater or brackish soils, without humus. Drought Tolerance: Moderate; generally requires moist soils, but tolerant of short periods of drought once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Muhlcapi"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "moderate",
+        "basis": "Drought Tolerance: Moderate; generally requires moist soils, but tolerant of short periods of drought once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Muhlcapi"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2069",
       "verified": true,
       "checked_by": "Aydin",
@@ -1415,6 +1872,28 @@
       "look_into": [
         "Are there saw palmettos growing wild anywhere near your school?"
       ],
+      "moisture": {
+        "value": [
+          "dry",
+          "average",
+          "wet"
+        ],
+        "basis": "Soils: Moist to dry or seasonally wet, well-drained to moderately well-drained sandy or limestone soils, with or without humusy top layer. Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Sererepe"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "low",
+        "basis": "Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Sererepe"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2664",
       "verified": true,
       "checked_by": "Aydin",
@@ -1460,6 +1939,28 @@
       "look_into": [
         "Which sunny beds could use a summer wildflower?"
       ],
+      "moisture": {
+        "value": [
+          "dry",
+          "average",
+          "wet"
+        ],
+        "basis": "Soils: Moist to seasonally wet, moderately well-drained sandy or limestone soils, without humus. Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Rudbhirt"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "low",
+        "basis": "Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Rudbhirt"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2286",
       "verified": true,
       "checked_by": "Aydin",
@@ -1511,6 +2012,27 @@
       "look_into": [
         "Does anyone at school worry goldenrod causes hay fever? (It doesn't.)"
       ],
+      "moisture": {
+        "value": [
+          "average",
+          "wet"
+        ],
+        "basis": "Soils: Seasonally wet to moist, moderately- to poorly-drained freshwater soils, without humus. Drought Tolerance: Moderate to high; plants growing in extremely dry soils may die during extended periods of drought.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Solistri"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "moderate",
+        "basis": "Drought Tolerance: Moderate to high; plants growing in extremely dry soils may die during extended periods of drought.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Solistri"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3967",
       "verified": true,
       "checked_by": "Aydin",
@@ -1571,6 +2093,27 @@
           "why": "Grows in the same wet spots."
         }
       ],
+      "moisture": {
+        "value": [
+          "average",
+          "wet"
+        ],
+        "basis": "Soils: Wet to moist, moderately well-drained to poorly-drained organic soils. Drought Tolerance: Low; requires moist to wet soils and is intolerant of long periods of drought.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Salicaro"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "moderate",
+        "basis": "Drought Tolerance: Low; requires moist to wet soils and is intolerant of long periods of drought.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Salicaro"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/4040",
       "verified": true,
       "checked_by": "Aydin",
@@ -1631,6 +2174,27 @@
       "look_into": [
         "Is there a corner away from walkways where a thorny shrub could go?"
       ],
+      "moisture": {
+        "value": [
+          "dry",
+          "average"
+        ],
+        "basis": "Soils: Moist, well-drained sandy or limestone soils, with humusy top layer. Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Zantfaga"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "low",
+        "basis": "Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Zantfaga"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2804",
       "verified": true,
       "checked_by": "Aydin",
@@ -1685,6 +2249,27 @@
       "look_into": [
         "Is there a rain garden or wet spot where it could grow?"
       ],
+      "moisture": {
+        "value": [
+          "average",
+          "wet"
+        ],
+        "basis": "Soils: Wet to moist, poorly-drained to moderately well-drained organic soils, with or without humus. Drought Tolerance: Low; requires moist to wet soils and is intolerant of long periods of drought.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Asclinca"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "moderate",
+        "basis": "Drought Tolerance: Low; requires moist to wet soils and is intolerant of long periods of drought.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Asclinca"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3626",
       "verified": true,
       "checked_by": "Aydin",
@@ -1742,6 +2327,27 @@
           "why": "The native beach shrub, instead of invasive beach naupaka."
         }
       ],
+      "moisture": {
+        "value": [
+          "dry",
+          "average"
+        ],
+        "basis": "Soils: Moist, well-drained sandy or limestone soils, without humus. Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Scaeplum"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "low",
+        "basis": "Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Scaeplum"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2179",
       "verified": true,
       "checked_by": "Aydin",
@@ -1807,6 +2413,27 @@
           "why": "The native lantana, instead of the invasive kind."
         }
       ],
+      "moisture": {
+        "value": [
+          "dry",
+          "average"
+        ],
+        "basis": "Soils: Moist, well-drained limestone or sandy soils, with or without humusy top layer. Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Lantinvo"
+        },
+        "verified": false
+      },
+      "care": {
+        "value": "low",
+        "basis": "Drought Tolerance: High; does not require any supplemental water once established.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Lantinvo"
+        },
+        "verified": false
+      },
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3639",
       "verified": true,
       "checked_by": "Aydin",

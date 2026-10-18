@@ -451,7 +451,7 @@
       "what": "API endpoint for the Recommend tab: native plants to add when there's no audit.",
       "how": [
         "Reads `location`; 400 if missing, and the Florida-only message for ZIPs outside Florida.",
-        "Returns `{result: build_plan([], checked).add, plantings_checked}`: verified plants from our data, ranked as if the campus had nothing yet, or no plants when the ZIP is outside Palm Beach County (`plantings_checked()`). No AI is used."
+        "Takes an optional `site` object and returns `{result: build_plan([], checked, site=site).add, plantings_checked, hidden_by_site}`: verified plants that fit the site, ranked as if the campus had nothing yet, or none when the ZIP is outside Palm Beach County. No AI is used."
       ]
     },
     {
@@ -846,7 +846,8 @@
         "`replaces` pairs a plant with FISC invasives it can stand in for, with a plain reason. These pairings are EcoLoco suggestions for the team to review.",
         "Every Palm Beach County prohibited invasive has at least one replacement (a test checks this).",
         "`atlas_url`: that plant's own species page in the USF Atlas of Florida Plants.",
-        "Only entries with `verified: true` are recommended. All 30 were checked against the USF Atlas and their sources (docs/plant-checklist.md) and carry `checked_by` and `checked_on`. Tropical sage was dropped after the Atlas listed it as Not Native."
+        "Only entries with `verified: true` are recommended. All 30 were checked against the USF Atlas and their sources (docs/plant-checklist.md) and carry `checked_by` and `checked_on`. Tropical sage was dropped after the Atlas listed it as Not Native.",
+        "`moisture` (dry / average / wet) and `care` (low / moderate) come from each plant's Natives for Your Neighborhood page (its Soils and Drought Tolerance lines), with that text in `basis` and `verified: false` until checked in docs/plant-site-checklist.csv."
       ]
     },
     {
@@ -894,13 +895,13 @@
         "Runs `summarize()` on the scanned plants for their statuses.",
         "Each distinct invasive becomes a Remove card with its `why`, removal safety (or \"Ask your grounds crew how to remove it safely.\"), a replacement, and (only when there is one) \"Replacing it takes you from X% to Y% native\", counting every scan of that plant.",
         "Finds gaps on campus (invasive plants never count toward them): none of NWF's important plant groups, nothing caterpillars eat, no fruit, months with nothing blooming.",
-        "Ranks verified plants from `fl_recommendations.json`: gaps filled + 2 if it replaces an invasive found + 0.5 if its group is on the NWF list; easy plants first on ties.",
+        "Keeps verified plants from `fl_recommendations.json` that fit the site (`fits_site`), then ranks them: gaps filled + 2 if it replaces an invasive found + 0.5 if its group is on the NWF list; easy plants first on ties.",
         "Picks one replacement per invasive, then gap fillers, up to 5 Add cards; the first 3 have at most 1 tree and at least 1 easy plant.",
         "Cards whose plant group is on the NWF list carry `nwf: {group, caterpillar_species}` for the chart.",
         "Add cards say why they were picked and their effect: \"Oaks feed 395 kinds of caterpillars here.\" for NWF groups, otherwise the percent-native change. Counts are never added up.",
         "With `plantings_checked=False` no plant is recommended: Remove cards keep their why and safety but get no replacement or percent change, and there are no Add cards.",
         "`skip` lists Add plants the user unticked: they stay in `add` with `in_letter: false` but don't count in the \"with the plan\" numbers, and a Remove card whose replacement is skipped loses its percent change.",
-        "Returns `{remove, add, gaps, summary, why_this_matters, plantings_checked}`; every Add card has `in_letter`.",
+        "Returns `{remove, add, gaps, summary, why_this_matters, plantings_checked, site, hidden_by_site}`; every Add card has `in_letter`.",
         "Looks the scanned plants up once and reuses that for the final summary through `with_plan()`."
       ]
     },
@@ -915,9 +916,9 @@
       "row": 4.8,
       "what": "API endpoint for the campus plan.",
       "how": [
-        "Reads `plants` (a list, may be empty), `location`, and an optional `skip` list of scientific names; 400 if missing or `skip` isn't a list of names.",
+        "Reads `plants` (a list, may be empty), `location`, an optional `skip` list of scientific names and an optional `site` object; 400 if missing, if `skip` isn't a list of names, or if `site` isn't an object.",
         "ZIP codes outside Florida (32004–34997) get \"EcoLoco's plant lists cover Florida only. Enter a Florida ZIP code.\"",
-        "Returns `{result: build_plan(plants, plantings_checked(location), skip)}`: scanning and invasive checks work anywhere in Florida; Add cards only for Palm Beach County."
+        "Returns `{result: build_plan(plants, plantings_checked(location), skip, site)}`: scanning and invasive checks work anywhere in Florida; Add cards only for Palm Beach County."
       ]
     },
     {
@@ -932,7 +933,7 @@
       "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
       "what": "Sends the audited plants to the backend and gets the plan back.",
       "how": [
-        "POSTs `{plants: [{scientific_name, plant_name}], location, skip}` to `/plan`.",
+        "POSTs `{plants: [{scientific_name, plant_name}], location, skip, site}` to `/plan`.",
         "Errors keep the HTTP status; `userMessage(err, fallback)` shows the server's own message for 400s (like the Florida-only message) and a friendly fallback otherwise."
       ]
     },
@@ -1504,6 +1505,94 @@
         "Downloads the checklist from the PLANTS web service (the same request plants.usda.gov's State Search download makes), or reads a saved copy.",
         "Keeps accepted names, strips author names (\"ssp.\" becomes \"subsp.\"), and drops repeats.",
         "Run: `venv\\Scripts\\python scripts/build_fl_plant_names.py download data/fl_plant_names.json`."
+      ]
+    },
+    {
+      "id": "ui_sitefilters",
+      "label": "SiteFilters",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/SiteFilters.js",
+      "symbol": "export default function SiteFilters",
+      "col": 2,
+      "row": 3.9,
+      "what": "\"Your site\": optional Light, Moisture, Space and Care choices that narrow the plants to add.",
+      "how": [
+        "Each field has \"Any\" plus its options: Light (Full sun, Part shade, Shade), Moisture (Dry, Average, Wet), Space (Small bed, Shrub area, Tree space), Care (Low, Moderate).",
+        "Says how many plants are hidden because they don't fit, and that moisture and care only narrow the list once checked.",
+        "Used on the Recommend screen and above the Add cards on the results screen; changing a choice asks for the plants again."
+      ]
+    },
+    {
+      "id": "s_fits",
+      "label": "fits_site()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/plan_service.py",
+      "symbol": "def fits_site(",
+      "col": 6,
+      "row": 5.6,
+      "what": "Says whether a recommended plant fits the user's site choices.",
+      "how": [
+        "Light and Space use the sun and size already in our checked data (`light_of`, `space_of`). Space allows smaller plants: a shrub area still shows small-bed plants.",
+        "Moisture and Care only count once that plant's field has `verified: true` (`checked_value`); until then the plant is never hidden.",
+        "\"Any\" (`unknown`) never hides anything."
+      ]
+    },
+    {
+      "id": "s_cleansite",
+      "label": "clean_site()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/plan_service.py",
+      "symbol": "def clean_site(",
+      "col": 6,
+      "row": 6.2,
+      "what": "Turns whatever site choices were sent into the four known fields.",
+      "how": [
+        "Unknown fields are dropped and unknown values become `unknown`, which hides nothing."
+      ]
+    },
+    {
+      "id": "s_lightof",
+      "label": "light_of()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/plan_service.py",
+      "symbol": "def light_of(",
+      "col": 7,
+      "row": 5.6,
+      "what": "Reads which light a plant takes from its sun text.",
+      "how": [
+        "\"Full sun\" → full; \"light shade\", \"part shade\" or \"light to moderate shade\" → part; \"moderate shade\" or \"full shade\" → shade."
+      ]
+    },
+    {
+      "id": "s_spaceof",
+      "label": "space_of()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/plan_service.py",
+      "symbol": "def space_of(",
+      "col": 7,
+      "row": 6.2,
+      "what": "Reads how much room a plant needs from its type and size.",
+      "how": [
+        "Trees need tree space; anything else up to 3 feet tall fits a small bed, taller plants need a shrub area."
+      ]
+    },
+    {
+      "id": "s_checked",
+      "label": "checked_value()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/plan_service.py",
+      "symbol": "def checked_value(",
+      "col": 7,
+      "row": 6.8,
+      "what": "Gives a plant's moisture or care only if a teammate has checked it.",
+      "how": [
+        "Returns the field's `value` when `verified` is true, otherwise `None` (unknown)."
       ]
     }
   ],
@@ -2130,6 +2219,41 @@
       "from": "names_builder",
       "to": "d_plantnames",
       "label": "writes 5,322 Florida plants"
+    },
+    {
+      "from": "rec",
+      "to": "ui_sitefilters",
+      "label": "site choices"
+    },
+    {
+      "from": "results",
+      "to": "ui_sitefilters",
+      "label": "site choices"
+    },
+    {
+      "from": "s_plan",
+      "to": "s_cleansite",
+      "label": "clean_site(site)"
+    },
+    {
+      "from": "s_plan",
+      "to": "s_fits",
+      "label": "fits_site(rec, site)"
+    },
+    {
+      "from": "s_fits",
+      "to": "s_lightof",
+      "label": "light from sun text"
+    },
+    {
+      "from": "s_fits",
+      "to": "s_spaceof",
+      "label": "room from type and size"
+    },
+    {
+      "from": "s_fits",
+      "to": "s_checked",
+      "label": "moisture and care, only if checked"
     }
   ]
 }

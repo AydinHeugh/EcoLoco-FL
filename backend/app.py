@@ -103,6 +103,9 @@ def choose():
     return jsonify({"result": choose_plant(name, common_name_for(name), location)})
 
 
+BAD_SITE = "site must be an object like {light, moisture, space, care}"
+
+
 @app.route("/recommend", methods=["POST"])
 def recommend():
     data = request.get_json()
@@ -112,8 +115,12 @@ def recommend():
         return jsonify({"error": "location is required"}), 400
     if not is_florida_zip(location):
         return jsonify({"error": FLORIDA_ONLY}), 400
+    site = data.get("site")
+    if site is not None and not isinstance(site, dict):
+        return jsonify({"error": BAD_SITE}), 400
     checked = plantings_checked(location)
-    return jsonify({"result": build_plan([], checked)["add"], "plantings_checked": checked})
+    plan = build_plan([], checked, site=site)
+    return jsonify({"result": plan["add"], "plantings_checked": checked, "hidden_by_site": plan["hidden_by_site"]})
 
 
 @app.route("/plan", methods=["POST"])
@@ -128,7 +135,10 @@ def plan():
     skip = data.get("skip") or []
     if not isinstance(skip, list) or not all(isinstance(name, str) for name in skip):
         return jsonify({"error": "skip must be a list of scientific names"}), 400
-    return jsonify({"result": build_plan(plants, plantings_checked(location), skip)})
+    site = data.get("site")
+    if site is not None and not isinstance(site, dict):
+        return jsonify({"error": BAD_SITE}), 400
+    return jsonify({"result": build_plan(plants, plantings_checked(location), skip, site)})
 
 
 NOT_FOUND = "We couldn't find that place. Try your school's ZIP code."

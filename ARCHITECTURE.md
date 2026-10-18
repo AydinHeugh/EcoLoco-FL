@@ -87,6 +87,7 @@ flowchart LR
     ui_charts["StatusBars + CaterpillarBars"]
     ui_atlas["AtlasButton"]
     ui_namepicker["NamePicker"]
+    ui_sitefilters["SiteFilters"]
   end
   subgraph L_device["Device"]
     direction TB
@@ -145,6 +146,11 @@ flowchart LR
     s_namesearch["search()"]
     s_isknown["is_known()"]
     s_commonfor["common_name_for()"]
+    s_fits["fits_site()"]
+    s_cleansite["clean_site()"]
+    s_lightof["light_of()"]
+    s_spaceof["space_of()"]
+    s_checked["checked_value()"]
   end
   subgraph L_data["Bundled data"]
     direction TB
@@ -293,6 +299,13 @@ flowchart LR
   s_choose -->|"same status check as a scan"| s_option
   s_namesearch -->|"USDA Florida names"| d_plantnames
   names_builder -->|"writes 5,322 Florida plants"| d_plantnames
+  rec -->|"site choices"| ui_sitefilters
+  results -->|"site choices"| ui_sitefilters
+  s_plan -->|"clean_site(site)"| s_cleansite
+  s_plan -->|"fits_site(rec, site)"| s_fits
+  s_fits -->|"light from sun text"| s_lightof
+  s_fits -->|"room from type and size"| s_spaceof
+  s_fits -->|"moisture and care, only if checked"| s_checked
   classDef ui fill:#e3f2e1,stroke:#2e7d32,color:#12301a
   classDef device fill:#eceff1,stroke:#607d8b,color:#263238
   classDef client fill:#e1effa,stroke:#1e6fb8,color:#0d2d4d
@@ -302,11 +315,11 @@ flowchart LR
   classDef ext fill:#fde4e1,stroke:#c0392b,color:#4a0f08
   classDef planned stroke-dasharray:6 4,stroke-width:2px
   classDef dead fill:#f3f3f3,stroke:#9e9e9e,color:#616161,stroke-dasharray:3 3
-  class app,home,ident,rec,audit,results,ui_why,ui_receipt,letter,ui_multiphoto,ui_ai_unknown,ui_picker,ui_ring,ui_plancard,ui_location,ui_charts,ui_atlas,ui_namepicker ui
+  class app,home,ident,rec,audit,results,ui_why,ui_receipt,letter,ui_multiphoto,ui_ai_unknown,ui_picker,ui_ring,ui_plancard,ui_location,ui_charts,ui_atlas,ui_namepicker,ui_sitefilters ui
   class picker,clipboard device
   class c_identify,c_rec,c_letter,c_local,c_plan,c_user_message,c_locate,c_nearby,c_names,c_choose client
   class flask,r_identify,r_recommend,r_letter,r_plan,r_locate,r_nearby,r_names,r_choose route
-  class s_identify,s_letter,s_fl,s_species,s_plantnet,s_usda,s_resolve,s_option,s_common_name,s_summary,s_plan,s_guard,s_letter_facts,s_round,s_geocode,s_reverse,s_seen,s_with_plan,s_zip_center,s_region,s_county,s_choose,s_namesearch,s_isknown,s_commonfor svc
+  class s_identify,s_letter,s_fl,s_species,s_plantnet,s_usda,s_resolve,s_option,s_common_name,s_summary,s_plan,s_guard,s_letter_facts,s_round,s_geocode,s_reverse,s_seen,s_with_plan,s_zip_center,s_region,s_county,s_choose,s_namesearch,s_isknown,s_commonfor,s_fits,s_cleansite,s_lightof,s_spaceof,s_checked svc
   class d_fisc,d_natives,fisc_builder,d_recs,d_nwf,d_terms,d_why,d_zip_counties,zip_builder,d_non_natives,d_plantnames,names_builder data
   class openai,usda,plantnet,nominatim,inaturalist,usf_atlas ext
   class c_local dead

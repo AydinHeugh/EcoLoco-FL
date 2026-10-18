@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
   close: { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.textMuted },
   hint: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textMuted, lineHeight: 17 },
   input: {
-    borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
+    minWidth: 0, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
     fontSize: 14, fontFamily: FONTS.body, color: COLORS.textBody, backgroundColor: COLORS.white,
   },
   spinner: { alignSelf: 'flex-start' },

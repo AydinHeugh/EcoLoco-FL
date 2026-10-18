@@ -127,3 +127,11 @@ def test_chosen_plants_say_so_instead_of_a_percent():
     picker = (FRONTEND / "components" / "CandidatePicker.js").read_text(encoding="utf-8")
     assert "export const CHOSEN_BY_NAME = 'Chosen by name';" in picker
     assert "if (idSource === 'by_name') return CHOSEN_BY_NAME;" in picker
+
+
+def test_site_filters_are_on_both_planting_screens():
+    filters = (FRONTEND / "components" / "SiteFilters.js").read_text(encoding="utf-8")
+    for label in ("Light", "Moisture", "Space", "Care", "Any"):
+        assert f"'{label}'" in filters or f'"{label}"' in filters
+    for screen in ("RecommendationScreen.js", "AuditResultsScreen.js"):
+        assert "<SiteFilters" in (FRONTEND / "screens" / screen).read_text(encoding="utf-8")
