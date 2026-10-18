@@ -50,6 +50,9 @@ __pycache__/
 .env
 backend/test_api.py
 
+# browser test tool
+.playwright-mcp/
+
 # Local Python development environments and test caches
 .venv/
 .pytest_cache/

@@ -1,0 +1,33 @@
+{
+  "_comment": "The short 'Why this matters' section on the results screen. At most 4 lines, each with a checked source.",
+  "lines": [
+    {
+      "text": "Almost all of our land birds (96%) depend on insects that native plants support.",
+      "source": {
+        "name": "National Wildlife Federation",
+        "url": "https://www.nwf.org/-/media/Documents/PDFs/Garden-for-Wildlife/Keystone-Plants/NWF-GFW-keystone-plant-list-ecoregion-15-tropical-wet-forests.pdf"
+      }
+    },
+    {
+      "text": "Native plants need less watering and fertilizer, so less fertilizer washes into our water, where too much of it can cause algae blooms.",
+      "source": {
+        "name": "UF/IFAS Extension",
+        "url": "https://blogs.ifas.ufl.edu/franklinco/2015/05/16/3-ways-you-can-help-keep-our-bays-healthy"
+      }
+    },
+    {
+      "text": "Invasive plants clog South Florida's waterways, which makes flood control harder for the 8.1 million people who live here.",
+      "source": {
+        "name": "South Florida Water Management District",
+        "url": "https://www.sfwmd.gov/sites/default/files/documents/fyi_invasive_plants.pdf"
+      }
+    },
+    {
+      "text": "A study near Washington, D.C., found chickadees only raised enough young to keep their numbers up in yards where at least 70% of the plants, by size, were native.",
+      "source": {
+        "name": "Narango, Tallamy and Marra, 2018 (PNAS)",
+        "url": "https://doi.org/10.1073/pnas.1809259115"
+      }
+    }
+  ]
+}

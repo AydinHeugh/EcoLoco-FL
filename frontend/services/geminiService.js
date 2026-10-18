@@ -2,7 +2,7 @@
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const observationFields = ['id', 'scientific_name', 'plant_name', 'name', 'taxon_id', 'confidence',
-  'needs_confirmation', 'user_confirmed', 'status_verified', 'invasive_status', 'wildlife_support', 'source', 'id_source'];
+  'needs_confirmation', 'needs_taxon_confirmation', 'user_confirmed', 'state', 'status_verified', 'invasive_status', 'wildlife_support', 'source', 'id_source'];
 
 function observations(plants = []) {
   return plants.map(plant => Object.fromEntries(observationFields
@@ -93,4 +93,24 @@ export async function getPlantRecommendations(location, { plants = [], site = {}
 export async function generateLetter(payload, options = {}) {
   const { plants = [], plant_names, zip_code, site, site_name, survey_date, proposal, is_sample = false } = payload;
   return request('/letter', { plants: observations(plants), plant_names, zip_code, site, site_name, survey_date, proposal, is_sample }, options);
+}
+
+export async function getPlan(plants, location, options = {}) {
+  return request('/plan', { plants: observations(plants), location }, options);
+}
+
+function coordinates(lat, lon) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+    throw new Error('A valid latitude and longitude are required.');
+  }
+  return { lat: Math.round(lat * 100) / 100, lon: Math.round(lon * 100) / 100 };
+}
+
+export async function locate(place, options = {}) {
+  const query = typeof place?.query === 'string' ? place.query.trim() : '';
+  return request('/locate', query ? { query } : coordinates(place?.lat, place?.lon), options);
+}
+
+export async function getNearby(lat, lon, options = {}) {
+  return request('/nearby', coordinates(lat, lon), options);
 }

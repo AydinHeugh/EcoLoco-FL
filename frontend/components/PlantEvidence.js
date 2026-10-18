@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Linking, ActivityIndicator } from 'react-native';
 import { isLoaded } from 'expo-font';
-import { confirmationCandidates, evidenceText, identificationNeedsConfirmation, identificationProvider, safeEvidenceUrl, taxonomyStatus } from '../utils/plantEvidence';
+import { candidateMatchText, confirmationCandidates, evidenceText, identificationNeedsConfirmation, identificationProvider, plantExtraFacts, safeEvidenceUrl, suggestedCandidateName, taxonomyStatus, verifiedAtlasUrl } from '../utils/plantEvidence';
 
 const PLANTNET_LOGO = require('../../assets/powered-by-plantnet-light.png');
 
@@ -17,6 +17,20 @@ export function EvidenceLink({ url, children }) {
   </View>;
 }
 
+export function PlantFacts({ plant = {} }) {
+  const rows = plantExtraFacts(plant);
+  const atlas = verifiedAtlasUrl(plant);
+  if (!rows.length && !atlas) return null;
+  return <View style={styles.detailGroup}>
+    {rows.map((row, index) => <View key={`${row.title}-${index}`} style={styles.detailGroup}>
+      <Text style={[styles.detailTitle, isLoaded('DMSans_700Bold') && styles.boldFont]}>{row.title}</Text>
+      <Text style={[styles.small, isLoaded('DMSans_400Regular') && styles.bodyFont]}>{row.text}</Text>
+      <EvidenceLink url={row.source_url}>{row.source_name || 'Read source'}</EvidenceLink>
+    </View>)}
+    <EvidenceLink url={atlas}>Florida Plant Atlas</EvidenceLink>
+  </View>;
+}
+
 export default function PlantEvidence({ plant = {}, onConfirm, onRetake, confirming = false, compact = false, children }) {
   const [expanded, setExpanded] = useState(false);
   const [reviewExpanded, setReviewExpanded] = useState(!compact);
@@ -24,11 +38,13 @@ export default function PlantEvidence({ plant = {}, onConfirm, onRetake, confirm
   const text = (field) => evidenceText(plant[field]);
   const status = taxonomyStatus(plant);
   const needsReview = identificationNeedsConfirmation(plant);
+  const unidentified = plant.state === 'unidentified';
   const canConfirm = typeof onConfirm === 'function';
   const canRetake = typeof onRetake === 'function';
   const provider = plant.id_source;
   const candidates = confirmationCandidates(plant).filter((candidate) => !plant.needs_taxon_confirmation || candidate.scientific_name !== plant.scientific_name);
-  const supportEvidence = text('wildlife_support_reason') || (plant.wildlife_support_verified ? text('why') : '');
+  const suggestedName = suggestedCandidateName(plant);
+  const supportEvidence = text('wildlife_support_reason') || (plant.wildlife_support_verified ? text('why') : '') || (safeEvidenceUrl(plant.helps?.source?.url) ? evidenceText(plant.helps?.text) : '');
   const actions = (Array.isArray(plant.actions) ? plant.actions : []).filter((item) => item && evidenceText(item.action));
   const summary = supportEvidence || (!needsReview && evidenceText(actions[0]?.action));
   const zones = text('fisc_zones');
@@ -53,7 +69,10 @@ export default function PlantEvidence({ plant = {}, onConfirm, onRetake, confirm
     {!compact && !!(confidence || providerShort) && <Text style={[styles.small, bodyFont]}>{[confidence, providerShort].filter(Boolean).join(' · ')}</Text>}
     {!compact && !expanded && !!summary && <Text style={[styles.body, bodyFont]} numberOfLines={2} ellipsizeMode="tail">{needsReview ? 'If confirmed: ' : ''}{summary}</Text>}
 
-    {needsReview && <View style={styles.review}>
+    {unidentified ? <View style={styles.reviewContent}>
+      <Text style={[styles.small, bodyFont]}>No clear match. Try a close-up of a leaf or flower.</Text>
+      {canRetake && <TouchableOpacity accessibilityRole="button" disabled={confirming} aria-disabled={confirming} accessibilityState={{ disabled: confirming }} onPress={onRetake} style={styles.linkButton}><Text style={[styles.link, bodyFont]}>Try another photo</Text></TouchableOpacity>}
+    </View> : needsReview && <View style={styles.review}>
       <TouchableOpacity accessibilityRole="button" accessibilityLabel="Review match" aria-expanded={reviewExpanded} accessibilityState={{ expanded: reviewExpanded }} onPress={() => setReviewExpanded(!reviewExpanded)} style={styles.reviewToggle}>
         <Text style={[styles.reviewTitle, boldFont]}>Review match</Text><Text style={styles.chevron}>{reviewExpanded ? '−' : '+'}</Text>
       </TouchableOpacity>
@@ -63,6 +82,7 @@ export default function PlantEvidence({ plant = {}, onConfirm, onRetake, confirm
           <View style={styles.candidateIdentity}>
             <Text style={[styles.candidateName, boldFont]}>{evidenceText(candidate.common_name) || evidenceText(candidate.plant_name) || candidate.scientific_name}</Text>
             {(candidate.common_name || candidate.plant_name) && <Text style={[styles.small, bodyFont]}>{candidate.scientific_name}</Text>}
+            {!!candidateMatchText(candidate, provider) && <Text style={[styles.small, bodyFont]}>{candidateMatchText(candidate, provider)}{suggestedName === candidate.scientific_name.trim().toLowerCase() ? ' · Best guess' : ''}</Text>}
           </View>
           <Text style={[styles.choose, boldFont]}>Use match →</Text>
         </TouchableOpacity>)}
@@ -100,7 +120,7 @@ export default function PlantEvidence({ plant = {}, onConfirm, onRetake, confirm
       {!!supportEvidence && <View style={styles.detailGroup}>
         <Text style={[styles.detailTitle, boldFont]}>Wildlife relationship</Text>
         <Text style={[styles.body, bodyFont]}>{supportEvidence}</Text>
-        <EvidenceLink url={plant.why_source_url || plant.wildlife_source_url}>Relationship source</EvidenceLink>
+        <EvidenceLink url={plant.why_source_url || plant.wildlife_source_url || plant.helps?.source?.url}>Relationship source</EvidenceLink>
         <Text style={[styles.small, bodyFont]}>Documented relationships do not measure wildlife at this site.</Text>
       </View>}
       {((text('suggested_status') && text('suggested_status') !== 'unknown') || text('suggested_wildlife_reason')) && <View style={styles.detailGroup}>
@@ -117,6 +137,7 @@ export default function PlantEvidence({ plant = {}, onConfirm, onRetake, confirm
         </View>)}
       </View>}
       {!!text('management_notes') && <Text style={[styles.small, bodyFont]}>{text('management_notes')}</Text>}
+      <PlantFacts plant={plant} />
       {!!text('inat_note') && <Text style={[styles.small, bodyFont]}>Nearby observations: {text('inat_note')}</Text>}
       {plant.ai_unavailable && <Text style={[styles.small, bodyFont]}>Extra explanation is unavailable. Verified plant records are retained.</Text>}
       <Text style={[styles.small, bodyFont]}>Florida status does not establish suitability for every planting site.</Text>

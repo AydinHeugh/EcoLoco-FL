@@ -238,10 +238,10 @@
       "row": 5.4,
       "what": "Browse three concise native options first, with growing evidence available on demand.",
       "how": [
-        "Accept supported ZIP, optional observed plants and four compact site selectors.",
-        "Cancel and clear old options when ZIP or site inputs change; call the unchanged recommendation API.",
-        "Render alphabetically ordered plant cards with a short benefit and a Growing details & sources disclosure.",
-        "Expand additional returned plants and the explanation of selection rules without changing the site filters."
+        "Accept a five-digit ZIP, optional observed plants and four compact site selectors; the server checks Florida lookup membership.",
+        "Cancel and clear old options when ZIP or site inputs change; call the recommendation API.",
+        "Show three planning-ranked native cards first, with growing guidance and source-linked facts in expanded details.",
+        "Use south_florida=false to distinguish regional coverage from site filters yielding no matches; expand more returned options on request."
       ]
     },
     {
@@ -723,8 +723,9 @@
       "row": 2.7,
       "what": "Identify a bounded photo set.",
       "how": [
-        "Validate ZIP and one to five JPEG/PNG images, apply identification limits, then call identify_plant.",
-        "Return {result: ...} on success or {error, code} with an appropriate HTTP status on failure."
+        "Validate JSON and the Florida ZIP, then apply identification quotas before decoding images.",
+        "Verify and sanitize one to five JPEG/PNG photos before identify_plant.",
+        "Return the flat result with candidates, explicit state and suggested index; failures use JSON errors and appropriate HTTP status."
       ]
     },
     {
@@ -769,7 +770,7 @@
       "what": "Return suitable native additions.",
       "how": [
         "Validate location, observations and site enums, then call get_plant_recommendations.",
-        "Return {result: ...} on success or {error, code} with an appropriate HTTP status on failure."
+        "Return {result: ranked options, south_florida: boolean}; Florida locations outside the planting region receive an empty option list."
       ]
     },
     {
@@ -813,10 +814,11 @@
       "row": 0,
       "what": "Join identification to sourced Florida evidence.",
       "how": [
-        "Obtain candidate species from identify_species and recheck the proposed name with get_status.",
-        "Use bundled evidence without model explanations when available.",
-        "For an unsupported taxon, optionally obtain a separately labeled hypothesis; keep verified status unknown.",
-        "Return confidence, review flags, canonical identity, source links, documented relationships and actions."
+        "Obtain photo candidates, state, suggested index and provider-availability flags; recheck the named taxon against Florida sources.",
+        "Use bundled evidence and source-linked plant facts without an explanation call when available.",
+        "For an unsupported named taxon, optionally obtain a separately labeled hypothesis; verified status stays unknown.",
+        "Append precise catalog alternatives for consequential variety/subspecies ambiguity without changing photo candidate order or scores.",
+        "Preserve the suggested candidate reference after filtering; return flat identity, review state, provenance and practical actions."
       ]
     },
     {
@@ -860,12 +862,12 @@
       "symbol": "def get_plant_recommendations(",
       "col": 6,
       "row": 4.050000000000001,
-      "what": "Filter verified native candidates using the inventory and site.",
+      "what": "Filter and prioritize sourced native planting options.",
       "how": [
-        "Calculate the verified survey inventory; exclude taxa already represented.",
-        "Require a recommendable native record and a precise unambiguous status.",
-        "Filter sunlight, moisture, mature space and maintenance conflicts.",
-        "Return complete cards with source links, practical actions, site requirements and explicit unknown conditions, sorted alphabetically."
+        "Require a ZIP mapped to one of the 12 supported South Florida counties.",
+        "Calculate the verified inventory; exclude already-present taxa and require precise, recommendable native records.",
+        "Filter sunlight, moisture, mature space and maintenance conflicts; leave unknown site conditions explicit.",
+        "Build source-linked fact cards and pass them to rank_recommendations; retain the flat array contract."
       ]
     },
     {
@@ -899,8 +901,8 @@
       "what": "Create a factual school proposal from the current survey.",
       "how": [
         "Revalidate selected taxa against site-filtered native choices; reject unsupported selections.",
-        "Recalculate inventory and selected additions on the server.",
-        "Build sourced survey facts, unresolved items, plant benefits and a conditional inventory scenario.",
+        "Recalculate inventory and selected additions on the server; ignore any client-supplied plan.",
+        "Build sourced survey facts, unresolved items, plant benefits, buying/care notes and the explicit selected scenario.",
         "Include quantities, budget, location, maintenance and permission request; retain placeholders for unknown details.",
         "Label sample proposals and avoid invented ecological or campus-wide conclusions."
       ]
@@ -971,12 +973,13 @@
       "symbol": "def identify_species(",
       "col": 7,
       "row": 0,
-      "what": "Choose a photo identification with explicit review state.",
+      "what": "Return photo candidates with separate identity state and review suggestion.",
       "how": [
-        "Try PlantNet; accept a top score at least 0.80 with at least a 0.15 lead.",
-        "For a close result, ask image reasoning to choose among supplied candidates; still require review.",
-        "When PlantNet fails, use image reasoning as fallback; apply confidence/ambiguity review rules.",
-        "If both fail, retain an unresolved result rather than a fabricated identity."
+        "Normalize exact known synonyms and deduplicate taxa using the highest supplied score; preserve consequential ranks and never add provider scores.",
+        "A successful PlantNet no-match or top score below 0.20 returns unidentified without a second model opinion.",
+        "Accept a top score of at least 0.80 only when its lead is greater than 0.15.",
+        "For close candidates, optional image reasoning suggests an index into the existing list; scores/order stay unchanged and confirmation is still required.",
+        "On PlantNet failure, use image reasoning as fallback with the same review thresholds; expose unavailable-provider flags and retain an unresolved result if both fail."
       ]
     },
     {
@@ -1020,12 +1023,12 @@
       "symbol": "def get_status(",
       "col": 7,
       "row": 4.050000000000001,
-      "what": "Resolve exact taxon evidence for the supported pilot.",
+      "what": "Resolve exact taxon evidence for lookup-known Florida ZIPs.",
       "how": [
-        "Reject unsupported locations without inferring regional status.",
-        "Normalize known author citations and synonyms while preserving consequential ranks/hybrids.",
-        "Check sourced nonnative exceptions, FISC invasives, then natives.",
-        "Return canonical identity, provenance, dates, cautions and source-backed status; unsupported names stay unverified."
+        "Require a ZIP present in the bundled Florida county map.",
+        "Normalize known author citations and synonyms while preserving varieties, subspecies, hybrids and cultivars.",
+        "Check sourced nonnative exceptions, FISC invasives, then natives; accept common names only through the strict catalog resolver.",
+        "Return canonical identity, recorded source dates, source-linked growing/purchasing facts and status; unfamiliar precise taxa stay unverified."
       ]
     },
     {
@@ -1037,9 +1040,10 @@
       "symbol": "def supported_location(",
       "col": 7,
       "row": 5.4,
-      "what": "Check the explicit pilot area.",
+      "what": "Check membership in the bundled Florida ZIP lookup.",
       "how": [
-        "Accept exactly five digits with prefixes 330–334; do not infer site suitability."
+        "Require five ASCII digits and an exact key in fl_zip_counties.json.",
+        "The Census-based lookup may omit postal-only or newer ZIPs; membership does not establish site suitability."
       ]
     },
     {
@@ -1102,21 +1106,6 @@
       ]
     },
     {
-      "id": "s_inat",
-      "label": "get_plant_requests()",
-      "layer": "svc",
-      "status": "dead",
-      "file": "backend/services/inat_service.py",
-      "symbol": "def get_plant_requests(",
-      "col": 7,
-      "row": 12.149999999999999,
-      "what": "Unused nearby-observation integration.",
-      "how": [
-        "No current identification, score or recommendation flow calls this helper."
-      ],
-      "goal": "Remove or separately redesign this legacy helper; do not use nearby sightings as identification confidence."
-    },
-    {
       "id": "v_text",
       "label": "text_field()",
       "layer": "svc",
@@ -1139,9 +1128,10 @@
       "symbol": "def location_field(",
       "col": 8,
       "row": 1.35,
-      "what": "Require a supported pilot ZIP.",
+      "what": "Validate a supported Florida ZIP.",
       "how": [
-        "Validate five digits and prefixes 330–334; return clear errors otherwise."
+        "Require five ASCII digits and supported_location membership.",
+        "Return a clear error for missing lookup entries; South Florida planting coverage is assessed separately."
       ]
     },
     {
@@ -1267,9 +1257,10 @@
       "symbol": null,
       "col": 9,
       "row": 2.7,
-      "what": "Reviewed native candidates and site requirements.",
+      "what": "Sourced native taxa with planting facts and site requirements.",
       "how": [
-        "Store exact taxa, source URLs/dates, wildlife relationships, growing requirements and recommendable flags."
+        "Store exact taxa, source URLs/dates, wildlife relationships, growing requirements and recommendable flags.",
+        "Additional sourced planting facts are merged into this catalog without bypassing status precedence or precise-taxon safeguards."
       ]
     },
     {
@@ -1328,21 +1319,6 @@
       "how": [
         "Not used as a Florida-native classifier or in the active audit request path."
       ]
-    },
-    {
-      "id": "inat",
-      "label": "iNaturalist API",
-      "layer": "ext",
-      "status": "dead",
-      "file": "backend/services/inat_service.py",
-      "symbol": "api.inaturalist.org/v2/observations",
-      "col": 10,
-      "row": 4.050000000000001,
-      "what": "Legacy external integration.",
-      "how": [
-        "Referenced only by the unused observations helper."
-      ],
-      "goal": "Retire with the unused helper or design a separately scoped observation feature."
     },
     {
       "id": "u_review",
@@ -1670,6 +1646,512 @@
       "how": [
         "Filter the indexed asset from the photos array and notify the parent.",
         "Use the existing disabled/preparing controls to prevent conflicting interaction."
+      ]
+    },
+    {
+      "id": "d_recommendations",
+      "label": "fl_recommendations.json",
+      "layer": "data",
+      "status": "live",
+      "col": 9,
+      "row": 13.35,
+      "file": "backend/data/fl_recommendations.json",
+      "symbol": null,
+      "what": "Imported source-linked South Florida planting facts.",
+      "how": [
+        "Retain source URLs, recorded verification metadata, growth, wildlife, purchasing cautions and suggested replacements.",
+        "Reviewed copies of supported exact taxa enrich the active native catalog; this file does not independently determine Florida status."
+      ]
+    },
+    {
+      "id": "d_nwf",
+      "label": "nwf_keystone_fl.json",
+      "layer": "data",
+      "status": "live",
+      "col": 9,
+      "row": 14.7,
+      "file": "backend/data/nwf_keystone_fl.json",
+      "symbol": null,
+      "what": "NWF genus-level host relationships for Tropical Wet Forests.",
+      "how": [
+        "Store regional genus caterpillar counts with the NWF source; counts are never species-level predictions or sums across plants."
+      ]
+    },
+    {
+      "id": "d_why",
+      "label": "why_this_matters.json",
+      "layer": "data",
+      "status": "live",
+      "col": 9,
+      "row": 16.05,
+      "file": "backend/data/why_this_matters.json",
+      "symbol": null,
+      "what": "Retained source-linked habitat context.",
+      "how": [
+        "Store explanatory statements separately from campus outcomes; the deterministic proposal currently constructs its own sourced text."
+      ]
+    },
+    {
+      "id": "d_zip",
+      "label": "fl_zip_counties.json",
+      "layer": "data",
+      "status": "live",
+      "col": 9,
+      "row": 17.4,
+      "file": "backend/data/fl_zip_counties.json",
+      "symbol": null,
+      "what": "Bundled Florida ZIP-to-county relationships.",
+      "how": [
+        "Map Census ZIP areas to the county containing most of their land; this is a supported-record lookup, not exact user location or individual-site suitability."
+      ]
+    },
+    {
+      "id": "d_terms",
+      "label": "nature_terms.json",
+      "layer": "data",
+      "status": "live",
+      "col": 9,
+      "row": 18.75,
+      "file": "backend/data/nature_terms.json",
+      "symbol": null,
+      "what": "Nature-name terms for bounded text validation.",
+      "how": [
+        "Provide known words and suffixes used to detect unsupported new plant or animal names in text."
+      ]
+    },
+    {
+      "id": "zip_builder",
+      "label": "build_zip_counties.py",
+      "layer": "data",
+      "status": "live",
+      "col": 9,
+      "row": 20.1,
+      "file": "backend/scripts/build_zip_counties.py",
+      "symbol": "def zip_counties(",
+      "what": "Build the county lookup from the Census relationship file.",
+      "how": [
+        "Choose the county with the greatest land overlap for each ZIP area and retain Florida entries.",
+        "Write the source URL and generated mapping to the bundled data file."
+      ]
+    },
+    {
+      "id": "c_plan",
+      "label": "getPlan()",
+      "layer": "client",
+      "status": "live",
+      "col": 3,
+      "row": 12.35,
+      "file": "frontend/services/geminiService.js",
+      "symbol": "function getPlan",
+      "what": "Request an optional inventory-based planting plan.",
+      "how": [
+        "Post compact observations and location to /plan; this export does not add a new screen.",
+        "Use the shared cancellation, deadlines and JSON error handling."
+      ]
+    },
+    {
+      "id": "c_locate",
+      "label": "locate()",
+      "layer": "client",
+      "status": "live",
+      "col": 3,
+      "row": 13.7,
+      "file": "frontend/services/geminiService.js",
+      "symbol": "function locate",
+      "what": "Request an optional location lookup.",
+      "how": [
+        "Send a place query or finite coordinates rounded to two decimals to /locate.",
+        "Use the shared cancellation, deadlines and JSON error handling."
+      ]
+    },
+    {
+      "id": "c_nearby",
+      "label": "getNearby()",
+      "layer": "client",
+      "status": "live",
+      "col": 3,
+      "row": 15.05,
+      "file": "frontend/services/geminiService.js",
+      "symbol": "function getNearby",
+      "what": "Request optional nearby-observation context.",
+      "how": [
+        "Send finite coordinates rounded to two decimals to /nearby; this does not identify a photo.",
+        "Use the shared cancellation, deadlines and JSON error handling."
+      ]
+    },
+    {
+      "id": "plant_facts",
+      "label": "PlantFacts",
+      "layer": "ui",
+      "status": "live",
+      "col": 2,
+      "row": 20.25,
+      "file": "frontend/components/PlantEvidence.js",
+      "symbol": "function PlantFacts",
+      "what": "Show additional source-linked facts inside expanded plant details.",
+      "how": [
+        "Render growth, buying cautions and management guidance through plantExtraFacts.",
+        "Show a Florida Plant Atlas link only when its verification flag permits it.",
+        "Keep the existing compact screen layout and use safe evidence links."
+      ]
+    },
+    {
+      "id": "u_suggested",
+      "label": "suggestedCandidateName()",
+      "layer": "client",
+      "status": "live",
+      "col": 11,
+      "row": 12.15,
+      "file": "frontend/utils/plantEvidence.js",
+      "symbol": "function suggestedCandidateName",
+      "what": "Read the suggested candidate without changing provider scores.",
+      "how": [
+        "Interpret the index against the flat top result plus alternatives; suppress it for an unidentified result or invalid index."
+      ]
+    },
+    {
+      "id": "u_match",
+      "label": "candidateMatchText()",
+      "layer": "client",
+      "status": "live",
+      "col": 11,
+      "row": 13.5,
+      "file": "frontend/utils/plantEvidence.js",
+      "symbol": "function candidateMatchText",
+      "what": "Label the actual candidate match score.",
+      "how": [
+        "Validate a finite 0–1 score and identify the provider behind it; manual choices receive no synthetic confidence."
+      ]
+    },
+    {
+      "id": "u_atlas",
+      "label": "verifiedAtlasUrl()",
+      "layer": "client",
+      "status": "live",
+      "col": 11,
+      "row": 14.85,
+      "file": "frontend/utils/plantEvidence.js",
+      "symbol": "function verifiedAtlasUrl",
+      "what": "Expose only explicitly verified Atlas links.",
+      "how": [
+        "Require atlas_verified before applying HTTPS URL validation."
+      ]
+    },
+    {
+      "id": "u_extra_facts",
+      "label": "plantExtraFacts()",
+      "layer": "client",
+      "status": "live",
+      "col": 11,
+      "row": 16.2,
+      "file": "frontend/utils/plantEvidence.js",
+      "symbol": "function plantExtraFacts",
+      "what": "Normalize optional planting facts for display.",
+      "how": [
+        "Extract readable growing details, purchasing advice, cautions and removal guidance with source URLs; ignore malformed text."
+      ]
+    },
+    {
+      "id": "r_plan",
+      "label": "POST /plan",
+      "layer": "route",
+      "status": "live",
+      "file": "backend/app.py",
+      "symbol": "def plan(",
+      "col": 5,
+      "row": 12.15,
+      "what": "Return sourced planning options and an explicit selected scenario.",
+      "how": [
+        "Validate observations, Florida ZIP, site enums and addition/removal lists.",
+        "Call build_plan; return ranked planting options, management-review cards and strict native-share summary with the South Florida coverage flag."
+      ]
+    },
+    {
+      "id": "r_locate",
+      "label": "POST /locate",
+      "layer": "route",
+      "status": "live",
+      "file": "backend/app.py",
+      "symbol": "def locate(",
+      "col": 5,
+      "row": 13.5,
+      "what": "Resolve an optional place or coordinate pair to a supported Florida ZIP.",
+      "how": [
+        "Bound query text or validate and round coordinates; apply the separate shared location budget.",
+        "For a valid direct ZIP, keep the ZIP even if its coordinate lookup fails; otherwise geocode text or reverse-geocode coordinates.",
+        "Validate returned ZIP membership and return rounded coordinates, ZIP and South Florida coverage; unresolved places receive a clear JSON error."
+      ]
+    },
+    {
+      "id": "r_nearby",
+      "label": "POST /nearby",
+      "layer": "route",
+      "status": "live",
+      "file": "backend/app.py",
+      "symbol": "def nearby(",
+      "col": 5,
+      "row": 14.85,
+      "what": "Return nearby plant observations as context.",
+      "how": [
+        "Validate and round coordinates, then apply the shared location request budget.",
+        "Return up to five unconfirmed research-grade iNaturalist entries and a scope note; these do not enter the campus survey automatically."
+      ]
+    },
+    {
+      "id": "s_rank",
+      "label": "rank_recommendations()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/plan_service.py",
+      "symbol": "def rank_recommendations(",
+      "col": 6,
+      "row": 13.5,
+      "what": "Order already-filtered options using documented planning needs.",
+      "how": [
+        "Recheck the verified native inventory for documented relationships, bloom months and NWF-listed genera.",
+        "Prioritize suggested alternatives to recorded invasives, missing relationship documentation and planting effort; use names for ties.",
+        "Diversify the first three plant forms and include an easy option when available; retain all options.",
+        "Attach reasons and regional genus-level NWF facts with scope; do not infer absent wildlife or calculate ecological impact points."
+      ]
+    },
+    {
+      "id": "s_plan",
+      "label": "build_plan()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/plan_service.py",
+      "symbol": "def build_plan(",
+      "col": 6,
+      "row": 14.85,
+      "what": "Build a plan without applying unselected actions.",
+      "how": [
+        "Obtain inventory-aware, site-filtered native options and revalidate requested additions.",
+        "Recalculate with the same score service and only explicitly requested additions/removals.",
+        "Return up to five ranked additions, sourced invasive management-review cards and a summary; a suggestion does not authorize or automatically apply removal."
+      ]
+    },
+    {
+      "id": "s_summary_metrics",
+      "label": "from_metrics()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/summary_service.py",
+      "symbol": "def from_metrics(",
+      "col": 6,
+      "row": 16.2,
+      "what": "Add compatibility summary fields to authoritative metrics.",
+      "how": [
+        "Retain the complete current/projected score response.",
+        "Expose counts, known taxa, observation count and percentages as aliases; unknown counts remain unresolved observations."
+      ]
+    },
+    {
+      "id": "s_summary",
+      "label": "summarize()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/summary_service.py",
+      "symbol": "def summarize(",
+      "col": 6,
+      "row": 17.55,
+      "what": "Summarize a survey and explicit scenario using the same metric.",
+      "how": [
+        "Delegate observations, ZIP and selected changes to calculate_biodiversity_score.",
+        "Pass the result to from_metrics without introducing an independent counting rule."
+      ]
+    },
+    {
+      "id": "s_resolve",
+      "label": "resolve()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/species_service.py",
+      "symbol": "def resolve(",
+      "col": 7,
+      "row": 12.15,
+      "what": "Resolve explicit catalog scientific or common names safely.",
+      "how": [
+        "Index catalog names and documented synonyms in classification precedence; remove ambiguous common-name mappings.",
+        "Preserve broad firebush ambiguity and consequential taxonomic qualifiers; unknown varieties and cultivars do not inherit a parent identity."
+      ]
+    },
+    {
+      "id": "s_common",
+      "label": "common_name()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/species_service.py",
+      "symbol": "def common_name(",
+      "col": 7,
+      "row": 13.5,
+      "what": "Return a catalog-backed common name.",
+      "how": [
+        "Use the strict resolver, then return the canonical record’s common name or no result."
+      ]
+    },
+    {
+      "id": "s_plant_option",
+      "label": "plant_option()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/fl_plants_service.py",
+      "symbol": "def plant_option(",
+      "col": 7,
+      "row": 14.85,
+      "what": "Shape candidate/nearby cards from exact Florida evidence.",
+      "how": [
+        "Resolve the taxon using supported ZIP status or the explicit internal empty-ZIP display path.",
+        "Return names, supplied confidence, sourced Florida status labels and facts; nearby occurrence does not verify a photographed identity."
+      ]
+    },
+    {
+      "id": "s_county",
+      "label": "county()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/location_service.py",
+      "symbol": "def county(",
+      "col": 7,
+      "row": 16.2,
+      "what": "Look up the dominant county of a bundled Florida ZIP area.",
+      "how": [
+        "Require five ASCII digits and return the mapped county or no result."
+      ]
+    },
+    {
+      "id": "s_south",
+      "label": "in_south_florida()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/location_service.py",
+      "symbol": "def in_south_florida(",
+      "col": 7,
+      "row": 17.55,
+      "what": "Apply the 12-county planting-guidance boundary.",
+      "how": [
+        "Check the ZIP’s mapped county against Palm Beach, Broward, Miami-Dade, Martin, Monroe, Collier, Lee, Hendry, Glades, Okeechobee, St. Lucie and Charlotte."
+      ]
+    },
+    {
+      "id": "s_coords",
+      "label": "round_coords()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/location_service.py",
+      "symbol": "def round_coords(",
+      "col": 7,
+      "row": 18.9,
+      "what": "Validate coordinates before reducing precision.",
+      "how": [
+        "Reject booleans, nonfinite values and original out-of-range coordinates.",
+        "Round latitude and longitude to two decimals before external lookup."
+      ]
+    },
+    {
+      "id": "s_geocode",
+      "label": "geocode()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/location_service.py",
+      "symbol": "def geocode(",
+      "col": 7,
+      "row": 20.25,
+      "what": "Find a place with a bounded Nominatim search.",
+      "how": [
+        "Validate 1–200 characters and search US places; serialize Nominatim calls with a 0.25-second queue bound and at most one request per second.",
+        "Use 2-second connect/3-second read timeouts, round coordinates and obtain a ZIP from the address or reverse lookup.",
+        "Return no result on provider/malformed-data failure without logging the query."
+      ]
+    },
+    {
+      "id": "s_zip_center",
+      "label": "zip_center()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/location_service.py",
+      "symbol": "def zip_center(",
+      "col": 7,
+      "row": 21.6,
+      "what": "Optionally locate a ZIP-area center.",
+      "how": [
+        "Search Nominatim by five-digit US postal code with the shared timing bounds.",
+        "Return rounded coordinates or no result; a failed lookup does not invalidate an otherwise supported direct ZIP."
+      ]
+    },
+    {
+      "id": "s_reverse",
+      "label": "reverse_zip()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/location_service.py",
+      "symbol": "def reverse_zip(",
+      "col": 7,
+      "row": 22.95,
+      "what": "Resolve rounded coordinates to a ZIP.",
+      "how": [
+        "Validate and round coordinates, then request a bounded Nominatim reverse lookup.",
+        "Accept a US five-digit or ZIP+4 address and return its first five digits; return no result on failure."
+      ]
+    },
+    {
+      "id": "s_nearby",
+      "label": "seen_near()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/location_service.py",
+      "symbol": "def seen_near(",
+      "col": 7,
+      "row": 24.3,
+      "what": "Fetch nearby research-grade plant context.",
+      "how": [
+        "Round coordinates and request up to five iNaturalist plant species counts within 5 km using bounded timeouts.",
+        "Validate names/counts and attach offline source-linked Florida facts through plant_option.",
+        "Mark every result unconfirmed; return an empty list on lookup failure and never infer identity or nativity from occurrence."
+      ]
+    },
+    {
+      "id": "s_name_guard",
+      "label": "mentions_new_names()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/name_guard.py",
+      "symbol": "def mentions_new_names(",
+      "col": 7,
+      "row": 25.65,
+      "what": "Retained utility for detecting extra nature-name mentions.",
+      "how": [
+        "Build patterns from known catalog names, wildlife terms and suffixes.",
+        "Flag matching names absent from allowed text; this heuristic is not currently called by deterministic proposals and is not factual verification."
+      ]
+    },
+    {
+      "id": "nominatim",
+      "label": "Nominatim API",
+      "layer": "ext",
+      "status": "live",
+      "file": "backend/services/location_service.py",
+      "symbol": "NOMINATIM =",
+      "col": 10,
+      "row": 4.05,
+      "what": "Optional external place/ZIP lookup.",
+      "how": [
+        "Receive user-entered search text or coordinates rounded to two decimals.",
+        "Use serialized per-process traffic and bounded timeouts; location routes enforce a separate request quota."
+      ]
+    },
+    {
+      "id": "inat",
+      "label": "iNaturalist observations API",
+      "layer": "ext",
+      "status": "live",
+      "file": "backend/services/location_service.py",
+      "symbol": "INATURALIST =",
+      "col": 10,
+      "row": 5.4,
+      "what": "Nearby research-grade observations for context.",
+      "how": [
+        "Receive rounded coordinates, a 5 km radius and Plantae research-grade filter.",
+        "Return species/count context; observations are not the current survey or proof of local nativity."
       ]
     }
   ],
@@ -2375,12 +2857,6 @@
       "from": "s_usda"
     },
     {
-      "to": "inat",
-      "label": "legacy observation query",
-      "status": "dead",
-      "from": "s_inat"
-    },
-    {
       "from": "bootstrap",
       "to": "boundary",
       "label": "wrap app rendering"
@@ -2474,6 +2950,366 @@
       "from": "photo",
       "to": "remove_photo",
       "label": "selected photo index"
+    },
+    {
+      "from": "zip_builder",
+      "to": "d_zip",
+      "label": "Census relationship import → county lookup"
+    },
+    {
+      "from": "c_plan",
+      "to": "client",
+      "label": "shared bounded request"
+    },
+    {
+      "from": "c_locate",
+      "to": "client",
+      "label": "shared bounded request"
+    },
+    {
+      "from": "c_nearby",
+      "to": "client",
+      "label": "shared bounded request"
+    },
+    {
+      "from": "evidence",
+      "to": "plant_facts",
+      "label": "expanded plant record"
+    },
+    {
+      "from": "plant_facts",
+      "to": "evidence_link",
+      "label": "fact sources and verified Atlas URL"
+    },
+    {
+      "from": "evidence",
+      "to": "u_suggested",
+      "label": "candidate evidence fields"
+    },
+    {
+      "from": "evidence",
+      "to": "u_match",
+      "label": "candidate evidence fields"
+    },
+    {
+      "from": "plant_facts",
+      "to": "u_atlas",
+      "label": "optional sourced record fields"
+    },
+    {
+      "from": "plant_facts",
+      "to": "u_extra_facts",
+      "label": "optional sourced record fields"
+    },
+    {
+      "from": "u_atlas",
+      "to": "u_url",
+      "label": "validate verified Atlas link"
+    },
+    {
+      "from": "u_extra_facts",
+      "to": "u_url",
+      "label": "validate fact sources"
+    },
+    {
+      "from": "u_extra_facts",
+      "to": "evidence_text",
+      "label": "normalize text"
+    },
+    {
+      "from": "c_plan",
+      "to": "r_plan",
+      "label": "POST observations + ZIP; optional API helper"
+    },
+    {
+      "from": "c_locate",
+      "to": "r_locate",
+      "label": "POST query or rounded coordinates"
+    },
+    {
+      "from": "c_nearby",
+      "to": "r_nearby",
+      "label": "POST rounded coordinates"
+    },
+    {
+      "from": "r_plan",
+      "to": "s_plan",
+      "label": "validated plants, location, site, additions/removals"
+    },
+    {
+      "from": "r_plan",
+      "to": "v_location",
+      "label": "Florida ZIP"
+    },
+    {
+      "from": "r_plan",
+      "to": "v_plants",
+      "label": "observations"
+    },
+    {
+      "from": "r_plan",
+      "to": "v_species",
+      "label": "explicit additions/removals"
+    },
+    {
+      "from": "r_plan",
+      "to": "v_site",
+      "label": "site filters"
+    },
+    {
+      "from": "r_locate",
+      "to": "v_text",
+      "label": "place text ≤200 chars"
+    },
+    {
+      "from": "r_locate",
+      "to": "v_location",
+      "label": "direct or resolved Florida ZIP"
+    },
+    {
+      "from": "r_locate",
+      "to": "s_coords",
+      "label": "coordinate validation/rounding"
+    },
+    {
+      "from": "r_locate",
+      "to": "limits",
+      "label": "separate 20/client/min, 60/min, 1000/day budget"
+    },
+    {
+      "from": "r_locate",
+      "to": "s_geocode",
+      "label": "place query"
+    },
+    {
+      "from": "r_locate",
+      "to": "s_zip_center",
+      "label": "supported direct ZIP"
+    },
+    {
+      "from": "r_locate",
+      "to": "s_reverse",
+      "label": "rounded coordinates"
+    },
+    {
+      "from": "r_locate",
+      "to": "s_south",
+      "label": "returned ZIP coverage"
+    },
+    {
+      "from": "r_nearby",
+      "to": "s_coords",
+      "label": "coordinate validation/rounding"
+    },
+    {
+      "from": "r_nearby",
+      "to": "limits",
+      "label": "same separate location budget"
+    },
+    {
+      "from": "r_nearby",
+      "to": "s_nearby",
+      "label": "rounded coordinates"
+    },
+    {
+      "from": "r_recommend",
+      "to": "s_south",
+      "label": "ZIP coverage flag"
+    },
+    {
+      "from": "r_plan",
+      "to": "s_south",
+      "label": "ZIP coverage flag"
+    },
+    {
+      "from": "s_rec",
+      "to": "s_south",
+      "label": "ZIP planting boundary"
+    },
+    {
+      "from": "s_rec",
+      "to": "s_rank",
+      "label": "site-filtered cards + verified audit + ZIP"
+    },
+    {
+      "from": "s_plan",
+      "to": "s_rec",
+      "label": "inventory/site options; revalidate selected additions"
+    },
+    {
+      "from": "s_plan",
+      "to": "s_score",
+      "label": "observations + explicit changes"
+    },
+    {
+      "from": "s_plan",
+      "to": "s_summary_metrics",
+      "label": "authoritative current/projected metrics"
+    },
+    {
+      "from": "s_plan",
+      "to": "s_fl",
+      "label": "sourced management facts and selected taxa"
+    },
+    {
+      "from": "s_plan",
+      "to": "s_south",
+      "label": "ZIP coverage flag"
+    },
+    {
+      "from": "s_rank",
+      "to": "s_fl",
+      "label": "verified inventory and suggested replacement taxa"
+    },
+    {
+      "from": "s_rank",
+      "to": "d_nwf",
+      "label": "regional genus reference"
+    },
+    {
+      "from": "s_summary",
+      "to": "s_score",
+      "label": "plants + location + explicit changes"
+    },
+    {
+      "from": "s_summary",
+      "to": "s_summary_metrics",
+      "label": "metric response aliases"
+    },
+    {
+      "from": "s_fl",
+      "to": "s_resolve",
+      "label": "unambiguous catalog name lookup"
+    },
+    {
+      "from": "s_scope",
+      "to": "d_zip",
+      "label": "exact supported ZIP membership"
+    },
+    {
+      "from": "v_location",
+      "to": "s_scope",
+      "label": "supported Florida ZIP"
+    },
+    {
+      "from": "s_county",
+      "to": "d_zip",
+      "label": "ZIP → dominant county"
+    },
+    {
+      "from": "s_south",
+      "to": "s_county",
+      "label": "ZIP county membership"
+    },
+    {
+      "from": "s_common",
+      "to": "s_resolve",
+      "label": "strict canonical name"
+    },
+    {
+      "from": "s_resolve",
+      "to": "d_exceptions",
+      "label": "scientific names, common names and synonyms"
+    },
+    {
+      "from": "s_resolve",
+      "to": "d_fisc",
+      "label": "scientific names, common names and synonyms"
+    },
+    {
+      "from": "s_resolve",
+      "to": "d_natives",
+      "label": "scientific names, common names and synonyms"
+    },
+    {
+      "from": "s_plant_option",
+      "to": "s_fl",
+      "label": "exact taxon + ZIP; internal empty-ZIP evidence path"
+    },
+    {
+      "from": "s_geocode",
+      "to": "nominatim",
+      "label": "bounded US place search"
+    },
+    {
+      "from": "s_geocode",
+      "to": "s_coords",
+      "label": "rounded provider coordinates"
+    },
+    {
+      "from": "s_geocode",
+      "to": "s_reverse",
+      "label": "missing address ZIP fallback"
+    },
+    {
+      "from": "s_zip_center",
+      "to": "nominatim",
+      "label": "postal-code search"
+    },
+    {
+      "from": "s_zip_center",
+      "to": "s_coords",
+      "label": "rounded provider coordinates"
+    },
+    {
+      "from": "s_reverse",
+      "to": "nominatim",
+      "label": "rounded coordinate reverse lookup"
+    },
+    {
+      "from": "s_reverse",
+      "to": "s_coords",
+      "label": "validation/rounding"
+    },
+    {
+      "from": "s_nearby",
+      "to": "s_coords",
+      "label": "validation/rounding"
+    },
+    {
+      "from": "s_nearby",
+      "to": "inat",
+      "label": "rounded coords + 5 km + research-grade plants"
+    },
+    {
+      "from": "s_nearby",
+      "to": "s_plant_option",
+      "label": "scientific/common names; unconfirmed display facts"
+    },
+    {
+      "from": "s_name_guard",
+      "to": "d_terms",
+      "label": "word and suffix patterns"
+    },
+    {
+      "from": "s_name_guard",
+      "to": "d_recommendations",
+      "label": "known plant and animal names"
+    },
+    {
+      "from": "s_name_guard",
+      "to": "d_natives",
+      "label": "known taxon names"
+    },
+    {
+      "from": "s_name_guard",
+      "to": "d_fisc",
+      "label": "known taxon names"
+    },
+    {
+      "from": "s_name_guard",
+      "to": "d_nwf",
+      "label": "regional plant group names"
+    },
+    {
+      "from": "recommendation_card",
+      "to": "plant_facts",
+      "label": "expanded sourced planting facts"
+    },
+    {
+      "from": "plant_option",
+      "to": "plant_facts",
+      "label": "expanded sourced planting facts"
     }
   ]
 }
@@ -2503,7 +3339,7 @@ const LAYERS = {
             desc: 'Backend functions that do the real work once a route gets a request.' },
   data:   { name: 'Bundled data', color: '#00897b', where: 'backend/data/*.json',
             desc: 'Data files shipped with the backend instead of fetched online.' },
-  ext:    { name: 'External API', color: '#c0392b', where: 'PlantNet, OpenAI; optional USDA and unused iNaturalist',
+  ext:    { name: 'External API', color: '#c0392b', where: 'PlantNet, OpenAI; optional Nominatim, iNaturalist and USDA',
             desc: 'Outside services the backend calls over the internet.' },
 };
 const MARKERS = [

@@ -94,3 +94,36 @@ def test_recent_reclassifications_are_countable_nonnatives_without_removal_claim
         assert row["wildlife_support"] == "documented"
         assert row["recommendable"] is False
     assert "Moderate Risk" in BY_NAME["Ixora coccinea"]["invasion_assessment"]
+
+
+def test_imported_verified_facts_preserve_current_status_and_growing_sources():
+    incoming = json.loads((DATA / "fl_recommendations.json").read_text())["species"]
+    assert len(incoming) == 31
+    for row in incoming:
+        name = "Hamelia patens var. patens" if row["scientific_name"] == "Hamelia patens" else row["scientific_name"]
+        current = BY_NAME[name]
+        assert current["atlas_verified"] is True
+        assert current["atlas_checked_on"] == "2026-10-17"
+        assert current["atlas_url"] == row["atlas_url"]
+        assert current["growing_source"]["url"] == row["growing_source"]["url"]
+        assert current["helps"]["source"]["url"].startswith("https://")
+        assert current["buying"]["ask_for"]
+        assert current["sun_description"]
+        if row["scientific_name"] == "Salvia coccinea":
+            assert row["native"] is False and row["recommendable"] is False
+            assert current["atlas_status"] == "Not Native"
+        else:
+            assert current["native"] is True
+
+
+@pytest.mark.parametrize("parent,precise", [
+    ("Asclepias tuberosa", "Asclepias tuberosa subsp. rolfsii"),
+    ("Pinus elliottii", "Pinus elliottii var. densa"),
+    ("Helianthus debilis", "Helianthus debilis subsp. debilis"),
+])
+def test_verified_infraspecific_taxa_remain_distinct_without_duplicate_recommendations(parent, precise):
+    assert BY_NAME[parent]["taxon_id"] != BY_NAME[precise]["taxon_id"]
+    assert BY_NAME[precise]["native"] is True
+    assert BY_NAME[precise]["taxonomy_source_url"].startswith("https://")
+    assert BY_NAME[parent]["recommendable"] is True
+    assert BY_NAME[precise]["recommendable"] is False

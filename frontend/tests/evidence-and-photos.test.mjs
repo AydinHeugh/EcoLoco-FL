@@ -24,6 +24,18 @@ test('close candidates require review even with a high confidence number', () =>
   assert.equal(evidence.identificationNeedsConfirmation({ scientific_name: 'Species alpha', confidence: null }), true);
 });
 
+test('explicit confirmation state keeps a high-score close call in review', () => {
+  assert.equal(evidence.identificationNeedsConfirmation({ state: 'confirm', scientific_name: 'Species alpha', confidence: 0.93 }), true);
+  assert.equal(evidence.identificationNeedsConfirmation({ state: 'identified', scientific_name: 'Species alpha', confidence: 0.93 }), false);
+});
+
+test('an unidentified response never exposes a leftover candidate as a selectable match', () => {
+  const result = { state: 'unidentified', scientific_name: 'Species alpha', confidence: 0.99, user_confirmed: true, suggested: 1, candidates: [{ scientific_name: 'Species beta', confidence: 0.8 }] };
+  assert.equal(evidence.identificationNeedsConfirmation(result), true);
+  assert.deepEqual(evidence.confirmationCandidates(result), []);
+  assert.equal(evidence.suggestedCandidateName(result), '');
+});
+
 test('manual identification does not resolve a consequential variety distinction', () => {
   assert.equal(evidence.identificationNeedsConfirmation({ user_confirmed: true, scientific_name: 'Hamelia patens', needs_taxon_confirmation: true }), true);
   assert.equal(evidence.identificationNeedsConfirmation({ user_confirmed: true, scientific_name: 'Zamia integrifolia', confidence: null }), false);
@@ -32,6 +44,42 @@ test('manual identification does not resolve a consequential variety distinction
 test('candidate choices preserve distinct taxa and omit duplicate names', () => {
   const result = evidence.confirmationCandidates({ scientific_name: 'Hamelia patens', candidates: [{ scientific_name: 'HAMELIA PATENS' }, { scientific_name: 'Hamelia patens var. glabra' }, null, {}] });
   assert.deepEqual(result.map((item) => item.scientific_name), ['Hamelia patens', 'Hamelia patens var. glabra']);
+});
+
+test('suggested index refers to original provider order even when displayed choices deduplicate', () => {
+  const result = { scientific_name: 'Species alpha', confidence: 0.93, suggested: 2, candidates: [{ scientific_name: 'SPECIES ALPHA', confidence: 0.91 }, { scientific_name: 'Species beta', confidence: 0.85 }] };
+  const before = JSON.stringify(result);
+  assert.deepEqual(evidence.confirmationCandidates(result).map(item => item.scientific_name), ['Species alpha', 'Species beta']);
+  assert.equal(evidence.suggestedCandidateName(result), 'species beta');
+  assert.equal(evidence.candidateMatchText(result.candidates[1], 'openai_adjudicated'), 'Pl@ntNet · 85% match');
+  assert.equal(evidence.candidateMatchText(result, 'openai_fallback'), 'Image review · 93% match');
+  assert.equal(JSON.stringify(result), before);
+  for (const suggested of [-1, 50, 0.5, null]) assert.equal(evidence.suggestedCandidateName({ ...result, suggested }), '');
+  for (const confidence of [-1, 2, null, NaN, '0.9']) assert.equal(evidence.candidateMatchText({ confidence }, 'plantnet'), '');
+});
+
+test('Atlas links require explicit verification and a secure URL', () => {
+  const atlas_url = 'https://florida.plantatlas.usf.edu/plant/species/2105';
+  assert.equal(evidence.verifiedAtlasUrl({ atlas_url }), null);
+  assert.equal(evidence.verifiedAtlasUrl({ atlas_url, atlas_verified: false }), null);
+  assert.equal(evidence.verifiedAtlasUrl({ atlas_url, atlas_verified: true }), atlas_url);
+  assert.equal(evidence.verifiedAtlasUrl({ atlas_url: 'javascript:alert(1)', atlas_verified: true }), null);
+});
+
+test('expanded plant facts retain sourced buying, caution and growing information', () => {
+  const source = { name: 'Plant reference', url: 'https://example.org/plant' };
+  const rows = evidence.plantExtraFacts({
+    sun: ['full', 'part'], sun_description: 'Full sun to light shade', mature_size: '1–4 feet', growing_source: source,
+    buying: { ask_for: 'Zamia integrifolia', avoid: 'Ask for the Florida kind.', source },
+    watch_out: [{ text: 'Seeds are toxic to pets.', source }],
+    removal_safety: { text: 'Ask grounds staff to confirm safe removal.', source },
+  });
+  assert.deepEqual(rows.map(row => row.title), ['Growing', 'Buying', 'Before planting', 'Removal guidance']);
+  assert.match(rows[0].text, /Full sun to light shade.*1–4 feet/);
+  assert.match(rows[1].text, /Zamia integrifolia.*Florida kind/);
+  assert.ok(rows.every(row => row.source_url === source.url && row.source_name === source.name));
+  assert.deepEqual(evidence.plantExtraFacts({ buying: null, watch_out: [null, {}, 'bad'], removal_safety: {}, sun_description: {} }), []);
+  assert.equal(evidence.plantExtraFacts({ watch_out: [{ text: 'Check first.', source: { url: 'file:///secret' } }] })[0].source_url, null);
 });
 
 test('source links cannot open script, local-file or insecure schemes', () => {

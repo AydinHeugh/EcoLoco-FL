@@ -3,7 +3,7 @@ import json
 import pytest
 import requests
 
-from services.fl_plants_service import DATA_DIR, bundled_catalog, bundled_natives, get_status, supported_location
+from services.fl_plants_service import DATA_DIR, bundled_catalog, bundled_natives, get_status, plant_option, supported_location
 
 ZIP = "33139"
 
@@ -56,8 +56,8 @@ def test_case_whitespace_and_author_do_not_change_identity(name):
     ("Pontederia crassipes", "Eichhornia crassipes"),
     ("Zamia floridana", "Zamia integrifolia"),
     ("Lantana × strigocamara", "Lantana strigocamara"),
-    ("Asclepias tuberosa subsp. rolfsii", "Asclepias tuberosa"),
-    ("Asclepias tuberosa var. rolfsii", "Asclepias tuberosa"),
+    ("Asclepias rolfsii", "Asclepias tuberosa subsp. rolfsii"),
+    ("Asclepias tuberosa var. rolfsii", "Asclepias tuberosa subsp. rolfsii"),
 ])
 def test_documented_synonyms_share_canonical_taxon(name, accepted):
     result = get_status(name, ZIP)
@@ -162,17 +162,17 @@ def test_curated_milkweed_evidence_preserves_fisc_category():
     assert status["additional_source_url"].endswith(".pdf")
 
 
-@pytest.mark.parametrize("location", ["33001", "33139", "33201", "33301", "33431"])
-def test_pilot_location_support(location):
+@pytest.mark.parametrize("location", ["33001", "33139", "33301", "33431", "32003", "34997", "32301"])
+def test_status_supports_known_florida_county_map_zips(location):
     assert supported_location(location)
     assert get_status("Zamia integrifolia", location)["native"] is True
 
 
-@pytest.mark.parametrize("location", ["10001", "32999", "33500", "3313", "331390", "abcde", "٣٣١٣٩", None, 33139])
+@pytest.mark.parametrize("location", ["10001", "32999", "33500", "33201", "32611", "3313", "331390", "abcde", "٣٣١٣٩", None, 33139])
 def test_other_locations_are_not_misrepresented_as_supported(location):
     assert not supported_location(location)
     assert_unknown(get_status("Zamia integrifolia", location))
-    assert "330–334" in get_status("Zamia integrifolia", location)["why"]
+    assert "bundled Florida county map" in get_status("Zamia integrifolia", location)["why"]
 
 
 def test_status_lookup_and_catalog_never_need_a_network(monkeypatch):
@@ -221,3 +221,38 @@ def test_catalog_has_substantial_verified_offline_coverage():
     assert sum(entry["invasive"] is True for entry in catalog) >= 179
     assert all(entry["status_verified"] for entry in catalog)
     assert len({entry["taxon_id"] for entry in catalog}) == len(catalog)
+
+
+def test_nearby_option_can_show_statewide_facts_without_a_zip():
+    option = plant_option("Zamia integrifolia", "Coontie", 0.0, "")
+    assert option["status"] == "native"
+    assert option["status_verified"] is True
+    assert option["atlas_verified"] is True
+    assert option["source_label"]
+    assert "Florida-wide" in option["status_scope"]
+    assert option["helps"]["source"]["url"].startswith("https://")
+    # Empty ZIP is for internal statewide source display, not public support.
+    assert_unknown(get_status("Zamia integrifolia", ""))
+
+
+def test_nearby_option_does_not_hide_uncertain_taxonomy():
+    option = plant_option("Hamelia patens", "Firebush", 0.0, "")
+    assert option["scientific_name"] == "Hamelia patens"
+    assert option["needs_taxon_confirmation"] is True
+    assert option["buying"]["ask_for"] == "Hamelia patens var. patens"
+
+
+def test_sourced_nonnative_fact_is_not_promoted_by_old_verified_recommendation():
+    option = plant_option("Salvia coccinea", "Tropical sage", 0.0, "")
+    assert option["status"] == "non-native"
+    assert option["recommendable"] is False
+    assert option["atlas_verified"] is True
+    assert option["atlas_status"] == "Not Native"
+    assert option["helps"]["text"]
+
+
+def test_invasive_option_includes_sourced_removal_safety():
+    option = plant_option("Brazilian pepper", "", 0.0, "33496")
+    assert option["status"] == "invasive"
+    assert option["fisc_category"] == "I"
+    assert option["removal_safety"]["source"]["url"].startswith("https://")

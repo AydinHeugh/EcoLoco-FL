@@ -2,7 +2,7 @@ import pytest
 import requests
 
 from services import identification_service, openai_client
-from services.identification_service import identify_species
+from services.identification_service import _merge_same_species, identify_species
 
 
 @pytest.fixture
@@ -26,6 +26,7 @@ def test_identify_species_returns_standard_shape(model_reply):
         "scientific_name": "Zamia integrifolia", "common_name": "Coontie", "confidence": 0.87,
         "candidates": [{"scientific_name": "Zamia furfuracea", "common_name": "Cardboard palm", "confidence": 0.1}],
         "source": "openai_fallback", "needs_confirmation": False,
+        "state": "identified", "suggested": 0, "ai_unavailable": False,
     }
 
 
@@ -34,15 +35,16 @@ def test_identify_species_cleans_messy_reply(model_reply):
                             "confidence": "0.871", "candidates": ["junk", {"common_name": "Other"}]}
     result = identify_species("abc123", "33139")
     assert result["scientific_name"] == "Zamia integrifolia"
-    assert result["confidence"] == 0.87
-    assert result["candidates"] == [{"scientific_name": "", "common_name": "Other", "confidence": 0.0}]
+    assert result["confidence"] == 0.871
+    assert result["candidates"] == []
 
 
 def test_identify_species_survives_missing_fields(model_reply):
     model_reply["value"] = {"common_name": "Mystery plant"}
     assert identify_species("abc123", "33139") == {
-        "scientific_name": "", "common_name": "Mystery plant", "confidence": 0.0, "candidates": [],
-        "source": "openai_fallback", "needs_confirmation": True}
+        "scientific_name": "", "common_name": "", "confidence": 0.0, "candidates": [],
+        "source": "openai_fallback", "needs_confirmation": True,
+        "state": "unidentified", "suggested": 0, "ai_unavailable": False}
 
 
 @pytest.mark.parametrize("value, expected", [(1.7, 1.0), (-0.2, 0.0), ("abc", 0.0), (None, 0.0), (True, 0.0)])
@@ -108,6 +110,7 @@ def test_plantnet_confident_is_used_directly(plantnet, openai):
     assert identify_species("img", ZIP) == {
         "scientific_name": "Zamia integrifolia", "common_name": "Coontie", "confidence": 0.92,
         "candidates": [dict(B, confidence=0.03)], "source": "plantnet", "needs_confirmation": False,
+        "state": "identified", "suggested": 0, "ai_unavailable": False,
     }
     assert openai["calls"] == []
 
@@ -117,8 +120,9 @@ def test_plantnet_ambiguous_is_adjudicated(plantnet, openai):
     openai["reply"] = {"scientific_name": "Zamia furfuracea", "confidence": 0.7}
     result = identify_species(["img1", "img2"], ZIP)
     assert result == {
-        "scientific_name": "Zamia furfuracea", "common_name": "Cardboard palm", "confidence": 0.7,
-        "candidates": [A, C], "source": "openai_adjudicated", "needs_confirmation": True,
+        "scientific_name": "Zamia integrifolia", "common_name": "Coontie", "confidence": 0.45,
+        "candidates": [B, C], "source": "openai_adjudicated", "needs_confirmation": True,
+        "state": "confirm", "suggested": 1, "ai_unavailable": False,
     }
     prompt = _text(openai["calls"][0])
     assert ZIP in prompt
@@ -131,7 +135,7 @@ def test_plantnet_low_confidence_single_result_is_adjudicated(plantnet, openai):
     openai["reply"] = {"scientific_name": "Zamia integrifolia", "confidence": 0.75}
     result = identify_species("img", ZIP)
     assert result["source"] == "openai_adjudicated"
-    assert result["confidence"] == 0.75
+    assert result["confidence"] == 0.6
     assert len(openai["calls"]) == 1
 
 
@@ -164,10 +168,15 @@ def test_plantnet_failure_falls_back_to_openai_vision(plantnet, openai):
     assert result["needs_confirmation"] is False
 
 
-def test_plantnet_empty_result_falls_back(plantnet, openai):
+def test_plantnet_empty_result_stays_unidentified_without_fallback(plantnet, openai):
     plantnet["ranked"] = []
     openai["reply"] = {"scientific_name": "Zamia integrifolia", "common_name": "Coontie", "confidence": 0.88}
-    assert identify_species("img", ZIP)["source"] == "openai_fallback"
+    result = identify_species("img", ZIP)
+    assert result["source"] == "plantnet"
+    assert result["state"] == "unidentified"
+    assert result["scientific_name"] == ""
+    assert result["candidates"] == []
+    assert openai["calls"] == []
 
 
 def test_everything_failing_never_crashes(plantnet, openai):
@@ -176,6 +185,7 @@ def test_everything_failing_never_crashes(plantnet, openai):
     assert identify_species("img", ZIP) == {
         "scientific_name": "", "common_name": "", "confidence": 0.0, "candidates": [],
         "source": "none", "needs_confirmation": True,
+        "state": "unidentified", "suggested": 0, "ai_unavailable": True,
     }
 
 
@@ -234,7 +244,107 @@ def test_nonfinite_confidence_cannot_become_certain(model_reply, value):
 
 @pytest.mark.parametrize("reply", [[], None, "bad", 9])
 def test_malformed_vision_response_recovers(plantnet, openai, reply):
+    plantnet["error"] = RuntimeError("PlantNet down")
     openai["reply"] = reply
     result = identify_species("img", ZIP)
     assert result["scientific_name"] == ""
     assert result["needs_confirmation"] is True
+
+
+@pytest.mark.parametrize("top, expected", [(0.0, "unidentified"), (0.1999, "unidentified"), (0.20, "confirm"), (0.7999, "confirm"), (0.80, "identified")])
+def test_provider_thresholds_preserve_real_scores(plantnet, openai, top, expected):
+    plantnet["ranked"] = [dict(A, confidence=top)]
+    openai["reply"] = {"scientific_name": A["scientific_name"], "confidence": 0.99}
+    result = identify_species("img", ZIP)
+    assert result["state"] == expected
+    if expected == "unidentified":
+        assert result["scientific_name"] == ""
+        assert result["candidates"] == []
+        assert openai["calls"] == []
+    else:
+        assert result["confidence"] == top
+
+
+def test_synonym_dedup_keeps_maximum_not_sum_of_provider_scores():
+    ranked = _merge_same_species([
+        {"scientific_name": "Zamia floridana", "common_name": "", "confidence": 0.45},
+        {"scientific_name": "Zamia integrifolia", "common_name": "Coontie", "confidence": 0.41},
+    ], ZIP)
+    assert ranked == [{"scientific_name": "Zamia integrifolia", "common_name": "Coontie", "confidence": 0.45}]
+
+
+def test_repeated_llm_alternatives_cannot_become_confident(plantnet, openai):
+    plantnet["error"] = RuntimeError("PlantNet down")
+    openai["reply"] = {"scientific_name": "Zamia integrifolia", "confidence": 0.3, "candidates": [
+        {"scientific_name": "Zamia floridana", "confidence": 0.3},
+        {"scientific_name": "ZAMIA INTEGRIFOLIA", "confidence": 0.3},
+    ]}
+    result = identify_species("img", ZIP)
+    assert result["state"] == "confirm"
+    assert result["confidence"] == 0.3
+    assert result["candidates"] == []
+
+
+def test_low_duplicate_plantnet_scores_cannot_cross_no_match_threshold(plantnet, openai):
+    plantnet["ranked"] = [dict(A, confidence=0.12), dict(A, scientific_name="Zamia floridana", confidence=0.11)]
+    result = identify_species("img", ZIP)
+    assert result["state"] == "unidentified"
+    assert openai["calls"] == []
+
+
+@pytest.mark.parametrize("names", [
+    ["Hamelia patens", "Hamelia patens var. patens", "Hamelia patens var. glabra"],
+    ["Ficus microcarpa", "Ficus microcarpa subsp. fuyuensis"],
+    ["Zamia integrifolia", "Zamia pumila"],
+    ["Asclepias tuberosa", "Asclepias tuberosa subsp. rolfsii", "Asclepias tuberosa subsp. imaginaria"],
+    ["Pinus elliottii", "Pinus elliottii var. densa"],
+    ["Helianthus debilis", "Helianthus debilis subsp. debilis"],
+    ["Plantus alpha", "Plantus alpha 'Garden'", "Plantus x alpha"],
+])
+def test_meaningful_taxonomic_distinctions_are_not_merged(names):
+    ranked = _merge_same_species([dict(A, scientific_name=name) for name in names], ZIP)
+    assert len(ranked) == len(names)
+
+
+def test_documented_subspecies_synonym_keeps_precise_identity_and_maximum_score():
+    ranked = _merge_same_species([
+        dict(A, scientific_name="Asclepias rolfsii", confidence=0.45),
+        dict(A, scientific_name="Asclepias tuberosa subsp. rolfsii", confidence=0.41),
+    ], ZIP)
+    assert len(ranked) == 1
+    assert ranked[0]["scientific_name"] == "Asclepias tuberosa subsp. rolfsii"
+    assert ranked[0]["confidence"] == 0.45
+
+
+def test_exact_duplicates_keep_highest_even_when_listed_later():
+    ranked = _merge_same_species([dict(A, confidence=0.2), dict(A, confidence=0.7)], ZIP)
+    assert ranked[0]["confidence"] == 0.7
+    assert len(ranked) == 1
+
+
+@pytest.mark.parametrize("reply", [[], None, "bad", {"scientific_name": {}}, {"scientific_name": ""}])
+def test_malformed_adjudication_does_not_change_match(plantnet, openai, reply):
+    plantnet["ranked"] = [A, B]
+    openai["reply"] = reply
+    result = identify_species("img", ZIP)
+    assert result["scientific_name"] == A["scientific_name"]
+    assert result["confidence"] == A["confidence"]
+    assert result["suggested"] == 0
+    assert result["state"] == "confirm"
+
+
+def test_adjudication_error_preserves_useful_plantnet_match(plantnet, openai):
+    plantnet["ranked"] = [A, B]
+    openai["error"] = openai_client.AIUnavailable("Timeout")
+    result = identify_species("img", ZIP)
+    assert result["ai_unavailable"] is True
+    assert result["scientific_name"] == A["scientific_name"]
+    assert result["confidence"] == A["confidence"]
+
+
+@pytest.mark.parametrize("images", [None, 9, {}, [None], [True], [""], ["HTTPS://example.com/image.jpg"]])
+def test_invalid_image_shapes_are_rejected_before_providers(plantnet, openai, images):
+    with pytest.raises(ValueError):
+        identify_species(images, ZIP)
+    assert plantnet["images"] is None
+    assert openai["calls"] == []

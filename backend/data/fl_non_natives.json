@@ -88,7 +88,61 @@
       "suitability_notes": "Classification reference only. This native-addition planner does not recommend nonnative plants; nonnative status alone is not a reason to remove a plant.",
       "taxonomy_notes": "Updated October 2026 status supersedes older native labels in this catalog. The linked UF/IFAS report cites the Atlas of Florida Plants.",
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/1043",
-      "management_notes": "Nonnative does not mean invasive. UF/IFAS retains this species in a pollinator demonstration garden while removing the native label."
+      "management_notes": "Nonnative does not mean invasive. UF/IFAS retains this species in a pollinator demonstration garden while removing the native label.",
+      "helps": {
+        "animals": [
+          "hummingbirds",
+          "butterflies",
+          "birds"
+        ],
+        "text": "Hummingbirds and butterflies drink from its red flowers, and other birds eat its seeds.",
+        "source": {
+          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Salvcocc"
+        }
+      },
+      "buying": {
+        "ask_for": "Salvia coccinea"
+      },
+      "growing_source": {
+        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
+        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Salvcocc"
+      },
+      "mature_size": "2 to 4 feet tall",
+      "plant_type": "wildflower",
+      "effort": "easy",
+      "offers": [
+        "nectar"
+      ],
+      "bloom_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "replaces": [
+        {
+          "scientific_name": "Lantana strigocamara",
+          "why": "A hummingbird flower for the same sunny beds."
+        }
+      ],
+      "look_into": [
+        "Which flower beds on campus get at least half a day of sun?"
+      ],
+      "genus": "Salvia",
+      "atlas_verified": true,
+      "atlas_checked_on": "2026-10-17",
+      "atlas_status": "Not Native",
+      "sun_description": "Full sun to light shade",
+      "common_names": []
     },
     {
       "scientific_name": "Bidens alba",

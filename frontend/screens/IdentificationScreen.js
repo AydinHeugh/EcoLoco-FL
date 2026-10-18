@@ -12,7 +12,7 @@ import PlantEvidence from '../components/PlantEvidence';
 import { matchesCatalogQuery } from '../utils/catalogSearch';
 
 const LOGO = require('../../assets/EcoLoco_logo.png');
-const supportedZip = (value) => /^33[0-4]\d{2}$/.test(value);
+const supportedZip = (value) => /^[0-9]{5}$/.test(value);
 
 export default function IdentificationScreen({ navigation }) {
   const [photos, setPhotos] = useState([]);
@@ -72,7 +72,7 @@ export default function IdentificationScreen({ navigation }) {
   }
   function validateZip() {
     if (!supportedZip(zipCode)) {
-      setError('Enter a South Florida ZIP beginning 330–334.');
+      setError('Enter a five-digit Florida ZIP code.');
       return false;
     }
     return true;
@@ -146,7 +146,7 @@ export default function IdentificationScreen({ navigation }) {
         <View style={styles.zipSection}>
           <Text style={[styles.label, fontsLoaded && styles.sansBold]}>ZIP code</Text>
           <TextInput accessibilityLabel="Survey ZIP code" style={[styles.input, fontsLoaded && styles.sans]} value={zipCode} onChangeText={changeZip} placeholder="e.g. 33431" placeholderTextColor="#777768" keyboardType="number-pad" maxLength={5} />
-          <Text style={[styles.hint, fontsLoaded && styles.sans]}>South Florida · ZIP 330–334</Text>
+          <Text style={[styles.hint, fontsLoaded && styles.sans]}>Florida ZIP code</Text>
         </View>
         <TouchableOpacity accessibilityRole="button" accessibilityLabel={loading ? 'Identifying plant' : 'Identify plant'} disabled={identifyDisabled} accessibilityState={{ disabled: identifyDisabled }} aria-disabled={identifyDisabled} onPress={identify} style={[styles.button, identifyDisabled && styles.disabled]}>
           {loading ? <ActivityIndicator color="#fffdf8" /> : <><Ionicons name="scan-outline" size={19} color="#fffdf8" /><Text style={[styles.buttonText, fontsLoaded && styles.sansBold]}>Identify plant</Text></>}

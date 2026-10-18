@@ -13,7 +13,16 @@ SOURCES = {
     "fisc_list.json": "FISC",
     "fl_natives.json": "fl_natives",
 }
-SCOPE = "Florida status evidence; pilot ZIP prefixes 330–334. Site suitability is assessed separately."
+SCOPE = "Florida-wide status evidence. Site suitability and South Florida planting guidance are assessed separately."
+EVIDENCE_FIELDS = (
+    "wildlife_support", "wildlife_support_basis", "why_source_url", "taxonomy_notes", "taxonomy_source_url",
+    "management_notes", "recommendable", "invasion_assessment", "additional_source_url", "fisc_category",
+    "known_distribution_zones", "atlas_url", "atlas_verified", "atlas_checked_on", "atlas_status", "atlas_scope",
+    "helps", "buying", "watch_out", "growing_source", "mature_size", "plant_type", "effort", "offers",
+    "bloom_months", "replaces", "look_into", "sun_description", "removal_safety", "site_rating_basis",
+)
+STATUS_LABELS = {"native": "Native", "non-native": "Non-native", "invasive": "Invasive", "unknown": "Unverified Florida status"}
+SOURCE_LABELS = {"FISC": "Florida Invasive Species Council 2026 list", "fl_natives": "Sourced Florida native catalog", "fl_non_natives": "Sourced Florida nonnative catalog"}
 RANKS = {
     "var": "var.", "variety": "var.", "subsp": "subsp.", "ssp": "subsp.",
     "subspecies": "subsp.", "forma": "f.", "f": "f.",
@@ -33,8 +42,9 @@ TAXON_WARNINGS = {
 
 
 def supported_location(location):
-    """The pilot serves these ZIP prefixes, not every possible Florida address."""
-    return isinstance(location, str) and re.fullmatch(r"33[0-4][0-9]{2}", location.strip()) is not None
+    """Accept only a ZIP present in the bundled Florida county map."""
+    return (isinstance(location, str) and re.fullmatch(r"[0-9]{5}", location.strip()) is not None
+            and location.strip() in _document("fl_zip_counties.json")["zips"])
 
 
 def _unknown(reason=None):
@@ -140,7 +150,7 @@ def _status(entry, filename, query_key):
         "status_scope": SCOPE,
         "needs_confirmation": bool(warning), "needs_taxon_confirmation": bool(warning),
     }
-    for field in ("wildlife_support", "wildlife_support_basis", "why_source_url", "taxonomy_notes", "taxonomy_source_url", "management_notes", "recommendable", "invasion_assessment", "additional_source_url", "fisc_category", "known_distribution_zones"):
+    for field in EVIDENCE_FIELDS:
         if field in entry:
             status[field] = copy.deepcopy(entry[field])
     if warning:
@@ -170,9 +180,7 @@ def bundled_catalog():
     return sorted(catalog, key=lambda item: (item["common_name"].lower(), item["scientific_name"]))
 
 
-def get_status(scientific_name, zip_code):
-    if not supported_location(zip_code):
-        return _unknown("This pilot supports South Florida ZIP prefixes 330–334; no status is inferred for another location.")
+def _lookup_status(scientific_name):
     key = _normalize(scientific_name)
     if not key:
         return _unknown()
@@ -180,4 +188,37 @@ def get_status(scientific_name, zip_code):
     for filename in CATALOGS:
         if entry := _find(filename, key):
             return _status(entry, filename, key)
+    # Common names are accepted only when the local catalog resolves them
+    # uniquely. The resolver never truncates an unknown variety or cultivar.
+    from services.species_service import resolve
+    canonical = resolve(scientific_name)
+    if canonical and _normalize(canonical) != key:
+        for filename in CATALOGS:
+            if entry := _find(filename, _normalize(canonical)):
+                return _status(entry, filename, _normalize(canonical))
     return _unknown("No Florida-specific status evidence is bundled for this exact taxon. National occurrence does not establish Florida nativity.")
+
+
+def get_status(scientific_name, zip_code):
+    if not supported_location(zip_code):
+        return _unknown("Enter a ZIP in the bundled Florida county map. Some postal-only or recently created ZIPs are not represented; no local suitability is inferred.")
+    return _lookup_status(scientific_name)
+
+
+def plant_option(scientific_name, common_name, confidence, zip_code):
+    """Compatibility shape for candidate/nearby cards with Florida-scoped facts.
+
+    Empty ZIP is permitted only for this internal display helper. Nearby
+    occurrence is never presented as proof of native status or suitability.
+    """
+    status = _lookup_status(scientific_name) if zip_code == "" else get_status(scientific_name, zip_code)
+    key = "unknown"
+    if status["status_verified"]:
+        key = "invasive" if status["invasive"] else "native" if status["native"] else "non-native"
+    name = status.get("common_name") or common_name or scientific_name or "Unidentified plant"
+    return {
+        **status, "plant_name": name[:1].upper() + name[1:],
+        "scientific_name": status.get("scientific_name") or scientific_name,
+        "confidence": confidence, "status": key, "status_label": STATUS_LABELS[key],
+        "source_label": SOURCE_LABELS.get(status["source"]),
+    }

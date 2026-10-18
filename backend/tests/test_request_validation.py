@@ -24,6 +24,16 @@ def test_location_rejects_bad_types_non_ascii_and_unsupported_regions(value):
         validation.location_field(value)
 
 
+@pytest.mark.parametrize("value", ["32301", "32801", "33431", "33901", "34102", "34990"])
+def test_location_accepts_known_florida_zips_across_the_state(value):
+    assert validation.location_field(value) == value
+
+
+def test_location_rejects_unmapped_zip_even_inside_florida_numeric_range():
+    with pytest.raises(ValueError, match="county lookup"):
+        validation.location_field("32099")
+
+
 def test_text_rejects_control_characters_and_oversized_values():
     for value in ("school\x00name", "x" * 181, ["school"], True):
         with pytest.raises(ValueError):

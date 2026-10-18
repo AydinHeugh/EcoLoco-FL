@@ -557,7 +557,14 @@
       ],
       "fisc_category": "I",
       "zones": "N, C, S",
-      "why": "FISC Category I: documented alteration of native plant communities through displacement, changes to community structure or ecological function, or hybridization."
+      "why": "FISC Category I: documented alteration of native plant communities through displacement, changes to community structure or ecological function, or hybridization.",
+      "removal_safety": {
+        "text": "Brazilian pepper is in the poison ivy family, and its sap can cause a skin rash. Wear gloves and long sleeves, and let an adult or the grounds crew do the cutting.",
+        "source": {
+          "name": "UF/IFAS Extension Miami-Dade County",
+          "url": "https://blogs.ifas.ufl.edu/miamidadeco/2025/07/14/invasive-plants-they-affect-fruit-trees-too/"
+        }
+      }
     },
     {
       "scientific_name": "Scleria eggersiana",

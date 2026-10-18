@@ -43,7 +43,7 @@ def test_health_matches_actual_metric_without_providers(client):
     assert response.headers["X-Content-Type-Options"] == "nosniff"
 
 
-@pytest.mark.parametrize("route", ["/identify", "/confirm", "/catalog", "/recommend", "/score", "/letter"])
+@pytest.mark.parametrize("route", ["/identify", "/confirm", "/catalog", "/recommend", "/score", "/letter", "/plan", "/locate", "/nearby"])
 @pytest.mark.parametrize("body", [None, [], "plant", 42, True])
 def test_non_object_json_is_a_json_client_error(client, route, body):
     response = client.post(route, data=json.dumps(body), content_type="application/json")
@@ -229,3 +229,76 @@ def test_debug_is_opt_in_only(monkeypatch, value, expected):
     else:
         monkeypatch.setenv("ECOLOCO_DEV", value)
     assert app_module.debug_enabled() is expected
+
+
+def test_plan_returns_same_metrics_as_score_without_auto_applying_options(client):
+    payload = {"location": ZIP, "plants": [observed("Zamia integrifolia"), observed("Schinus terebinthifolius")]}
+    planned = client.post("/plan", json=payload).get_json()
+    scored = client.post("/score", json=payload).get_json()["result"]
+    assert planned["south_florida"] is True
+    assert planned["result"]["summary"]["native_share"] == scored["native_share"] == 50
+    assert planned["result"]["summary"]["projected"] == scored["projected"]
+    assert planned["result"]["add"] and planned["result"]["selected_additions"] == []
+    payload["additions"] = ["Muhlenbergia capillaris"]
+    changed = client.post("/plan", json=payload).get_json()["result"]
+    assert changed["summary"]["percent_native_with_plan"] == 66.7
+    assert changed["summary"]["counts_with_plan"]["invasive"] == 1
+
+
+@pytest.mark.parametrize("payload", [{"plants": [1]}, {"plants": [], "site": {"sun": "night"}},
+                                      {"plants": [], "additions": ["Salvia coccinea"]},
+                                      {"plants": [], "removals": ["Schinus terebinthifolius"]}])
+def test_plan_rejects_invalid_inputs_and_ineligible_changes(client, payload):
+    response = client.post("/plan", json={"location": ZIP, **payload})
+    assert response.status_code == 400 and response.is_json
+
+
+def test_client_submitted_letter_plan_is_not_trusted(client):
+    response = client.post("/letter", json={"zip_code": ZIP, "plan": {"summary": {"percent_native": 100}, "add": [], "remove": []}})
+    assert response.status_code == 400
+
+
+def test_locate_zip_keeps_working_without_remote_coordinates(client, monkeypatch):
+    monkeypatch.setattr(app_module, "zip_center", lambda zipcode: None)
+    response = client.post("/locate", json={"query": ZIP})
+    assert response.status_code == 200
+    assert response.get_json()["result"] == {"zip": ZIP, "lat": None, "lon": None}
+    assert response.get_json()["south_florida"] is True
+
+
+def test_locate_place_revalidates_provider_zip(client, monkeypatch):
+    monkeypatch.setattr(app_module, "geocode", lambda query: {"lat": 40.71, "lon": -74.0, "zip": "10001"})
+    assert client.post("/locate", json={"query": "A school"}).status_code == 400
+    monkeypatch.setattr(app_module, "geocode", lambda query: {"lat": 26.37, "lon": -80.1, "zip": ZIP})
+    assert client.post("/locate", json={"query": "A school"}).get_json()["result"]["zip"] == ZIP
+
+
+@pytest.mark.parametrize("payload", [{}, {"query": []}, {"query": "a" * 201}, {"query": "32099"},
+                                      {"lat": True, "lon": -80}, {"lat": 90.001, "lon": -80}, {"lat": 26}])
+def test_locate_invalid_input_never_calls_provider(client, monkeypatch, payload):
+    monkeypatch.setattr(app_module, "geocode", lambda *args: pytest.fail("invalid lookup reached provider"))
+    monkeypatch.setattr(app_module, "reverse_zip", lambda *args: pytest.fail("invalid lookup reached provider"))
+    monkeypatch.setattr(app_module, "zip_center", lambda *args: pytest.fail("invalid lookup reached provider"))
+    assert client.post("/locate", json=payload).status_code == 400
+
+
+def test_nearby_uses_rounded_coordinates_and_identifies_context(client, monkeypatch):
+    received = []
+    monkeypatch.setattr(app_module, "seen_near", lambda lat, lon: received.append((lat, lon)) or [])
+    response = client.post("/nearby", json={"lat": 26.37321, "lon": -80.10198})
+    assert response.status_code == 200 and received == [(26.37, -80.1)]
+    assert "not this survey" in response.get_json()["scope_note"]
+
+
+@pytest.mark.parametrize("route,payload", [("/locate", {"query": ZIP}), ("/nearby", {"lat": 26.37, "lon": -80.1})])
+def test_lookup_budget_blocks_remote_work(client, monkeypatch, route, payload):
+    class Denied:
+        def check(self, *args):
+            return 30
+    monkeypatch.setitem(app_module.app.config, "RATE_LIMIT_ENABLED", True)
+    monkeypatch.setattr(app_module, "location_limits", Denied())
+    monkeypatch.setattr(app_module, "seen_near", lambda *args: pytest.fail("quota must block remote call"))
+    monkeypatch.setattr(app_module, "zip_center", lambda *args: pytest.fail("quota must block remote call"))
+    response = client.post(route, json=payload)
+    assert response.status_code == 429
+    assert response.headers["Retry-After"] == "30"

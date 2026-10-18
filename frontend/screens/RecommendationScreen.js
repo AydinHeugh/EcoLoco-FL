@@ -7,7 +7,7 @@ import { DMSans_400Regular } from '@expo-google-fonts/dm-sans/400Regular';
 import { DMSans_700Bold } from '@expo-google-fonts/dm-sans/700Bold';
 import { getPlantRecommendations } from '../services/geminiService';
 import SiteConditions, { DEFAULT_SITE } from '../components/SiteConditions';
-import { EvidenceLink } from '../components/PlantEvidence';
+import { EvidenceLink, PlantFacts } from '../components/PlantEvidence';
 
 const LOGO = require('../../assets/EcoLoco_logo.png');
 const readable = (value) => Array.isArray(value) ? value.join(', ') : typeof value === 'string' ? value : '';
@@ -33,6 +33,7 @@ export function RecommendationCard({ item }) {
       <EvidenceLink url={item.source_url}>Florida status</EvidenceLink>
       <EvidenceLink url={item.why_source_url}>Wildlife relationship</EvidenceLink>
       <EvidenceLink url={item.requirements_source_url}>Growing requirements</EvidenceLink>
+      <PlantFacts plant={item} />
     </View>}
   </View>;
 }
@@ -41,6 +42,7 @@ export default function RecommendationScreen({ navigation, route }) {
   const [zipCode, setZipCode] = useState(route?.params?.prefillZip || '');
   const [site, setSite] = useState({ ...DEFAULT_SITE, ...route?.params?.site });
   const [results, setResults] = useState(null);
+  const [southFlorida, setSouthFlorida] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [expanded, setExpanded] = useState(false);
@@ -76,8 +78,8 @@ export default function RecommendationScreen({ navigation, route }) {
     setError(null);
   }
   async function recommend() {
-    if (!/^33[0-4]\d{2}$/.test(zipCode)) {
-      setError('Enter a South Florida ZIP beginning 330–334.');
+    if (!/^[0-9]{5}$/.test(zipCode)) {
+      setError('Enter a five-digit Florida ZIP code.');
       return;
     }
     cancel();
@@ -87,10 +89,11 @@ export default function RecommendationScreen({ navigation, route }) {
     setLoading(true);
     setError(null);
     setResults(null);
+    setSouthFlorida(null);
     setExpanded(false);
     try {
       const data = await getPlantRecommendations(zipCode, { plants, site, signal: controller.signal });
-      if (id === request.current.sequence) setResults(data.result);
+      if (id === request.current.sequence) { setResults(data.result); setSouthFlorida(data.south_florida); }
     } catch (failure) {
       if (id === request.current.sequence && !controller.signal.aborted) setError(failure.message || 'Could not load plant suggestions. Your site choices are still here; try again.');
     } finally {
@@ -107,7 +110,7 @@ export default function RecommendationScreen({ navigation, route }) {
         <Text style={styles.subtitle}>Native plants for your space.</Text>
         <Text style={styles.label}>Planting ZIP code</Text>
         <TextInput accessibilityLabel="Planting ZIP code" value={zipCode} onChangeText={changeZip} placeholder="e.g. 33431" placeholderTextColor="#777768" keyboardType="number-pad" maxLength={5} style={styles.input} />
-        <Text style={styles.hint}>South Florida · ZIP 330–334</Text>
+        <Text style={styles.hint}>Planting options for South Florida</Text>
         <SiteConditions site={site} onChange={changeSite} />
         {!!plants.length && <Text style={styles.hint}>Finding additions to your {plants.length} recorded plant{plants.length === 1 ? '' : 's'}.</Text>}
         <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: loading }} aria-disabled={loading} disabled={loading} onPress={recommend} style={[styles.button, loading && styles.disabled]}>
@@ -117,7 +120,7 @@ export default function RecommendationScreen({ navigation, route }) {
         {!!error && <View style={styles.errorBox}><Text accessibilityLiveRegion="assertive" style={styles.error}>{error}</Text><TouchableOpacity accessibilityRole="button" onPress={recommend} style={styles.linkButton}><Text style={styles.link}>Try again</Text></TouchableOpacity></View>}
         {Array.isArray(results) && <View style={styles.results}>
           <Text accessibilityRole="header" style={styles.resultsTitle}>{results.length ? 'A greener place to start' : 'No matches yet'}</Text>
-          <Text style={styles.hint}>{results.length ? `${results.length} options for your site · listed alphabetically` : 'Check your site details or ask local extension staff for more options.'}</Text>
+          <Text style={styles.hint}>{results.length ? `${results.length} options for your site` : southFlorida === false ? 'Planting options currently cover South Florida only.' : 'Check your site details or ask local extension staff for more options.'}</Text>
           {shown.map((item) => <RecommendationCard key={item.taxon_id || item.scientific_name} item={item} />)}
           {results.length > 3 && <TouchableOpacity accessibilityRole="button" accessibilityState={{ expanded }} aria-expanded={expanded} onPress={() => setExpanded(!expanded)} style={styles.secondaryButton}><Text style={styles.secondaryText}>{expanded ? 'Show less' : `Show ${results.length - 3} more ${results.length === 4 ? 'plant' : 'plants'}`}</Text></TouchableOpacity>}
           <TouchableOpacity accessibilityRole="button" accessibilityState={{ expanded: aboutOpen }} aria-expanded={aboutOpen} onPress={() => setAboutOpen(!aboutOpen)} style={styles.linkButton}><Text style={styles.link}>{aboutOpen ? 'Hide how we choose −' : 'How we choose these plants +'}</Text></TouchableOpacity>

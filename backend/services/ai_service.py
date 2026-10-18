@@ -1,8 +1,10 @@
 """Join plant identification to source-backed facts and practical campus plans."""
 
 from services import openai_client
-from services.fl_plants_service import bundled_catalog, bundled_natives, get_status
+from services.fl_plants_service import _normalize, bundled_catalog, bundled_natives, get_status
 from services.identification_service import identify_species
+from services.location_service import in_south_florida
+from services.plan_service import rank_recommendations
 from services.score_service import calculate_biodiversity_score
 
 STATUSES = ("native", "non-native", "invasive")
@@ -16,6 +18,12 @@ SITE_OPTIONS = {
 }
 SPACE_ORDER = {"small": 0, "medium": 1, "large": 2}
 SCOPE_NOTE = "This pilot uses Florida status records and South Florida planting guidance; a ZIP code alone does not establish suitability at a particular site."
+PLANT_FACT_FIELDS = ("atlas_url", "atlas_verified", "atlas_checked_on", "sun_description", "helps", "buying", "watch_out", "growing_source", "mature_size",
+                     "plant_type", "effort", "offers", "bloom_months", "replaces", "look_into", "removal_safety")
+
+
+def _plant_facts(record):
+    return {key: record[key] for key in PLANT_FACT_FIELDS if key in record}
 
 ASSESS_PROMPT = """The proposed identification is {common_name} ({scientific_name}) near US ZIP {location}.
 {status_line}
@@ -76,10 +84,12 @@ def assess_plant(species, status, location):
 
 
 def _taxon_candidates(status, existing):
-    """Offer precise, source-backed alternatives for a consequential coarse name."""
+    """Append catalog alternatives without replacing or reordering photo matches."""
+    existing = [entry for entry in existing if isinstance(entry, dict) and _normalize(entry.get("scientific_name"))] if isinstance(existing, list) else []
     if not status.get("needs_taxon_confirmation"):
         return existing
     base = " ".join(str(status.get("scientific_name") or "").casefold().split()[:2])
+    existing_names = {_normalize(entry["scientific_name"]) for entry in existing}
     precise = [
         {
             "scientific_name": entry["scientific_name"],
@@ -93,9 +103,9 @@ def _taxon_candidates(status, existing):
         for entry in bundled_catalog()
         if entry["scientific_name"].casefold().startswith(base + " ")
         and not entry.get("needs_taxon_confirmation")
+        and _normalize(entry["scientific_name"]) not in existing_names
     ]
-    precise_names = {entry["scientific_name"].casefold() for entry in precise}
-    return precise + [entry for entry in existing if str(entry.get("scientific_name") or "").casefold() not in precise_names]
+    return existing + precise
 
 
 def _plant_result(species, status, *, user_confirmed=False, assessment=None, ai_unavailable=False):
@@ -105,6 +115,19 @@ def _plant_result(species, status, *, user_confirmed=False, assessment=None, ai_
     taxon_confirmation = status.get("needs_taxon_confirmation", False)
     needs_confirmation = bool(taxon_confirmation or (species.get("needs_confirmation", True) and not user_confirmed))
     scientific_name = status.get("scientific_name") or species.get("scientific_name") or ""
+    original_candidates = species.get("candidates", [])
+    candidates = _taxon_candidates(status, original_candidates)
+    suggested = 0
+    requested = species.get("suggested", 0)
+    # Suggestions reference [top, *provider candidates]. Catalog additions and
+    # filtering must never move that suggestion onto an unscored alternative.
+    if (isinstance(requested, int) and not isinstance(requested, bool)
+            and isinstance(original_candidates, list) and 0 < requested <= len(original_candidates)):
+        original = original_candidates[requested - 1]
+        target = _normalize(original.get("scientific_name")) if isinstance(original, dict) else ""
+        if target:
+            suggested = next((index for index, candidate in enumerate(candidates, 1)
+                              if _normalize(candidate["scientific_name"]) == target), 0)
     support = _pick(status.get("wildlife_support"), SUPPORT_LEVELS, "unknown")
     why = status.get("why") or ""
     support_reason = why if support != "unknown" else ""
@@ -126,6 +149,7 @@ def _plant_result(species, status, *, user_confirmed=False, assessment=None, ai_
             "impact": "Nonnative does not by itself mean invasive, and an unverified status is not a reason to remove a plant.",
         }]
     return {
+        **_plant_facts(status),
         "plant_name": status.get("common_name") or species.get("common_name") or scientific_name or "Unidentified plant",
         "scientific_name": scientific_name,
         "taxon_id": status.get("taxon_id"),
@@ -148,7 +172,7 @@ def _plant_result(species, status, *, user_confirmed=False, assessment=None, ai_
         "suggestion_note": "Automated suggestions are unverified and are excluded from survey metrics and planting selections." if assessment else None,
         "endangered_status": "unknown",
         "confidence": species.get("confidence"),
-        "candidates": _taxon_candidates(status, species.get("candidates", [])),
+        "candidates": candidates,
         "id_source": species.get("source", "manual"),
         "needs_confirmation": needs_confirmation,
         "needs_taxon_confirmation": bool(taxon_confirmation),
@@ -161,13 +185,15 @@ def _plant_result(species, status, *, user_confirmed=False, assessment=None, ai_
         "fisc_category": status.get("fisc_category"),
         "fisc_zones": status.get("known_distribution_zones"),
         "distribution_note": status.get("distribution_note"),
+        "state": "unidentified" if not scientific_name else ("confirm" if needs_confirmation else "identified"),
+        "suggested": suggested,
     }
 
 
 def identify_plant(images, location):
     species = identify_species(images, location)
     status = get_status(species.get("scientific_name"), location)
-    assessment, ai_unavailable = {}, species.get("source") == "none"
+    assessment, ai_unavailable = {}, bool(species.get("ai_unavailable") or species.get("source") == "none")
     # Curated relationships and statuses do not depend on an explanation provider.
     # An unfamiliar taxon may still receive a clearly separated, tentative explanation.
     if species.get("scientific_name") and not status.get("status_verified"):
@@ -241,6 +267,7 @@ def _recommendation(entry, status, site, audit):
         problem += " The survey also records invasive taxa; have grounds staff review those separately."
     benefit = entry["why"]
     return {
+        **_plant_facts(entry),
         "plant_name": name,
         "scientific_name": status.get("scientific_name") or entry["scientific_name"],
         "taxon_id": status["taxon_id"],
@@ -272,6 +299,8 @@ def _recommendation(entry, status, site, audit):
 
 def get_plant_recommendations(location, plants=None, site=None):
     """Filter sourced natives by observed taxa and actual site constraints."""
+    if not in_south_florida(location):
+        return []
     site = _site(site)
     audit = calculate_biodiversity_score(plants or [], location)
     present = {entry["taxon_id"] for entry in audit["species"]}
@@ -287,8 +316,7 @@ def get_plant_recommendations(location, plants=None, site=None):
             continue
         seen.add(key)
         recommendations.append(_recommendation(entry, status, site, audit))
-    # Alphabetical ordering is explicit; undocumented wildlife rankings are avoided.
-    return sorted(recommendations, key=lambda entry: entry["plant_name"].casefold())
+    return rank_recommendations(recommendations, audit, location)
 
 
 def fallback_recommendations(location, plants=None, site=None):
@@ -350,6 +378,15 @@ def generate_proposal(payload):
             f"  Wildlife relationship: {plant['why_source_url'] or plant['source_url']}",
             f"  Planting requirements: {plant['requirements_source_url'] or plant['source_url']}",
         ])
+        buying = plant.get("buying") or {}
+        if buying.get("ask_for"):
+            lines.append(f"  Nursery label: {buying['ask_for']}.")
+        if buying.get("avoid"):
+            lines.append(f"  Buying note: {buying['avoid']}")
+        for caution in plant.get("watch_out") or []:
+            if isinstance(caution, dict) and caution.get("text"):
+                source = caution.get("source") or {}
+                lines.append(f"  Care note: {caution['text']} {source.get('url', '')}".rstrip())
     projected = audit["projected"]
     if projected["added_species"]:
         lines.extend(["", f"If all selected new taxa are established and retained in this surveyed inventory, its native share would be {projected['native_count']} of {projected['verified_species_count']} verified taxa ({projected['native_share']:g}%). This is a conditional inventory calculation, not a prediction of wildlife outcomes."])

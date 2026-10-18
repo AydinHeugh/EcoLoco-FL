@@ -1,6 +1,6 @@
 # EcoLoco-FL Architecture
 
-Map of the app: Expo screens → bounded API requests → validated Flask routes → sourced taxon evidence, survey calculations and proposals. Device storage preserves audit facts and draft edits; provider calls are limited to identification-related work.
+Map of the app: Expo screens → bounded API requests → validated Flask routes → sourced taxon evidence, survey calculations and proposals. Device storage preserves audit facts and draft edits; model calls are limited to identification-related work. Optional place and nearby-observation APIs use separate bounded external requests; they are not a visible location workflow.
 
 **Interactive version:** https://aydinheugh.github.io/EcoLoco-FL/ (or open
 [`docs/architecture.html`](docs/architecture.html) locally; it needs internet for the React Flow CDN). Drag nodes, pan and zoom, and click any node for a side panel
@@ -32,7 +32,7 @@ and the answer comes back the same way.
 | orange | **Flask route** | A backend URL that receives those requests — the front door of the Python server. | `backend/app.py` |
 | purple | **Service** | Backend functions that do the real work once a route gets a request. | `backend/services/*.py` |
 | teal | **Bundled data** | Data files shipped with the backend instead of fetched online. | `backend/data/*.json` |
-| red | **External API** | PlantNet and OpenAI for identification; USDA is optional distribution research and iNaturalist is unused legacy code. | — |
+| red | **External API** | PlantNet and OpenAI for identification; Nominatim for optional place lookup and iNaturalist for nearby context. USDA remains optional distribution research. | — |
 
 ### Markers
 
@@ -51,8 +51,6 @@ and the answer comes back the same way.
 |---|---|---|
 | `getLocalPlants()` (frontend/services/plantService.js) | DEAD | Remove this unused client when cleaning up legacy integrations. |
 | `Flask app` (backend/app.py) | change planned | Choose a public HTTPS host and configure credentials, allowed origins, budgets and shared gateway limits before external demonstrations. |
-| `get_plant_requests()` (backend/services/inat_service.py) | DEAD | Remove or separately redesign this legacy helper; do not use nearby sightings as identification confidence. |
-| `iNaturalist API` (backend/services/inat_service.py) | DEAD | Retire with the unused helper or design a separately scoped observation feature. |
 <!-- /GENERATED:planned -->
 
 ## Diagram
@@ -87,6 +85,7 @@ flowchart LR
     recommendation_card["RecommendationCard"]
     scan_another["scanAnotherPlant()"]
     remove_photo["removePhoto()"]
+    plant_facts["PlantFacts"]
   end
   subgraph L_device["Device"]
     direction TB
@@ -123,6 +122,13 @@ flowchart LR
     u_bytes["base64ByteLength()"]
     catalog_search["Catalog name search"]
     evidence_text["evidenceText()"]
+    c_plan["getPlan()"]
+    c_locate["locate()"]
+    c_nearby["getNearby()"]
+    u_suggested["suggestedCandidateName()"]
+    u_match["candidateMatchText()"]
+    u_atlas["verifiedAtlasUrl()"]
+    u_extra_facts["plantExtraFacts()"]
   end
   subgraph L_route["Flask routes"]
     direction TB
@@ -135,6 +141,9 @@ flowchart LR
     r_score["POST /score"]
     r_letter["POST /letter"]
     gunicorn["Gunicorn pilot server"]
+    r_plan["POST /plan"]
+    r_locate["POST /locate"]
+    r_nearby["POST /nearby"]
   end
   subgraph L_svc["Services"]
     direction TB
@@ -157,7 +166,6 @@ flowchart LR
     s_bundled_all["bundled_catalog()"]
     s_usda["florida_distribution()"]
     s_usda_guard["florida_status()"]
-    s_inat["get_plant_requests()<br/>DEAD — Remove or separately redesign this legacy helper; do not use nearby sightings as identification confidence."]
     v_text["text_field()"]
     v_location["location_field()"]
     v_plants["plant_list()"]
@@ -166,6 +174,21 @@ flowchart LR
     v_proposal["proposal_fields()"]
     v_images["validate_images()"]
     limits["RequestLimits.check()"]
+    s_rank["rank_recommendations()"]
+    s_plan["build_plan()"]
+    s_summary_metrics["from_metrics()"]
+    s_summary["summarize()"]
+    s_resolve["resolve()"]
+    s_common["common_name()"]
+    s_plant_option["plant_option()"]
+    s_county["county()"]
+    s_south["in_south_florida()"]
+    s_coords["round_coords()"]
+    s_geocode["geocode()"]
+    s_zip_center["zip_center()"]
+    s_reverse["reverse_zip()"]
+    s_nearby["seen_near()"]
+    s_name_guard["mentions_new_names()"]
   end
   subgraph L_data["Bundled data"]
     direction TB
@@ -173,14 +196,21 @@ flowchart LR
     d_fisc["fisc_list.json"]
     d_natives["fl_natives.json"]
     fisc_builder["build_fisc_list.py"]
+    d_recommendations["fl_recommendations.json"]
+    d_nwf["nwf_keystone_fl.json"]
+    d_why["why_this_matters.json"]
+    d_zip["fl_zip_counties.json"]
+    d_terms["nature_terms.json"]
+    zip_builder["build_zip_counties.py"]
   end
   subgraph L_ext["External APIs"]
     direction TB
     plantnet["PlantNet API"]
     openai["OpenAI model API"]
     usda["USDA PLANTS distribution API"]
-    inat["iNaturalist API<br/>DEAD — Retire with the unused helper or design a separately scoped observation feature."]
     ci_checks["Repository verification"]
+    nominatim["Nominatim API"]
+    inat["iNaturalist observations API"]
   end
   app -->|"screen navigation"| home
   app -->|"screen navigation"| ident
@@ -322,7 +352,6 @@ flowchart LR
   s_assess -->|"unverified explanatory hypothesis"| s_chat
   s_chat -->|"bounded model request"| openai
   s_usda -->|"optional occurrence/profile research"| usda
-  s_inat -.->|"legacy observation query"| inat
   bootstrap -->|"wrap app rendering"| boundary
   boundary -->|"render or recover navigation"| app
   gunicorn -->|"serve app:app with one worker"| flask
@@ -342,6 +371,78 @@ flowchart LR
   ident -->|"retake / Scan another plant"| scan_another
   scan_another -->|"new photoSession remount"| photo
   photo -->|"selected photo index"| remove_photo
+  zip_builder -->|"Census relationship import → county lookup"| d_zip
+  c_plan -->|"shared bounded request"| client
+  c_locate -->|"shared bounded request"| client
+  c_nearby -->|"shared bounded request"| client
+  evidence -->|"expanded plant record"| plant_facts
+  plant_facts -->|"fact sources and verified Atlas URL"| evidence_link
+  evidence -->|"candidate evidence fields"| u_suggested
+  evidence -->|"candidate evidence fields"| u_match
+  plant_facts -->|"optional sourced record fields"| u_atlas
+  plant_facts -->|"optional sourced record fields"| u_extra_facts
+  u_atlas -->|"validate verified Atlas link"| u_url
+  u_extra_facts -->|"validate fact sources"| u_url
+  u_extra_facts -->|"normalize text"| evidence_text
+  c_plan -->|"POST observations + ZIP; optional API helper"| r_plan
+  c_locate -->|"POST query or rounded coordinates"| r_locate
+  c_nearby -->|"POST rounded coordinates"| r_nearby
+  r_plan -->|"validated plants, location, site, additions/removals"| s_plan
+  r_plan -->|"Florida ZIP"| v_location
+  r_plan -->|"observations"| v_plants
+  r_plan -->|"explicit additions/removals"| v_species
+  r_plan -->|"site filters"| v_site
+  r_locate -->|"place text ≤200 chars"| v_text
+  r_locate -->|"direct or resolved Florida ZIP"| v_location
+  r_locate -->|"coordinate validation/rounding"| s_coords
+  r_locate -->|"separate 20/client/min, 60/min, 1000/day budget"| limits
+  r_locate -->|"place query"| s_geocode
+  r_locate -->|"supported direct ZIP"| s_zip_center
+  r_locate -->|"rounded coordinates"| s_reverse
+  r_locate -->|"returned ZIP coverage"| s_south
+  r_nearby -->|"coordinate validation/rounding"| s_coords
+  r_nearby -->|"same separate location budget"| limits
+  r_nearby -->|"rounded coordinates"| s_nearby
+  r_recommend -->|"ZIP coverage flag"| s_south
+  r_plan -->|"ZIP coverage flag"| s_south
+  s_rec -->|"ZIP planting boundary"| s_south
+  s_rec -->|"site-filtered cards + verified audit + ZIP"| s_rank
+  s_plan -->|"inventory/site options; revalidate selected additions"| s_rec
+  s_plan -->|"observations + explicit changes"| s_score
+  s_plan -->|"authoritative current/projected metrics"| s_summary_metrics
+  s_plan -->|"sourced management facts and selected taxa"| s_fl
+  s_plan -->|"ZIP coverage flag"| s_south
+  s_rank -->|"verified inventory and suggested replacement taxa"| s_fl
+  s_rank -->|"regional genus reference"| d_nwf
+  s_summary -->|"plants + location + explicit changes"| s_score
+  s_summary -->|"metric response aliases"| s_summary_metrics
+  s_fl -->|"unambiguous catalog name lookup"| s_resolve
+  s_scope -->|"exact supported ZIP membership"| d_zip
+  v_location -->|"supported Florida ZIP"| s_scope
+  s_county -->|"ZIP → dominant county"| d_zip
+  s_south -->|"ZIP county membership"| s_county
+  s_common -->|"strict canonical name"| s_resolve
+  s_resolve -->|"scientific names, common names and synonyms"| d_exceptions
+  s_resolve -->|"scientific names, common names and synonyms"| d_fisc
+  s_resolve -->|"scientific names, common names and synonyms"| d_natives
+  s_plant_option -->|"exact taxon + ZIP; internal empty-ZIP evidence path"| s_fl
+  s_geocode -->|"bounded US place search"| nominatim
+  s_geocode -->|"rounded provider coordinates"| s_coords
+  s_geocode -->|"missing address ZIP fallback"| s_reverse
+  s_zip_center -->|"postal-code search"| nominatim
+  s_zip_center -->|"rounded provider coordinates"| s_coords
+  s_reverse -->|"rounded coordinate reverse lookup"| nominatim
+  s_reverse -->|"validation/rounding"| s_coords
+  s_nearby -->|"validation/rounding"| s_coords
+  s_nearby -->|"rounded coords + 5 km + research-grade plants"| inat
+  s_nearby -->|"scientific/common names; unconfirmed display facts"| s_plant_option
+  s_name_guard -->|"word and suffix patterns"| d_terms
+  s_name_guard -->|"known plant and animal names"| d_recommendations
+  s_name_guard -->|"known taxon names"| d_natives
+  s_name_guard -->|"known taxon names"| d_fisc
+  s_name_guard -->|"regional plant group names"| d_nwf
+  recommendation_card -->|"expanded sourced planting facts"| plant_facts
+  plant_option -->|"expanded sourced planting facts"| plant_facts
   classDef ui fill:#e3f2e1,stroke:#2e7d32,color:#12301a
   classDef device fill:#eceff1,stroke:#607d8b,color:#263238
   classDef client fill:#e1effa,stroke:#1e6fb8,color:#0d2d4d
@@ -351,13 +452,13 @@ flowchart LR
   classDef ext fill:#fde4e1,stroke:#c0392b,color:#4a0f08
   classDef planned stroke-dasharray:6 4,stroke-width:2px
   classDef dead fill:#f3f3f3,stroke:#9e9e9e,color:#616161,stroke-dasharray:3 3
-  class app,home,ident,audit,results,rec,photo,prepare,evidence,evidence_link,site,button,field,notice,page,bootstrap,boundary,home_entry,home_feature,audit_details,site_selection,plant_option,recommendation_card,scan_another,remove_photo ui
+  class app,home,ident,audit,results,rec,photo,prepare,evidence,evidence_link,site,button,field,notice,page,bootstrap,boundary,home_entry,home_feature,audit_details,site_selection,plant_option,recommendation_card,scan_another,remove_photo,plant_facts ui
   class picker,manipulator,clipboard,storage_device device
-  class client,c_identify,c_confirm,c_catalog,c_score,c_rec,c_letter,c_local,empty,store,load,save,patch,subscribe,flush,report,u_review,u_status,u_provider,u_url,u_candidates,u_count,u_files,u_bytes,catalog_search,evidence_text client
-  class flask,r_health,r_identify,r_confirm,r_catalog,r_recommend,r_score,r_letter,gunicorn route
-  class s_identify,s_confirm,s_catalog,s_rec,s_score,s_proposal,s_assess,s_fallback_rec,s_letter,s_letter_noai,s_species,s_plantnet,s_chat,s_fl,s_scope,s_bundled,s_bundled_all,s_usda,s_usda_guard,s_inat,v_text,v_location,v_plants,v_species,v_site,v_proposal,v_images,limits svc
-  class d_exceptions,d_fisc,d_natives,fisc_builder data
-  class plantnet,openai,usda,inat,ci_checks ext
-  class c_local,s_inat,inat dead
+  class client,c_identify,c_confirm,c_catalog,c_score,c_rec,c_letter,c_local,empty,store,load,save,patch,subscribe,flush,report,u_review,u_status,u_provider,u_url,u_candidates,u_count,u_files,u_bytes,catalog_search,evidence_text,c_plan,c_locate,c_nearby,u_suggested,u_match,u_atlas,u_extra_facts client
+  class flask,r_health,r_identify,r_confirm,r_catalog,r_recommend,r_score,r_letter,gunicorn,r_plan,r_locate,r_nearby route
+  class s_identify,s_confirm,s_catalog,s_rec,s_score,s_proposal,s_assess,s_fallback_rec,s_letter,s_letter_noai,s_species,s_plantnet,s_chat,s_fl,s_scope,s_bundled,s_bundled_all,s_usda,s_usda_guard,v_text,v_location,v_plants,v_species,v_site,v_proposal,v_images,limits,s_rank,s_plan,s_summary_metrics,s_summary,s_resolve,s_common,s_plant_option,s_county,s_south,s_coords,s_geocode,s_zip_center,s_reverse,s_nearby,s_name_guard svc
+  class d_exceptions,d_fisc,d_natives,fisc_builder,d_recommendations,d_nwf,d_why,d_zip,d_terms,zip_builder data
+  class plantnet,openai,usda,ci_checks,nominatim,inat ext
+  class c_local dead
 ```
 <!-- /GENERATED:mermaid -->

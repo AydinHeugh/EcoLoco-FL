@@ -7,6 +7,7 @@ import re
 import warnings
 
 from PIL import Image, ImageOps
+from services.fl_plants_service import supported_location
 
 MAX_IMAGE_BYTES = 4 * 1024 * 1024
 MAX_IMAGE_PIXELS = 20_000_000
@@ -36,8 +37,8 @@ def location_field(value):
     value = text_field(value, "ZIP code", 5, required=True)
     if not re.fullmatch(r"[0-9]{5}", value):
         raise ValueError("Enter a five-digit US ZIP code.")
-    if value[:3] not in {"330", "331", "332", "333", "334"}:
-        raise ValueError("This pilot covers South Florida ZIP codes beginning 330–334. Choose a site in that area.")
+    if not supported_location(value):
+        raise ValueError("Choose a Florida ZIP code included in the app's county lookup. Planting suggestions cover South Florida only.")
     return value
 
 

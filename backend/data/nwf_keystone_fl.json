@@ -1,0 +1,159 @@
+{
+  "_comment": "The 30 plant groups (genera) whose leaves feed the most kinds of butterfly and moth caterpillars in NWF Ecoregion 15 (Tropical Wet Forests, South Florida). Counts are for the whole group, never one species, and must never be added together across plants.",
+  "source": {
+    "name": "National Wildlife Federation, Keystone Native Plants: Tropical Wet Forests (Ecoregion 15)",
+    "url": "https://www.nwf.org/-/media/Documents/PDFs/Garden-for-Wildlife/Keystone-Plants/NWF-GFW-keystone-plant-list-ecoregion-15-tropical-wet-forests.pdf"
+  },
+  "genera": [
+    {
+      "genus": "Quercus",
+      "group": "oaks",
+      "caterpillar_species": 395
+    },
+    {
+      "genus": "Prunus",
+      "group": "cherries and plums",
+      "caterpillar_species": 247
+    },
+    {
+      "genus": "Salix",
+      "group": "willows",
+      "caterpillar_species": 190
+    },
+    {
+      "genus": "Acer",
+      "group": "maples",
+      "caterpillar_species": 171
+    },
+    {
+      "genus": "Pinus",
+      "group": "pines",
+      "caterpillar_species": 171
+    },
+    {
+      "genus": "Vaccinium",
+      "group": "blueberries",
+      "caterpillar_species": 150
+    },
+    {
+      "genus": "Ulmus",
+      "group": "elms",
+      "caterpillar_species": 131
+    },
+    {
+      "genus": "Fraxinus",
+      "group": "ashes",
+      "caterpillar_species": 99
+    },
+    {
+      "genus": "Rubus",
+      "group": "blackberries",
+      "caterpillar_species": 93
+    },
+    {
+      "genus": "Solidago",
+      "group": "goldenrods",
+      "caterpillar_species": 82
+    },
+    {
+      "genus": "Cornus",
+      "group": "dogwoods",
+      "caterpillar_species": 77
+    },
+    {
+      "genus": "Viburnum",
+      "group": "viburnums",
+      "caterpillar_species": 75
+    },
+    {
+      "genus": "Vitis",
+      "group": "grapes",
+      "caterpillar_species": 58
+    },
+    {
+      "genus": "Helianthus",
+      "group": "sunflowers",
+      "caterpillar_species": 58
+    },
+    {
+      "genus": "Diospyros",
+      "group": "persimmons",
+      "caterpillar_species": 56
+    },
+    {
+      "genus": "Rhus",
+      "group": "sumacs",
+      "caterpillar_species": 50
+    },
+    {
+      "genus": "Celtis",
+      "group": "hackberries",
+      "caterpillar_species": 43
+    },
+    {
+      "genus": "Ilex",
+      "group": "hollies",
+      "caterpillar_species": 41
+    },
+    {
+      "genus": "Hibiscus",
+      "group": "hibiscuses",
+      "caterpillar_species": 37
+    },
+    {
+      "genus": "Vigna",
+      "group": "wild beans and peas",
+      "caterpillar_species": 35
+    },
+    {
+      "genus": "Cissus",
+      "group": "treebines",
+      "caterpillar_species": 34
+    },
+    {
+      "genus": "Cassia",
+      "group": "cassias",
+      "caterpillar_species": 32
+    },
+    {
+      "genus": "Baccharis",
+      "group": "saltbushes",
+      "caterpillar_species": 31
+    },
+    {
+      "genus": "Eupatorium",
+      "group": "bonesets",
+      "caterpillar_species": 31
+    },
+    {
+      "genus": "Gaylussacia",
+      "group": "huckleberries",
+      "caterpillar_species": 30
+    },
+    {
+      "genus": "Acacia",
+      "group": "acacias",
+      "caterpillar_species": 29
+    },
+    {
+      "genus": "Ficus",
+      "group": "figs",
+      "caterpillar_species": 29
+    },
+    {
+      "genus": "Juniperus",
+      "group": "junipers",
+      "caterpillar_species": 27
+    },
+    {
+      "genus": "Parthenocissus",
+      "group": "Virginia creepers",
+      "caterpillar_species": 27
+    },
+    {
+      "genus": "Lonicera",
+      "group": "honeysuckles",
+      "caterpillar_species": 26
+    }
+  ]
+}

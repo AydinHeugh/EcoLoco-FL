@@ -216,3 +216,69 @@ def test_sample_proposal_is_unmistakably_labeled():
     letter = ai_service.generate_proposal({"plant_names": ["Zamia integrifolia"], "zip_code": ZIP, "is_sample": True})
     assert letter.startswith("SAMPLE PROPOSAL")
     assert "not a real campus survey" in letter
+
+
+def test_new_catalog_facts_survive_identification_and_recommendation():
+    plant = ai_service.confirm_plant("Zamia integrifolia", ZIP)
+    choice = next(item for item in ai_service.get_plant_recommendations(ZIP) if item["scientific_name"] == "Zamia integrifolia")
+    for item in (plant, choice):
+        assert item["atlas_verified"] is True
+        assert item["atlas_url"].startswith("https://florida.plantatlas.usf.edu/")
+        assert item["helps"]["source"]["url"]
+        assert item["buying"]["ask_for"] == "Zamia integrifolia"
+        assert item["watch_out"] and item["growing_source"]["url"]
+
+
+def test_identification_state_respects_taxonomy_review(model):
+    candidate = {"scientific_name": "Zamia integrifolia", "common_name": "Coontie", "confidence": 0.83}
+    model["species"].update(scientific_name="Hamelia patens", state="identified", suggested=1,
+                            candidates=[candidate], ai_unavailable=True)
+    result = ai_service.identify_plant(["image"], ZIP)
+    assert result["state"] == "confirm"
+    assert result["ai_unavailable"] is True
+    assert result["suggested"] == 1
+    assert result["candidates"][0] == candidate
+    assert all(entry["confidence"] is None for entry in result["candidates"][1:])
+
+
+def test_catalog_alternative_preserves_existing_provider_score_and_order(model):
+    candidates = [
+        {"scientific_name": "Zamia integrifolia", "common_name": "Coontie", "confidence": 0.85},
+        {"scientific_name": "Hamelia patens var. patens", "common_name": "Firebush", "confidence": 0.83},
+    ]
+    model["species"].update(scientific_name="Hamelia patens", candidates=candidates, suggested=2)
+    result = ai_service.identify_plant(["image"], ZIP)
+    assert result["candidates"][:2] == candidates
+    assert result["suggested"] == 2
+    names = [entry["scientific_name"] for entry in result["candidates"]]
+    assert names.count("Hamelia patens var. patens") == 1
+    assert result["candidates"][2]["scientific_name"] == "Hamelia patens var. glabra"
+    assert result["candidates"][2]["confidence"] is None
+    assert result["candidates"][2]["source"] == "catalog"
+
+
+def test_suggestion_follows_provider_name_when_invalid_entries_are_filtered(model):
+    candidate = {"scientific_name": "Zamia integrifolia", "confidence": 0.83}
+    model["species"].update(scientific_name="Hamelia patens", candidates=[None, candidate], suggested=2)
+    result = ai_service.identify_plant(["image"], ZIP)
+    assert result["suggested"] == 1
+    assert result["candidates"][0] == candidate
+
+
+@pytest.mark.parametrize("suggested", [-1, 1, 9, True, None, "1"])
+def test_invalid_suggestion_does_not_select_added_catalog_alternative(model, suggested):
+    model["species"].update(scientific_name="Hamelia patens", candidates=[], suggested=suggested)
+    result = ai_service.identify_plant(["image"], ZIP)
+    assert result["candidates"]
+    assert result["suggested"] == 0
+
+
+def test_proposal_includes_checked_buying_and_care_notes():
+    result = ai_service.generate_proposal({"plant_names": ["Zamia integrifolia"], "zip_code": ZIP})
+    assert "Nursery label: Zamia integrifolia" in result
+    assert "Care note:" in result
+
+
+def test_recommendations_are_region_limited_without_blocking_statewide_confirmation():
+    assert ai_service.get_plant_recommendations("32301") == []
+    assert ai_service.confirm_plant("Zamia integrifolia", "32301")["status_verified"] is True

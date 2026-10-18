@@ -6,6 +6,8 @@ from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 
 from services.ai_service import confirm_plant, generate_proposal, get_catalog, get_plant_recommendations, identify_plant
+from services.location_service import geocode, in_south_florida, reverse_zip, round_coords, seen_near, zip_center
+from services.plan_service import build_plan
 from services.request_limits import RequestLimits
 from services.request_validation import (
     location_field, plant_list, proposal_fields, site_fields, species_list, text_field, validate_images,
@@ -26,6 +28,7 @@ allowed_origins = os.getenv(
 ).split(",")
 CORS(app, origins=[origin.strip() for origin in allowed_origins if origin.strip()], max_age=600)
 limits = RequestLimits()
+location_limits = RequestLimits()
 
 
 def debug_enabled():
@@ -114,7 +117,64 @@ def recommend():
     location = location_field(data.get("location"))
     plants = plant_list(data.get("plants", []))
     site = site_fields(data.get("site"))
-    return jsonify(result=get_plant_recommendations(location, plants=plants, site=site))
+    return jsonify(result=get_plant_recommendations(location, plants=plants, site=site), south_florida=in_south_florida(location))
+
+
+@app.route("/plan", methods=["POST"])
+def plan():
+    data = _body()
+    location = location_field(data.get("location"))
+    plants = plant_list(data.get("plants"))
+    site = site_fields(data.get("site"))
+    additions = species_list(data.get("additions", []), "Proposed additions")
+    removals = species_list(data.get("removals", []), "Proposed removals")
+    return jsonify(result=build_plan(plants, location, site=site, additions=additions, removals=removals),
+                   south_florida=in_south_florida(location))
+
+
+def _location_limit():
+    if app.config["RATE_LIMIT_ENABLED"]:
+        retry = location_limits.check(request.remote_addr or "unknown", 20, 60, 1000)
+        if retry:
+            response = jsonify(error="Place lookup is temporarily at its request limit. Enter your Florida ZIP directly.",
+                               code="rate_limited", retry_after=retry)
+            response.headers["Retry-After"] = str(retry)
+            return response, 429
+    return None
+
+
+@app.route("/locate", methods=["POST"])
+def locate():
+    data = _body()
+    query = text_field(data.get("query"), "Place", 200)
+    coordinates = round_coords(data.get("lat"), data.get("lon")) if "lat" in data or "lon" in data else None
+    if not query and coordinates is None:
+        raise ValueError("Enter a place or provide latitude and longitude.")
+    direct_zip = location_field(query) if len(query) == 5 and query.isascii() and query.isdigit() else None
+    if limited := _location_limit():
+        return limited
+    if direct_zip:
+        lat, lon = zip_center(direct_zip) or (None, None)
+        place = {"lat": lat, "lon": lon, "zip": direct_zip}
+    elif coordinates:
+        lat, lon = coordinates
+        place = {"lat": lat, "lon": lon, "zip": reverse_zip(lat, lon)}
+    else:
+        place = geocode(query)
+    if not place or not place.get("zip"):
+        return jsonify(error="We couldn't find a Florida ZIP for that place. Enter your school's ZIP directly.", code="place_not_found"), 400
+    location = location_field(place["zip"])
+    return jsonify(result={**place, "zip": location}, south_florida=in_south_florida(location))
+
+
+@app.route("/nearby", methods=["POST"])
+def nearby():
+    data = _body()
+    lat, lon = round_coords(data.get("lat"), data.get("lon"))
+    if limited := _location_limit():
+        return limited
+    return jsonify(result=seen_near(lat, lon),
+                   scope_note="Nearby research-grade iNaturalist observations are context, not this survey's inventory or proof of local nativity.")
 
 
 @app.route("/score", methods=["POST"])

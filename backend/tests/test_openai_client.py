@@ -59,6 +59,7 @@ def test_chat_bad_json_raises_ai_unavailable(monkeypatch):
 
 
 def test_client_has_short_timeout_and_no_automatic_retries(monkeypatch):
+    importlib.reload(openai_client)
     seen = {}
     monkeypatch.setenv("OPENAI_API_KEY", "test-placeholder")
     def client(**kwargs):
@@ -72,3 +73,19 @@ def test_client_has_short_timeout_and_no_automatic_retries(monkeypatch):
         assert seen["max_retries"] == 0
     finally:
         openai_client._client.cache_clear()
+
+
+def test_optional_system_message_preserves_bounded_chat_settings(monkeypatch):
+    seen = {}
+    def create(**kwargs):
+        seen.update(kwargs)
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='{"ok": true}'))])
+    client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    monkeypatch.setattr(openai_client, "_client", lambda: client)
+    assert openai_client.chat("Explain this plant", json_reply=True, system="Use only the supplied evidence.") == {"ok": True}
+    assert seen["messages"] == [
+        {"role": "system", "content": "Use only the supplied evidence."},
+        {"role": "user", "content": "Explain this plant"},
+    ]
+    assert seen["temperature"] == 0
+    assert seen["max_tokens"] == 1200

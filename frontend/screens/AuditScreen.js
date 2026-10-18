@@ -14,7 +14,7 @@ import { matchesCatalogQuery } from '../utils/catalogSearch';
 import { AuditButton, AuditField, AuditNotice, auditStyles as s } from '../components/AuditUI';
 
 const SAMPLE_SPECIES = ['Quercus virginiana', 'Zamia integrifolia', 'Schinus terebinthifolia'];
-const zipIsSupported = value => /^(330|331|332|333|334)\d{2}$/.test(value);
+const zipIsSupported = value => /^[0-9]{5}$/.test(value);
 const LOGO = require('../../assets/EcoLoco_logo.png');
 
 export default function AuditScreen({ navigation, route }) {
@@ -124,7 +124,7 @@ export default function AuditScreen({ navigation, route }) {
 
   function requireZIP() {
     if (!zipIsSupported(audit?.zip_code || '')) {
-      setError('Enter a five-digit ZIP beginning 330–334.');
+      setError('Enter a five-digit Florida ZIP code.');
       scrollRef.current?.scrollTo({ y: 0, animated: true });
       return false;
     }
@@ -261,7 +261,7 @@ export default function AuditScreen({ navigation, route }) {
           <AuditField label="School ZIP" value={audit.zip_code} onChangeText={zip_code => { setPreview(null); setCatalog(null); setError(''); change({ zip_code: zip_code.replace(/\D/g, '').slice(0, 5) }, true); }} editable={!busy && !audit.plants.length} keyboardType="number-pad" maxLength={5} placeholder="33431" />
         </View>
         <View style={styles.zipContext}>
-          <Text style={s.muted}>South Florida · 330–334</Text>
+          <Text style={s.muted}>Florida ZIP code</Text>
           <Text accessibilityLiveRegion="polite" style={styles.saveText}>{saving ? 'Saving…' : saveError ? 'Not saved yet' : 'Saved on this device'}</Text>
           {audit.plants.length > 0 && <Text style={styles.saveText}>New scan to change ZIP</Text>}
         </View>

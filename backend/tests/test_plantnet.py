@@ -69,8 +69,8 @@ def test_plantnet_parses_ranked_results(plantnet):
         plantnet_result("Zamia furfuracea", None, 0.0921),
     ]})
     assert identify_with_plantnet([b64(JPEG)]) == [
-        {"scientific_name": "Zamia integrifolia", "common_name": "Coontie", "confidence": 0.83},
-        {"scientific_name": "Zamia furfuracea", "common_name": "", "confidence": 0.09},
+        {"scientific_name": "Zamia integrifolia", "common_name": "Coontie", "confidence": 0.8312},
+        {"scientific_name": "Zamia furfuracea", "common_name": "", "confidence": 0.0921},
     ]
 
 
@@ -120,3 +120,38 @@ def test_plantnet_http_error_raises(plantnet):
     plantnet["response"] = FakeResponse(status_code=401, body={"statusCode": 401, "message": "Bad token"})
     with pytest.raises(requests.HTTPError):
         identify_with_plantnet([b64(JPEG)])
+
+
+def test_plantnet_404_is_a_successful_no_match(plantnet):
+    plantnet["response"] = FakeResponse(status_code=404, body={"statusCode": 404})
+    assert identify_with_plantnet([b64(JPEG)]) == []
+
+
+def test_plantnet_duplicate_keeps_highest_score_without_summing(plantnet):
+    plantnet["response"] = FakeResponse(body={"results": [
+        plantnet_result("Zamia integrifolia", "Coontie", 0.21),
+        plantnet_result("ZAMIA INTEGRIFOLIA", "Coontie", 0.52),
+    ]})
+    result = identify_with_plantnet([b64(JPEG)])
+    assert len(result) == 1
+    assert result[0]["confidence"] == 0.52
+
+
+@pytest.mark.parametrize("images", [[], [b64(JPEG)] * 6])
+def test_direct_plantnet_calls_keep_photo_count_limits(plantnet, images):
+    with pytest.raises(ValueError):
+        identify_with_plantnet(images)
+    assert plantnet["post"] == []
+
+
+def test_plantnet_rejects_decoded_photo_over_four_mib(plantnet):
+    oversized = JPEG + b"x" * (4 * 1024 * 1024 - len(JPEG) + 1)
+    with pytest.raises(ValueError, match="4 MB"):
+        identify_with_plantnet([b64(oversized)])
+    assert plantnet["post"] == []
+
+
+@pytest.mark.parametrize("score", [float("nan"), float("inf"), True, {}, None])
+def test_plantnet_invalid_scores_never_become_certain(plantnet, score):
+    plantnet["response"] = FakeResponse(body={"results": [plantnet_result("Zamia integrifolia", "Coontie", score)]})
+    assert identify_with_plantnet([b64(JPEG)])[0]["confidence"] == 0

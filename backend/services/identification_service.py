@@ -6,11 +6,14 @@ import os
 import requests
 
 from services import openai_client
+from services.fl_plants_service import _normalize, get_status
 
 log = logging.getLogger(__name__)
 
 PLANTNET_URL = "https://my-api.plantnet.org/v2/identify/all"
 MAX_IMAGES = 5
+MAX_IMAGE_BYTES = 4 * 1024 * 1024
+NO_MATCH_BELOW = 0.20
 CONFIDENT = 0.80
 CLOSE_CALL = 0.15
 
@@ -19,11 +22,12 @@ A plant identification service narrowed it down to these species (with its confi
 {choices}
 
 Using the photos and what grows near that ZIP code, which one is it? Choose only from this list.
-Give confidence as a float between 0.0 and 1.0; use 0.90 or higher only if the photos clearly show
-the features that tell these species apart.
+Suggest the listed species whose visible distinguishing features best match the photos.
+Do not invent a species or change the supplied scores. If the photos do not distinguish
+the candidates, return an empty scientific_name.
 
 Respond only in JSON:
-{{"scientific_name": "...", "confidence": 0.00}}"""
+{{"scientific_name": "..."}}"""
 
 VISION_PROMPT = """Identify the plant in these photos (1 to 5 photos of the same plant), taken near US ZIP code {location}.
 
@@ -55,7 +59,7 @@ def _confidence(value):
         return 0.0
     try:
         number = float(value)
-        return round(min(1.0, max(0.0, number)), 2) if math.isfinite(number) else 0.0
+        return min(1.0, max(0.0, number)) if math.isfinite(number) else 0.0
     except (TypeError, ValueError):
         return 0.0
 
@@ -76,23 +80,69 @@ def _image_parts(images):
     return [{"type": "image_url", "image_url": {"url": _image_url(image)}} for image in images]
 
 
-def _needs_confirmation(ranked):
-    if not ranked or not ranked[0].get("scientific_name"):
-        return True
+def _merge_same_species(ranked, location):
+    """Deduplicate only exact normalized or catalog-backed synonym identities.
+
+    Candidate scores are not independent probabilities. Keep the highest supplied
+    score for one taxon rather than adding repeated predictions into certainty.
+    The Florida resolver preserves varieties, subspecies, hybrids and exclusions.
+    """
+    merged = {}
+    for raw in ranked if isinstance(ranked, list) else []:
+        if not isinstance(raw, dict):
+            continue
+        candidate = _species(raw)
+        name = candidate["scientific_name"]
+        if not name:
+            continue
+        status = get_status(name, location)
+        canonical = _name(status.get("scientific_name")) or name
+        key = _normalize(canonical)
+        if not key:
+            continue
+        candidate["scientific_name"] = canonical
+        previous = merged.get(key)
+        if previous is None:
+            merged[key] = candidate
+        elif candidate["confidence"] > previous["confidence"]:
+            candidate["common_name"] = candidate["common_name"] or previous["common_name"]
+            merged[key] = candidate
+        elif not previous["common_name"]:
+            previous["common_name"] = candidate["common_name"]
+    return sorted(merged.values(), key=lambda item: item["confidence"], reverse=True)
+
+
+def _state(ranked):
+    if not ranked or not ranked[0].get("scientific_name") or ranked[0]["confidence"] < NO_MATCH_BELOW:
+        return "unidentified"
     top = ranked[0]["confidence"]
     runner_up = ranked[1]["confidence"] if len(ranked) > 1 else 0.0
-    # Rounded so float error can't push an exact 0.15 gap over the line.
-    return top < CONFIDENT or round(top - runner_up, 2) <= CLOSE_CALL
+    # Tolerate binary float error only at the exact close-call boundary.
+    if top < CONFIDENT or top - runner_up <= CLOSE_CALL + 1e-12:
+        return "confirm"
+    return "identified"
 
 
-def _result(top, candidates, source, needs_confirmation):
+def _needs_confirmation(ranked):
+    return _state(ranked) != "identified"
+
+
+def _result(ranked, source, suggested=0, ai_unavailable=False):
+    state = _state(ranked)
+    if state == "unidentified":
+        ranked, suggested = [], 0
+    top = ranked[0] if ranked else {"scientific_name": "", "common_name": "", "confidence": 0.0}
     return {
         "scientific_name": top["scientific_name"],
         "common_name": top["common_name"],
         "confidence": top["confidence"],
-        "candidates": candidates,
+        "candidates": ranked[1:],
         "source": source,
-        "needs_confirmation": needs_confirmation,
+        "needs_confirmation": state != "identified",
+        "state": state,
+        # Index into [the flat top result, *candidates]; it never changes scores.
+        "suggested": suggested,
+        "ai_unavailable": ai_unavailable,
     }
 
 
@@ -110,10 +160,12 @@ def _adjudicate(images, ranked, location):
         *_image_parts(images),
         {"type": "text", "text": ADJUDICATE_PROMPT.format(location=location, choices=choices)},
     ], json_reply=True)
-    picked = str(reply.get("scientific_name") or "").strip().lower()
+    if not isinstance(reply, dict):
+        return None
+    picked = _normalize(_name(reply.get("scientific_name")))
     for i, candidate in enumerate(ranked):
-        if candidate["scientific_name"].lower() == picked:
-            return i, _confidence(reply.get("confidence"))
+        if _normalize(candidate["scientific_name"]) == picked:
+            return i
     return None
 
 
@@ -129,40 +181,48 @@ def _identify_with_openai(images, location):
     return [_species(raw), *candidates]
 
 
-def identify_species(images, location):
+def _validate_images(images):
     if isinstance(images, str):
         images = [images]
-    if not 1 <= len(images) <= MAX_IMAGES:
-        raise ValueError(f"expected 1 to {MAX_IMAGES} images, got {len(images)}")
-    if any(not isinstance(image, str) or image.startswith(("http:", "https:", "file:")) for image in images):
-        raise ValueError("Upload JPEG or PNG photo data; remote URLs are not accepted")
+    if not isinstance(images, (list, tuple)) or not 1 <= len(images) <= MAX_IMAGES:
+        raise ValueError(f"expected 1 to {MAX_IMAGES} uploaded images")
+    for image in images:
+        if (not isinstance(image, str) or not image
+                or image.lower().startswith(("http:", "https:", "file:"))):
+            raise ValueError("Upload JPEG or PNG photo data; remote URLs are not accepted")
+        encoded = image.split(",", 1)[1] if image.startswith("data:") and "," in image else image
+        if len(encoded) > MAX_IMAGE_BYTES * 4 // 3 + 4:
+            raise ValueError("Image exceeds the 4 MB limit")
+    return list(images)
 
+
+def identify_species(images, location):
+    images = _validate_images(images)
     try:
-        ranked = identify_with_plantnet(images)
+        ranked = _merge_same_species(identify_with_plantnet(images), location)
     except Exception as err:
         # Never log str(err): the request URL carries the API key.
         log.warning("PlantNet failed (%s); falling back to OpenAI vision", _describe(err))
-        ranked = []
-
-    if ranked:
-        if not _needs_confirmation(ranked):
-            return _result(ranked[0], ranked[1:], "plantnet", False)
+    else:
+        # A successful no-match is evidence to retake the photo, not a reason to
+        # ask another provider for a more confident answer.
+        if _state(ranked) != "confirm":
+            return _result(ranked, "plantnet")
         try:
             pick = _adjudicate(images, ranked, location)
         except Exception as err:
-            log.warning("OpenAI adjudication failed (%s); keeping PlantNet's top match", _describe(err))
-            pick = None
+            log.warning("OpenAI adjudication failed (%s); keeping PlantNet's order", _describe(err))
+            return _result(ranked, "plantnet", ai_unavailable=True)
         if pick is None:
-            return _result(ranked[0], ranked[1:], "plantnet", True)
-        i, confidence = pick
-        return _result(dict(ranked[i], confidence=confidence), ranked[:i] + ranked[i + 1:], "openai_adjudicated", True)
+            return _result(ranked, "plantnet")
+        return _result(ranked, "openai_adjudicated", suggested=pick)
 
     try:
-        ranked = _identify_with_openai(images, location)
+        ranked = _merge_same_species(_identify_with_openai(images, location), location)
     except Exception as err:
         log.warning("OpenAI vision failed (%s)", _describe(err))
-        return _result({"scientific_name": "", "common_name": "", "confidence": 0.0}, [], "none", True)
-    return _result(ranked[0], ranked[1:], "openai_fallback", _needs_confirmation(ranked))
+        return _result([], "none", ai_unavailable=True)
+    return _result(ranked, "openai_fallback")
 
 
 def _image_bytes(image):
@@ -170,9 +230,12 @@ def _image_bytes(image):
         raise ValueError("Remote image URLs are not accepted")
     if image.startswith("data:"):
         image = image.split(",", 1)[1]
-    if len(image) > 4 * 1024 * 1024 * 4 // 3 + 4:
+    if len(image) > MAX_IMAGE_BYTES * 4 // 3 + 4:
         raise ValueError("Image exceeds the 4 MB limit")
-    return base64.b64decode(image, validate=True)
+    data = base64.b64decode(image, validate=True)
+    if len(data) > MAX_IMAGE_BYTES:
+        raise ValueError("Image exceeds the 4 MB limit")
+    return data
 
 
 def _mime(data):
@@ -184,6 +247,7 @@ def _mime(data):
 
 
 def identify_with_plantnet(images):
+    images = _validate_images(images)
     key = os.getenv("PLANTNET_API_KEY")
     if not key:
         raise RuntimeError("PLANTNET_API_KEY is not set")
@@ -197,24 +261,24 @@ def identify_with_plantnet(images):
         files=files,
         timeout=(3, 12),
     )
+    if response.status_code == 404:
+        return []
     response.raise_for_status()
     body = response.json()
     if not isinstance(body, dict) or not isinstance(body.get("results"), list):
         raise ValueError("Identification response has no result list")
     ranked = []
-    seen = set()
     for result in body["results"][:20]:
         if not isinstance(result, dict) or not isinstance(result.get("species"), dict):
             continue
         species = result["species"]
         name = _name(species.get("scientificNameWithoutAuthor"))
-        if not name or name.lower() in seen:
+        if not name:
             continue
-        seen.add(name.lower())
         common = species.get("commonNames")
         ranked.append({
             "scientific_name": name,
             "common_name": _name(common[0]) if isinstance(common, list) and common else "",
             "confidence": _confidence(result.get("score")),
         })
-    return sorted(ranked, key=lambda entry: entry["confidence"], reverse=True)[:5]
+    return _merge_same_species(ranked, None)[:5]

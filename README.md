@@ -2,7 +2,7 @@
 
 EcoLoco helps students turn a campus plant survey into a practical planting proposal. Identify plants, review their Florida status and sources, record site conditions, choose native additions, and prepare an editable request for school review.
 
-This is the 2026 Congressional App Challenge entry for FL-22. The current pilot accepts five-digit ZIP codes beginning **330–334**. That defines the supported region; a ZIP does not establish an individual site's growing conditions.
+This is the 2026 Congressional App Challenge entry for FL-22. Identification and surveys accept Florida ZIP codes present in the bundled county lookup. Some postal-only or recently created ZIP codes are missing. Planting suggestions cover 12 South Florida counties: Palm Beach, Broward, Miami-Dade, Martin, Monroe, Collier, Lee, Hendry, Glades, Okeechobee, St. Lucie, and Charlotte. A ZIP does not establish an individual site's growing conditions.
 
 ## What goes in and comes out
 
@@ -14,7 +14,7 @@ Use **Scan a plant** on the home screen for identification, **EcoScan** for a ca
 
 - Native, nonnative, and invasive counts for unique verified taxa, with unresolved observations kept visible outside the denominator. A taxon means a species or a separately documented variety/subspecies with a different status.
 - **Native share of verified taxa**: native taxa divided by all verified taxa in the sample. Synonyms and repeated photographs count once. This is not a campus biodiversity score, plant-abundance measure, or wildlife-population estimate.
-- Source-backed native additions that fit the recorded conditions and are absent from the verified inventory. The first three appear initially; expand the list for more, or a plant's details for growing guidance and sources. Unknown conditions remain explicit. Options are alphabetical, not ranked by invented impact points.
+- Source-backed native additions that fit the recorded conditions and are absent from the verified inventory. The first three appear initially; expand the list for more, or a plant's details for growing guidance and sources. Unknown conditions remain explicit. Planning order considers suggested replacements for recorded invasives, wildlife relationships not yet documented in the inventory, effort, and a mix of plant sizes. This ordering is not a measured wildlife-benefit score.
 - A selected-species scenario recalculated from the proposed inventory. Planting another individual of a species already present does not change this metric.
 - An editable school proposal containing the survey facts, source links, chosen plants, location, quantities, budget, maintenance responsibility, and permission request. **Personalize letter** opens optional planning and recipient fields; blank fields become placeholders. Changes to the underlying survey mark an existing draft as needing review.
 - A text report to download on web or open in the native share sheet, plus a copyable proposal.
@@ -25,19 +25,27 @@ Audits and draft edits save on the current device. There is one real audit and o
 
 ## How the evidence works
 
-1. **Identify the photograph.** PlantNet returns candidate species. An unambiguous top result with a score of at least 0.80 and a lead greater than 0.15 is accepted without an extra identification step. Close results can be reviewed by an image model and still require user confirmation. If PlantNet is unavailable, the image-model fallback can provide candidates. If neither service succeeds, the observation remains unresolved and the manual catalog is available. Model scores are not measured accuracy rates.
-2. **Check Florida status.** Bundled, source-linked nonnative records and taxonomic exceptions are checked first, then the FISC invasive list, then the native catalog. Matching preserves important varieties, subspecies, hybrids, and synonyms. Known natives, nonnatives, and invasives retain their supported classifications even when explanation services are unavailable. Unsupported names may receive a separately labeled automated hypothesis; it does not become verified evidence.
+1. **Identify the photograph.** PlantNet returns candidate species. An unambiguous top result with a score of at least 0.80 and a lead greater than 0.15 is accepted without an extra identification step. Close results can receive a suggested choice from an image model and still require user confirmation; this does not change the original candidate scores or order. A successful no-match or score below 0.20 asks for a clearer photo instead of another model opinion. If PlantNet is unavailable, the image-model fallback can provide candidates. If neither service succeeds, the observation remains unresolved and the manual catalog is available. Duplicate predictions for one taxon retain the highest supplied score rather than adding scores. Model scores are not measured accuracy rates.
+2. **Check Florida status.** Bundled, source-linked nonnative records and taxonomic exceptions are checked first, then the FISC invasive list, then the native catalog. Matching preserves important varieties, subspecies, hybrids, cultivars, and synonyms. A common name resolves only when the catalog supports an unambiguous match. Known natives, nonnatives, and invasives retain their supported classifications even when explanation services are unavailable. Unsupported names may receive a separately labeled automated hypothesis; it does not become verified evidence.
 3. **Keep local status separate from national occurrence.** USDA occurrence and lower-48 nativity do not establish Florida nativity. The optional USDA helper is retained for distribution research; the active classification and recommendation flow does not depend on it.
 4. **Calculate from source records.** The server looks up each scientific name again; it does not trust submitted native/invasive labels. Only resolved identifications with sourced Florida status enter the fraction. Ambiguous broad firebush/ficus names still need the relevant taxon choice. Additions and removals use the same calculation; a projected removal means that taxon is no longer present in the surveyed area.
 5. **Build an actionable proposal.** Recommendations come from verified native catalog entries, filtered by inventory and site requirements. Proposal generation rechecks selected plants and uses a fixed factual template. Catalog lookup, survey calculation, recommendations, and proposals do not require paid model services. A running backend is still needed.
 
-The catalog includes Florida status sources, wildlife relationship sources, growing guidance, and verification dates. Its descriptive wildlife categories do not establish measured wildlife at a campus. FISC categories describe documented invasive effects and distribution; the FISC list is not itself a regulatory list. The app does not establish permission to remove vegetation or approve a planting.
+The catalog includes Florida status sources, wildlife relationship sources, growing guidance, and recorded verification dates. Expanded plant details show available purchasing advice, size, cautions, and verified Atlas links. Imported planting facts do not override the status or taxonomic safeguards.
+
+The combined catalog currently contains 228 taxa: 41 native, 179 invasive, and 8 other nonnative; 35 native entries can be considered for recommendations before site and inventory filters. Atlas and regional growing-guide links for the 31 imported records were checked on October 17, 2026. Salvia coccinea is excluded from native recommendations because its [Atlas record](https://florida.plantatlas.usf.edu/plant/species/1043) says Not Native.
+
+The catalog’s descriptive wildlife categories do not establish measured wildlife at a campus. FISC categories describe documented invasive effects and distribution; the FISC list is not itself a regulatory list. The app does not establish permission to remove vegetation or approve a planting. Regional NWF host counts describe a whole genus in Ecoregion 15; they are neither a species-level campus prediction nor numbers to add across plants. Missing relationship documentation is not evidence that wildlife is absent from the site.
+
+Additional backend endpoints provide a planting plan, place-to-ZIP lookup, and nearby research-grade iNaturalist observations. These have client helpers but no separate location or nearby-observation screen in the current UI. Plans apply only explicitly selected changes to the same native-share calculation; a management-review suggestion does not automatically remove a taxon. Nearby observations provide context, not identification of the photographed plant or proof of its Florida status.
 
 ## Photos, saved work, and request limits
 
 Prepared photos are sent through the backend to identification providers when you request identification. The backend decodes and checks JPEG/PNG data, strips metadata, resizes photos, and rejects remote image URLs. Each prepared upload is limited to 4 MB, with at most five photos and a 30 MB request limit. The picker accepts originals under 12 MB and prepares smaller copies before upload.
 
 Saved audits contain observations, notes, site details, and proposal text; photo payloads and photo URIs are excluded from persisted audit records. This local storage is not an encrypted vault. Exported reports contain the survey information and names you enter. Use school-approved photos, avoid unnecessary personal details, and clear or export an audit appropriately on shared devices.
+
+The optional place lookup sends the entered query to Nominatim; coordinate lookups round latitude and longitude to two decimal places before sending them to Nominatim or iNaturalist. These are still approximate locations, so enter a school ZIP when finer location context is unnecessary. Location endpoints have separate request limits and bounded provider timeouts.
 
 The client has deadlines, cancellation, inline errors, and retry controls. A recovery screen can reopen the app after a rendering failure without clearing saved audits; unsaved edits or staged photos may need to be added again. The backend returns JSON errors and has per-client and shared identification limits. These limits are held in one server process and reset when it restarts; a public deployment needs shared gateway limits if it uses several workers or instances. Aborted client requests may already have reached a provider.
 
@@ -122,7 +130,7 @@ To rebuild the FISC data from an official PDF, use `backend/scripts/build_fisc_l
 | `frontend/utils/` and `frontend/tests/` | Photo/evidence rules and frontend regression checks. |
 | `backend/app.py` | Validated API routes, JSON errors, request limits, and health checks. |
 | `backend/services/` | Identification, Florida evidence, native-share calculations, site filtering, and proposals. |
-| `backend/data/` | Native records, nonnative exceptions, and the FISC list with source provenance. |
+| `backend/data/` | Native records, nonnative exceptions, the FISC list, planting facts, regional host references, and a Florida ZIP/county lookup with source provenance. |
 | `backend/tests/` | Backend regression checks with mocked external services. |
 | `docs/implementation-plan.md` | Scope, shared contracts, acceptance checks, and work requiring the team. |
 | `docs/submission-guide.md` | Adaptable application answers and the 2:50 video plan; not a submitted application. |
