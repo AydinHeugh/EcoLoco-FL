@@ -18,7 +18,6 @@ import SourceLine from '../components/SourceLine'
 const EASE_OUT = Easing.bezier(0.22, 1, 0.36, 1)  // fast-out, ease-in-out feel
 
 const LOGO            = require('../../assets/EcoLoco_logo.png')
-const IMG_SCANNING    = require('../../assets/EcoLoco_Scanning_Plant.png')
 const IMG_POLLINATORS = require('../../assets/EcoLoco_support_polinators.png')
 const IMG_GROW        = require('../../assets/GrowWithConfidence_Ecoloco.png')
 const IMG_ECOSYSTEM   = require('../../assets/EcoLoco_ecosystem.png')
@@ -84,21 +83,18 @@ function Divider() {
 
 // ─── Feature row ─────────────────────────────────────────────────────────────
 function FeatureRow({ image, heading, body, source, linkText, onLinkPress, imgHeight, reverse, animStyle }) {
-  const imgBlock = (
+  const imgBlock = image ? (
     <View style={[styles.featureImgWrap, { height: imgHeight }]}>
-      {image
-        ? <Image source={image} style={styles.featureImg} resizeMode="cover" />
-        : <View style={styles.imgFallback} />
-      }
+      <Image source={image} style={styles.featureImg} resizeMode="cover" />
     </View>
-  )
+  ) : null
   const textBlock = (
     <View style={[styles.featureText, reverse && { paddingLeft: 4 }]}>
       <Text style={styles.featureHeading}>{heading}</Text>
       <Text style={styles.featureBody}>{body}</Text>
       {source && <SourceLine source={source} />}
       {linkText && (
-        <TouchableOpacity onPress={onLinkPress} style={styles.linkBtn}>
+        <TouchableOpacity onPress={onLinkPress} style={styles.linkBtn} accessibilityRole="link">
           <Text style={styles.featureLink}>{linkText}</Text>
         </TouchableOpacity>
       )}
@@ -118,30 +114,15 @@ export default function HomeScreen({ navigation }) {
   const imgHeight = isWide ? 280 : 190
   const maxWidth  = Math.min(width, 960)
 
-  // Hero words animate on mount
-  const word1 = useRef(new Animated.Value(0)).current   // "Welcome to "
-  const word2 = useRef(new Animated.Value(0)).current   // "EcoLoco"
-  const w1Y   = useRef(new Animated.Value(14)).current
-  const w2Y   = useRef(new Animated.Value(14)).current
-
-  useEffect(() => {
-    Animated.stagger(180, [
-      Animated.parallel([
-        Animated.timing(word1, { toValue: 1, duration: 600, easing: EASE_OUT, useNativeDriver: true }),
-        Animated.timing(w1Y,   { toValue: 0, duration: 600, easing: EASE_OUT, useNativeDriver: true }),
-      ]),
-      Animated.parallel([
-        Animated.timing(word2, { toValue: 1, duration: 600, easing: EASE_OUT, useNativeDriver: true }),
-        Animated.timing(w2Y,   { toValue: 0, duration: 600, easing: EASE_OUT, useNativeDriver: true }),
-      ]),
-    ]).start()
-  }, [])
-
-  const tagAnim = useFadeUp(680)
+  const nameAnim = useFadeUp(0)
+  const tagAnim  = useFadeUp(400)
+  const ctaAnim  = useFadeUp(560)
   const s1Anim = useFadeUp(200)
   const s2Anim = useFadeUp(320)
   const s3Anim = useFadeUp(440)
   const s4Anim = useFadeUp(560)
+  const s5Anim = useFadeUp(680)
+  const s6Anim = useFadeUp(800)
 
   const [fontsLoaded] = useFonts(FONT_ASSETS)
 
@@ -167,66 +148,70 @@ export default function HomeScreen({ navigation }) {
 
         {/* ── Hero ── */}
         <View style={styles.hero}>
-          <View style={styles.heroHeadingRow}>
-            <Animated.Text style={[styles.heroHeading, { opacity: word1, transform: [{ translateY: w1Y }] }]}>
-              {'Welcome to '}
-            </Animated.Text>
-            <Animated.Text style={[styles.heroHeadingItalic, { opacity: word2, transform: [{ translateY: w2Y }] }]}>
-              EcoLoco
-            </Animated.Text>
-          </View>
-          <Ornament delay={500} />
+          <Animated.Text style={[styles.heroHeadingItalic, styles.heroName, nameAnim]}>EcoLoco</Animated.Text>
+          <Ornament delay={300} />
           <Animated.Text style={[styles.tagline, tagAnim]}>
-            Help wildlife on your campus, one plant at a time.
+            Find out which plants on your campus help Florida wildlife, and which ones hurt it.
           </Animated.Text>
+          <Animated.View style={[styles.ctaWrap, ctaAnim]}>
+            <AnimButton
+              style={styles.cta}
+              textStyle={styles.ctaText}
+              label="Start a campus scan"
+              onPress={() => navigation?.navigate('EcoScan')}
+            />
+          </Animated.View>
         </View>
 
         <Divider />
 
-        {/* ── Section 1 ── */}
         <FeatureRow
           animStyle={s1Anim}
-          image={IMG_SCANNING}
-          imgHeight={imgHeight}
-          heading="Identify a Plant"
-          body="Take a photo of a plant on campus. EcoLoco tells you if it's native to Florida, not native, or invasive, and where that answer comes from."
-          linkText="Identify a plant →"
-          onLinkPress={() => navigation?.navigate('Camera')}
-        />
-
-        <Divider />
-
-        {/* ── Section 2 ── */}
-        <FeatureRow
-          reverse
-          animStyle={s2Anim}
           image={IMG_POLLINATORS}
           imgHeight={imgHeight}
           heading="Scan Your Campus"
-          body="Scan the plants around your school one by one. You'll see what share are native, which invasive plants to remove, and what to plant instead."
+          body="Add each plant around your school, give it up to 5 photos, then scan them all at once. You'll see what share are native, which invasive plants to remove, and what to plant instead."
           linkText="Start a campus scan →"
           onLinkPress={() => navigation?.navigate('EcoScan')}
         />
 
         <Divider />
 
-        {/* ── Section 3 ── */}
+        <FeatureRow
+          animStyle={s2Anim}
+          heading="Write to Your Principal"
+          body="EcoLoco turns your scan into a letter for your principal: which invasive plants to remove and how to do it safely, which natives to plant and what to ask for at the nursery, with a source for every fact. You pick which plants go in it."
+          linkText="Make your plan →"
+          onLinkPress={() => navigation?.navigate('EcoScan')}
+        />
+
+        <Divider />
+
         <FeatureRow
           animStyle={s3Anim}
+          heading="Identify a Plant"
+          body="Add up to 5 photos of one plant, or choose it by name. EcoLoco tells you if it's native to Florida, not native, or invasive, and where that answer comes from."
+          linkText="Identify a plant →"
+          onLinkPress={() => navigation?.navigate('Camera')}
+        />
+
+        <Divider />
+
+        <FeatureRow
+          reverse
+          animStyle={s4Anim}
           image={IMG_GROW}
           imgHeight={imgHeight}
           heading="Plant Florida Natives"
-          body="Get native plants picked for South Florida, with what each one helps and what to ask for at the nursery. Every fact shows its source."
+          body="See native plants checked for Palm Beach County, with what each one helps and what to ask for at the nursery. Every fact shows its source."
           linkText="See native plants →"
           onLinkPress={() => navigation?.navigate('Recommend')}
         />
 
         <Divider />
 
-        {/* ── Section 4 ── */}
         <FeatureRow
-          reverse
-          animStyle={s4Anim}
+          animStyle={s5Anim}
           image={IMG_ECOSYSTEM}
           imgHeight={imgHeight}
           heading="Why It Matters"
@@ -234,12 +219,20 @@ export default function HomeScreen({ navigation }) {
           source={{ name: 'National Wildlife Federation', url: 'https://www.nwf.org/-/media/Documents/PDFs/Garden-for-Wildlife/Keystone-Plants/NWF-GFW-keystone-plant-list-ecoregion-15-tropical-wet-forests.pdf' }}
         />
 
+        <Divider />
+
+        <FeatureRow
+          animStyle={s6Anim}
+          heading="How We Know"
+          body="Every answer comes from Florida's official invasive list, USDA, and the USF Atlas. Our team checked every plant we recommend."
+        />
+
         <View style={styles.footerDivider} />
 
         {/* ── Footer ── */}
         <View style={styles.footer}>
           <Image source={LOGO} style={styles.footerLogo} />
-          <Text style={styles.footerText}>EcoLoco · Growing communities, one plant at a time</Text>
+          <Text style={styles.footerText}>EcoLoco</Text>
         </View>
 
       </View>
@@ -297,18 +290,6 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     alignItems: 'center',
   },
-  heroHeadingRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginBottom: 18,
-  },
-  heroHeading: {
-    fontSize: 36,
-    fontFamily: FONTS.headingLight,
-    color: COLORS.darkGreen,
-    lineHeight: 46,
-  },
   heroHeadingItalic: {
     fontSize: 36,
     fontFamily: FONTS.headingItalic,
@@ -324,6 +305,26 @@ const styles = StyleSheet.create({
     marginTop: 20,
     lineHeight: 23,
     paddingHorizontal: 16,
+  },
+
+  heroName: {
+    marginBottom: 18,
+  },
+  ctaWrap: {
+    alignSelf: 'stretch',
+    marginTop: 24,
+    paddingHorizontal: 8,
+  },
+  cta: {
+    backgroundColor: COLORS.darkGreen,
+    borderRadius: 10,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  ctaText: {
+    fontSize: 15,
+    fontFamily: FONTS.bodyBold,
+    color: COLORS.cream,
   },
 
   // ── Ornament ──
@@ -368,10 +369,6 @@ const styles = StyleSheet.create({
   featureImg: {
     width: '100%',
     height: '100%',
-  },
-  imgFallback: {
-    flex: 1,
-    backgroundColor: COLORS.lightBg,
   },
   featureText: {
     flex: 1,
