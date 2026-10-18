@@ -168,7 +168,7 @@
         "Opens with the name, \"Find out which plants on your campus help Florida wildlife, and which ones hurt it.\" and a \"Start a campus scan\" button.",
         "Then six short sections: Scan Your Campus, Write to Your Principal, Identify a Plant, Plant Florida Natives (checked for Palm Beach County), Why It Matters, How We Know.",
         "Each links to its tab; the oak fact (\"Oaks feed 395 kinds of caterpillars in South Florida\") shows its National Wildlife Federation source. How We Know names the official invasive list, USDA and the USF Atlas.",
-        "Sections without a real photo have no picture, so the page never shows a made-up app screen.",
+        "Write to Your Principal shows `LetterDemo` and Identify a Plant shows `IdentifyDemo`, two short looping animations; How We Know shows the three data sources with their numbers (179 FISC invasives, 5,322 USDA Florida plants, 30 plants checked in the USF Atlas).",
         "Colors and fonts come from `frontend/theme.js`."
       ]
     },
@@ -1612,6 +1612,37 @@
         "Each thumbnail has a ✕ to remove that photo, when removing is allowed.",
         "Used on EcoScan plant cards and the Identify screen; dims while a card is being scanned."
       ]
+    },
+    {
+      "id": "ui_letterdemo",
+      "label": "LetterDemo",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/HomeDemos.js",
+      "symbol": "export function LetterDemo",
+      "col": 2,
+      "row": 0.4,
+      "what": "A small looping animation of the letter on the home page, showing that it can be edited.",
+      "how": [
+        "Shows the shape of a real letter: greeting, percent native now and with the plan, what to remove with its safety note, what to plant with what to ask for, and its sources.",
+        "The [PRINCIPAL_NAME] and [SCHOOL_NAME] blanks are typed over (\"Ms. Lefevre\", \"American Heritage School\") with a blinking cursor, then it resets.",
+        "An invisible copy of the finished letter sets the panel's height, so the page never jumps while the names are typed.",
+        "With reduce motion turned on it shows the filled-in letter without moving."
+      ]
+    },
+    {
+      "id": "ui_identifydemo",
+      "label": "IdentifyDemo",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/HomeDemos.js",
+      "symbol": "export function IdentifyDemo",
+      "col": 2,
+      "row": -0.2,
+      "what": "A small looping animation on the home page: a scan line sweeps over a plant photo, then \"Native to Florida\" pops in.",
+      "how": [
+        "Built with React Native's Animated; with reduce motion turned on it just shows the photo and the result."
+      ]
     }
   ],
   "edges": [
@@ -2282,6 +2313,16 @@
       "from": "ident",
       "to": "ui_photostrip",
       "label": "photos added"
+    },
+    {
+      "from": "home",
+      "to": "ui_letterdemo",
+      "label": "Write to Your Principal"
+    },
+    {
+      "from": "home",
+      "to": "ui_identifydemo",
+      "label": "Identify a Plant"
     }
   ]
 }

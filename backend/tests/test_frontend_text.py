@@ -150,8 +150,10 @@ def test_home_page_says_what_the_app_does():
                    "Every answer comes from Florida's official invasive list, USDA, and the USF Atlas. Our team checked every plant we recommend.",
                    "checked for Palm Beach County"):
         assert phrase in text
-    for gone in ("Welcome to", "EcoLoco_Scanning_Plant", "picked for South Florida", "one plant at a time"):
+    for gone in ("Welcome to", "picked for South Florida", "one plant at a time"):
         assert gone not in text
+    for image in ("EcoLoco_Scanning_Plant.png", "<LetterDemo />", "<IdentifyDemo image={IMG_SCANNING} />", "<SourcesPanel />"):
+        assert image in text
 
 
 def test_identify_shows_every_photo():

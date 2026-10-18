@@ -13,11 +13,13 @@ import {
 import { useFonts } from 'expo-font'
 import { COLORS, FONTS, FONT_ASSETS } from '../theme'
 import SourceLine from '../components/SourceLine'
+import { IdentifyDemo, LetterDemo } from '../components/HomeDemos'
 
 
 const EASE_OUT = Easing.bezier(0.22, 1, 0.36, 1)  // fast-out, ease-in-out feel
 
 const LOGO            = require('../../assets/EcoLoco_logo.png')
+const IMG_SCANNING    = require('../../assets/EcoLoco_Scanning_Plant.png')
 const IMG_POLLINATORS = require('../../assets/EcoLoco_support_polinators.png')
 const IMG_GROW        = require('../../assets/GrowWithConfidence_Ecoloco.png')
 const IMG_ECOSYSTEM   = require('../../assets/EcoLoco_ecosystem.png')
@@ -81,11 +83,30 @@ function Divider() {
   return <View style={styles.dividerLine} />
 }
 
+const SOURCES = [
+  { count: '179', label: "invasive plants on Florida's official 2026 list (FISC)" },
+  { count: '5,322', label: 'plants recorded in Florida by USDA PLANTS' },
+  { count: '30', label: 'plants we recommend, each checked in the USF Atlas' },
+]
+
+function SourcesPanel() {
+  return (
+    <View style={styles.sources} accessible accessibilityLabel={SOURCES.map(s => `${s.count} ${s.label}`).join('. ')}>
+      {SOURCES.map(source => (
+        <View key={source.count} style={styles.sourceRow}>
+          <Text style={styles.sourceCount}>{source.count}</Text>
+          <Text style={styles.sourceLabel}>{source.label}</Text>
+        </View>
+      ))}
+    </View>
+  )
+}
+
 // ─── Feature row ─────────────────────────────────────────────────────────────
-function FeatureRow({ image, heading, body, source, linkText, onLinkPress, imgHeight, reverse, animStyle }) {
-  const imgBlock = image ? (
-    <View style={[styles.featureImgWrap, { height: imgHeight }]}>
-      <Image source={image} style={styles.featureImg} resizeMode="cover" />
+function FeatureRow({ image, visual, fitVisual, imageLabel, heading, body, source, linkText, onLinkPress, imgHeight, reverse, animStyle }) {
+  const imgBlock = image || visual ? (
+    <View style={[styles.featureImgWrap, fitVisual ? null : { height: imgHeight }]}>
+      {visual ?? <Image source={image} style={styles.featureImg} resizeMode="cover" accessibilityLabel={imageLabel} />}
     </View>
   ) : null
   const textBlock = (
@@ -179,6 +200,10 @@ export default function HomeScreen({ navigation }) {
 
         <FeatureRow
           animStyle={s2Anim}
+          reverse
+          visual={<LetterDemo />}
+          fitVisual
+          imgHeight={imgHeight}
           heading="Write to Your Principal"
           body="EcoLoco turns your scan into a letter for your principal: which invasive plants to remove and how to do it safely, which natives to plant and what to ask for at the nursery, with a source for every fact. You pick which plants go in it."
           linkText="Make your plan →"
@@ -189,6 +214,8 @@ export default function HomeScreen({ navigation }) {
 
         <FeatureRow
           animStyle={s3Anim}
+          visual={<IdentifyDemo image={IMG_SCANNING} />}
+          imgHeight={imgHeight}
           heading="Identify a Plant"
           body="Add up to 5 photos of one plant, or choose it by name. EcoLoco tells you if it's native to Florida, not native, or invasive, and where that answer comes from."
           linkText="Identify a plant →"
@@ -222,7 +249,11 @@ export default function HomeScreen({ navigation }) {
         <Divider />
 
         <FeatureRow
+          reverse
           animStyle={s6Anim}
+          visual={<SourcesPanel />}
+          fitVisual
+          imgHeight={imgHeight}
           heading="How We Know"
           body="Every answer comes from Florida's official invasive list, USDA, and the USF Atlas. Our team checked every plant we recommend."
         />
@@ -397,6 +428,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: FONTS.bodyBold,
     color: COLORS.darkGreen,
+  },
+
+  // ── Sources panel ──
+  sources: {
+    backgroundColor: COLORS.darkGreen,
+    padding: 14,
+    justifyContent: 'center',
+    gap: 12,
+  },
+  sourceRow: {
+    gap: 2,
+  },
+  sourceCount: {
+    fontSize: 22,
+    fontFamily: FONTS.heading,
+    color: COLORS.cream,
+  },
+  sourceLabel: {
+    fontSize: 11,
+    fontFamily: FONTS.body,
+    color: COLORS.tabInactive,
+    lineHeight: 15,
   },
 
   // ── Footer ──
