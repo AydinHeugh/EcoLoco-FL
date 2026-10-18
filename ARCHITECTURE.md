@@ -100,6 +100,9 @@ flowchart LR
     ui_reveal["Reveal"]
     ui_countup["CountUp"]
     ui_lastplace["lastPlace.js"]
+    ui_photo["PlantPhoto"]
+    ui_press["PressScale"]
+    ui_tabicon["TabIcon"]
   end
   subgraph L_device["Device"]
     direction TB
@@ -163,6 +166,7 @@ flowchart LR
     s_lightof["light_of()"]
     s_spaceof["space_of()"]
     s_checked["checked_value()"]
+    s_photo["photo_for()"]
   end
   subgraph L_data["Bundled data"]
     direction TB
@@ -178,6 +182,7 @@ flowchart LR
     d_non_natives["fl_non_natives.json"]
     d_plantnames["fl_plant_names.json"]
     names_builder["build_fl_plant_names.py"]
+    d_photos["plant_photos.json"]
   end
   subgraph L_ext["External APIs"]
     direction TB
@@ -342,6 +347,14 @@ flowchart LR
   ident -->|"rememberPlace(place)"| ui_lastplace
   audit -->|"rememberPlace(place)"| ui_lastplace
   rec -->|"lastPlace()"| ui_lastplace
+  s_plan -->|"photo_for(name)"| s_photo
+  s_photo -->|"reads"| d_photos
+  ui_plancard -->|"card.photo"| ui_photo
+  results -->|"plant photos"| ui_photo
+  app -->|"tab icons"| ui_tabicon
+  ident -->|"Identify Plant"| ui_press
+  audit -->|"Scan all, See my results"| ui_press
+  s_option -->|"photo_for(name)"| s_photo
   classDef ui fill:#e3f2e1,stroke:#2e7d32,color:#12301a
   classDef device fill:#eceff1,stroke:#607d8b,color:#263238
   classDef client fill:#e1effa,stroke:#1e6fb8,color:#0d2d4d
@@ -351,12 +364,12 @@ flowchart LR
   classDef ext fill:#fde4e1,stroke:#c0392b,color:#4a0f08
   classDef planned stroke-dasharray:6 4,stroke-width:2px
   classDef dead fill:#f3f3f3,stroke:#9e9e9e,color:#616161,stroke-dasharray:3 3
-  class app,home,ident,rec,audit,results,ui_why,ui_receipt,letter,ui_multiphoto,ui_ai_unknown,ui_picker,ui_ring,ui_plancard,ui_location,ui_charts,ui_atlas,ui_namepicker,ui_sitefilters,ui_photostrip,ui_letterdemo,ui_identifydemo,ui_theme,ui_motion,ui_photos,ui_photoslot,ui_header,ui_leaf,ui_reveal,ui_countup,ui_lastplace ui
+  class app,home,ident,rec,audit,results,ui_why,ui_receipt,letter,ui_multiphoto,ui_ai_unknown,ui_picker,ui_ring,ui_plancard,ui_location,ui_charts,ui_atlas,ui_namepicker,ui_sitefilters,ui_photostrip,ui_letterdemo,ui_identifydemo,ui_theme,ui_motion,ui_photos,ui_photoslot,ui_header,ui_leaf,ui_reveal,ui_countup,ui_lastplace,ui_photo,ui_press,ui_tabicon ui
   class picker,clipboard device
   class c_identify,c_rec,c_letter,c_local,c_plan,c_user_message,c_locate,c_nearby,c_names,c_choose client
   class flask,r_identify,r_recommend,r_letter,r_plan,r_locate,r_nearby,r_names,r_choose route
-  class s_identify,s_letter,s_fl,s_species,s_plantnet,s_usda,s_resolve,s_option,s_common_name,s_summary,s_plan,s_guard,s_letter_facts,s_round,s_geocode,s_reverse,s_seen,s_with_plan,s_zip_center,s_region,s_county,s_choose,s_namesearch,s_isknown,s_commonfor,s_fits,s_cleansite,s_lightof,s_spaceof,s_checked svc
-  class d_fisc,d_natives,fisc_builder,d_recs,d_nwf,d_terms,d_why,d_zip_counties,zip_builder,d_non_natives,d_plantnames,names_builder data
+  class s_identify,s_letter,s_fl,s_species,s_plantnet,s_usda,s_resolve,s_option,s_common_name,s_summary,s_plan,s_guard,s_letter_facts,s_round,s_geocode,s_reverse,s_seen,s_with_plan,s_zip_center,s_region,s_county,s_choose,s_namesearch,s_isknown,s_commonfor,s_fits,s_cleansite,s_lightof,s_spaceof,s_checked,s_photo svc
+  class d_fisc,d_natives,fisc_builder,d_recs,d_nwf,d_terms,d_why,d_zip_counties,zip_builder,d_non_natives,d_plantnames,names_builder,d_photos data
   class openai,usda,plantnet,nominatim,inaturalist,usf_atlas ext
   class c_local dead
 ```

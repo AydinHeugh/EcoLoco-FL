@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
   ActivityIndicator, useWindowDimensions, Linking, TextInput,
@@ -9,15 +9,17 @@ import { getPlan, getNearby, generateLetter, userMessage } from '../services/gem
 import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS, TYPE, LINE } from '../theme';
 import StatusBadge from '../components/StatusBadge';
 import PercentRing from '../components/PercentRing';
-import CountUp from '../components/CountUp';
-import { COUNT_STAGGER, useDelayedFlag } from '../motion';
+import CountUp, { useCountUp } from '../components/CountUp';
+import PlantPhoto, { PhotoCredit } from '../components/PlantPhoto';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { BAR_MS, COUNT_STAGGER, useDelayedFlag } from '../motion';
 import PlanCard, { NOT_CHECKED_HERE } from '../components/PlanCard';
 import SiteFilters, { ANY_SITE } from '../components/SiteFilters';
 import SourceLine from '../components/SourceLine';
 import StatusBars from '../components/StatusBars';
 import ScreenHeader from '../components/ScreenHeader';
 import ScanningLeaf from '../components/ScanningLeaf';
-import Reveal, { RevealProvider, useRevealScroll } from '../components/Reveal';
+import Reveal, { RevealProvider, useRevealScroll, useInView } from '../components/Reveal';
 import { PHOTOS } from '../photos';
 import CaterpillarBars from '../components/CaterpillarBars';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
@@ -32,6 +34,35 @@ const BUCKETS = [
   { key: 'invasive',   status: 'invasive',   label: 'Invasive (hurting wildlife)' },
   { key: 'unknown',    status: 'unknown',    label: 'Unknown: not on Florida lists' },
 ];
+
+const NEARBY_WHY = 'Natives that are common here clearly grow well in your area, so they are good choices to plant. An invasive plant on this list could spread onto your campus, so look out for it.';
+const WHY_NOTE = 'The reasons behind your plan, each with its source. Use them to back up your letter.';
+const STATUS_ICONS = { native: 'leaf', 'non-native': 'earth', invasive: 'alert-octagon-outline', unknown: 'help-circle-outline' };
+
+function NearbyRow({ plant, max, order }) {
+  const ref = useRef(null);
+  const shown = useCountUp(plant.count, useInView(ref), order * COUNT_STAGGER, BAR_MS);
+  return (
+    <View ref={ref} collapsable={false} style={styles.plantRow}>
+      <View style={styles.photoRow}>
+        <PlantPhoto photo={plant.photo} size={56} radius={12} label={plant.plant_name} />
+        <View style={styles.photoRowBody}>
+          <View style={styles.plantHead}>
+            <Text style={styles.plantName}>{plant.plant_name}</Text>
+            <StatusBadge status={plant.status} label={plant.status_label} />
+          </View>
+          <View style={styles.seenTrack}>
+            <View style={[styles.seenBar, { width: `${(shown / max) * 100}%`, backgroundColor: STATUS_COLORS[plant.status].color }]} />
+          </View>
+          <Text style={styles.plantWhy} accessibilityLabel={`Seen ${plant.count} ${plant.count === 1 ? 'time' : 'times'} nearby`}>
+            Seen {shown} {plant.count === 1 ? 'time' : 'times'} nearby
+          </Text>
+          <PhotoCredit photo={plant.photo} />
+        </View>
+      </View>
+    </View>
+  );
+}
 
 function LetterGenerator({ plan, zipCode }) {
   const [loading, setLoading] = useState(false);
@@ -237,25 +268,31 @@ function AuditResults({ route, navigation }) {
               <Text style={styles.sectionNote}>Scanned something by mistake, like a fake or potted plant? Remove it and your counts and plan update.</Text>
               {summary.plants.length === 0 && <Text style={styles.mutedText}>No plants left. Go back to EcoScan to scan more.</Text>}
               {summary.plants.map((p, i) => (
-                <View key={planFor.plants[i]?._id ?? i} style={styles.plantRow}>
-                  <View style={styles.plantHead}>
-                    <Text style={styles.plantName}>{p.plant_name}</Text>
-                    <View style={styles.plantActions}>
-                      <StatusBadge status={p.status} label={p.status_label} />
-                      <TouchableOpacity
-                        onPress={() => removePlant(i)}
-                        disabled={stale}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Remove ${p.plant_name}`}
-                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                      >
-                        <Text style={[styles.removeBtn, stale && styles.btnDisabled]}>Remove</Text>
-                      </TouchableOpacity>
+                <Reveal key={planFor.plants[i]?._id ?? i} index={i} style={styles.plantRow}>
+                  <View style={styles.photoRow}>
+                    <PlantPhoto photo={p.photo} size={56} radius={12} label={p.plant_name} />
+                    <View style={styles.photoRowBody}>
+                      <View style={styles.plantHead}>
+                        <Text style={styles.plantName}>{p.plant_name}</Text>
+                        <View style={styles.plantActions}>
+                          <StatusBadge status={p.status} label={p.status_label} />
+                          <TouchableOpacity
+                            onPress={() => removePlant(i)}
+                            disabled={stale}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Remove ${p.plant_name}`}
+                            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                          >
+                            <Text style={[styles.removeBtn, stale && styles.btnDisabled]}>Remove</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                      <Text style={styles.plantWhy}>{p.why || NO_DATA}</Text>
+                      {p.why ? <SourceLine source={{ name: p.source_label }} /> : null}
+                      <PhotoCredit photo={p.photo} />
                     </View>
                   </View>
-                  <Text style={styles.plantWhy}>{p.why || NO_DATA}</Text>
-                  {p.why ? <SourceLine source={{ name: p.source_label }} /> : null}
-                </View>
+                </Reveal>
               ))}
             </View>
 
@@ -284,6 +321,9 @@ function AuditResults({ route, navigation }) {
               <View style={styles.countRow}>
                 {BUCKETS.map(({ key, status, label }, i) => (
                   <View key={key} style={styles.countItem}>
+                    <View style={[styles.countIcon, { backgroundColor: STATUS_COLORS[status].bg }]}>
+                      <MaterialCommunityIcons name={STATUS_ICONS[status]} size={22} color={STATUS_COLORS[status].color} />
+                    </View>
                     <CountUp value={summary.counts[key]} style={[styles.countNum, { color: STATUS_COLORS[status].color }]} delay={i * COUNT_STAGGER} />
                     <Text style={styles.countLabel}>{label}</Text>
                   </View>
@@ -306,14 +346,9 @@ function AuditResults({ route, navigation }) {
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>Seen near you</Text>
                   <Text style={styles.sectionNote}>Plants people photographed within about 5 km of your school, checked by other iNaturalist users.</Text>
+                  <Text style={styles.sectionNote}>{NEARBY_WHY}</Text>
                   {nearby.map((p, i) => (
-                    <View key={i} style={styles.plantRow}>
-                      <View style={styles.plantHead}>
-                        <Text style={styles.plantName}>{p.plant_name}</Text>
-                        <StatusBadge status={p.status} label={p.status_label} />
-                      </View>
-                      <Text style={styles.plantWhy}>Seen {p.count} {p.count === 1 ? 'time' : 'times'} nearby</Text>
-                    </View>
+                    <NearbyRow key={i} plant={p} order={i} max={Math.max(...nearby.map(n => n.count), 1)} />
                   ))}
                   <SourceLine source={{ name: 'iNaturalist', url: 'https://www.inaturalist.org' }} />
                 </View>
@@ -323,11 +358,17 @@ function AuditResults({ route, navigation }) {
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Why this matters</Text>
+              <Text style={styles.sectionNote}>{WHY_NOTE}</Text>
               {plan.why_this_matters.map((line, i) => (
-                <View key={i} style={styles.whyLine}>
-                  <Text style={styles.plantWhy}>{line.text}</Text>
-                  <SourceLine source={line.source} />
-                </View>
+                <Reveal key={i} index={i} style={styles.whyLine}>
+                  <View style={styles.whyIcon}>
+                    <MaterialCommunityIcons name={line.icon ?? 'leaf'} size={22} color={COLORS.seaGrape} />
+                  </View>
+                  <View style={styles.photoRowBody}>
+                    <Text style={styles.plantWhy}>{line.text}</Text>
+                    <SourceLine source={line.source} />
+                  </View>
+                </Reveal>
               ))}
             </View>
 
@@ -377,11 +418,17 @@ const styles = StyleSheet.create({
   plantName: { fontSize: TYPE.lead, fontFamily: FONTS.heading, color: COLORS.darkGreen, flexShrink: 1 },
   plantActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   removeBtn: { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.accent, textDecorationLine: 'underline' },
-  whyLine:   { paddingVertical: 6 },
+  whyLine:   { paddingVertical: 8, flexDirection: 'row', gap: 14 },
+  whyIcon:   { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.seaGrapeSoft, alignItems: 'center', justifyContent: 'center' },
+  photoRow:  { flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
+  photoRowBody: { flex: 1, minWidth: 0, gap: 6 },
+  seenTrack: { height: 8, borderRadius: 4, backgroundColor: COLORS.lightBg, overflow: 'hidden' },
+  seenBar:   { height: 8, borderRadius: 4 },
+  countIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
   plantWhy:  { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: LINE.body },
 
-  countRow:   { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 16, marginTop: 12 },
-  countItem:  { alignItems: 'center', width: 90 },
+  countRow:   { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6, marginTop: 12 },
+  countItem:  { alignItems: 'center', width: 80 },
   countNum:   { fontSize: TYPE.h2, fontFamily: FONTS.headingBlack },
   countLabel: { fontSize: TYPE.caption, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
 

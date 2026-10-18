@@ -14,6 +14,7 @@ import OfflineNotice, { reportAi } from '../components/OfflineNotice';
 import { useProgressText } from '../components/ProgressText';
 import { DURATION, EASE_OUT, useReduceMotion } from '../motion';
 import LocationPicker from '../components/LocationPicker';
+import PressScale from '../components/PressScale';
 import { rememberPlace } from '../lastPlace';
 import NamePicker from '../components/NamePicker';
 import PhotoStrip from '../components/PhotoStrip';
@@ -368,11 +369,11 @@ export default function AuditScreen({ navigation }) {
           </TouchableOpacity>
 
           {waiting.length > 0 && (
-            <TouchableOpacity style={[styles.scanAllBtn, scanning && styles.btnDisabled]} onPress={scanAll} disabled={scanning}>
+            <PressScale style={[styles.scanAllBtn, scanning && styles.btnDisabled]} onPress={scanAll} disabled={scanning}>
               {scanning
                 ? <ActivityIndicator color={COLORS.cream} size="small" />
                 : <Text style={styles.scanAllText}>Scan all ({waiting.length})</Text>}
-            </TouchableOpacity>
+            </PressScale>
           )}
 
           {done.length > 0 && waiting.length > 0 && !scanning && (
@@ -382,9 +383,9 @@ export default function AuditScreen({ navigation }) {
           )}
 
           {done.length > 0 && (
-            <TouchableOpacity style={[styles.finishBtn, !canFinish && styles.btnDisabled]} onPress={handleFinish} disabled={!canFinish}>
+            <PressScale style={[styles.finishBtn, !canFinish && styles.btnDisabled]} onPress={handleFinish} disabled={!canFinish}>
               <Text style={styles.finishBtnText}>See my results  →</Text>
-            </TouchableOpacity>
+            </PressScale>
           )}
         </View>
 

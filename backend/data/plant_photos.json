@@ -1,0 +1,995 @@
+{
+  "_comment": "One openly licensed iNaturalist photo per plant, with its credit. Built by scripts/build_plant_photos.py.",
+  "photos": {
+    "Zamia integrifolia": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/76427734/medium.jpg",
+      "credit": "(c) Jenny Evans, some rights reserved (CC BY-NC)",
+      "license": "cc-by-nc"
+    },
+    "Hamelia patens": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/7365085/medium.jpg",
+      "credit": "(c) nogle, some rights reserved (CC BY-NC), uploaded by nogle",
+      "license": "cc-by-nc"
+    },
+    "Quercus virginiana": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/56778997/medium.jpg",
+      "credit": "(c) John Winder, some rights reserved (CC BY-NC-SA)",
+      "license": "cc-by-nc-sa"
+    },
+    "Callicarpa americana": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/225612223/medium.jpeg",
+      "credit": "(c) Alex Abair, some rights reserved (CC BY), uploaded by Alex Abair",
+      "license": "cc-by"
+    },
+    "Mimosa strigillosa": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/16932614/medium.jpeg",
+      "credit": "(c) Stephanie, some rights reserved (CC BY-NC), uploaded by Stephanie",
+      "license": "cc-by-nc"
+    },
+    "Psychotria nervosa": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/103484/medium.jpg",
+      "credit": "(c) Mary Keim, some rights reserved (CC BY-NC-SA)",
+      "license": "cc-by-nc-sa"
+    },
+    "Ardisia escallonioides": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/51175086/medium.jpg",
+      "credit": "(c) Joe MDO, some rights reserved (CC BY-NC), uploaded by Joe MDO",
+      "license": "cc-by-nc"
+    },
+    "Chrysobalanus icaco": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/8708128/medium.jpeg",
+      "credit": "(c) Eridan Xharahi, some rights reserved (CC BY), uploaded by Eridan Xharahi",
+      "license": "cc-by"
+    },
+    "Coccoloba uvifera": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/10898104/medium.jpg",
+      "credit": "(c) tonysnfelipe, some rights reserved (CC BY-NC)",
+      "license": "cc-by-nc"
+    },
+    "Coccoloba diversifolia": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/1540887/medium.jpg",
+      "credit": "(c) Karen, some rights reserved (CC BY-NC-SA)",
+      "license": "cc-by-nc-sa"
+    },
+    "Bursera simaruba": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/116222598/medium.jpeg",
+      "credit": "(c) Ricard Busquets Reverte, some rights reserved (CC BY), uploaded by Ricard Busquets Reverte",
+      "license": "cc-by"
+    },
+    "Acer rubrum": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/371065093/medium.jpg",
+      "credit": "no rights reserved, uploaded by mefisher",
+      "license": "cc0"
+    },
+    "Ilex cassine": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/25093260/medium.jpeg",
+      "credit": "(c) jefferykarafa, some rights reserved (CC BY-NC), uploaded by jefferykarafa",
+      "license": "cc-by-nc"
+    },
+    "Pinus elliottii": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/471031454/medium.jpg",
+      "credit": "no rights reserved, uploaded by Jean-Paul Boerekamps",
+      "license": "cc0"
+    },
+    "Myrcianthes fragrans": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/139907386/medium.jpeg",
+      "credit": "no rights reserved, uploaded by Diego Blanco",
+      "license": "cc0"
+    },
+    "Stachytarpheta jamaicensis": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/388149349/medium.jpeg",
+      "credit": "(c) Dayron Breto, some rights reserved (CC BY), uploaded by Dayron Breto",
+      "license": "cc-by"
+    },
+    "Helianthus debilis": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/64705422/medium.jpg",
+      "credit": "(c) steffiland, some rights reserved (CC BY-SA), uploaded by steffiland",
+      "license": "cc-by-sa"
+    },
+    "Ruellia caroliniensis": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/354009899/medium.jpeg",
+      "credit": "(c) Michael J. Papay, some rights reserved (CC BY), uploaded by Michael J. Papay",
+      "license": "cc-by"
+    },
+    "Passiflora suberosa": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/170735717/medium.jpg",
+      "credit": "(c) Juan Sangiovanni, some rights reserved (CC BY-NC), uploaded by Juan Sangiovanni",
+      "license": "cc-by-nc"
+    },
+    "Passiflora incarnata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/91738617/medium.jpg",
+      "credit": "(c) Alex Abair, some rights reserved (CC BY), uploaded by Alex Abair",
+      "license": "cc-by"
+    },
+    "Tripsacum dactyloides": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/21709424/medium.jpg",
+      "credit": "(c) samlutfy, some rights reserved (CC BY), uploaded by samlutfy",
+      "license": "cc-by"
+    },
+    "Muhlenbergia capillaris": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/35021968/medium.jpg",
+      "credit": "(c) Alvin Diamond, some rights reserved (CC BY-NC), uploaded by Alvin Diamond",
+      "license": "cc-by-nc"
+    },
+    "Serenoa repens": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/353425532/medium.jpeg",
+      "credit": "(c) jackparton, some rights reserved (CC BY-NC)",
+      "license": "cc-by-nc"
+    },
+    "Rudbeckia hirta": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/20050503/medium.jpeg",
+      "credit": "(c) germangirl, some rights reserved (CC BY-NC), uploaded by germangirl",
+      "license": "cc-by-nc"
+    },
+    "Solidago stricta": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/156583563/medium.jpeg",
+      "credit": "(c) Bonnie Semmling, some rights reserved (CC BY), uploaded by Bonnie Semmling",
+      "license": "cc-by"
+    },
+    "Salix caroliniana": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/111655/medium.jpg",
+      "credit": "(c) Mary Keim, some rights reserved (CC BY-NC-SA)",
+      "license": "cc-by-nc-sa"
+    },
+    "Zanthoxylum fagara": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/179740103/medium.jpg",
+      "credit": "(c) Douglas Goldman, some rights reserved (CC BY-SA), uploaded by Douglas Goldman",
+      "license": "cc-by-sa"
+    },
+    "Asclepias incarnata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/21590017/medium.jpg",
+      "credit": "(c) aarongunnar, some rights reserved (CC BY), uploaded by aarongunnar",
+      "license": "cc-by"
+    },
+    "Scaevola plumieri": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/369356896/medium.jpg",
+      "credit": "(c) dbond, some rights reserved (CC BY-NC)",
+      "license": "cc-by-nc"
+    },
+    "Lantana involucrata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/289460369/medium.jpeg",
+      "credit": "(c) Stuart Cable, some rights reserved (CC BY), uploaded by Stuart Cable",
+      "license": "cc-by"
+    },
+    "Abrus precatorius": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/66780796/medium.jpeg",
+      "credit": "(c) Shiwalee Samant, some rights reserved (CC BY-NC), uploaded by Shiwalee Samant",
+      "license": "cc-by-nc"
+    },
+    "Acacia auriculiformis": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/700459/medium.JPG",
+      "credit": "(c) 106611639464075912591, some rights reserved (CC BY-NC-SA), uploaded by 106611639464075912591",
+      "license": "cc-by-nc-sa"
+    },
+    "Albizia julibrissin": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/146757188/medium.jpg",
+      "credit": "(c) Andrew Butko, some rights reserved (CC BY-SA)",
+      "license": "cc-by-sa"
+    },
+    "Albizia lebbeck": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/48771727/medium.jpeg",
+      "credit": "(c) berthapi2, some rights reserved (CC BY-NC), uploaded by berthapi2",
+      "license": "cc-by-nc"
+    },
+    "Ardisia crenata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/73013471/medium.jpg",
+      "credit": "(c) Toshihiro Gamo, some rights reserved (CC BY-NC-ND)",
+      "license": "cc-by-nc-nd"
+    },
+    "Ardisia elliptica": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/39977935/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Asparagus aethiopicus": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/480866709/medium.jpeg",
+      "credit": "(c) Tony Rebelo, some rights reserved (CC BY-SA), uploaded by Tony Rebelo",
+      "license": "cc-by-sa"
+    },
+    "Bauhinia variegata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/82926214/medium.jpeg",
+      "credit": "(c) Sune Holt, some rights reserved (CC BY-NC), uploaded by Sune Holt",
+      "license": "cc-by-nc"
+    },
+    "Bischofia javanica": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/499869913/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Casuarina equisetifolia": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/16450498/medium.jpeg",
+      "credit": "(c) Pedro Alanis, some rights reserved (CC BY-NC), uploaded by Pedro Alanis",
+      "license": "cc-by-nc"
+    },
+    "Casuarina glauca": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/184818817/medium.jpeg",
+      "credit": "(c) Russell Barrett, some rights reserved (CC BY-NC), uploaded by Russell Barrett",
+      "license": "cc-by-nc"
+    },
+    "Cenchrus purpureus": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/109071014/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Colocasia esculenta": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/20295281/medium.jpeg",
+      "credit": "(c) Kuan-Chieh (Chuck) Hung, some rights reserved (CC BY-NC-SA), uploaded by Kuan-Chieh (Chuck) Hung",
+      "license": "cc-by-nc-sa"
+    },
+    "Colubrina asiatica": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/77597080/medium.jpeg",
+      "credit": "(c) Ehoarn Bidault, some rights reserved (CC BY-NC), uploaded by Ehoarn Bidault",
+      "license": "cc-by-nc"
+    },
+    "Cupaniopsis anacardioides": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/396715598/medium.jpeg",
+      "credit": "(c) cirolana, some rights reserved (CC BY-NC)",
+      "license": "cc-by-nc"
+    },
+    "Cyperus blepharoleptos": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/72166515/medium.jpeg",
+      "credit": "(c) Sharleen, some rights reserved (CC BY-NC), uploaded by Sharleen",
+      "license": "cc-by-nc"
+    },
+    "Dioscorea alata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/281981579/medium.jpeg",
+      "credit": "(c) kerrycoleman, some rights reserved (CC BY-NC), uploaded by kerrycoleman",
+      "license": "cc-by-nc"
+    },
+    "Dioscorea bulbifera": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/569462991/medium.jpg",
+      "credit": "(c) Oliver g jones, some rights reserved (CC BY-NC), uploaded by Oliver g jones",
+      "license": "cc-by-nc"
+    },
+    "Dolichandra unguis-cati": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/15188222/medium.jpg",
+      "credit": "(c) Kobie du Preez, some rights reserved (CC BY-NC), uploaded by Kobie du Preez",
+      "license": "cc-by-nc"
+    },
+    "Eugenia uniflora": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/654004464/medium.jpg",
+      "credit": "(c) Guillaume Léotard, some rights reserved (CC BY-NC), uploaded by Guillaume Léotard",
+      "license": "cc-by-nc"
+    },
+    "Ficus microcarpa": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/59896114/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Heptapleurum actinophyllum": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/19387254/medium.jpeg",
+      "credit": "(c) Stephen Thorpe, some rights reserved (CC BY-NC), uploaded by Stephen Thorpe",
+      "license": "cc-by-nc"
+    },
+    "Hydrilla verticillata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/308709379/medium.jpg",
+      "credit": "(c) Ad Konings, some rights reserved (CC BY-NC), uploaded by Ad Konings",
+      "license": "cc-by-nc"
+    },
+    "Hygrophila polysperma": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/106945999/medium.jpeg",
+      "credit": "(c) Andy Blair, some rights reserved (CC BY-NC), uploaded by Andy Blair",
+      "license": "cc-by-nc"
+    },
+    "Hymenachne amplexicaulis": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/444948482/medium.jpg",
+      "credit": "(c) Robert Gundy, some rights reserved (CC BY-NC)",
+      "license": "cc-by-nc"
+    },
+    "Imperata cylindrica": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/47625648/medium.jpeg",
+      "credit": "(c) wangleeping, some rights reserved (CC BY-NC), uploaded by wangleeping",
+      "license": "cc-by-nc"
+    },
+    "Ipomoea aquatica": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/103856840/medium.jpeg",
+      "credit": "(c) Didier Levasseur, some rights reserved (CC BY-NC), uploaded by Didier Levasseur",
+      "license": "cc-by-nc"
+    },
+    "Jasminum dichotomum": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/115312425/medium.jpg",
+      "credit": "(c) alexandramegladon, some rights reserved (CC BY-NC)",
+      "license": "cc-by-nc"
+    },
+    "Jasminum fluminense": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/92225171/medium.jpeg",
+      "credit": "(c) Helio Lourencini, some rights reserved (CC BY), uploaded by Helio Lourencini",
+      "license": "cc-by"
+    },
+    "Lantana strigocamara": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/169360861/medium.jpeg",
+      "credit": "(c) Dwight Bohlmeyer, some rights reserved (CC BY-NC), uploaded by Dwight Bohlmeyer",
+      "license": "cc-by-nc"
+    },
+    "Ligustrum lucidum": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/561658777/medium.jpg",
+      "credit": "(c) Douglas Goldman, some rights reserved (CC BY-SA), uploaded by Douglas Goldman",
+      "license": "cc-by-sa"
+    },
+    "Ligustrum sinense": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/570026/medium.jpg",
+      "credit": "(c) Kai Yan,  Joseph Wong, some rights reserved (CC BY-NC-SA)",
+      "license": "cc-by-nc-sa"
+    },
+    "Lonicera japonica": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/285795362/medium.jpg",
+      "credit": "(c) Michael Stanton, some rights reserved (CC BY-NC), uploaded by Michael Stanton",
+      "license": "cc-by-nc"
+    },
+    "Ludwigia peruviana": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/155924185/medium.jpeg",
+      "credit": "(c) mfeaver, some rights reserved (CC BY), uploaded by mfeaver",
+      "license": "cc-by"
+    },
+    "Lumnitzera racemosa": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/50697869/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Luziola subintegra": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/48783821/medium.jpeg",
+      "credit": "(c) Juan Diego Lozano, some rights reserved (CC BY-NC-ND), uploaded by Juan Diego Lozano",
+      "license": "cc-by-nc-nd"
+    },
+    "Lygodium japonicum": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/110312912/medium.jpeg",
+      "credit": "(c) bbk-htx, some rights reserved (CC BY-NC)",
+      "license": "cc-by-nc"
+    },
+    "Lygodium microphyllum": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/469283791/medium.jpeg",
+      "credit": "(c) Mike and Cathy Beamish, some rights reserved (CC BY-NC), uploaded by Mike and Cathy Beamish",
+      "license": "cc-by-nc"
+    },
+    "Manilkara zapota": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/124479510/medium.jpg",
+      "credit": "(c) Ong Jyh Seng, some rights reserved (CC BY-SA), uploaded by Ong Jyh Seng",
+      "license": "cc-by-sa"
+    },
+    "Melaleuca quinquenervia": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/68697633/medium.jpeg",
+      "credit": "(c) gillbsydney, some rights reserved (CC BY-NC), uploaded by gillbsydney",
+      "license": "cc-by-nc"
+    },
+    "Melinis repens": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/117783839/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Microsorum grossum": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/383909540/medium.jpg",
+      "credit": "(c) Kimbrint, some rights reserved (CC BY-NC), uploaded by Kimbrint",
+      "license": "cc-by-nc"
+    },
+    "Microstegium vimineum": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/92747116/medium.jpg",
+      "credit": "(c) Emily Summerbell, some rights reserved (CC BY), uploaded by Emily Summerbell",
+      "license": "cc-by"
+    },
+    "Mimosa pigra": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/45203291/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Nandina domestica": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/71351881/medium.jpg",
+      "credit": "(c) Sam Kieschnick, some rights reserved (CC BY), uploaded by Sam Kieschnick",
+      "license": "cc-by"
+    },
+    "Nephrolepis brownii": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/429205247/medium.jpeg",
+      "credit": "no rights reserved, uploaded by Agnes Trekker",
+      "license": "cc0"
+    },
+    "Nephrolepis cordifolia": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/260680022/medium.jpeg",
+      "credit": "(c) cyunf, some rights reserved (CC BY-NC), uploaded by cyunf",
+      "license": "cc-by-nc"
+    },
+    "Neyraudia reynaudiana": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/170318635/medium.jpeg",
+      "credit": "(c) casarangel, some rights reserved (CC BY-NC), uploaded by casarangel",
+      "license": "cc-by-nc"
+    },
+    "Nymphoides cristata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/1417809/medium.JPG",
+      "credit": "(c) Subhajit Roy, some rights reserved (CC BY-NC-ND), uploaded by Subhajit Roy",
+      "license": "cc-by-nc-nd"
+    },
+    "Paederia cruddasiana": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/235326896/medium.jpg",
+      "credit": "(c) Douglas Goldman, some rights reserved (CC BY-SA), uploaded by Douglas Goldman",
+      "license": "cc-by-sa"
+    },
+    "Paederia foetida": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/604390260/medium.jpg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Panicum repens": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/135087391/medium.jpg",
+      "credit": "(c) Matt Berger, some rights reserved (CC BY), uploaded by Matt Berger",
+      "license": "cc-by"
+    },
+    "Pistia stratiotes": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/309359974/medium.jpeg",
+      "credit": "(c) amywainwright, some rights reserved (CC BY-NC)",
+      "license": "cc-by-nc"
+    },
+    "Pongamia pinnata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/26927388/medium.jpeg",
+      "credit": "(c) taiwan_reevesia, some rights reserved (CC BY-NC), uploaded by taiwan_reevesia",
+      "license": "cc-by-nc"
+    },
+    "Psidium guajava": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/751951189/medium.jpg",
+      "credit": "(c) John Parrotta, some rights reserved (CC BY)",
+      "license": "cc-by"
+    },
+    "Rhodomyrtus tomentosa": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/36966412/medium.jpg",
+      "credit": "(c) nkc, some rights reserved (CC BY-NC)",
+      "license": "cc-by-nc"
+    },
+    "Ruellia simplex": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/73486570/medium.jpeg",
+      "credit": "(c) Te Chang, some rights reserved (CC BY-NC), uploaded by Te Chang",
+      "license": "cc-by-nc"
+    },
+    "Salvinia minima": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/101941898/medium.jpeg",
+      "credit": "(c) Susie Doe, some rights reserved (CC BY-NC-SA), uploaded by Susie Doe",
+      "license": "cc-by-nc-sa"
+    },
+    "Salvinia molesta": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/39028206/medium.jpeg",
+      "credit": "(c) Will McFarland, some rights reserved (CC BY), uploaded by Will McFarland",
+      "license": "cc-by"
+    },
+    "Scaevola taccada": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/28754448/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Schinus terebinthifolia": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/57240422/medium.jpg",
+      "credit": "(c) Mary Keim, some rights reserved (CC BY-NC-SA)",
+      "license": "cc-by-nc-sa"
+    },
+    "Scleria eggersiana": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/188148305/medium.jpeg",
+      "credit": "(c) Ricardo J. Colón-Rivera, some rights reserved (CC BY-NC), uploaded by Ricardo J. Colón-Rivera",
+      "license": "cc-by-nc"
+    },
+    "Scleria lacustris": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/108734066/medium.jpeg",
+      "credit": "(c) obrock, some rights reserved (CC BY-NC), uploaded by obrock",
+      "license": "cc-by-nc"
+    },
+    "Scleria microcarpa": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/568928346/medium.jpg",
+      "credit": "(c) Alexis López Hernández, some rights reserved (CC BY), uploaded by Alexis López Hernández",
+      "license": "cc-by"
+    },
+    "Solanum tampicense": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/142898052/medium.jpg",
+      "credit": "(c) Keith Bradley, some rights reserved (CC BY-NC), uploaded by Keith Bradley",
+      "license": "cc-by-nc"
+    },
+    "Solanum viarum": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/585533/medium.jpg",
+      "credit": "(c) J. Jeffrey Mullahey, University of Florida, Bugwood.org, some rights reserved (CC BY)",
+      "license": "cc-by"
+    },
+    "Sporobolus jacquemontii": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/319841244/medium.jpg",
+      "credit": "(c) Carlos Martorell, some rights reserved (CC BY), uploaded by Carlos Martorell",
+      "license": "cc-by"
+    },
+    "Syngonium podophyllum": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/177690272/medium.jpeg",
+      "credit": "(c) Luís A. Funez, some rights reserved (CC BY-NC), uploaded by Luís A. Funez",
+      "license": "cc-by-nc"
+    },
+    "Syzygium cumini": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/4801317/medium.jpeg",
+      "credit": "(c) sea-kangaroo, some rights reserved (CC BY-NC-ND), uploaded by sea-kangaroo",
+      "license": "cc-by-nc-nd"
+    },
+    "Tectaria incisa": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/177928687/medium.jpg",
+      "credit": "(c) Omar Monzon Carmona, some rights reserved (CC BY-NC), uploaded by Omar Monzon Carmona",
+      "license": "cc-by-nc"
+    },
+    "Thespesia populnea": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/61022916/medium.jpeg",
+      "credit": "(c) Daniel Cahen, some rights reserved (CC BY), uploaded by Daniel Cahen",
+      "license": "cc-by"
+    },
+    "Tradescantia fluminensis": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/359669695/medium.jpeg",
+      "credit": "(c) Saryu Mae 前 朝琉, some rights reserved (CC BY), uploaded by Saryu Mae 前 朝琉",
+      "license": "cc-by"
+    },
+    "Tradescantia spathacea": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/13127306/medium.jpeg",
+      "credit": "(c) Sunnetchan, some rights reserved (CC BY-NC-ND), uploaded by Sunnetchan",
+      "license": "cc-by-nc-nd"
+    },
+    "Triadica sebifera": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/401041896/medium.jpeg",
+      "credit": "(c) WATANABE Hitoshi 渡辺仁, some rights reserved (CC BY), uploaded by WATANABE Hitoshi 渡辺仁",
+      "license": "cc-by"
+    },
+    "Urena lobata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/642852036/medium.jpg",
+      "credit": "(c) 藜梓柠, some rights reserved (CC BY-NC), uploaded by 藜梓柠",
+      "license": "cc-by-nc"
+    },
+    "Urochloa mutica": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/57852953/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Vitex rotundifolia": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/92599877/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Adenanthera pavonina": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/20605511/medium.jpg",
+      "credit": "(c) Cheongweei Gan, some rights reserved (CC BY-NC), uploaded by Cheongweei Gan",
+      "license": "cc-by-nc"
+    },
+    "Agave sisalana": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/44763522/medium.jpeg",
+      "credit": "(c) subhashc, some rights reserved (CC BY-NC)",
+      "license": "cc-by-nc"
+    },
+    "Alstonia macrophylla": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/157899527/medium.jpeg",
+      "credit": "no rights reserved, uploaded by Ajit Ampalakkad",
+      "license": "cc0"
+    },
+    "Alternanthera philoxeroides": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/8552798/medium.jpg",
+      "credit": "(c) Bryan, some rights reserved (CC BY-NC), uploaded by Bryan",
+      "license": "cc-by-nc"
+    },
+    "Antigonon leptopus": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/25523058/medium.jpg",
+      "credit": "(c) portioid, some rights reserved (CC BY), uploaded by portioid",
+      "license": "cc-by"
+    },
+    "Ardisia japonica": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/12815013/medium.jpeg",
+      "credit": "(c) Keita Watanabe, some rights reserved (CC BY-NC), uploaded by Keita Watanabe",
+      "license": "cc-by-nc"
+    },
+    "Asclepias curassavica": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/133647238/medium.jpeg",
+      "credit": "(c) Ricard Busquets Reverte, some rights reserved (CC BY), uploaded by Ricard Busquets Reverte",
+      "license": "cc-by"
+    },
+    "Asystasia gangetica": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/178177515/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Begonia cucullata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/594821996/medium.jpg",
+      "credit": "(c) julianisilva, some rights reserved (CC BY-NC)",
+      "license": "cc-by-nc"
+    },
+    "Broussonetia papyrifera": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/142337328/medium.jpg",
+      "credit": "(c) dearufo, some rights reserved (CC BY-NC)",
+      "license": "cc-by-nc"
+    },
+    "Bruguiera gymnorhiza": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/34559194/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Callisia fragrans": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/28951620/medium.jpg",
+      "credit": "(c) Jose Alicea, some rights reserved (CC BY-NC), uploaded by Jose Alicea",
+      "license": "cc-by-nc"
+    },
+    "Casuarina cunninghamiana": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/57118907/medium.jpeg",
+      "credit": "(c) Sandile Mdoko, some rights reserved (CC BY-NC), uploaded by Sandile Mdoko",
+      "license": "cc-by-nc"
+    },
+    "Cecropia palmata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/100419344/medium.jpeg",
+      "credit": "(c) Helio Lourencini, some rights reserved (CC BY), uploaded by Helio Lourencini",
+      "license": "cc-by"
+    },
+    "Cenchrus setaceus": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/6748173/medium.jpg",
+      "credit": "(c) btburke, some rights reserved (CC BY-NC), uploaded by btburke",
+      "license": "cc-by-nc"
+    },
+    "Cestrum diurnum": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/110471323/medium.jpeg",
+      "credit": "(c) Ben Machado, some rights reserved (CC BY), uploaded by Ben Machado",
+      "license": "cc-by"
+    },
+    "Chamaedorea seifrizii": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/170863411/medium.jpg",
+      "credit": "(c) nataliamata, some rights reserved (CC BY-NC)",
+      "license": "cc-by-nc"
+    },
+    "Clematis terniflora": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/147839568/medium.jpg",
+      "credit": "(c) Michael J. Papay, some rights reserved (CC BY), uploaded by Michael J. Papay",
+      "license": "cc-by"
+    },
+    "Cocos nucifera": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/2373013/medium.JPG",
+      "credit": "(c) Kimberlie Sasan, some rights reserved (CC BY-ND), uploaded by Kimberlie Sasan",
+      "license": "cc-by-nd"
+    },
+    "Crassocephalum crepidioides": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/58426954/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Cryptostegia madagascariensis": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/29979280/medium.jpeg",
+      "credit": "(c) Ethan Gosnell, some rights reserved (CC BY-NC), uploaded by Ethan Gosnell",
+      "license": "cc-by-nc"
+    },
+    "Cyperus prolifer": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/117011320/medium.jpeg",
+      "credit": "(c) Craig Peter, some rights reserved (CC BY-NC), uploaded by Craig Peter",
+      "license": "cc-by-nc"
+    },
+    "Dactyloctenium aegyptium": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/49378012/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Dalbergia sissoo": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/783579/medium.jpg",
+      "credit": "(c) Anne Reeves, some rights reserved (CC BY-NC-ND)",
+      "license": "cc-by-nc-nd"
+    },
+    "Dalechampia scandens": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/206728846/medium.jpeg",
+      "credit": "(c) Daniel Velasco C., some rights reserved (CC BY-NC), uploaded by Daniel Velasco C.",
+      "license": "cc-by-nc"
+    },
+    "Distimake tuberosus": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/343219337/medium.jpg",
+      "credit": "(c) Edgar Miranda, some rights reserved (CC BY-NC), uploaded by Edgar Miranda",
+      "license": "cc-by-nc"
+    },
+    "Elaeagnus pungens": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/63422139/medium.jpg",
+      "credit": "(c) Dave Holland, some rights reserved (CC BY-NC), uploaded by Dave Holland",
+      "license": "cc-by-nc"
+    },
+    "Elaeagnus umbellata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/575611447/medium.jpg",
+      "credit": "no rights reserved, uploaded by Shawn",
+      "license": "cc0"
+    },
+    "Epipremnum aureum": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/337751865/medium.jpeg",
+      "credit": "(c) Amaury Durbano, some rights reserved (CC BY-NC), uploaded by Amaury Durbano",
+      "license": "cc-by-nc"
+    },
+    "Eulophia graminea": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/174482353/medium.jpg",
+      "credit": "(c) Yanuar Ishaq Dc, some rights reserved (CC BY-NC-SA), uploaded by Yanuar Ishaq Dc",
+      "license": "cc-by-nc-sa"
+    },
+    "Ficus altissima": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/21620838/medium.jpeg",
+      "credit": "(c) Wayne Fidler, some rights reserved (CC BY-NC), uploaded by Wayne Fidler",
+      "license": "cc-by-nc"
+    },
+    "Flacourtia indica": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/1307595/medium.jpg",
+      "credit": "(c) Graeme White, some rights reserved (CC BY-NC), uploaded by Graeme White",
+      "license": "cc-by-nc"
+    },
+    "Hemarthria altissima": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/261882253/medium.jpg",
+      "credit": "(c) François Rousseu, some rights reserved (CC BY-NC), uploaded by François Rousseu",
+      "license": "cc-by-nc"
+    },
+    "Heteropogon contortus": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/42008917/medium.jpeg",
+      "credit": "(c) Siddarth Machado, some rights reserved (CC BY), uploaded by Siddarth Machado",
+      "license": "cc-by"
+    },
+    "Heteropogon melanocarpus": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/235368499/medium.jpeg",
+      "credit": "(c) Ryan Fessenden, some rights reserved (CC BY-NC), uploaded by Ryan Fessenden",
+      "license": "cc-by-nc"
+    },
+    "Heteropterys brachiata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/8841929/medium.jpg",
+      "credit": "(c) Neptalí Ramírez Marcial, some rights reserved (CC BY), uploaded by Neptalí Ramírez Marcial",
+      "license": "cc-by"
+    },
+    "Hyparrhenia rufa": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/330949981/medium.jpg",
+      "credit": "(c) Darren Fielder, some rights reserved (CC BY-NC), uploaded by Darren Fielder",
+      "license": "cc-by-nc"
+    },
+    "Kalanchoe pinnata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/342176977/medium.jpg",
+      "credit": "(c) onidiras-iNaturalist, some rights reserved (CC BY-NC), uploaded by onidiras-iNaturalist",
+      "license": "cc-by-nc"
+    },
+    "Landoltia punctata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/247453581/medium.jpg",
+      "credit": "(c) Eric Blomberg, some rights reserved (CC BY-NC-ND), uploaded by Eric Blomberg",
+      "license": "cc-by-nc-nd"
+    },
+    "Leucaena leucocephala": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/173810094/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Limnophila sessiliflora": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/221128489/medium.jpeg",
+      "credit": "(c) chiuluan, some rights reserved (CC BY), uploaded by chiuluan",
+      "license": "cc-by"
+    },
+    "Livistona chinensis": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/121324857/medium.jpg",
+      "credit": "(c) Forest and Kim Starr, some rights reserved (CC BY)",
+      "license": "cc-by"
+    },
+    "Macroptilium lathyroides": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/114162116/medium.jpeg",
+      "credit": "(c) Matt Reala, some rights reserved (CC BY-NC), uploaded by Matt Reala",
+      "license": "cc-by-nc"
+    },
+    "Melaleuca viminalis": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/357825157/medium.jpeg",
+      "credit": "(c) nature-lover2, some rights reserved (CC BY-NC)",
+      "license": "cc-by-nc"
+    },
+    "Melia azedarach": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/33351307/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Melinis minutiflora": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/62422971/medium.jpg",
+      "credit": "(c) Mauricio Mercadante, some rights reserved (CC BY-NC-SA)",
+      "license": "cc-by-nc-sa"
+    },
+    "Mikania micrantha": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/252393368/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Momordica charantia": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/269347188/medium.jpg",
+      "credit": "(c) Douglas Goldman, some rights reserved (CC BY-SA), uploaded by Douglas Goldman",
+      "license": "cc-by-sa"
+    },
+    "Murraya paniculata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/169096158/medium.jpg",
+      "credit": "(c) jinze, some rights reserved (CC BY-NC), uploaded by jinze",
+      "license": "cc-by-nc"
+    },
+    "Myriophyllum spicatum": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/51150740/medium.jpg",
+      "credit": "(c) Association de bassin versant des 7 (ABV7), some rights reserved (CC BY-NC), uploaded by Association de bassin versant des 7 (ABV7)",
+      "license": "cc-by-nc"
+    },
+    "Noronhia emarginata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/48869928/medium.jpg",
+      "credit": "(c) Jean-Philippe BASUYAUX, some rights reserved (CC BY-NC), uploaded by Jean-Philippe BASUYAUX",
+      "license": "cc-by-nc"
+    },
+    "Passiflora biflora": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/2359229/medium.jpg",
+      "credit": "(c) Cheongweei Gan, some rights reserved (CC BY-NC), uploaded by Cheongweei Gan",
+      "license": "cc-by-nc"
+    },
+    "Phoenix reclinata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/12342659/medium.jpg",
+      "credit": "(c) seasav, some rights reserved (CC BY-NC-ND), uploaded by seasav",
+      "license": "cc-by-nc-nd"
+    },
+    "Phyllostachys aurea": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/365026800/medium.jpeg",
+      "credit": "(c) Abrahami, some rights reserved (CC BY-SA)",
+      "license": "cc-by-sa"
+    },
+    "Pittosporum pentandrum": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/62228342/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Platycerium bifurcatum": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/322960815/medium.jpeg",
+      "credit": "(c) Leon Perrie, some rights reserved (CC BY), uploaded by Leon Perrie",
+      "license": "cc-by"
+    },
+    "Praxelis clematidea": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/59888189/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Pteris tripartita": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/565154900/medium.jpg",
+      "credit": "(c) Frederico Acaz Sonntag, some rights reserved (CC BY-NC), uploaded by Frederico Acaz Sonntag",
+      "license": "cc-by-nc"
+    },
+    "Pteris vittata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/111610523/medium.jpg",
+      "credit": "(c) irisyu, some rights reserved (CC BY-NC-ND), uploaded by irisyu",
+      "license": "cc-by-nc-nd"
+    },
+    "Ptychosperma elegans": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/117946017/medium.jpeg",
+      "credit": "(c) Steve Fitzgerald, some rights reserved (CC BY-SA), uploaded by Steve Fitzgerald",
+      "license": "cc-by-sa"
+    },
+    "Richardia grandiflora": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/4290/medium.jpg",
+      "credit": "(c) Alex Popovkin, some rights reserved (CC BY-NC-ND)",
+      "license": "cc-by-nc-nd"
+    },
+    "Ricinus communis": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/224419959/medium.jpeg",
+      "credit": "(c) Bram Stynen, some rights reserved (CC BY-NC), uploaded by Bram Stynen",
+      "license": "cc-by-nc"
+    },
+    "Rotala rotundifolia": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/33791619/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Ruellia blechum": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/54603621/medium.jpg",
+      "credit": "(c) Felipe Campos, some rights reserved (CC BY-NC), uploaded by Felipe Campos",
+      "license": "cc-by-nc"
+    },
+    "Selenicereus pteranthus": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/1540880/medium.jpg",
+      "credit": "(c) Mike Keeling, some rights reserved (CC BY-ND)",
+      "license": "cc-by-nd"
+    },
+    "Sesbania punicea": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/15197140/medium.jpg",
+      "credit": "(c) magriet b, some rights reserved (CC BY-SA), uploaded by magriet b",
+      "license": "cc-by-sa"
+    },
+    "Sida planicaulis": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/341322740/medium.jpeg",
+      "credit": "(c) Júlio Castellain, some rights reserved (CC BY), uploaded by Júlio Castellain",
+      "license": "cc-by"
+    },
+    "Solanum diphyllum": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/97746517/medium.jpg",
+      "credit": "(c) gloriamarkiewicz, some rights reserved (CC BY-NC)",
+      "license": "cc-by-nc"
+    },
+    "Solanum torvum": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/116176221/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Spermacoce verticillata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/56443261/medium.jpeg",
+      "credit": "(c) GILBERT, some rights reserved (CC BY-NC), uploaded by GILBERT",
+      "license": "cc-by-nc"
+    },
+    "Sphagneticola trilobata": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/43898069/medium.jpeg",
+      "credit": "no rights reserved, uploaded by 葉子",
+      "license": "cc0"
+    },
+    "Stachytarpheta cayennensis": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/269453993/medium.jpeg",
+      "credit": "(c) David Anderson, some rights reserved (CC BY), uploaded by David Anderson",
+      "license": "cc-by"
+    },
+    "Syagrus romanzoffiana": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/123453473/medium.jpg",
+      "credit": "(c) mauro halpern, some rights reserved (CC BY)",
+      "license": "cc-by"
+    },
+    "Syzygium jambos": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/32269153/medium.jpeg",
+      "credit": "(c) 謝忠良, some rights reserved (CC BY-NC), uploaded by 謝忠良",
+      "license": "cc-by-nc"
+    },
+    "Tabebuia heterophylla": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/294781/medium.jpeg",
+      "credit": "(c) Smithsonian Institution, National Museum of Natural History, Department of Botany, some rights reserved (CC BY-NC-SA)",
+      "license": "cc-by-nc-sa"
+    },
+    "Terminalia catappa": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/14371751/medium.jpg",
+      "credit": "(c) Forest & Kim Starr, some rights reserved (CC BY)",
+      "license": "cc-by"
+    },
+    "Terminalia muelleri": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/250673607/medium.jpeg",
+      "credit": "(c) Matt B, some rights reserved (CC BY), uploaded by Matt B",
+      "license": "cc-by"
+    },
+    "Tradescantia zebrina": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/248349882/medium.jpeg",
+      "credit": "(c) Ricard Busquets Reverte, some rights reserved (CC BY), uploaded by Ricard Busquets Reverte",
+      "license": "cc-by"
+    },
+    "Tribulus cistoides": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/81046372/medium.jpg",
+      "credit": "(c) karlwerner, some rights reserved (CC BY-NC)",
+      "license": "cc-by-nc"
+    },
+    "Vernicia fordii": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/31693644/medium.jpg",
+      "credit": "(c) Alvin Diamond, some rights reserved (CC BY-NC), uploaded by Alvin Diamond",
+      "license": "cc-by-nc"
+    },
+    "Vitex trifolia": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/218964156/medium.jpg",
+      "credit": "(c) krystalnaomis, some rights reserved (CC BY-NC)",
+      "license": "cc-by-nc"
+    },
+    "Washingtonia robusta": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/249270666/medium.jpeg",
+      "credit": "(c) itazura, some rights reserved (CC BY-NC)",
+      "license": "cc-by-nc"
+    },
+    "Wisteria sinensis": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/481687145/medium.jpeg",
+      "credit": "(c) Collin Willson, some rights reserved (CC BY-NC), uploaded by Collin Willson",
+      "license": "cc-by-nc"
+    },
+    "Xanthosoma sagittifolium": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/4676869/medium.jpg",
+      "credit": "(c) Roberto R. Calderón, some rights reserved (CC BY-NC), uploaded by Roberto R. Calderón",
+      "license": "cc-by-nc"
+    },
+    "Asclepias tuberosa": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/206558098/medium.jpeg",
+      "credit": "(c) Michael J. Papay, some rights reserved (CC BY), uploaded by Michael J. Papay",
+      "license": "cc-by"
+    },
+    "Sabal palmetto": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/217939258/medium.jpg",
+      "credit": "(c) camilleclark, some rights reserved (CC BY-NC)",
+      "license": "cc-by-nc"
+    },
+    "Conocarpus erectus": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/99889650/medium.jpeg",
+      "credit": "(c) Clifton Albrecht, some rights reserved (CC BY-NC), uploaded by Clifton Albrecht",
+      "license": "cc-by-nc"
+    },
+    "Rhizophora mangle": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/125165299/medium.jpg",
+      "credit": "(c) James St. John, some rights reserved (CC BY)",
+      "license": "cc-by"
+    },
+    "Coreopsis leavenworthii": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/30546711/medium.jpeg",
+      "credit": "(c) Judy Gallagher, some rights reserved (CC BY-SA), uploaded by Judy Gallagher",
+      "license": "cc-by-sa"
+    },
+    "Ilex vomitoria": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/1280560/medium.jpg",
+      "credit": "(c) Laura Clark, some rights reserved (CC BY), uploaded by Laura Clark",
+      "license": "cc-by"
+    },
+    "Salvia coccinea": {
+      "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/14351934/medium.jpg",
+      "credit": "no rights reserved, uploaded by Brady Reed",
+      "license": "cc0"
+    }
+  }
+}
