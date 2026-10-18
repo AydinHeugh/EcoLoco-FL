@@ -6,7 +6,7 @@ import {
 import { useFonts } from 'expo-font';
 import { getPlantRecommendations, userMessage } from '../services/geminiService';
 import { COLORS, FONTS, FONT_ASSETS } from '../theme';
-import PlanCard, { NOT_SOUTH_FLORIDA } from '../components/PlanCard';
+import PlanCard, { NOT_CHECKED_HERE } from '../components/PlanCard';
 import LocationPicker from '../components/LocationPicker';
 
 const LOGO = require('../../assets/EcoLoco_logo.png');
@@ -42,7 +42,7 @@ export default function RecommendationScreen({ route }) {
     setResults(null);
     try {
       const data = await getPlantRecommendations(target);
-      setResults({ cards: data.result, southFlorida: data.south_florida !== false });
+      setResults({ cards: data.result, plantingsChecked: data.plantings_checked !== false });
     } catch (err) {
       setError(userMessage(err, 'Could not get recommendations. Check your connection and try again.'));
     } finally {
@@ -80,8 +80,8 @@ export default function RecommendationScreen({ route }) {
 
         {results && !loading && (
           <View style={styles.resultsSection}>
-            {!results.southFlorida
-              ? <Text style={styles.emptyText}>{NOT_SOUTH_FLORIDA}</Text>
+            {!results.plantingsChecked
+              ? <Text style={styles.emptyText}>{NOT_CHECKED_HERE}</Text>
               : results.cards.length === 0
                 ? <Text style={styles.emptyText}>No plants are ready to recommend yet. Our team is still checking each one.</Text>
                 : results.cards.map(card => <PlanCard key={card.scientific_name} card={card} kind="add" />)}

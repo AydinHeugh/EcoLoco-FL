@@ -74,9 +74,9 @@ def test_ecoscan_asks_for_real_outdoor_plants():
     assert "Only scan real plants growing outdoors." in (FRONTEND / "screens" / "AuditScreen.js").read_text(encoding="utf-8")
 
 
-def test_outside_south_florida_message_is_exact():
+def test_unchecked_area_message_is_exact():
     text = (FRONTEND / "components" / "PlanCard.js").read_text(encoding="utf-8")
-    assert "'Planting recommendations are only checked for South Florida so far.'" in text
+    assert "'Planting recommendations are only checked for Palm Beach County so far.'" in text
 
 
 def test_atlas_button_opens_in_app_browser_only_with_a_link():
