@@ -197,7 +197,9 @@
         "Plants with no wildlife facts in our data say \"We don't have wildlife info for this plant yet\".",
         "'Get native plant recommendations for ZIP' → `navigate('Recommend', {prefillZip})`. A \"Plant identification powered by Pl@ntNet\" credit links to plantnet.org.",
         "Plants we recommend and have checked show a \"See where it grows\" button (`AtlasButton`) that opens that plant's USF Atlas page in an in-app browser.",
-        "Colors and fonts come from `frontend/theme.js`."
+        "Colors and fonts come from `frontend/theme.js`.",
+        "The facts under a result each have an icon and fade in one after another. \"Identify Plant\" presses in slightly when touched (`PressScale`).",
+        "The result shows our photo of the plant (with its credit): as the main picture when the plant was chosen by name, or beside your photo as \"What … looks like\" so you can compare."
       ]
     },
     {
@@ -270,7 +272,9 @@
         "Seen near you: if the scan has a location, the top 5 plants people photographed within about 5 km (iNaturalist), each with its status.",
         "Why this matters: up to 4 short lines from `why_this_matters.json`, each with its source.",
         "`LetterGenerator` writes the letter from the plan; it starts fresh whenever the plants or ticks change. Errors show as text.",
-        "Below the Add cards, \"Show all plants that fit (N more)\" asks for every fitting plant; the extra ones start unticked (\"The extra plants start outside your letter. Tick one to add it.\"), and ticking one adds it to `extras`. \"Show fewer plants\" goes back to 5."
+        "Below the Add cards, \"Show all plants that fit (N more)\" asks for every fitting plant; the extra ones start unticked (\"The extra plants start outside your letter. Tick one to add it.\"), and ticking one adds it to `extras`. \"Show fewer plants\" goes back to 5.",
+        "Every scanned plant and every \"Seen near you\" plant shows its photo and credit. \"Seen near you\" also draws a bar for how often each plant was seen, which grows as it counts up, and explains why the list is useful. \"Why this matters\" says what it is for, and each line has an icon.",
+        "The four group counts have status icons; the campus list, \"Why this matters\" lines and plan cards fade up as they scroll into view."
       ]
     },
     {
@@ -770,7 +774,8 @@
         "Uses our list's common name first, then PlantNet's, then the scientific name, so a name is never blank.",
         "Non-native plants from USDA with no curated line get `why`: \"Not from Florida, and not on Florida's invasive list.\"",
         "Adds `helps` and `watch_out` from `fl_recommendations.json`, `atlas_url` when that plant is verified, and `removal_safety` from the FISC list when we have them.",
-        "Returns `{plant_name, scientific_name, confidence, status, status_label, source, source_label, why}`."
+        "Returns `{plant_name, scientific_name, confidence, status, status_label, source, source_label, why}`.",
+        "Adds `photo` from `photo_for()`: an openly licensed iNaturalist photo of the plant with its credit, or `None`."
       ]
     },
     {
@@ -825,7 +830,7 @@
         "`percent_native` = native plants ÷ plants with a known status, rounded; `None` when no plant has a known status.",
         "Kinds: each species with a known status counts once however many times it was scanned (two coonties are one kind). `kinds` holds the counts and `percent_native_kinds` the share of kinds that are native.",
         "\"With the plan\" numbers come from `with_plan()`; by default every invasive counts as replaced, but `build_plan()` passes only the ones that got a replacement.",
-        "Returns `{counts, known, plant_count, percent_native, kinds, percent_native_kinds, kind_status, ... with-plan numbers, plants}`; `plants` lists each one with its name, status label, `why` and source label, unknowns included."
+        "Returns `{counts, known, plant_count, percent_native, kinds, percent_native_kinds, kind_status, ... with-plan numbers, plants}`; `plants` lists each one with its name, status label, `why`, source label and `photo`, unknowns included."
       ]
     },
     {
@@ -916,7 +921,7 @@
         "Add cards say why they were picked and their effect: \"Oaks feed 395 kinds of caterpillars here.\" for NWF groups, otherwise the percent-native change. Counts are never added up.",
         "With `plantings_checked=False` no plant is recommended: Remove cards keep their why and safety but get no replacement or percent change, and there are no Add cards.",
         "`skip` lists Add plants the user unticked: they stay in `add` with `in_letter: false` but don't count in the \"with the plan\" numbers, and a Remove card whose replacement is skipped loses its percent change. With `show_all`, every fitting plant is added; the ones past the first 5 have `extra: true` and stay out of the letter and the numbers unless they are in `letter_extras`.",
-        "Returns `{remove, add, gaps, summary, why_this_matters, plantings_checked, site, hidden_by_site, more_available}`; every Add card has `in_letter` and `extra`.",
+        "Returns `{remove, add, gaps, summary, why_this_matters, plantings_checked, site, hidden_by_site, more_available}`; every Add card has `in_letter` and `extra`. Remove and Add cards carry `photo` from `photo_for()`.",
         "Looks the scanned plants up once and reuses that for the final summary through `with_plan()`."
       ]
     },
@@ -1010,10 +1015,11 @@
       "row": 4.2,
       "what": "One Remove or Add card in the plan, with every fact followed by its source.",
       "how": [
-        "Add cards: name, why it was picked, effect, then Helps / Where / Buying it / Watch out / Look into. On the results screen they have an \"In my letter\" checkbox; ticking it pops the box with a light tap, and the card fades to dim when unticked.",
-        "Remove cards: name, Invasive badge, Why, Safety, and what to replace it with (left out when `plantingsChecked` is false). `NOT_CHECKED_HERE` holds the message screens show instead of Add cards.",
-        "Shows 2 rows and a \"More\" button for the rest; the extra rows fade and slide in one after another.",
-        "`SourceLine` (frontend/components/SourceLine.js) shows \"Source: …\" in small text and opens the link.",
+        "Header: the plant photo, the name, then a small tag saying why it was picked (fills a gap, replaces an invasive, or another good native) or the Invasive badge. Add cards on the results screen also have an \"In my letter\" checkbox; ticking it pops the box with a light tap, and the card fades to dim when unticked.",
+        "The effect (\"Adding it takes you from X% to Y% native\" or the caterpillar count) sits in its own shaded strip with an arrow icon.",
+        "Rows (Helps, Where, Buying it, Watch out, Look into; or Why, Safety, Replace with) each have an icon and the same spacing, whether or not a source follows.",
+        "Shows 2 rows and a \"More\" button whose arrow turns as it opens; the extra rows fade and slide in one after another.",
+        "`SourceLine` shows \"Source: …\" in small text and opens the link. The photo credit sits at the bottom.",
         "Add cards end with `AtlasButton` (\"See where it grows\") when the card has an `atlas_url`."
       ]
     },
@@ -1029,7 +1035,8 @@
       "what": "The 4 short \"Why this matters\" lines on the results screen, each with a checked source.",
       "how": [
         "Birds and insects (National Wildlife Federation), fertilizer and algae blooms (UF/IFAS), invasive plants and flood control (South Florida Water Management District), and the chickadee study (Narango et al., 2018).",
-        "`build_plan()` returns them as `why_this_matters`."
+        "`build_plan()` returns them as `why_this_matters`.",
+        "Each line has an `icon` name for the results screen."
       ]
     },
     {
@@ -1121,7 +1128,8 @@
       "how": [
         "Asks iNaturalist for research-grade plant sightings within 5 km of the rounded location.",
         "Runs each one through `plant_option()` so it shows Native, Non-native, Invasive or Unknown.",
-        "Returns `[]` if iNaturalist can't be reached. Nothing about the location is saved or logged."
+        "Returns `[]` if iNaturalist can't be reached. Nothing about the location is saved or logged.",
+        "Each plant carries `photo`: iNaturalist's own photo when it has an open license, otherwise the one from `plant_option()`."
       ]
     },
     {
@@ -1219,7 +1227,8 @@
       "how": [
         "StatusBars: a \"Now\" and a \"With plan\" bar split into native, non-native and invasive, from `summary.counts` and `summary.counts_with_plan`, with the numbers written under each bar.",
         "CaterpillarBars (frontend/components/CaterpillarBars.js): one bar per plan card whose plant group is on the NWF list, marked add or remove, showing that group's number of caterpillar species. Numbers are never added together, and the source is shown.",
-        "Each caterpillar bar grows and its number counts up when it scrolls into view (`useCountUp`)."
+        "Each caterpillar bar grows and its number counts up when it scrolls into view (`useCountUp`).",
+        "The \"now\" and \"with the plan\" bars grow from left to right when they scroll into view."
       ]
     },
     {
@@ -1797,6 +1806,79 @@
       "how": [
         "Kept in memory only; it is never saved and is gone when the app closes.",
         "`rememberPlace(place)` stores it; `lastPlace()` reads it."
+      ]
+    },
+    {
+      "id": "s_photo",
+      "label": "photo_for()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/photo_service.py",
+      "symbol": "def photo_for(",
+      "col": 6,
+      "row": 7.4,
+      "what": "Finds the photo we have for a plant, with its photographer credit and license.",
+      "how": [
+        "Looks the scientific name up in `plant_photos.json`; returns `{url, credit, license}` or `None`.",
+        "Never calls the internet while the app runs, so tests and scans stay fast."
+      ]
+    },
+    {
+      "id": "d_photos",
+      "label": "plant_photos.json",
+      "layer": "data",
+      "status": "live",
+      "file": "backend/data/plant_photos.json",
+      "symbol": null,
+      "col": 7,
+      "row": 7.4,
+      "what": "One openly licensed iNaturalist photo for each plant on our lists, with its credit.",
+      "how": [
+        "Built by `scripts/build_plant_photos.py` from the recommended plants, the FISC list and our native and non-native lists.",
+        "Only photos with an open Creative Commons license are kept; plants without one get no photo."
+      ]
+    },
+    {
+      "id": "ui_photo",
+      "label": "PlantPhoto",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/PlantPhoto.js",
+      "symbol": "export default function PlantPhoto",
+      "col": 3,
+      "row": 9,
+      "what": "A rounded plant photo, or a 🌱 plant emoji when there is none, plus the photo credit line.",
+      "how": [
+        "Uses expo-image so the photo fades in.",
+        "`PhotoCredit` turns the iNaturalist credit into \"Photo: name, license, via iNaturalist\"."
+      ]
+    },
+    {
+      "id": "ui_press",
+      "label": "PressScale",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/PressScale.js",
+      "symbol": "export default function PressScale",
+      "col": 3,
+      "row": 10,
+      "what": "A button that presses in slightly when touched.",
+      "how": [
+        "Used for Identify Plant, Scan all and See my results. Turns off with reduce motion."
+      ]
+    },
+    {
+      "id": "ui_tabicon",
+      "label": "TabIcon",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/TabIcon.js",
+      "symbol": "export default function TabIcon",
+      "col": 0,
+      "row": 4,
+      "what": "A tab bar icon that pops and gives a light tap when you switch to its tab.",
+      "how": [
+        "The pop turns off with reduce motion; the tap still happens on phones."
       ]
     }
   ],
@@ -2578,6 +2660,46 @@
       "from": "rec",
       "to": "ui_lastplace",
       "label": "lastPlace()"
+    },
+    {
+      "from": "s_plan",
+      "to": "s_photo",
+      "label": "photo_for(name)"
+    },
+    {
+      "from": "s_photo",
+      "to": "d_photos",
+      "label": "reads"
+    },
+    {
+      "from": "ui_plancard",
+      "to": "ui_photo",
+      "label": "card.photo"
+    },
+    {
+      "from": "results",
+      "to": "ui_photo",
+      "label": "plant photos"
+    },
+    {
+      "from": "app",
+      "to": "ui_tabicon",
+      "label": "tab icons"
+    },
+    {
+      "from": "ident",
+      "to": "ui_press",
+      "label": "Identify Plant"
+    },
+    {
+      "from": "audit",
+      "to": "ui_press",
+      "label": "Scan all, See my results"
+    },
+    {
+      "from": "s_option",
+      "to": "s_photo",
+      "label": "photo_for(name)"
     }
   ]
 }</script>

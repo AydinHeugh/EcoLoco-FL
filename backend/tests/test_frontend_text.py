@@ -185,7 +185,7 @@ def test_motion_is_short_and_respects_reduce_motion():
     motion = (FRONTEND / "motion.js").read_text(encoding="utf-8")
     assert int(re.search(r"export const DURATION = (\d+);", motion).group(1)) <= 400
     assert "isReduceMotionEnabled" in motion
-    for name in ("Reveal.js", "StatusBadge.js", "PercentRing.js", "ScanningLeaf.js", "HomeDemos.js", "PlanCard.js", "CountUp.js"):
+    for name in ("Reveal.js", "StatusBadge.js", "PercentRing.js", "ScanningLeaf.js", "HomeDemos.js", "PlanCard.js", "CountUp.js", "PressScale.js", "TabIcon.js"):
         assert "useReduceMotion" in (FRONTEND / "components" / name).read_text(encoding="utf-8"), name
     assert "useReduceMotion" in (FRONTEND / "screens" / "HomeScreen.js").read_text(encoding="utf-8")
     for p in FILES:
@@ -235,3 +235,22 @@ def test_quick_loads_do_not_flash():
 def test_ecoscan_location_can_change_after_scanning():
     text = (FRONTEND / "screens" / "AuditScreen.js").read_text(encoding="utf-8")
     assert "setChangingPlace(true)" in text and "Your scanned plants stay as they are." in text
+
+
+def test_cards_and_lists_show_plant_photos_with_credit():
+    for path in ("components/PlanCard.js", "screens/AuditResultsScreen.js"):
+        text = (FRONTEND / path).read_text(encoding="utf-8")
+        assert "<PlantPhoto" in text and "<PhotoCredit" in text
+    assert "via iNaturalist" in (FRONTEND / "components" / "PlantPhoto.js").read_text(encoding="utf-8")
+
+
+def test_nearby_and_why_sections_explain_themselves():
+    text = (FRONTEND / "screens" / "AuditResultsScreen.js").read_text(encoding="utf-8")
+    assert "so they are good choices to plant. An invasive plant on this list could spread onto your campus" in text
+    assert "The reasons behind your plan, each with its source. Use them to back up your letter." in text
+
+
+def test_every_why_line_has_an_icon():
+    import json
+    lines = json.loads((DATA / "why_this_matters.json").read_text(encoding="utf-8"))["lines"]
+    assert all(line.get("icon") for line in lines)

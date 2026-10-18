@@ -1,7 +1,7 @@
 import { NavigationContainer } from '@react-navigation/native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
-import { Ionicons } from '@expo/vector-icons'
+import TabIcon, { tabPressed } from '../components/TabIcon'
 
 import HomeScreen from '../screens/HomeScreen'
 import IdentificationScreen from '../screens/IdentificationScreen'
@@ -17,6 +17,7 @@ const Stack = createNativeStackNavigator()
 function TabNavigator() {
   return (
     <Tab.Navigator
+      screenListeners={({ route }) => ({ tabPress: () => tabPressed(route.name) })}
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
@@ -36,7 +37,7 @@ function TabNavigator() {
             EcoScan:  'scan-outline',
             Recommend:'thumbs-up',
           }
-          return <Ionicons name={icons[route.name]} size={size} color={color} />
+          return <TabIcon routeName={route.name} name={icons[route.name]} size={size} color={color} />
         },
       })}
     >

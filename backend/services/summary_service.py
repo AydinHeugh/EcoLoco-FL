@@ -4,7 +4,7 @@ from services.fl_plants_service import plant_option
 
 COUNT_KEYS = {"native": "native", "non-native": "non_native", "invasive": "invasive", "unknown": "unknown"}
 KIND_KEYS = ("native", "non_native", "invasive")
-LISTED_KEYS = ("plant_name", "scientific_name", "status", "status_label", "why", "source_label")
+LISTED_KEYS = ("plant_name", "scientific_name", "status", "status_label", "why", "source_label", "photo")
 
 
 def _percent(part, whole):

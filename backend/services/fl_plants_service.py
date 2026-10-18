@@ -3,6 +3,7 @@ import logging
 from functools import cache
 
 from services import usda_service
+from services.photo_service import photo_for
 from services.species_service import DATA_DIR, resolve, common_name as species_common_name
 
 log = logging.getLogger(__name__)
@@ -83,6 +84,7 @@ def plant_option(scientific_name, common_name, confidence, zip_code):
         "source": status["source"],
         "source_label": SOURCE_LABELS.get(status["source"]),
         "why": why,
+        "photo": photo_for(canonical),
     }
     facts = _by_name("fl_recommendations.json").get(canonical, {})
     for key in ("helps", "watch_out"):

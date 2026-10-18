@@ -8,6 +8,7 @@ from functools import cache
 import requests
 
 from services.fl_plants_service import plant_option
+from services.photo_service import OPEN_LICENSES
 from services.species_service import DATA_DIR
 
 log = logging.getLogger(__name__)
@@ -104,7 +105,12 @@ def seen_near(lat, lon):
     def option(row):
         taxon = row.get("taxon") or {}
         found = plant_option(taxon.get("name", ""), (taxon.get("preferred_common_name") or "").capitalize(), 0.0, "")
-        return {**found, "count": row.get("count", 0)}
+        photo = taxon.get("default_photo") or {}
+        if photo.get("license_code") in OPEN_LICENSES and photo.get("medium_url"):
+            shown = {"url": photo["medium_url"], "credit": photo.get("attribution", ""), "license": photo["license_code"]}
+        else:
+            shown = found["photo"]
+        return {**found, "count": row.get("count", 0), "photo": shown}
 
     with ThreadPoolExecutor(max_workers=NEARBY_COUNT) as pool:
         return list(pool.map(option, results))

@@ -4,6 +4,7 @@ from collections import Counter
 from functools import cache
 
 from services.species_service import DATA_DIR, resolve
+from services.photo_service import photo_for
 from services.summary_service import summarize, with_plan
 
 MAX_ADDS = 5
@@ -192,6 +193,7 @@ def build_plan(plants, plantings_checked=True, skip=(), site=None, show_all=Fals
             "source_label": invasive["source_label"],
             "removal_safety": _fisc_by_name().get(name, {}).get("removal_safety", GENERIC_SAFETY),
             "replacement": pick["scientific_name"] if pick else None,
+            "photo": photo_for(name),
         })
         if pick is not None and pick["scientific_name"] not in skip:
             replaced += scans[name]
@@ -223,6 +225,7 @@ def build_plan(plants, plantings_checked=True, skip=(), site=None, show_all=Fals
     for rec in chosen:
         card = dict(rec, where=f"{rec['sun']}. {rec['mature_size']}.", in_letter=rec["scientific_name"] not in skip)
         card.setdefault("extra", False)
+        card["photo"] = photo_for(rec["scientific_name"])
         if nwf := _nwf_count(rec["scientific_name"]):
             card["nwf"] = nwf
         if card["effect"] is None:

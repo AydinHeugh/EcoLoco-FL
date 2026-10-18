@@ -29,6 +29,10 @@ import AtlasButton from '../components/AtlasButton';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
 import { useProgressText } from '../components/ProgressText';
 import LocationPicker from '../components/LocationPicker';
+import PressScale from '../components/PressScale';
+import PlantPhoto, { PhotoCredit } from '../components/PlantPhoto';
+import Reveal from '../components/Reveal';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { rememberPlace } from '../lastPlace';
 
 
@@ -291,7 +295,7 @@ export default function IdentificationScreen({ navigation }) {
         </View>
 
         {/* ── Identify button ── */}
-        <TouchableOpacity
+        <PressScale
           style={[styles.identifyBtn, !canIdentify && styles.identifyBtnDisabled]}
           onPress={handleIdentify}
           disabled={!canIdentify}
@@ -300,7 +304,7 @@ export default function IdentificationScreen({ navigation }) {
             ? <ActivityIndicator color={COLORS.cream} size="small" />
             : <Text style={styles.identifyBtnText}>Identify Plant</Text>
           }
-        </TouchableOpacity>
+        </PressScale>
 
         {zipCode.length === 5 && !naming && (
           <TouchableOpacity style={styles.byName} onPress={() => setNaming(true)}>
@@ -359,14 +363,23 @@ export default function IdentificationScreen({ navigation }) {
 
             {shown && (
               <View style={[styles.resultCard, narrow && styles.resultCardNarrow]}>
-                {photo && (
+                {photo ? (
                   <Image source={{ uri: photo.uri }} style={[styles.resultThumb, narrow && styles.resultThumbNarrow]} resizeMode="cover" />
-                )}
+                ) : shown.photo ? (
+                  <PlantPhoto photo={shown.photo} radius={0} label={shown.plant_name} style={[styles.resultThumb, narrow && styles.resultThumbNarrow]} />
+                ) : null}
                 <View style={styles.resultInfo}>
                   <Text style={styles.plantName}>{shown.plant_name}</Text>
                   <StatusBadge key={shown.scientific_name} pop status={shown.status} label={shown.status_label} />
                   {!shown.why && !shown.helps && <Text style={styles.noData}>We don't have wildlife info for this plant yet</Text>}
+                  {photo && shown.photo && (
+                    <View style={styles.compare}>
+                      <PlantPhoto photo={shown.photo} size={56} radius={12} label={shown.plant_name} />
+                      <Text style={styles.compareText}>What {shown.plant_name.toLowerCase()} looks like</Text>
+                    </View>
+                  )}
                   <AtlasButton url={shown.atlas_url} />
+                  <PhotoCredit photo={shown.photo} />
                 </View>
               </View>
             )}
@@ -374,16 +387,21 @@ export default function IdentificationScreen({ navigation }) {
             {shown && (shown.why || shown.helps || shown.watch_out || shown.removal_safety) && (
               <View style={styles.facts}>
                 {[
-                  shown.why && { label: 'Why it matters', text: shown.why, source: { name: shown.source_label } },
-                  shown.helps && { label: 'Helps', text: shown.helps.text, source: shown.helps.source },
-                  ...(shown.watch_out ?? []).map(w => ({ label: 'Watch out', text: w.text, source: w.source })),
-                  shown.removal_safety && { label: 'Removing it safely', text: shown.removal_safety.text, source: shown.removal_safety.source },
+                  shown.why && { label: 'Why it matters', icon: 'leaf', text: shown.why, source: { name: shown.source_label } },
+                  shown.helps && { label: 'Helps', icon: 'butterfly-outline', text: shown.helps.text, source: shown.helps.source },
+                  ...(shown.watch_out ?? []).map(w => ({ label: 'Watch out', icon: 'alert-outline', text: w.text, source: w.source })),
+                  shown.removal_safety && { label: 'Removing it safely', icon: 'hand-back-right-outline', text: shown.removal_safety.text, source: shown.removal_safety.source },
                 ].filter(Boolean).map((fact, i) => (
-                  <View key={i} style={styles.fact}>
-                    <Text style={styles.factLabel}>{fact.label}</Text>
-                    <Text style={styles.factText}>{fact.text}</Text>
-                    <SourceLine source={fact.source} />
-                  </View>
+                  <Reveal key={`${shown.scientific_name}-${i}`} index={i} style={styles.fact}>
+                    <View style={styles.factIcon}>
+                      <MaterialCommunityIcons name={fact.icon} size={18} color={COLORS.seaGrape} />
+                    </View>
+                    <View style={styles.factBody}>
+                      <Text style={styles.factLabel}>{fact.label}</Text>
+                      <Text style={styles.factText}>{fact.text}</Text>
+                      <SourceLine source={fact.source} />
+                    </View>
+                  </Reveal>
                 ))}
               </View>
             )}
@@ -462,9 +480,11 @@ const styles = StyleSheet.create({
   identifyBtnDisabled: { opacity: 0.4 },
   identifyBtnText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.white },
 
-  facts: { marginTop: 18, gap: 16, paddingLeft: 14, borderLeftWidth: 2, borderLeftColor: COLORS.border },
-  fact: { gap: 2 },
-  factLabel: { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.seaGrape },
+  facts: { marginTop: 18, gap: 16 },
+  fact: { flexDirection: 'row', gap: 12 },
+  factIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.seaGrapeSoft, alignItems: 'center', justifyContent: 'center' },
+  factBody: { flex: 1, minWidth: 0, gap: 2 },
+  factLabel: { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
   factText: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: LINE.body },
   noData: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 6 },
   errorText: { color: COLORS.error, fontSize: TYPE.body, fontFamily: FONTS.body, marginHorizontal: 20, marginTop: 8 },
@@ -492,6 +512,8 @@ const styles = StyleSheet.create({
   resultCardNarrow: { flexDirection: 'column' },
   resultThumb: { width: 120, height: 120 },
   resultThumbNarrow: { width: '100%', height: 180 },
+  compare: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  compareText: { flex: 1, fontSize: TYPE.caption, fontFamily: FONTS.bodyMedium, color: COLORS.textMuted },
   thumbs: { paddingHorizontal: 16, paddingTop: 12 },
   clearPhotos: { alignSelf: 'center', paddingVertical: 4 },
   clearPhotosText: { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.accent, textDecorationLine: 'underline' },
