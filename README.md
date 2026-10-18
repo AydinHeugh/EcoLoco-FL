@@ -14,9 +14,12 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 - One to five photos of the same plant (a leaf, a flower, the bark), taken with the camera or uploaded, up to 10 MB each. More photos give a surer match.
 - Your school's location: press "Use my location", or type an address or ZIP code. The app rounds your location to about 1 km before it leaves the phone and never saves it. Only Florida locations work; anywhere else gets a message saying so. Scanning and invasive checks work anywhere in Florida, but plants to add are only suggested in Palm Beach County, the one county our plant list was checked for. Elsewhere the app says "Planting recommendations are only checked for Palm Beach County so far."
 
+If you already know the plant, you can skip the photos: press "Know its name? Choose by name" and start typing a common or scientific name. The list covers every plant the USDA PLANTS Database records in Florida. It shows names only; the plant's status is checked after you pick it, the same way as a scan, and the result says "Chosen by name" instead of a match percentage.
+
 **You get back, for each plant:**
 - Its name and how sure PlantNet is about the match
-- When the app isn't sure, a short list of close matches to pick from ("Which one is it?"), each with its Florida status, plus a "None of these" button
+- When the app isn't sure, a short list of close matches to pick from ("Which one is it?"), each with its Florida status, a small chart of how PlantNet scored each one, which one OpenAI picks (only PlantNet's scores show numbers), plus a "None of these" button. Guesses PlantNet scored under 5% are left out
+- When every close match has the same status (for example two native tickseeds), the app shows that status and "It's one of these:" with the names, instead of asking. You can still pick the exact one
 - When the photo is too unclear to match anything, "Couldn't identify this. Try a close-up of one leaf, or a flower" instead of a guess
 - Whether it's Native, Non-native, Invasive, or "Unknown: not on Florida lists"
 - Where that verdict came from: the Florida invasive species list, our list of Florida natives, or the USDA plant database. The AI never decides this; if none of them know the plant, it stays unknown
@@ -26,17 +29,19 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 - If the AI part is down, a small notice says "Extra descriptions are offline. Plant names and Florida status still work."
 
 **After you scan a whole campus (the EcoScan tab):**
-- The screen reminds you to only scan real plants growing outdoors. Every plant you scan stays in the list. Ones the app isn't sure about show the same "Which one is it?" list, and any card can be removed with ✕.
+- The screen reminds you to only scan real plants growing outdoors. Press "Add plant" for each plant, give it up to 5 photos of that one plant (take them one at a time or upload several at once), then press "Scan all" to scan every plant together, or scan one card at a time. Ones the app isn't sure about show the same "Which one is it?" list, and any card can be removed with ✕.
 - On the results screen, each plant has a Remove button for mistakes like a fake or potted plant. Removing one updates the counts, the percent, the charts, the plan and the letter.
 - Plants are grouped as native, non-native (not invasive), invasive, and unknown. Only invasive plants count as hurting wildlife.
 - How many plants are native, non-native, invasive, or unknown, and what percent of the identified ones are native
 - What that percent would be with the plan: only invasive plants that have a ready replacement, and the native plants the plan adds, are counted
 - Plants the app couldn't identify are still listed, but they aren't counted in the percent
 - A plan: a "Remove" card for each invasive plant found, with a safety note and a native plant to replace it, and "Add" cards for native plants that fill gaps on your campus. Each card shows what the plant helps, where it grows, what to ask for at the nursery (and look-alikes to avoid), what to watch out for, and questions to look into, each fact with its source, plus a "See where it grows" button. Outside Palm Beach County you still get the Remove cards, but no Add cards
+- Optional "Your site" choices (light, moisture, space and care) that narrow the plants to add, here and on the Recommend tab. Light and space use the sun and size we already checked. Moisture and care come from each plant's source page but only narrow the list after a teammate checks them in `docs/plant-site-checklist.csv`; until then they never hide a plant
 - A link to plantrealflorida.org to find a native plant nursery
 - Two simple charts: plants by status now and with the plan, and how many kinds of caterpillars each plant's group feeds (from the National Wildlife Federation)
 - "Seen near you": the five plants people have photographed most within about 5 km of your school (from iNaturalist), each marked native, non-native, invasive or unknown
 - A short "Why this matters" section: four facts about native plants, birds, water and flooding, each with its source
+- An "In my letter" checkbox on each plant to add. Untick one to leave it out of the letter and the "with the plan" numbers
 - An editable letter to your principal listing the plants to remove and add, how to buy them, safety notes, the percent native now and with the plan, and sources
 
 
@@ -46,7 +51,7 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
    - Different names for the same plant (for example "Zamia pumila" and "Zamia integrifolia", both coontie) are merged first, and their scores added together.
    - If PlantNet's top score is under 0.20, or it finds no plant at all, the app says it couldn't identify the photo.
    - If PlantNet is sure (top score 0.80 or higher, and clearly ahead of the next one), its answer is used.
-   - In between, you pick from the close matches. OpenAI's image model (gpt-4o-mini) only marks its best guess in that list; it doesn't change the scores.
+   - In between, you pick from the close matches. OpenAI's image model (gpt-4o-mini) marks its pick in that list; it doesn't change PlantNet's scores, and only PlantNet's scores are shown as numbers. Guesses PlantNet scored under 5% are dropped first.
    - If PlantNet can't be reached, OpenAI identifies the plant from the photos on its own, using the same rules.
 2. **Native or invasive.** Any name for the plant (scientific name, older name, or common name like "Florida arrowroot") is turned into one species first, so every spelling gets the same answer. Then it's checked in this order, and the first one that knows the plant wins:
    - the full official Florida Invasive Species Council (FISC) 2026 list of 179 invasive plants, which ships with the backend;
@@ -69,9 +74,9 @@ The invasive list is generated from the official FISC PDF by a script in `backen
 | Folder | What's in it |
 |---|---|
 | `frontend/` | The phone app. `screens/` has one file per screen, `components/` has pieces shared between screens, `navigation/` sets up the tabs, and `services/` has the code that sends requests to the backend. All colors and fonts are in `theme.js`, so a new look only needs that one file. |
-| `backend/` | The Python server the app talks to. `app.py` lists the web addresses the app can call. `services/` does the actual work (identifying, looking up Florida status, counting, building the plan, writing the letter). `data/` holds the Florida plant lists: the invasive list, our natives list, the plants we recommend with their sources, the National Wildlife Federation's list of the plant groups that feed the most caterpillars, and which county each Florida ZIP code is in. `scripts/` has the tools that rebuild the invasive list from the official FISC PDF and the ZIP-to-county table from the Census file. `tests/` checks it all works. |
+| `backend/` | The Python server the app talks to. `app.py` lists the web addresses the app can call. `services/` does the actual work (identifying, looking up Florida status, counting, building the plan, writing the letter). `data/` holds the Florida plant lists: the invasive list, our natives list, the plants we recommend with their sources, the National Wildlife Federation's list of the plant groups that feed the most caterpillars, and which county each Florida ZIP code is in. `scripts/` has the tools that rebuild the invasive list from the official FISC PDF, the ZIP-to-county table from the Census file, and the Florida plant name list from USDA PLANTS. `tests/` checks it all works. |
 | `assets/` | Images used in the app, the app icon and splash screen, and the official "Powered by Pl@ntNet" logo shown under identification results. |
-| `docs/` | The interactive architecture map (`architecture.html`), the script that keeps it matched to the code, our written plans (`superpowers/plans/`), and the plant checklist (`plant-checklist.md`, plus `plant-checklist.xlsx` to fill in with Excel and `plant-checklist.csv` for other spreadsheet apps) for checking each recommended plant before the app can suggest it. |
+| `docs/` | The interactive architecture map (`architecture.html`), the script that keeps it matched to the code, our written plans (`superpowers/plans/`), the moisture and care checklist (`plant-site-checklist.csv`), and the plant checklist (`plant-checklist.md`, plus `plant-checklist.xlsx` to fill in with Excel and `plant-checklist.csv` for other spreadsheet apps) for checking each recommended plant before the app can suggest it. |
 
 Files in the top folder:
 - `App.js` and `index.js` start the app. `app.json` holds app settings like the name, icon, and camera permission text.
@@ -112,6 +117,8 @@ You'll need Node.js, Python 3, an OpenAI API key, and a free PlantNet API key fr
 **Tests** (from the `backend` folder): `venv\Scripts\python -m pytest -v`. The tests don't need any API keys and never call OpenAI, PlantNet or USDA.
 
 **Rebuilding the invasive list** (from the `backend` folder, after `venv\Scripts\python -m pip install -r requirements-dev.txt`): `venv\Scripts\python scripts/build_fisc_list.py <link to the FISC PDF> data/fisc_list.json`.
+
+**Rebuilding the Florida plant name list** (from the `backend` folder): `venv\Scripts\python scripts/build_fl_plant_names.py download data/fl_plant_names.json`.
 
 **Rebuilding the ZIP-to-county table** (from the `backend` folder): `venv\Scripts\python scripts/build_zip_counties.py https://www2.census.gov/geo/docs/maps-data/data/rel2020/zcta520/tab20_zcta520_county20_natl.txt data/fl_zip_counties.json`.
 

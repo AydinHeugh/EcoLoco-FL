@@ -10,6 +10,7 @@ import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS } from '../theme';
 import StatusBadge from '../components/StatusBadge';
 import PercentRing from '../components/PercentRing';
 import PlanCard, { NOT_CHECKED_HERE } from '../components/PlanCard';
+import SiteFilters, { ANY_SITE } from '../components/SiteFilters';
 import SourceLine from '../components/SourceLine';
 import StatusBars from '../components/StatusBars';
 import CaterpillarBars from '../components/CaterpillarBars';
@@ -81,7 +82,7 @@ function LetterGenerator({ plan, zipCode }) {
 
 export default function AuditResultsScreen({ route, navigation }) {
   const { plants = [], zipCode, lat, lon } = route.params ?? {};
-  const [scanned,  setScanned]  = useState(plants);
+  const [request,  setRequest]  = useState({ plants, skip: [], site: ANY_SITE });
   const [plan,     setPlan]     = useState(null);
   const [planFor,  setPlanFor]  = useState(null);
   const [loading,  setLoading]  = useState(true);
@@ -92,17 +93,17 @@ export default function AuditResultsScreen({ route, navigation }) {
   const { width } = useWindowDimensions();
   const maxWidth   = Math.min(width, 960);
   const [fontsLoaded] = useFonts(FONT_ASSETS);
-  const stale = plan != null && planFor !== scanned;
+  const stale = plan != null && planFor !== request;
 
   useEffect(() => {
     let current = true;
     setError(null);
-    getPlan(scanned.map(p => ({ scientific_name: p.scientific_name, plant_name: p.plant_name })), zipCode)
-      .then(data => { if (current) { setPlan(data.result); setPlanFor(scanned); } })
+    getPlan(request.plants.map(p => ({ scientific_name: p.scientific_name, plant_name: p.plant_name })), zipCode, request.skip, request.site)
+      .then(data => { if (current) { setPlan(data.result); setPlanFor(request); } })
       .catch(err => { if (current) setError(userMessage(err, 'Could not check your plants. Check your connection and try again.')); })
       .finally(() => { if (current) setLoading(false); });
     return () => { current = false; };
-  }, [scanned, attempt]);
+  }, [request, attempt]);
 
   useEffect(() => {
     if (lat != null && lon != null) {
@@ -111,8 +112,13 @@ export default function AuditResultsScreen({ route, navigation }) {
   }, []);
 
   function removePlant(index) {
-    forgetScannedPlant(planFor[index]._id);
-    setScanned(planFor.filter((_, i) => i !== index));
+    forgetScannedPlant(planFor.plants[index]._id);
+    setRequest({ ...planFor, plants: planFor.plants.filter((_, i) => i !== index) });
+  }
+
+  function toggleLetter(name) {
+    const skip = planFor.skip.includes(name) ? planFor.skip.filter(n => n !== name) : [...planFor.skip, name];
+    setRequest({ ...planFor, skip });
   }
 
   if (!fontsLoaded) return <View style={styles.container} />;
@@ -172,9 +178,23 @@ export default function AuditResultsScreen({ route, navigation }) {
               ))}
               {plan.plantings_checked === false
                 ? <Text style={styles.mutedText}>{NOT_CHECKED_HERE}</Text>
-                : plan.add.length === 0
-                  ? <Text style={styles.mutedText}>No plants are ready to recommend yet. Our team is still checking each one.</Text>
-                  : plan.add.map(card => <PlanCard key={card.scientific_name} card={card} kind="add" />)}
+                : (
+                  <>
+                    <SiteFilters site={request.site} hidden={plan.hidden_by_site ?? 0} disabled={stale}
+                      onChange={site => setRequest({ ...planFor, site })} />
+                    {plan.add.length === 0
+                      ? <Text style={styles.mutedText}>{plan.hidden_by_site > 0 ? 'No checked plants fit all of those choices. Try setting one back to Any.' : 'No plants are ready to recommend yet. Our team is still checking each one.'}</Text>
+                      : (
+                        <>
+                          <Text style={styles.sectionNote}>Untick a plant to leave it out of your letter and the "with the plan" numbers.</Text>
+                          {plan.add.map(card => (
+                            <PlanCard key={card.scientific_name} card={card} kind="add"
+                              inLetter={card.in_letter !== false} onToggleLetter={stale ? null : () => toggleLetter(card.scientific_name)} />
+                          ))}
+                        </>
+                      )}
+                  </>
+                )}
               <TouchableOpacity onPress={() => Linking.openURL(NURSERY_URL)}>
                 <Text style={styles.link}>Find a native plant nursery near you (plantrealflorida.org) →</Text>
               </TouchableOpacity>
@@ -187,7 +207,7 @@ export default function AuditResultsScreen({ route, navigation }) {
               <Text style={styles.sectionNote}>Scanned something by mistake, like a fake or potted plant? Remove it and your counts and plan update.</Text>
               {summary.plants.length === 0 && <Text style={styles.mutedText}>No plants left. Go back to EcoScan to scan more.</Text>}
               {summary.plants.map((p, i) => (
-                <View key={planFor[i]?._id ?? i} style={styles.plantRow}>
+                <View key={planFor.plants[i]?._id ?? i} style={styles.plantRow}>
                   <View style={styles.plantHead}>
                     <Text style={styles.plantName}>{p.plant_name}</Text>
                     <View style={styles.plantActions}>
@@ -268,7 +288,7 @@ export default function AuditResultsScreen({ route, navigation }) {
 
             <View style={styles.divider} />
 
-            <LetterGenerator key={planFor.length + ':' + planFor.map(p => p._id).join(',')} plan={plan} zipCode={zipCode} />
+            <LetterGenerator key={planFor.plants.map(p => p._id).join(',') + '|' + planFor.skip.join(',')} plan={plan} zipCode={zipCode} />
 
             <View style={styles.ctaSection}>
               <TouchableOpacity style={styles.btnOutline} onPress={() => navigation.goBack()}>

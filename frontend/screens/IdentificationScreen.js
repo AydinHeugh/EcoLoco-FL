@@ -15,10 +15,11 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
 import { useFonts } from 'expo-font';
-import { identifyPlant, userMessage } from '../services/geminiService';
+import { choosePlant, identifyPlant, userMessage } from '../services/geminiService';
 import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS } from '../theme';
 import StatusBadge from '../components/StatusBadge';
-import CandidatePicker, { NO_MATCH_TEXT, matchLabel } from '../components/CandidatePicker';
+import CandidatePicker, { AgreedStatus, CHOSEN_BY_NAME, NO_MATCH_TEXT, matchLabel } from '../components/CandidatePicker';
+import NamePicker from '../components/NamePicker';
 import SourceLine from '../components/SourceLine';
 import AtlasButton from '../components/AtlasButton';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
@@ -134,6 +135,9 @@ export default function IdentificationScreen({ navigation }) {
   const [loading, setLoading]   = useState(false);
   const [result, setResult]     = useState(null);
   const [picked, setPicked]     = useState(null);
+  const [pickingOne, setPickingOne] = useState(false);
+  const [naming, setNaming]     = useState(false);
+  const [checkingName, setCheckingName] = useState(false);
   const [error, setError]       = useState(null);
   const [photos, setPhotos]     = useState([]);
   const [place, setPlace]       = useState(null);
@@ -184,21 +188,23 @@ export default function IdentificationScreen({ navigation }) {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') { setError('Camera permission is required.'); return; }
     const res = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.8 });
-    if (!res.canceled) { setPhotos([res.assets[0]]); setResult(null); setPicked(null); setError(null); }
+    if (!res.canceled) { setPhotos(prev => [...prev, res.assets[0]].slice(0, MAX_PHOTOS)); setResult(null); setPicked(null); setError(null); }
   }
 
   async function handleUploadPhoto() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') { setError('Photo library permission is required.'); return; }
+    const room = MAX_PHOTOS - photos.length;
+    if (room <= 0) return;
     const res = await ImagePicker.launchImageLibraryAsync({
-      base64: true, quality: 0.8, allowsMultipleSelection: true, selectionLimit: MAX_PHOTOS,
+      base64: true, quality: 0.8, allowsMultipleSelection: room > 1, selectionLimit: room,
     });
-    if (!res.canceled) { setPhotos(res.assets.slice(0, MAX_PHOTOS)); setResult(null); setPicked(null); setError(null); }
+    if (!res.canceled) { setPhotos(prev => [...prev, ...res.assets].slice(0, MAX_PHOTOS)); setResult(null); setPicked(null); setError(null); }
   }
 
   async function handleIdentify() {
     setLoading(true);
-    setResult(null); setPicked(null);
+    setResult(null); setPicked(null); setPickingOne(false);
     setError(null);
     try {
       const data = await identifyPlant(photos.map(p => p.base64), zipCode);
@@ -212,11 +218,28 @@ export default function IdentificationScreen({ navigation }) {
     }
   }
 
+  async function handleChooseName(plant) {
+    setCheckingName(true);
+    setResult(null); setPicked(null); setPickingOne(false);
+    setError(null);
+    try {
+      const data = await choosePlant(plant.scientific_name, zipCode);
+      setResult(data.result);
+      setPicked(0);
+      setNaming(false);
+    } catch (err) {
+      setError(userMessage(err, 'Could not check that plant. Check your connection and try again.'));
+    } finally {
+      setCheckingName(false);
+    }
+  }
+
   const photo = photos[0];
   const narrow = width < 420;
   const canIdentify = photos.length > 0 && zipCode.length === 5 && !loading;
   const noMatch  = result && (result.state === 'unidentified' || picked === -1);
-  const choosing = result && result.state === 'confirm' && picked === null;
+  const agreed   = result && result.state === 'confirm' && picked === null && result.agreed_status && !pickingOne;
+  const choosing = result && result.state === 'confirm' && picked === null && !agreed;
   const shown    = result && !noMatch && picked !== null ? result.options[picked] : null;
 
   if (!fontsLoaded) return <View style={styles.container} />;
@@ -256,8 +279,11 @@ export default function IdentificationScreen({ navigation }) {
               <View>
                 <Image source={{ uri: photo.uri }} style={styles.uploadPreview} resizeMode="cover" />
                 <Text style={styles.photoCount}>
-                  {photos.length > 1 ? `${photos.length} photos of this plant` : 'Tip: add up to 5 photos of the same plant (leaf, flower, bark) for a surer match.'}
+                  Photos of this one plant: {photos.length} of {MAX_PHOTOS}. Add a leaf up close or a flower for a surer match.
                 </Text>
+                <TouchableOpacity onPress={() => { setPhotos([]); setResult(null); setPicked(null); }} style={styles.clearPhotos}>
+                  <Text style={styles.clearPhotosText}>Clear photos</Text>
+                </TouchableOpacity>
               </View>
             )
             : (
@@ -297,6 +323,17 @@ export default function IdentificationScreen({ navigation }) {
           }
         </TouchableOpacity>
 
+        {zipCode.length === 5 && !naming && (
+          <TouchableOpacity style={styles.byName} onPress={() => setNaming(true)}>
+            <Text style={styles.byNameText}>Know its name? Choose by name</Text>
+          </TouchableOpacity>
+        )}
+        {naming && (
+          <View style={styles.namingBox}>
+            <NamePicker onChoose={handleChooseName} onClose={() => setNaming(false)} busy={checkingName} />
+          </View>
+        )}
+
         {error && <Text style={styles.errorText}>{error}</Text>}
 
         {loading && <LoadingDots message={progress} />}
@@ -309,8 +346,8 @@ export default function IdentificationScreen({ navigation }) {
               <Text style={styles.resultsTitle}>Results</Text>
               {shown && (
                 <Text style={styles.confidenceText}>
-                  {matchLabel(result.id_source)} match:{' '}
-                  <Text style={styles.confidenceValue}>{Math.round(shown.confidence * 100)}%</Text>
+                  {result.id_source === 'by_name' ? CHOSEN_BY_NAME : <>{matchLabel(result.id_source)} match:{' '}
+                  <Text style={styles.confidenceValue}>{Math.round(shown.confidence * 100)}%</Text></>}
                 </Text>
               )}
             </View>
@@ -318,6 +355,12 @@ export default function IdentificationScreen({ navigation }) {
             {noMatch && (
               <View style={styles.notice}>
                 <Text style={styles.noticeText}>{NO_MATCH_TEXT}</Text>
+              </View>
+            )}
+
+            {agreed && (
+              <View style={styles.agreedBox}>
+                <AgreedStatus options={result.options} onPickOne={() => setPickingOne(true)} />
               </View>
             )}
 
@@ -469,6 +512,12 @@ const styles = StyleSheet.create({
     alignItems: 'baseline', marginBottom: 14,
   },
   resultsTitle: { fontSize: 26, fontFamily: FONTS.heading, color: COLORS.darkGreen },
+  byName: { alignSelf: 'center', paddingVertical: 8 },
+  byNameText: { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.softGreen },
+  namingBox: {
+    marginHorizontal: 20, marginTop: 8, padding: 16, borderRadius: 14,
+    borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.white,
+  },
   confidenceText: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted },
   confidenceValue: { fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
 
@@ -480,6 +529,8 @@ const styles = StyleSheet.create({
   resultCardNarrow: { flexDirection: 'column' },
   resultThumb: { width: 120, height: 120 },
   resultThumbNarrow: { width: '100%', height: 180 },
+  clearPhotos: { alignSelf: 'center', paddingVertical: 4 },
+  clearPhotosText: { fontSize: 12, fontFamily: FONTS.bodyBold, color: COLORS.terracotta },
   photoCount: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', marginTop: 6 },
   retakeTip: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textBody, marginTop: 8 },
   resultInfo: { flex: 1, padding: 16, justifyContent: 'center', gap: 10 },
@@ -493,6 +544,9 @@ const styles = StyleSheet.create({
   credit: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: 8, marginTop: 18, paddingVertical: 6 },
   creditLogo: { width: 102, height: 24 },
   creditText: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textMuted },
+  agreedBox: {
+    backgroundColor: COLORS.white, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, padding: 16,
+  },
   notice: {
     backgroundColor: STATUS_COLORS.invasive.bg, borderRadius: 10, borderWidth: 1,
     borderColor: COLORS.terracotta, padding: 12, marginTop: 10,

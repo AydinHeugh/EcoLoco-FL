@@ -322,3 +322,27 @@ def test_letter_refuses_malformed_plans(client, break_it):
     response = client.post("/letter", json={"plan": plan, "zip_code": "33139"})
     assert response.status_code == 400
     assert response.get_json()["error"] == "The plan is missing details. Make the plan again and retry."
+
+
+@pytest.mark.parametrize("skip", ["Zamia integrifolia", [1, 2], {"a": 1}])
+def test_plan_rejects_a_bad_skip_list(client, skip):
+    response = client.post("/plan", json={"location": "33496", "plants": [], "skip": skip})
+    assert response.status_code == 400
+
+
+def test_plan_passes_the_skip_list_through(client):
+    full = client.post("/plan", json={"location": "33496", "plants": []}).get_json()["result"]
+    name = full["add"][0]["scientific_name"]
+    result = client.post("/plan", json={"location": "33496", "plants": [], "skip": [name]}).get_json()["result"]
+    assert next(c for c in result["add"] if c["scientific_name"] == name)["in_letter"] is False
+
+
+def test_letter_leaves_out_unchecked_plants(client, monkeypatch):
+    _ai_down(monkeypatch)
+    full = client.post("/plan", json={"location": "33496", "plants": []}).get_json()["result"]
+    kept, dropped = full["add"][0]["common_name"], full["add"][1]["common_name"]
+    plan = client.post("/plan", json={"location": "33496", "plants": [],
+                                      "skip": [full["add"][1]["scientific_name"]]}).get_json()["result"]
+    letter = client.post("/letter", json={"plan": plan, "zip_code": "33496"}).get_json()["result"]
+    assert kept in letter
+    assert dropped not in letter

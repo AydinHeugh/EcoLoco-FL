@@ -207,3 +207,33 @@ def test_letter_drops_the_plan_sentence_when_nothing_changes(rephrase):
     letter, _ = ai_service.generate_letter(same, ZIP)
     assert "Of the plants we checked, 40% are native to Florida." in letter
     assert "With these changes" not in letter
+
+
+def _close_call(model, *names):
+    model["species"].update(state="confirm", ranked=[
+        {"scientific_name": name, "common_name": "", "confidence": 0.4} for name in names])
+
+
+def test_close_matches_with_the_same_status_agree(model):
+    _close_call(model, "Zamia integrifolia", "Hamelia patens")
+    assert ai_service.identify_plant("img", ZIP)["agreed_status"] == "native"
+
+
+@pytest.mark.parametrize("names", [
+    ("Zamia integrifolia", "Schinus terebinthifolia"),
+    ("Lantana involucrata", "Lantana strigocamara"),
+])
+def test_close_matches_with_different_statuses_still_ask(model, names):
+    _close_call(model, *names)
+    assert ai_service.identify_plant("img", ZIP)["agreed_status"] is None
+
+
+def test_unknown_matches_never_agree(model, monkeypatch):
+    monkeypatch.setattr(usda_service, "florida_status", lambda name: None)
+    _close_call(model, "Madeupia one", "Madeupia two")
+    assert ai_service.identify_plant("img", ZIP)["agreed_status"] is None
+
+
+def test_confident_match_has_no_agreement_flag(model):
+    _says(model, "Zamia integrifolia", "Coontie")
+    assert ai_service.identify_plant("img", ZIP)["agreed_status"] is None

@@ -6,8 +6,9 @@ import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
-from services.ai_service import generate_letter, identify_plant
+from services.ai_service import choose_plant, generate_letter, identify_plant
 from services.location_service import geocode, plantings_checked, reverse_zip, round_coords, seen_near, zip_center
+from services.name_search import common_name_for, is_known, search
 from services.plan_service import build_plan
 
 load_dotenv()
@@ -78,6 +79,33 @@ def identify():
     return jsonify({"result": result})
 
 
+@app.route("/names", methods=["POST"])
+def names():
+    query = (request.get_json() or {}).get("query")
+    if not isinstance(query, str) or len(query) > 80:
+        return jsonify({"error": "query must be text of at most 80 characters"}), 400
+    return jsonify({"result": search(query)})
+
+
+UNKNOWN_NAME = "That plant isn't on our Florida plant list. Pick a name from the search results."
+
+
+@app.route("/choose", methods=["POST"])
+def choose():
+    data = request.get_json() or {}
+    name, location = data.get("scientific_name"), data.get("location")
+    if not isinstance(name, str) or not name.strip() or not location:
+        return jsonify({"error": "scientific_name and location are required"}), 400
+    if not is_florida_zip(location):
+        return jsonify({"error": FLORIDA_ONLY}), 400
+    if not is_known(name):
+        return jsonify({"error": UNKNOWN_NAME}), 400
+    return jsonify({"result": choose_plant(name, common_name_for(name), location)})
+
+
+BAD_SITE = "site must be an object like {light, moisture, space, care}"
+
+
 @app.route("/recommend", methods=["POST"])
 def recommend():
     data = request.get_json()
@@ -87,8 +115,12 @@ def recommend():
         return jsonify({"error": "location is required"}), 400
     if not is_florida_zip(location):
         return jsonify({"error": FLORIDA_ONLY}), 400
+    site = data.get("site")
+    if site is not None and not isinstance(site, dict):
+        return jsonify({"error": BAD_SITE}), 400
     checked = plantings_checked(location)
-    return jsonify({"result": build_plan([], checked)["add"], "plantings_checked": checked})
+    plan = build_plan([], checked, site=site)
+    return jsonify({"result": plan["add"], "plantings_checked": checked, "hidden_by_site": plan["hidden_by_site"]})
 
 
 @app.route("/plan", methods=["POST"])
@@ -100,7 +132,13 @@ def plan():
         return jsonify({"error": "plants and location are required"}), 400
     if not is_florida_zip(location):
         return jsonify({"error": FLORIDA_ONLY}), 400
-    return jsonify({"result": build_plan(plants, plantings_checked(location))})
+    skip = data.get("skip") or []
+    if not isinstance(skip, list) or not all(isinstance(name, str) for name in skip):
+        return jsonify({"error": "skip must be a list of scientific names"}), 400
+    site = data.get("site")
+    if site is not None and not isinstance(site, dict):
+        return jsonify({"error": BAD_SITE}), 400
+    return jsonify({"result": build_plan(plants, plantings_checked(location), skip, site)})
 
 
 NOT_FOUND = "We couldn't find that place. Try your school's ZIP code."
@@ -180,6 +218,7 @@ def letter():
         return jsonify({"error": FLORIDA_ONLY}), 400
     if not _valid_plan(plan):
         return jsonify({"error": BAD_PLAN}), 400
+    plan = dict(plan, add=[card for card in plan["add"] if card.get("in_letter") is not False])
     result, ai_unavailable = generate_letter(plan, zip_code)
     return jsonify({"result": result, "ai_unavailable": ai_unavailable})
 

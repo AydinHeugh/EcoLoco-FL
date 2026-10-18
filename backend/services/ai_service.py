@@ -18,7 +18,8 @@ def _options(ranked, location):
 def identify_plant(images, location):
     species = identify_species(images, location)
     base = {"state": species["state"], "suggested": species["suggested"], "id_source": species["source"],
-            "ai_unavailable": species.get("ai_unavailable", False)}
+            "ai_unavailable": species.get("ai_unavailable", False),
+            "suggested_confidence": species.get("suggested_confidence"), "agreed_status": None}
     if species["state"] == "unidentified":
         return {
             **base, "options": [], "message": UNIDENTIFIED_MESSAGE,
@@ -26,7 +27,18 @@ def identify_plant(images, location):
             "status_label": STATUS_LABELS["unknown"], "source": "unknown", "source_label": None, "why": None,
         }
     options = _options(species["ranked"], location)
+    statuses = {option["status"] for option in options}
+    if species["state"] == "confirm" and len(statuses) == 1 and "unknown" not in statuses:
+        base["agreed_status"] = statuses.pop()
     return {**options[0], **base, "options": options, "message": None}
+
+
+def choose_plant(scientific_name, common_name, location):
+    option = plant_option(scientific_name, common_name, None, location)
+    return {
+        **option, "state": "identified", "options": [option], "suggested": 0, "suggested_confidence": None,
+        "agreed_status": None, "id_source": "by_name", "ai_unavailable": False, "message": None,
+    }
 
 
 INVASIVE_WHY = "It is on Florida's official list of invasive plants."

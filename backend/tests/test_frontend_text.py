@@ -91,4 +91,53 @@ def test_atlas_button_opens_in_app_browser_only_with_a_link():
 def test_results_list_has_a_remove_button_that_rebuilds_the_plan():
     text = (FRONTEND / "screens" / "AuditResultsScreen.js").read_text(encoding="utf-8")
     assert "onPress={() => removePlant(i)}" in text
-    assert "}, [scanned, attempt]);" in text
+    assert "}, [request, attempt]);" in text
+
+
+def test_ecoscan_uses_plant_cards_with_scan_all():
+    text = (FRONTEND / "screens" / "AuditScreen.js").read_text(encoding="utf-8")
+    for phrase in ("Add plant", "Scan all (", "Scan this plant", "Photos of this one plant:", "Take photo", "Upload photos"):
+        assert phrase in text
+
+
+def test_picker_shows_openai_pick_and_agreement():
+    text = (FRONTEND / "components" / "CandidatePicker.js").read_text(encoding="utf-8")
+    assert "OpenAI's pick" in text
+    assert "It's one of these:" in text
+    assert "Best guess" not in text
+
+
+def test_add_cards_can_leave_the_letter():
+    text = (FRONTEND / "components" / "PlanCard.js").read_text(encoding="utf-8")
+    assert "In my letter" in text
+    assert "skip" in (FRONTEND / "services" / "geminiService.js").read_text(encoding="utf-8")
+
+
+def test_choose_by_name_never_shows_a_status_in_the_list():
+    picker = (FRONTEND / "components" / "NamePicker.js").read_text(encoding="utf-8")
+    assert "searchNames(text)" in picker
+    assert "StatusBadge" not in picker and "status" not in picker.replace("Florida status is checked", "")
+    for screen in ("AuditScreen.js", "IdentificationScreen.js"):
+        text = (FRONTEND / "screens" / screen).read_text(encoding="utf-8")
+        assert "Know its name? Choose by name" in text
+        assert "choosePlant(" in text
+
+
+def test_chosen_plants_say_so_instead_of_a_percent():
+    picker = (FRONTEND / "components" / "CandidatePicker.js").read_text(encoding="utf-8")
+    assert "export const CHOSEN_BY_NAME = 'Chosen by name';" in picker
+    assert "if (idSource === 'by_name') return CHOSEN_BY_NAME;" in picker
+
+
+def test_site_filters_are_on_both_planting_screens():
+    filters = (FRONTEND / "components" / "SiteFilters.js").read_text(encoding="utf-8")
+    for label in ("Light", "Moisture", "Space", "Care", "Any"):
+        assert f"'{label}'" in filters or f'"{label}"' in filters
+    for screen in ("RecommendationScreen.js", "AuditResultsScreen.js"):
+        assert "<SiteFilters" in (FRONTEND / "screens" / screen).read_text(encoding="utf-8")
+
+
+def test_openai_pick_shows_no_number():
+    picker = (FRONTEND / "components" / "CandidatePicker.js").read_text(encoding="utf-8")
+    assert "\" · OpenAI's pick\"" in picker
+    assert "sure)" not in picker and "suggestedConfidence" not in picker

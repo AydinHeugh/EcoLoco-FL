@@ -23,12 +23,20 @@ export async function identifyPlant(images, location) {
   return post('/identify', { images, location });
 }
 
-export async function getPlan(plants, location) {
-  return post('/plan', { plants, location });
+export async function searchNames(query) {
+  return post('/names', { query });
 }
 
-export async function getPlantRecommendations(location) {
-  return post('/recommend', { location });
+export async function choosePlant(scientificName, location) {
+  return post('/choose', { scientific_name: scientificName, location });
+}
+
+export async function getPlan(plants, location, skip = [], site = null) {
+  return post('/plan', { plants, location, skip, site });
+}
+
+export async function getPlantRecommendations(location, site = null) {
+  return post('/recommend', { location, site });
 }
 
 export async function generateLetter(plan, zipCode) {

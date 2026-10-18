@@ -12,6 +12,7 @@ log = logging.getLogger(__name__)
 PLANTNET_URL = "https://my-api.plantnet.org/v2/identify/all"
 MAX_IMAGES = 5
 NO_MATCH_BELOW = 0.20
+WEAK_GUESS_BELOW = 0.05
 CONFIDENT = 0.80
 CLOSE_CALL = 0.15
 
@@ -83,10 +84,11 @@ def _state(ranked):
     return "identified"
 
 
-def _result(state, ranked, source, suggested=0, ai_unavailable=False):
+def _result(state, ranked, source, suggested=0, ai_unavailable=False, suggested_confidence=None):
     if state == "unidentified":
         ranked = []
-    return {"state": state, "ranked": ranked, "suggested": suggested, "source": source, "ai_unavailable": ai_unavailable}
+    return {"state": state, "ranked": ranked, "suggested": suggested, "source": source, "ai_unavailable": ai_unavailable,
+            "suggested_confidence": suggested_confidence}
 
 
 def _merge_same_species(ranked):
@@ -99,7 +101,8 @@ def _merge_same_species(ranked):
             entry["common_name"] = entry["common_name"] or candidate["common_name"]
         else:
             merged[name] = dict(candidate, scientific_name=name)
-    return sorted(merged.values(), key=lambda c: c["confidence"], reverse=True)
+    ranked = sorted(merged.values(), key=lambda c: c["confidence"], reverse=True)
+    return [c for c in ranked if c["confidence"] >= WEAK_GUESS_BELOW]
 
 
 def _describe(err):
@@ -119,8 +122,8 @@ def _adjudicate(images, ranked, location):
     picked = str(reply.get("scientific_name") or "").strip().lower()
     for i, candidate in enumerate(ranked):
         if candidate["scientific_name"].lower() == picked:
-            return i
-    return None
+            return i, _confidence(reply.get("confidence"))
+    return None, None
 
 
 def _identify_with_openai(images, location):
@@ -150,13 +153,13 @@ def identify_species(images, location):
         if state != "confirm":
             return _result(state, ranked, "plantnet")
         try:
-            pick = _adjudicate(images, ranked, location)
+            pick, pick_confidence = _adjudicate(images, ranked, location)
         except Exception as err:
             log.warning("OpenAI adjudication failed (%s); keeping PlantNet's order", _describe(err))
             return _result(state, ranked, "plantnet", ai_unavailable=True)
         if pick is None:
             return _result(state, ranked, "plantnet")
-        return _result(state, ranked, "openai_adjudicated", pick)
+        return _result(state, ranked, "openai_adjudicated", pick, suggested_confidence=pick_confidence)
 
     try:
         ranked = _merge_same_species(_identify_with_openai(images, location))

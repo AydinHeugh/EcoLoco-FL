@@ -154,3 +154,28 @@ def test_invasive_never_counts_as_important_wildlife_plant(verified):
     gaps = build_plan([{"scientific_name": "Acacia auriculiformis"}])["gaps"]
     assert "important_wildlife_plant" in gaps
     assert "caterpillar_food" in gaps
+
+
+def test_every_add_card_starts_in_the_letter(verified):
+    assert all(card["in_letter"] for card in build_plan([PEPPER])["add"])
+
+
+def test_skipped_add_stays_listed_but_leaves_the_numbers(verified):
+    full = build_plan([PEPPER, {"scientific_name": "Zamia integrifolia"}])
+    replacement = full["remove"][0]["replacement"]
+    filler = next(c["scientific_name"] for c in full["add"] if c["scientific_name"] != replacement)
+    plan = build_plan([PEPPER, {"scientific_name": "Zamia integrifolia"}], skip=[replacement, filler])
+    assert [c["scientific_name"] for c in plan["add"]] == [c["scientific_name"] for c in full["add"]]
+    skipped = {c["scientific_name"]: c["in_letter"] for c in plan["add"]}
+    assert skipped[replacement] is False and skipped[filler] is False
+    assert "effect" not in plan["remove"][0]
+    kept = sum(c["in_letter"] for c in plan["add"])
+    assert plan["summary"]["counts_with_plan"]["invasive"] == 1
+    assert plan["summary"]["counts_with_plan"]["native"] == 1 + kept
+    assert plan["summary"]["percent_native_with_plan"] < full["summary"]["percent_native_with_plan"]
+
+
+def test_skipping_everything_matches_today(verified):
+    full = build_plan([PEPPER])
+    plan = build_plan([PEPPER], skip=[c["scientific_name"] for c in full["add"]])
+    assert plan["summary"]["percent_native_with_plan"] == plan["summary"]["percent_native"]

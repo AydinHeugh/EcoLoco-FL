@@ -181,11 +181,11 @@
       "row": 1.5,
       "what": "Identify a single plant from a photo and see whether it helps or hurts the local ecosystem.",
       "how": [
-        "You type a 5-digit ZIP and pick a photo: Take Photo (camera) or Upload Photo (library) via expo-image-picker with `base64: true`. On web you can also drag-and-drop an image; a `FileReader` turns it into base64.",
+        "You set the location and add up to 5 photos of one plant: Take Photo (camera) and Upload Photo (library, multi-select) both add to the photos instead of replacing them, and \"Clear photos\" starts over. On web you can also drag-and-drop images.",
         "The Identify button only enables when there's a photo and a 5-digit ZIP.",
         "`handleIdentify()` calls `identifyPlant(photo.base64, zipCode)` and shows loading dots.",
         "`identified`: shows the name, the shared `StatusBadge`, and PlantNet's match percentage.",
-        "`confirm`: shows `CandidatePicker` (\"Which one is it?\") with every option's status and PlantNet %, the AI's suggestion marked \"Best guess\", and \"None of these\".",
+        "`confirm`: if every close match shares a status, shows `AgreedStatus` (\"It's one of these: …\") with \"I know which one it is\"; otherwise `CandidatePicker` with the score chart, OpenAI's pick and \"None of these\".",
         "`unidentified` or \"None of these\": shows \"Couldn't identify this. Try a close-up of one leaf, or a flower\" and no name.",
         "Errors show as text; a 400 from the server (like the Florida-only message) shows the server's message.",
         "Plants with no wildlife facts in our data say \"We don't have wildlife info for this plant yet\".",
@@ -219,19 +219,20 @@
       "layer": "ui",
       "status": "live",
       "file": "frontend/screens/AuditScreen.js",
-      "symbol": "async function scanPlant",
+      "symbol": "async function scanAll",
       "col": 1,
       "row": 4.5,
-      "what": "The campus audit: scan many plants one after another, then score the whole schoolyard.",
+      "what": "The campus audit: one card per plant, each with up to 5 photos of that plant, then score the whole schoolyard.",
       "how": [
         "Under the title it says \"Only scan real plants growing outdoors.\"",
         "Uses `LocationPicker` for the school's location before scanning. The place lives in module-level variables (memory only) so it survives switching tabs.",
-        "`scanPlant(source)` asks for camera or photo-library permission, then opens expo-image-picker (on the web both buttons open a file picker).",
-        "Adds a loading card right away, then calls `identifyPlant(photo.base64, zipCode)`.",
-        "Every result is kept as a card. `confirm` cards show the `CandidatePicker` under the photo; `unidentified` cards say \"Not identified\" with the retake tip. Any card can be removed with ✕ (read out as \"Remove this plant\").",
+        "\"Add plant\" makes an empty card. Each card holds up to 5 photos of that one plant: \"Take photo\" adds one from the camera, \"Upload photos\" adds several at once (expo-image-picker, multi-select up to the room left). Photos can be removed before scanning.",
+        "\"Scan this plant\" scans one card; \"Scan all (N)\" scans every card that has photos, 3 at a time, each calling `identifyPlant(photos, zipCode)`. A card that fails keeps its photos and shows the error.",
+        "While a card scans, its photos dim and it shows the progress text.",
+        "Scanned cards show the result. `confirm` cards show `CandidatePicker`; when every close match shares a status they show `AgreedStatus` instead (\"It's one of these: …\"), with \"I know which one it is\" to pick. `unidentified` cards say \"Not identified\" with the retake tip. Any card can be removed with ✕ (read out as \"Remove this plant\").",
         "`forgetScannedPlant(id)` lets the results screen drop a plant from the saved list; when you come back to EcoScan the list matches.",
         "Problems (missing ZIP, permissions, network errors) appear as a message on the screen instead of a popup.",
-        "Finish sends every card: picked or identified plants as they are, unconfirmed or unidentified ones as \"Unidentified plant\" with status `unknown`.",
+        "\"See my results\" is enabled once every card with photos is scanned. `settledPlant()` sends picked or identified plants as they are, agreed cards as \"A or B\" with the shared status, and unconfirmed or unidentified ones as \"Unidentified plant\" with status `unknown`.",
         "\"New Scan\" clears the list after a confirm (browser confirm dialog on the web)."
       ]
     },
@@ -247,15 +248,16 @@
       "what": "The audit results: the plan first, then what the campus supports now, the percent native, and the letter.",
       "how": [
         "Receives `plants[]` and `zipCode` from AuditScreen.",
-        "Calls `getPlan()` for the plants it has; the plan includes the summary.",
+        "Calls `getPlan(plants, zipCode, skip)` for the plants it has and the Add plants you unticked; the plan includes the summary.",
         "Each plant under What your campus supports now has a Remove button (for a fake or potted plant scanned by mistake). Removing one calls `getPlan()` again, so the counts, percent, charts, plan and letter all update; it shows \"Updating your plan…\", and if that fails, the error with Try again.",
         "Your plan: a Remove `PlanCard` for each invasive (why, safety, replacement), then Add cards, then a link to plantrealflorida.org. Outside Palm Beach County the Remove cards stay, without a replacement, and the Add cards are replaced by \"Planting recommendations are only checked for Palm Beach County so far.\"",
+        "Each Add card has an \"In my letter\" checkbox. Unticking one asks for the plan again with it skipped: the card stays, dimmed, and leaves the letter and the \"with the plan\" numbers.",
         "What your campus supports now: every plant with its status and one sourced line, or \"We don't have wildlife info for this plant yet\".",
         "How native is your campus: `PercentRing` now and with the plan (or \"Not enough identified plants yet\") and counts for the four groups.",
         "Charts: `StatusBars` (now vs with the plan) and `CaterpillarBars` (NWF group counts per card).",
         "Seen near you: if the scan has a location, the top 5 plants people photographed within about 5 km (iNaturalist), each with its status.",
         "Why this matters: up to 4 short lines from `why_this_matters.json`, each with its source.",
-        "`LetterGenerator` writes the letter from the plan. Errors show as text."
+        "`LetterGenerator` writes the letter from the plan; it starts fresh whenever the plants or ticks change. Errors show as text."
       ]
     },
     {
@@ -449,7 +451,7 @@
       "what": "API endpoint for the Recommend tab: native plants to add when there's no audit.",
       "how": [
         "Reads `location`; 400 if missing, and the Florida-only message for ZIPs outside Florida.",
-        "Returns `{result: build_plan([], checked).add, plantings_checked}`: verified plants from our data, ranked as if the campus had nothing yet, or no plants when the ZIP is outside Palm Beach County (`plantings_checked()`). No AI is used."
+        "Takes an optional `site` object and returns `{result: build_plan([], checked, site=site).add, plantings_checked, hidden_by_site}`: verified plants that fit the site, ranked as if the campus had nothing yet, or none when the ZIP is outside Palm Beach County. No AI is used."
       ]
     },
     {
@@ -465,6 +467,7 @@
       "how": [
         "Reads `plan` and `zip_code`; 400 if missing or the ZIP is outside Florida.",
         "Checks the plan's shape: remove cards need a name and removal safety text, add cards need a name, what it helps (with a source) and the name to ask for; otherwise \"The plan is missing details. Make the plan again and retry.\"",
+        "Leaves out Add cards marked `in_letter: false`, so unticked plants never reach the letter.",
         "Calls `generate_letter(plan, zip_code)` and returns `{result: letter text, ai_unavailable}`."
       ]
     },
@@ -483,7 +486,8 @@
         "`unidentified` returns the message \"Couldn't identify this. Try a close-up of one leaf, or a flower\" with no options.",
         "Otherwise each option goes through `plant_option()` in parallel: status from our lists and USDA, plus `helps`, `watch_out` and `removal_safety` from our data when we have them.",
         "No OpenAI call is made here; the AI no longer rates wildlife value or suggests actions.",
-        "Returns the top option's fields plus `state, options, suggested, message, id_source, ai_unavailable`."
+        "For `confirm`, if every option has the same known status, sets `agreed_status` to it (for example `native`); otherwise `null`.",
+        "Returns the top option's fields plus `state, options, suggested, suggested_confidence, agreed_status, message, id_source, ai_unavailable`."
       ]
     },
     {
@@ -608,12 +612,12 @@
         "Accepts one photo or a list of 1–5; anything else raises an error (the route rejects it first).",
         "Never fetches web links: a link raises an error before PlantNet or OpenAI is asked.",
         "Asks PlantNet via `identify_with_plantnet(images)` for a ranked list of species with scores. A 404 from PlantNet means \"no plant found\" and returns an empty list.",
-        "Merges names of the same species with `resolve()` and adds their scores (capped at 1.0). PlantNet often splits coontie between Zamia integrifolia and Zamia pumila.",
+        "Merges names of the same species with `resolve()` and adds their scores (capped at 1.0), then drops guesses under 5% so no option shows 0%.",
         "Sets `state` from PlantNet's own top score: under 0.20 → `unidentified`; under 0.80, or 0.15 or less ahead of the runner-up → `confirm`; otherwise `identified`.",
-        "Only for `confirm`, OpenAI sees the photos, ZIP and the options and names its best guess; that only sets `suggested`, never the scores or order (`source: openai_adjudicated`). Errors or off-list answers keep PlantNet's order (`source: plantnet`).",
+        "Only for `confirm`, OpenAI sees the photos, ZIP and the options and names its best guess with its own confidence; that sets `suggested` and `suggested_confidence`, never the scores or order (`source: openai_adjudicated`). Errors or off-list answers keep PlantNet's order.",
         "If PlantNet itself fails, OpenAI vision identifies the photos on its own (`source: openai_fallback`) with the same thresholds. If that fails too: `unidentified`, `source: none`.",
         "Failures are logged by error type only, never the raw message (PlantNet's URL contains the API key).",
-        "Returns `{state, ranked, suggested, source}`; `ranked` is empty when unidentified."
+        "Returns `{state, ranked, suggested, suggested_confidence, source, ai_unavailable}`; `ranked` is empty when unidentified."
       ]
     },
     {
@@ -628,7 +632,7 @@
       "what": "Sends the photos to PlantNet and returns its ranked list of species.",
       "how": [
         "Reads `PLANTNET_API_KEY`; raises if it isn't set.",
-        "Turns each photo into bytes (base64, `data:` URL, or downloads an http(s) URL) and checks it is JPEG or PNG, the only formats PlantNet accepts.",
+        "Turns each photo into bytes (base64 or a `data:` URL; web links are refused) and checks it is JPEG or PNG, the only formats PlantNet accepts.",
         "POSTs them as repeated `images` fields to `/v2/identify/all` with `api-key`, `nb-results=5`, `lang=en`; organs default to auto.",
         "Raises on any HTTP error; otherwise returns `[{scientific_name, common_name, confidence}]` from `results[].species` and `score`, best first."
       ]
@@ -655,12 +659,12 @@
       "layer": "ui",
       "status": "live",
       "file": "frontend/screens/IdentificationScreen.js",
-      "symbol": "allowsMultipleSelection: true",
+      "symbol": "allowsMultipleSelection: room > 1",
       "col": 2,
       "row": -1.4,
       "what": "Lets the user send up to 5 photos of the same plant, and shows what the app is doing while it waits.",
       "how": [
-        "Upload Photo on Identify and EcoScan allows picking several photos (`allowsMultipleSelection`); the app keeps the first 5. On the web you can also drag in several images.",
+        "Uploading on Identify and on an EcoScan plant card allows picking several photos at once (`allowsMultipleSelection`), limited to the room left out of 5; the camera adds one at a time. On the web you can also drag in several images.",
         "All photos go to /identify as `images` in one request.",
         "While waiting, the text changes from \"Identifying…\" to \"Checking Florida lists…\" after 2 seconds (`useProgressText` in frontend/components/ProgressText.js).",
         "When the match is unsure, the screen suggests: \"For a surer match, add a photo of a leaf up close or a flower.\""
@@ -768,9 +772,12 @@
       "what": "Shared pieces used by Identify and EcoScan: the \"Which one is it?\" list and the four status labels.",
       "how": [
         "Lists every option with its name, match % labelled with its real source (PlantNet, or OpenAI when PlantNet was unavailable) and status badge; adds the scientific name only when two options share a common name.",
-        "Marks the AI's suggestion \"Best guess\" and always offers \"None of these\".",
+        "A small bar chart above the list shows PlantNet's score for each option, colored by status, with OpenAI's pick outlined.",
+        "Marks OpenAI's pick as \"OpenAI's pick\", only when OpenAI actually picked, with no number: only PlantNet's scores show percentages. Always offers \"None of these\".",
+        "`AgreedStatus` shows the shared status and \"It's one of these: A or B\" so the app doesn't hide that the species is unsure.",
         "`StatusBadge` (frontend/components/StatusBadge.js) shows the backend's `status_label` with the color for its status, so the four labels look the same on every screen.",
-        "Colors and fonts come from `frontend/theme.js`, the one file a redesign needs to change."
+        "Colors and fonts come from `frontend/theme.js`, the one file a redesign needs to change.",
+        "`matchText()` says \"Chosen by name\" for plants picked by name instead of a match percentage."
       ]
     },
     {
@@ -839,7 +846,8 @@
         "`replaces` pairs a plant with FISC invasives it can stand in for, with a plain reason. These pairings are EcoLoco suggestions for the team to review.",
         "Every Palm Beach County prohibited invasive has at least one replacement (a test checks this).",
         "`atlas_url`: that plant's own species page in the USF Atlas of Florida Plants.",
-        "Only entries with `verified: true` are recommended. All 30 were checked against the USF Atlas and their sources (docs/plant-checklist.md) and carry `checked_by` and `checked_on`. Tropical sage was dropped after the Atlas listed it as Not Native."
+        "Only entries with `verified: true` are recommended. All 30 were checked against the USF Atlas and their sources (docs/plant-checklist.md) and carry `checked_by` and `checked_on`. Tropical sage was dropped after the Atlas listed it as Not Native.",
+        "`moisture` (dry / average / wet) and `care` (low / moderate) come from each plant's Natives for Your Neighborhood page (its Soils and Drought Tolerance lines), with that text in `basis` and `verified: false` until checked in docs/plant-site-checklist.csv."
       ]
     },
     {
@@ -887,12 +895,13 @@
         "Runs `summarize()` on the scanned plants for their statuses.",
         "Each distinct invasive becomes a Remove card with its `why`, removal safety (or \"Ask your grounds crew how to remove it safely.\"), a replacement, and (only when there is one) \"Replacing it takes you from X% to Y% native\", counting every scan of that plant.",
         "Finds gaps on campus (invasive plants never count toward them): none of NWF's important plant groups, nothing caterpillars eat, no fruit, months with nothing blooming.",
-        "Ranks verified plants from `fl_recommendations.json`: gaps filled + 2 if it replaces an invasive found + 0.5 if its group is on the NWF list; easy plants first on ties.",
+        "Keeps verified plants from `fl_recommendations.json` that fit the site (`fits_site`), then ranks them: gaps filled + 2 if it replaces an invasive found + 0.5 if its group is on the NWF list; easy plants first on ties.",
         "Picks one replacement per invasive, then gap fillers, up to 5 Add cards; the first 3 have at most 1 tree and at least 1 easy plant.",
         "Cards whose plant group is on the NWF list carry `nwf: {group, caterpillar_species}` for the chart.",
         "Add cards say why they were picked and their effect: \"Oaks feed 395 kinds of caterpillars here.\" for NWF groups, otherwise the percent-native change. Counts are never added up.",
         "With `plantings_checked=False` no plant is recommended: Remove cards keep their why and safety but get no replacement or percent change, and there are no Add cards.",
-        "Returns `{remove, add, gaps, summary, why_this_matters, plantings_checked}`.",
+        "`skip` lists Add plants the user unticked: they stay in `add` with `in_letter: false` but don't count in the \"with the plan\" numbers, and a Remove card whose replacement is skipped loses its percent change.",
+        "Returns `{remove, add, gaps, summary, why_this_matters, plantings_checked, site, hidden_by_site}`; every Add card has `in_letter`.",
         "Looks the scanned plants up once and reuses that for the final summary through `with_plan()`."
       ]
     },
@@ -907,9 +916,9 @@
       "row": 4.8,
       "what": "API endpoint for the campus plan.",
       "how": [
-        "Reads `plants` (a list, may be empty) and `location`; 400 if missing.",
+        "Reads `plants` (a list, may be empty), `location`, an optional `skip` list of scientific names and an optional `site` object; 400 if missing, if `skip` isn't a list of names, or if `site` isn't an object.",
         "ZIP codes outside Florida (32004–34997) get \"EcoLoco's plant lists cover Florida only. Enter a Florida ZIP code.\"",
-        "Returns `{result: build_plan(plants, plantings_checked(location))}`: scanning and invasive checks work anywhere in Florida; Add cards only for Palm Beach County."
+        "Returns `{result: build_plan(plants, plantings_checked(location), skip, site)}`: scanning and invasive checks work anywhere in Florida; Add cards only for Palm Beach County."
       ]
     },
     {
@@ -924,7 +933,7 @@
       "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
       "what": "Sends the audited plants to the backend and gets the plan back.",
       "how": [
-        "POSTs `{plants: [{scientific_name, plant_name}], location}` to `/plan`.",
+        "POSTs `{plants: [{scientific_name, plant_name}], location, skip, site}` to `/plan`.",
         "Errors keep the HTTP status; `userMessage(err, fallback)` shows the server's own message for 400s (like the Florida-only message) and a friendly fallback otherwise."
       ]
     },
@@ -986,7 +995,7 @@
       "row": 4.2,
       "what": "One Remove or Add card in the plan, with every fact followed by its source.",
       "how": [
-        "Add cards: name, why it was picked, effect, then Helps / Where / Buying it / Watch out / Look into.",
+        "Add cards: name, why it was picked, effect, then Helps / Where / Buying it / Watch out / Look into. On the results screen they have an \"In my letter\" checkbox and dim when unticked.",
         "Remove cards: name, Invasive badge, Why, Safety, and what to replace it with (left out when `plantingsChecked` is false). `NOT_CHECKED_HERE` holds the message screens show instead of Add cards.",
         "Shows 2 rows and a \"More\" button for the rest.",
         "`SourceLine` (frontend/components/SourceLine.js) shows \"Source: …\" in small text and opens the link.",
@@ -1333,6 +1342,258 @@
         "Checked after our natives list and before USDA, so a USDA \"native\" answer can't override the Atlas.",
         "Today: tropical sage (Salvia coccinea), also called scarlet sage or blood sage."
       ]
+    },
+    {
+      "id": "ui_namepicker",
+      "label": "NamePicker",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/NamePicker.js",
+      "symbol": "export default function NamePicker",
+      "col": 2,
+      "row": 1.0,
+      "what": "\"Choose by name\": a type-to-search box over every plant recorded in Florida.",
+      "how": [
+        "After 2 letters and a short pause, calls `searchNames(text)`; only the latest search's answer is shown.",
+        "Each result shows the common name and the scientific name. It never shows a status: the status is checked after you pick, the same way as a scan.",
+        "Says \"No Florida plants match that. Try the scientific name.\" when nothing matches."
+      ]
+    },
+    {
+      "id": "c_names",
+      "label": "searchNames()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/services/geminiService.js",
+      "symbol": "export async function searchNames",
+      "col": 3,
+      "row": 1.0,
+      "what": "Asks the backend for plant names matching what was typed.",
+      "how": [
+        "POSTs `{query}` to `/names`."
+      ]
+    },
+    {
+      "id": "c_choose",
+      "label": "choosePlant()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/services/geminiService.js",
+      "symbol": "export async function choosePlant",
+      "col": 3,
+      "row": 0.4,
+      "what": "Asks the backend to check the plant the user picked by name.",
+      "how": [
+        "POSTs `{scientific_name, location}` to `/choose` and gets back the same shape as a scan."
+      ]
+    },
+    {
+      "id": "r_names",
+      "label": "POST /names",
+      "layer": "route",
+      "status": "live",
+      "file": "backend/app.py",
+      "symbol": "def names(",
+      "col": 4,
+      "row": 1.0,
+      "what": "Type-to-search over Florida plant names.",
+      "how": [
+        "Reads `query` (text, at most 80 characters; otherwise 400).",
+        "Returns `{result: search(query)}`: up to 20 `{scientific_name, common_name}`, names only."
+      ]
+    },
+    {
+      "id": "r_choose",
+      "label": "POST /choose",
+      "layer": "route",
+      "status": "live",
+      "file": "backend/app.py",
+      "symbol": "def choose(",
+      "col": 4,
+      "row": 0.4,
+      "what": "Checks a plant the user picked by name.",
+      "how": [
+        "Needs `scientific_name` and a Florida `location`; a name not on the Florida list gets \"That plant isn't on our Florida plant list. Pick a name from the search results.\"",
+        "Returns `{result: choose_plant(name, common_name, location)}`."
+      ]
+    },
+    {
+      "id": "s_choose",
+      "label": "choose_plant()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/ai_service.py",
+      "symbol": "def choose_plant(",
+      "col": 5,
+      "row": 0.4,
+      "what": "Turns a plant picked by name into the same result a scan gives.",
+      "how": [
+        "Runs `plant_option()`, the same status check as a scan: the FISC list, our natives lists, then USDA.",
+        "Returns `state: identified`, one option, `id_source: by_name` and no confidence, so the app shows \"Chosen by name\" instead of a match percentage. No PlantNet or OpenAI call."
+      ]
+    },
+    {
+      "id": "s_namesearch",
+      "label": "search()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/name_search.py",
+      "symbol": "def search(",
+      "col": 5,
+      "row": 1.0,
+      "what": "Finds Florida plants by common or scientific name.",
+      "how": [
+        "Builds one index from `fl_plant_names.json` (USDA) plus every name in our own lists, merged by `resolve()` so \"coontie\" and \"Zamia pumila\" find the same plant.",
+        "Ranks exact matches, then names starting with the text, then any word starting with it, then names containing it; returns up to 20.",
+        "`is_known(name)` and `common_name_for(name)` are used by `/choose`."
+      ]
+    },
+    {
+      "id": "s_isknown",
+      "label": "is_known()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/name_search.py",
+      "symbol": "def is_known(",
+      "col": 6,
+      "row": 0.4,
+      "what": "Says whether a name is on the Florida plant list, so `/choose` only checks real Florida plants.",
+      "how": [
+        "Resolves the name and looks for it in the same index `search()` uses."
+      ]
+    },
+    {
+      "id": "s_commonfor",
+      "label": "common_name_for()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/name_search.py",
+      "symbol": "def common_name_for(",
+      "col": 6,
+      "row": 1.0,
+      "what": "Gives a plant's common name for `/choose`.",
+      "how": [
+        "Our own lists' common name comes first, then USDA's."
+      ]
+    },
+    {
+      "id": "d_plantnames",
+      "label": "fl_plant_names.json",
+      "layer": "data",
+      "status": "live",
+      "file": "backend/data/fl_plant_names.json",
+      "symbol": null,
+      "col": 7,
+      "row": 1.0,
+      "what": "Every plant the USDA PLANTS Database records in Florida, natives and non-natives, with common names.",
+      "how": [
+        "5,322 species and varieties, author names removed.",
+        "Names only: no status is stored here."
+      ]
+    },
+    {
+      "id": "names_builder",
+      "label": "build_fl_plant_names.py",
+      "layer": "data",
+      "status": "live",
+      "file": "backend/scripts/build_fl_plant_names.py",
+      "symbol": "def plant_names(",
+      "col": 9,
+      "row": 1.0,
+      "what": "Script that rebuilds fl_plant_names.json from USDA's Florida state checklist.",
+      "how": [
+        "Downloads the checklist from the PLANTS web service (the same request plants.usda.gov's State Search download makes), or reads a saved copy.",
+        "Keeps accepted names, strips author names (\"ssp.\" becomes \"subsp.\"), and drops repeats.",
+        "Run: `venv\\Scripts\\python scripts/build_fl_plant_names.py download data/fl_plant_names.json`."
+      ]
+    },
+    {
+      "id": "ui_sitefilters",
+      "label": "SiteFilters",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/SiteFilters.js",
+      "symbol": "export default function SiteFilters",
+      "col": 2,
+      "row": 3.9,
+      "what": "\"Your site\": optional Light, Moisture, Space and Care choices that narrow the plants to add.",
+      "how": [
+        "Each field has \"Any\" plus its options: Light (Full sun, Part shade, Shade), Moisture (Dry, Average, Wet), Space (Small bed, Shrub area, Tree space), Care (Low, Moderate).",
+        "Says how many plants are hidden because they don't fit, and that moisture and care only narrow the list once checked.",
+        "Used on the Recommend screen and above the Add cards on the results screen; changing a choice asks for the plants again."
+      ]
+    },
+    {
+      "id": "s_fits",
+      "label": "fits_site()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/plan_service.py",
+      "symbol": "def fits_site(",
+      "col": 6,
+      "row": 5.6,
+      "what": "Says whether a recommended plant fits the user's site choices.",
+      "how": [
+        "Light and Space use the sun and size already in our checked data (`light_of`, `space_of`). Space allows smaller plants: a shrub area still shows small-bed plants.",
+        "Moisture and Care only count once that plant's field has `verified: true` (`checked_value`); until then the plant is never hidden.",
+        "\"Any\" (`unknown`) never hides anything."
+      ]
+    },
+    {
+      "id": "s_cleansite",
+      "label": "clean_site()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/plan_service.py",
+      "symbol": "def clean_site(",
+      "col": 6,
+      "row": 6.2,
+      "what": "Turns whatever site choices were sent into the four known fields.",
+      "how": [
+        "Unknown fields are dropped and unknown values become `unknown`, which hides nothing."
+      ]
+    },
+    {
+      "id": "s_lightof",
+      "label": "light_of()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/plan_service.py",
+      "symbol": "def light_of(",
+      "col": 7,
+      "row": 5.6,
+      "what": "Reads which light a plant takes from its sun text.",
+      "how": [
+        "\"Full sun\" → full; \"light shade\", \"part shade\" or \"light to moderate shade\" → part; \"moderate shade\" or \"full shade\" → shade."
+      ]
+    },
+    {
+      "id": "s_spaceof",
+      "label": "space_of()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/plan_service.py",
+      "symbol": "def space_of(",
+      "col": 7,
+      "row": 6.2,
+      "what": "Reads how much room a plant needs from its type and size.",
+      "how": [
+        "Trees need tree space; anything else up to 3 feet tall fits a small bed, taller plants need a shrub area."
+      ]
+    },
+    {
+      "id": "s_checked",
+      "label": "checked_value()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/plan_service.py",
+      "symbol": "def checked_value(",
+      "col": 7,
+      "row": 6.8,
+      "what": "Gives a plant's moisture or care only if a teammate has checked it.",
+      "how": [
+        "Returns the field's `value` when `verified` is true, otherwise `None` (unknown)."
+      ]
     }
   ],
   "edges": [
@@ -1620,7 +1881,7 @@
     {
       "from": "results",
       "to": "c_plan",
-      "label": "getPlan([{scientific_name, plant_name}], zipCode)"
+      "label": "getPlan(plants, zipCode, skip)"
     },
     {
       "from": "c_plan",
@@ -1888,6 +2149,111 @@
       "from": "s_fl",
       "to": "d_non_natives",
       "label": "not native per the Atlas"
+    },
+    {
+      "from": "audit",
+      "to": "ui_namepicker",
+      "label": "Choose by name on a plant card"
+    },
+    {
+      "from": "ident",
+      "to": "ui_namepicker",
+      "label": "Choose by name"
+    },
+    {
+      "from": "ui_namepicker",
+      "to": "c_names",
+      "label": "searchNames(text)"
+    },
+    {
+      "from": "audit",
+      "to": "c_choose",
+      "label": "choosePlant(name, zip)"
+    },
+    {
+      "from": "ident",
+      "to": "c_choose",
+      "label": "choosePlant(name, zip)"
+    },
+    {
+      "from": "c_names",
+      "to": "r_names",
+      "label": "POST /names {query}"
+    },
+    {
+      "from": "c_choose",
+      "to": "r_choose",
+      "label": "POST /choose {scientific_name, location}"
+    },
+    {
+      "from": "r_names",
+      "to": "s_namesearch",
+      "label": "search(query)"
+    },
+    {
+      "from": "r_choose",
+      "to": "s_isknown",
+      "label": "is_known(name)"
+    },
+    {
+      "from": "r_choose",
+      "to": "s_commonfor",
+      "label": "common_name_for(name)"
+    },
+    {
+      "from": "r_choose",
+      "to": "s_choose",
+      "label": "choose_plant(name, common, zip)"
+    },
+    {
+      "from": "s_choose",
+      "to": "s_option",
+      "label": "same status check as a scan"
+    },
+    {
+      "from": "s_namesearch",
+      "to": "d_plantnames",
+      "label": "USDA Florida names"
+    },
+    {
+      "from": "names_builder",
+      "to": "d_plantnames",
+      "label": "writes 5,322 Florida plants"
+    },
+    {
+      "from": "rec",
+      "to": "ui_sitefilters",
+      "label": "site choices"
+    },
+    {
+      "from": "results",
+      "to": "ui_sitefilters",
+      "label": "site choices"
+    },
+    {
+      "from": "s_plan",
+      "to": "s_cleansite",
+      "label": "clean_site(site)"
+    },
+    {
+      "from": "s_plan",
+      "to": "s_fits",
+      "label": "fits_site(rec, site)"
+    },
+    {
+      "from": "s_fits",
+      "to": "s_lightof",
+      "label": "light from sun text"
+    },
+    {
+      "from": "s_fits",
+      "to": "s_spaceof",
+      "label": "room from type and size"
+    },
+    {
+      "from": "s_fits",
+      "to": "s_checked",
+      "label": "moisture and care, only if checked"
     }
   ]
 }

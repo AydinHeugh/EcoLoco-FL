@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   btnText: { fontSize: 14, fontFamily: FONTS.bodyBold, color: COLORS.cream },
   row: { flexDirection: 'row', gap: 8 },
   input: {
-    flex: 1, backgroundColor: COLORS.white, color: COLORS.textBody, borderRadius: 10, padding: 12,
+    flex: 1, minWidth: 0, backgroundColor: COLORS.white, color: COLORS.textBody, borderRadius: 10, padding: 12,
     fontSize: 14, fontFamily: FONTS.body, borderWidth: 1, borderColor: COLORS.border,
   },
   findBtn: { backgroundColor: COLORS.softGreen, borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center' },
