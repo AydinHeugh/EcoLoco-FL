@@ -20,6 +20,7 @@ import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS } from '../theme';
 import StatusBadge from '../components/StatusBadge';
 import CandidatePicker, { AgreedStatus, CHOSEN_BY_NAME, NO_MATCH_TEXT, matchLabel } from '../components/CandidatePicker';
 import NamePicker from '../components/NamePicker';
+import PhotoStrip from '../components/PhotoStrip';
 import SourceLine from '../components/SourceLine';
 import AtlasButton from '../components/AtlasButton';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
@@ -278,6 +279,12 @@ export default function IdentificationScreen({ navigation }) {
             ? (
               <View>
                 <Image source={{ uri: photo.uri }} style={styles.uploadPreview} resizeMode="cover" />
+                <View style={styles.thumbs}>
+                  <PhotoStrip
+                    photos={photos}
+                    onRemove={index => { setPhotos(prev => prev.filter((_, i) => i !== index)); setResult(null); setPicked(null); }}
+                  />
+                </View>
                 <Text style={styles.photoCount}>
                   Photos of this one plant: {photos.length} of {MAX_PHOTOS}. Add a leaf up close or a flower for a surer match.
                 </Text>
@@ -529,6 +536,7 @@ const styles = StyleSheet.create({
   resultCardNarrow: { flexDirection: 'column' },
   resultThumb: { width: 120, height: 120 },
   resultThumbNarrow: { width: '100%', height: 180 },
+  thumbs: { paddingHorizontal: 16, paddingTop: 12 },
   clearPhotos: { alignSelf: 'center', paddingVertical: 4 },
   clearPhotosText: { fontSize: 12, fontFamily: FONTS.bodyBold, color: COLORS.terracotta },
   photoCount: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', marginTop: 6 },

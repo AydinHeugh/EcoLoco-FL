@@ -141,3 +141,18 @@ def test_openai_pick_shows_no_number():
     picker = (FRONTEND / "components" / "CandidatePicker.js").read_text(encoding="utf-8")
     assert "\" · OpenAI's pick\"" in picker
     assert "sure)" not in picker and "suggestedConfidence" not in picker
+
+
+def test_home_page_says_what_the_app_does():
+    text = (FRONTEND / "screens" / "HomeScreen.js").read_text(encoding="utf-8")
+    for phrase in ("Find out which plants on your campus help Florida wildlife, and which ones hurt it.",
+                   "Start a campus scan", "Write to Your Principal", "How We Know",
+                   "Every answer comes from Florida's official invasive list, USDA, and the USF Atlas. Our team checked every plant we recommend.",
+                   "checked for Palm Beach County"):
+        assert phrase in text
+    for gone in ("Welcome to", "EcoLoco_Scanning_Plant", "picked for South Florida", "one plant at a time"):
+        assert gone not in text
+
+
+def test_identify_shows_every_photo():
+    assert "<PhotoStrip" in (FRONTEND / "screens" / "IdentificationScreen.js").read_text(encoding="utf-8")

@@ -165,8 +165,10 @@
       "row": 0,
       "what": "Landing page that explains what EcoLoco does and links into the tools.",
       "how": [
-        "Four short cards: Identify a Plant, Scan Your Campus, Plant Florida Natives, Why It Matters.",
-        "Each links to its tab; the oak fact (\"Oaks feed 395 kinds of caterpillars in South Florida\") shows its National Wildlife Federation source.",
+        "Opens with the name, \"Find out which plants on your campus help Florida wildlife, and which ones hurt it.\" and a \"Start a campus scan\" button.",
+        "Then six short sections: Scan Your Campus, Write to Your Principal, Identify a Plant, Plant Florida Natives (checked for Palm Beach County), Why It Matters, How We Know.",
+        "Each links to its tab; the oak fact (\"Oaks feed 395 kinds of caterpillars in South Florida\") shows its National Wildlife Federation source. How We Know names the official invasive list, USDA and the USF Atlas.",
+        "Sections without a real photo have no picture, so the page never shows a made-up app screen.",
         "Colors and fonts come from `frontend/theme.js`."
       ]
     },
@@ -182,6 +184,7 @@
       "what": "Identify a single plant from a photo and see whether it helps or hurts the local ecosystem.",
       "how": [
         "You set the location and add up to 5 photos of one plant: Take Photo (camera) and Upload Photo (library, multi-select) both add to the photos instead of replacing them, and \"Clear photos\" starts over. On web you can also drag-and-drop images.",
+        "A row of thumbnails (`PhotoStrip`) under the first photo shows every photo added, each with a ✕ to remove it.",
         "The Identify button only enables when there's a photo and a 5-digit ZIP.",
         "`handleIdentify()` calls `identifyPlant(photo.base64, zipCode)` and shows loading dots.",
         "`identified`: shows the name, the shared `StatusBadge`, and PlantNet's match percentage.",
@@ -1594,6 +1597,21 @@
       "how": [
         "Returns the field's `value` when `verified` is true, otherwise `None` (unknown)."
       ]
+    },
+    {
+      "id": "ui_photostrip",
+      "label": "PhotoStrip",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/PhotoStrip.js",
+      "symbol": "export default function PhotoStrip",
+      "col": 2,
+      "row": 2.6,
+      "what": "A row of small thumbnails showing every photo of one plant.",
+      "how": [
+        "Each thumbnail has a ✕ to remove that photo, when removing is allowed.",
+        "Used on EcoScan plant cards and the Identify screen; dims while a card is being scanned."
+      ]
     }
   ],
   "edges": [
@@ -2254,6 +2272,16 @@
       "from": "s_fits",
       "to": "s_checked",
       "label": "moisture and care, only if checked"
+    },
+    {
+      "from": "audit",
+      "to": "ui_photostrip",
+      "label": "photos on a plant card"
+    },
+    {
+      "from": "ident",
+      "to": "ui_photostrip",
+      "label": "photos added"
     }
   ]
 }
