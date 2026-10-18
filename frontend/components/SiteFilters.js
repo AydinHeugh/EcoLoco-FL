@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { COLORS, FONTS } from '../theme';
+import { COLORS, FONTS, TYPE, LINE } from '../theme';
 
 export const ANY_SITE = { light: 'unknown', moisture: 'unknown', space: 'unknown', care: 'unknown' };
 
@@ -52,18 +52,18 @@ export default function SiteFilters({ site, onChange, hidden, disabled }) {
 
 const styles = StyleSheet.create({
   wrap: {
-    gap: 10, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border,
-    backgroundColor: COLORS.cardBg, marginBottom: 12,
+    gap: 12, padding: 18, borderRadius: 18,
+    backgroundColor: COLORS.lightBg, marginBottom: 16,
   },
-  title: { fontSize: 16, fontFamily: FONTS.heading, color: COLORS.darkGreen },
-  note: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textMuted, lineHeight: 17 },
+  title: { fontSize: TYPE.h3, fontFamily: FONTS.heading, color: COLORS.darkGreen },
+  note: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, lineHeight: LINE.body },
   row: { gap: 6 },
-  label: { fontSize: 11, fontFamily: FONTS.bodyBold, color: COLORS.textMuted, letterSpacing: 0.5 },
+  label: { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.seaGrape },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6 },
+  chip: { borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.cardBg, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 },
   chipOn: { backgroundColor: COLORS.darkGreen, borderColor: COLORS.darkGreen },
-  chipText: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textBody },
-  chipTextOn: { color: COLORS.cream, fontFamily: FONTS.bodyBold },
+  chipText: { fontSize: TYPE.link, fontFamily: FONTS.body, color: COLORS.textBody },
+  chipTextOn: { color: COLORS.onDark, fontFamily: FONTS.bodyBold },
   disabled: { opacity: 0.5 },
-  hidden: { fontSize: 12, fontFamily: FONTS.bodyBold, color: COLORS.textBody },
+  hidden: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.textBody },
 });

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import * as Location from 'expo-location';
 import { locate, userMessage } from '../services/geminiService';
-import { COLORS, FONTS } from '../theme';
+import { COLORS, FONTS, TYPE } from '../theme';
 
 const round2 = n => Math.round(n * 100) / 100;
 
@@ -80,16 +80,16 @@ export default function LocationPicker({ place, onChange }) {
 
 const styles = StyleSheet.create({
   wrap: { gap: 8 },
-  found: { fontSize: 14, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, textAlign: 'center' },
+  found: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, textAlign: 'center' },
   btn: { backgroundColor: COLORS.darkGreen, borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
-  btnText: { fontSize: 14, fontFamily: FONTS.bodyBold, color: COLORS.cream },
+  btnText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.cream },
   row: { flexDirection: 'row', gap: 8 },
   input: {
     flex: 1, minWidth: 0, backgroundColor: COLORS.white, color: COLORS.textBody, borderRadius: 10, padding: 12,
-    fontSize: 14, fontFamily: FONTS.body, borderWidth: 1, borderColor: COLORS.border,
+    fontSize: TYPE.body, fontFamily: FONTS.body, borderWidth: 1, borderColor: COLORS.border,
   },
   findBtn: { backgroundColor: COLORS.softGreen, borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center' },
   disabled: { opacity: 0.45 },
-  error: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.error, textAlign: 'center' },
-  note: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
+  error: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.error, textAlign: 'center' },
+  note: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
 });

@@ -31,8 +31,8 @@ export async function choosePlant(scientificName, location) {
   return post('/choose', { scientific_name: scientificName, location });
 }
 
-export async function getPlan(plants, location, skip = [], site = null) {
-  return post('/plan', { plants, location, skip, site });
+export async function getPlan(plants, location, skip = [], site = null, showAll = false, letterExtras = []) {
+  return post('/plan', { plants, location, skip, site, show_all: showAll, letter_extras: letterExtras });
 }
 
 export async function getPlantRecommendations(location, site = null) {

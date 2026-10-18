@@ -179,3 +179,42 @@ def test_skipping_everything_matches_today(verified):
     full = build_plan([PEPPER])
     plan = build_plan([PEPPER], skip=[c["scientific_name"] for c in full["add"]])
     assert plan["summary"]["percent_native_with_plan"] == plan["summary"]["percent_native"]
+
+
+def test_plan_gives_both_plant_and_kind_percents(monkeypatch):
+    monkeypatch.setattr(plan_service, "_recommendations", lambda: [dict(e, verified=False) for e in ALL])
+    plan = build_plan([PEPPER, dict(PEPPER), {"scientific_name": "Zamia integrifolia"}])
+    assert plan["summary"]["percent_native"] == 33
+    assert plan["summary"]["percent_native_kinds"] == 50
+    assert plan["summary"]["percent_native_kinds_with_plan"] == 50
+
+
+def test_kinds_with_plan_count_a_planted_species_once(verified):
+    plan = build_plan([PEPPER, {"scientific_name": "Zamia integrifolia"}])
+    kinds = plan["summary"]["kinds_with_plan"]
+    planted = {a["scientific_name"] for a in plan["add"]} | {"Zamia integrifolia"}
+    assert kinds == {"native": len(planted), "non_native": 0, "invasive": 0}
+    assert plan["summary"]["percent_native_kinds_with_plan"] == 100
+
+
+def test_plan_says_how_many_more_plants_fit(verified):
+    plan = build_plan([])
+    assert len(plan["add"]) == plan_service.MAX_ADDS
+    assert plan["more_available"] == len(ALL) - plan_service.MAX_ADDS
+
+
+def test_show_all_lists_every_fitting_plant_outside_the_letter(verified):
+    short = build_plan([])
+    plan = build_plan([], show_all=True)
+    assert len(plan["add"]) == len(ALL)
+    assert plan["more_available"] == 0
+    extras = plan["add"][plan_service.MAX_ADDS:]
+    assert all(c["extra"] and c["in_letter"] is False for c in extras)
+    assert plan["summary"] == short["summary"]
+
+
+def test_extras_join_the_letter_when_picked(verified):
+    name = build_plan([], show_all=True)["add"][-1]["scientific_name"]
+    plan = build_plan([], show_all=True, letter_extras=[name])
+    assert plan["add"][-1]["in_letter"] is True
+    assert plan["summary"]["counts_with_plan"]["native"] == plan_service.MAX_ADDS + 1

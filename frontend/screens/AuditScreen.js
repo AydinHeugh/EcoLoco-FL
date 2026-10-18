@@ -1,25 +1,28 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  ActivityIndicator, Image, useWindowDimensions,
-  Animated, Easing, Alert, Platform,
+  ActivityIndicator, useWindowDimensions,
+  Animated, Alert, Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useFonts } from 'expo-font';
 import { choosePlant, identifyPlant, userMessage } from '../services/geminiService';
-import { COLORS, FONTS, FONT_ASSETS } from '../theme';
+import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS, TYPE, LINE } from '../theme';
 import StatusBadge from '../components/StatusBadge';
 import CandidatePicker, { AgreedStatus, NO_MATCH_TEXT, agreedName, matchText } from '../components/CandidatePicker';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
 import { useProgressText } from '../components/ProgressText';
+import { DURATION, EASE_OUT, useReduceMotion } from '../motion';
 import LocationPicker from '../components/LocationPicker';
+import { rememberPlace } from '../lastPlace';
 import NamePicker from '../components/NamePicker';
 import PhotoStrip from '../components/PhotoStrip';
+import ScreenHeader from '../components/ScreenHeader';
+import ScanningLeaf from '../components/ScanningLeaf';
+import { PHOTOS } from '../photos';
 
-const EASE_OUT = Easing.bezier(0.22, 1, 0.36, 1);
 const MAX_PHOTOS = 5;
 const SCANS_AT_ONCE = 3;
-const LOGO = require('../../assets/EcoLoco_logo.png');
 
 let _savedPlants = [];
 let _savedPlace  = null;
@@ -49,13 +52,14 @@ export function settledPlant(card) {
 }
 
 function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan, onDelete, onPick, onNone, onPickOne, onNaming, onChooseName }) {
+  const reduce = useReduceMotion();
   const opacity    = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(14)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(opacity,    { toValue: 1, duration: 380, easing: EASE_OUT, useNativeDriver: true }),
-      Animated.timing(translateY, { toValue: 0, duration: 380, easing: EASE_OUT, useNativeDriver: true }),
+      Animated.timing(opacity,    { toValue: 1, duration: reduce ? 0 : DURATION, easing: EASE_OUT, useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: 0, duration: reduce ? 0 : DURATION, easing: EASE_OUT, useNativeDriver: true }),
     ]).start();
   }, []);
 
@@ -76,7 +80,7 @@ function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan,
     : 'Not sure yet';
 
   return (
-    <Animated.View style={[styles.plantCard, { opacity, transform: [{ translateY }] }]}>
+    <Animated.View style={[styles.plantCard, card.phase === 'draft' && styles.draftCard, { opacity, transform: [{ translateY }] }]}>
       <View style={styles.cardHead}>
         <Text style={styles.plantName} numberOfLines={2}>{title}</Text>
         {!scanning && (
@@ -132,7 +136,7 @@ function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan,
 
       {scanning && (
         <View style={styles.scanningRow}>
-          <ActivityIndicator color={COLORS.softGreen} size="small" />
+          <ScanningLeaf size={40} />
           <Text style={styles.scanningText}>{progress}</Text>
         </View>
       )}
@@ -142,7 +146,7 @@ function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan,
           {noMatch && <Text style={styles.expertWarning}>{NO_MATCH_TEXT}</Text>}
           {shown && (
             <>
-              <StatusBadge status={shown.status} label={shown.status_label} />
+              <StatusBadge key={shown.scientific_name} pop status={shown.status} label={shown.status_label} />
               <Text style={styles.matchText}>{matchText(r.id_source, shown.confidence)}</Text>
             </>
           )}
@@ -166,9 +170,10 @@ export default function AuditScreen({ navigation }) {
   const [place,   setPlace]   = useState(_savedPlace);
   const [plants,  setPlants]  = useState(_savedPlants);
   const [message, setMessage] = useState(null);
+  const [changingPlace, setChangingPlace] = useState(false);
 
   useEffect(() => { _savedPlants = plants; }, [plants]);
-  useEffect(() => { _savedPlace = place; }, [place]);
+  useEffect(() => { _savedPlace = place; rememberPlace(place); }, [place]);
   useEffect(() => navigation.addListener('focus', () => {
     setPlants(prev => prev.filter(p => p.phase === 'scanning' || _savedPlants.some(s => s._id === p._id)));
   }), [navigation]);
@@ -281,35 +286,43 @@ export default function AuditScreen({ navigation }) {
     >
       <View style={[styles.inner, { width: maxWidth }]}>
 
-        <View style={styles.header}>
-          <View style={styles.logoRow}>
-            <Image source={LOGO} style={styles.logoImg} />
-            <Text style={styles.logoText}>EcoLoco</Text>
-          </View>
-          {plants.length > 0 && (
-            <TouchableOpacity onPress={handleNewAudit}>
+        <ScreenHeader
+          photo={PHOTOS.ecoscan}
+          photoLabel="Plants and pollinators on a school campus"
+          title="EcoScan"
+          subtitle="Scan the plants around campus to see how many are native to Florida, and what to change."
+          right={plants.length > 0 ? (
+            <TouchableOpacity onPress={handleNewAudit} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
               <Text style={styles.newAuditBtn}>New Scan</Text>
             </TouchableOpacity>
-          )}
-        </View>
-
-        <View style={styles.divider} />
+          ) : null}
+        />
         <OfflineNotice />
 
         <View style={styles.titleSection}>
-          <Text style={styles.pageTitle}>EcoScan</Text>
-          <Text style={styles.pageSubtitle}>
-            Scan the plants around campus to see how many are native to Florida, and what to change.
-          </Text>
           <Text style={styles.realOnly}>Only scan real plants growing outdoors.</Text>
         </View>
 
         <View style={styles.zipSection}>
           {plants.length === 0 ? (
             <LocationPicker place={place} onChange={setPlace} />
+          ) : changingPlace ? (
+            <View style={styles.changePlace}>
+              <LocationPicker place={place} onChange={found => { setPlace(found); setChangingPlace(false); }} />
+              <Text style={styles.zipLockedSub}>Your scanned plants stay as they are.</Text>
+              <TouchableOpacity onPress={() => setChangingPlace(false)} accessibilityRole="button">
+                <Text style={styles.zipChange}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <View style={styles.zipLocked}>
-              <Text style={styles.zipLockedText}>📍 ZIP {zipCode}</Text>
+              <View style={styles.zipLockedLeft}>
+                <Text style={styles.zipLockedText}>📍 ZIP {zipCode}</Text>
+                <TouchableOpacity onPress={() => setChangingPlace(true)} accessibilityRole="button"
+                  accessibilityLabel="Change location" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Text style={styles.zipChange}>Change</Text>
+                </TouchableOpacity>
+              </View>
               <Text style={styles.zipLockedSub}>{done.length} of {plants.length} plant{plants.length !== 1 ? 's' : ''} scanned</Text>
             </View>
           )}
@@ -385,84 +398,79 @@ const styles = StyleSheet.create({
   scrollContent:{ alignItems: 'center' },
   inner:        { alignSelf: 'center' },
 
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 24, paddingTop: 52, paddingBottom: 16,
+  newAuditBtn:{ fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.onDark, textDecorationLine: 'underline' },
+
+  titleSection: { paddingTop: 18, paddingBottom: 6, paddingHorizontal: 20 },
+  realOnly: {
+    alignSelf: 'flex-start', fontSize: TYPE.body, lineHeight: LINE.body, fontFamily: FONTS.bodyBold, color: COLORS.accentInk,
+    backgroundColor: COLORS.accentSoft, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, overflow: 'hidden',
   },
-  logoRow:    { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logoImg:    { width: 40, height: 40, resizeMode: 'contain' },
-  logoText:   { fontSize: 20, fontFamily: FONTS.heading, color: COLORS.darkGreen, letterSpacing: 0.3 },
-  newAuditBtn:{ fontSize: 12, fontFamily: FONTS.body, color: COLORS.terracotta },
 
-  divider: { height: 1, backgroundColor: COLORS.border },
-
-  titleSection: { alignItems: 'center', paddingTop: 32, paddingBottom: 24, paddingHorizontal: 24 },
-  pageTitle:    { fontSize: 34, fontFamily: FONTS.heading, color: COLORS.darkGreen, marginBottom: 6 },
-  pageSubtitle: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', lineHeight: 19 },
-  realOnly:     { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, textAlign: 'center', marginTop: 10 },
-
-  zipSection: { paddingHorizontal: 20, marginBottom: 8 },
+  zipSection: { paddingHorizontal: 20, marginTop: 12, marginBottom: 8 },
   zipLocked: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: COLORS.lightBg, borderRadius: 10, padding: 13,
+    borderTopWidth: 1, borderBottomWidth: 1, borderColor: COLORS.border, paddingVertical: 12,
   },
-  zipLockedText: { fontSize: 14, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
-  zipLockedSub:  { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textMuted },
+  zipLockedText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
+  zipLockedSub:  { fontSize: TYPE.caption, fontFamily: FONTS.bodyMedium, color: COLORS.textMuted },
+  zipLockedLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  zipChange:     { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.softGreen, textDecorationLine: 'underline', textAlign: 'center' },
+  changePlace:   { gap: 10, paddingVertical: 8 },
 
-  listSection: { paddingHorizontal: 20, paddingTop: 16, gap: 12 },
+  listSection: { paddingHorizontal: 20, paddingTop: 16, gap: 14 },
 
   plantCard: {
-    backgroundColor: COLORS.cardBg, borderRadius: 14,
-    borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden', padding: 12, gap: 10,
+    backgroundColor: COLORS.cardBg, borderRadius: 18,
+    borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden', padding: 16, gap: 12,
   },
+  draftCard: { backgroundColor: 'transparent', borderStyle: 'dashed', borderWidth: 1.5, borderColor: COLORS.softGreen },
   cardHead:  { flexDirection: 'row', alignItems: 'flex-start' },
-  cardBody:  { gap: 8 },
-  plantName: { flex: 1, fontSize: 16, fontFamily: FONTS.heading, color: COLORS.darkGreen, lineHeight: 22 },
+  cardBody:  { gap: 10 },
+  plantName: { flex: 1, fontSize: TYPE.h3, fontFamily: FONTS.heading, color: COLORS.darkGreen, lineHeight: LINE.h3 },
   deleteBtn:      { paddingLeft: 8 },
   deleteBtnInner: {
-    width: 26, height: 26, borderRadius: 13,
-    backgroundColor: COLORS.photoBg, alignItems: 'center', justifyContent: 'center',
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: COLORS.lightBg, alignItems: 'center', justifyContent: 'center',
   },
-  deleteBtnText: { fontSize: 13, color: COLORS.terracotta, fontFamily: FONTS.bodyBold, lineHeight: 14 },
+  deleteBtnText: { fontSize: TYPE.body, color: COLORS.textBody, fontFamily: FONTS.bodyBold, lineHeight: LINE.body },
 
-
-  photoCount:  { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textMuted, lineHeight: 17 },
-  cardButtons: { flexDirection: 'row', gap: 8 },
+  photoCount:  { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, lineHeight: LINE.body },
+  cardButtons: { flexDirection: 'row', gap: 10 },
   smallBtn: {
-    flex: 1, borderRadius: 8, paddingVertical: 10, alignItems: 'center',
-    borderWidth: 1.5, borderColor: COLORS.darkGreen,
+    flex: 1, borderRadius: 12, paddingVertical: 12, alignItems: 'center',
+    backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.border,
   },
-  smallBtnText: { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, textAlign: 'center' },
-  scanOneBtn:   { borderRadius: 8, paddingVertical: 11, alignItems: 'center', backgroundColor: COLORS.softGreen },
-  scanOneText:  { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.cream },
+  smallBtnText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, textAlign: 'center' },
+  scanOneBtn:   { borderRadius: 12, paddingVertical: 13, alignItems: 'center', backgroundColor: COLORS.darkGreen },
+  scanOneText:  { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.onDark },
   byName:       { alignSelf: 'center', paddingVertical: 4 },
-  byNameText:   { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.softGreen },
-  cardError:    { fontSize: 12, fontFamily: FONTS.body, color: COLORS.error },
+  byNameText:   { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.softGreen, textDecorationLine: 'underline' },
+  cardError:    { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.error },
 
-  scanningRow:  { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  scanningText: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textBody },
-  matchText:    { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textMuted },
+  scanningRow:  { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  scanningText: { fontSize: TYPE.body, fontFamily: FONTS.bodyMedium, color: COLORS.textBody },
+  matchText:    { fontSize: TYPE.caption, fontFamily: FONTS.body, color: COLORS.textMuted },
 
-  emptyState:   { alignItems: 'center', paddingVertical: 52, paddingHorizontal: 32 },
-  emptyIcon:    { fontSize: 36, marginBottom: 12 },
-  emptyTitle:   { fontSize: 17, fontFamily: FONTS.heading, color: COLORS.textBody, marginBottom: 6 },
-  emptySubtitle:{ fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', lineHeight: 19 },
+  emptyState:   { alignItems: 'flex-start', paddingVertical: 36, paddingHorizontal: 20 },
+  emptyIcon:    { fontSize: TYPE.display, marginBottom: 8 },
+  emptyTitle:   { fontSize: TYPE.h3, fontFamily: FONTS.heading, color: COLORS.darkGreen, marginBottom: 6 },
+  emptySubtitle:{ fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, lineHeight: LINE.body },
 
   actions: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 52, gap: 12 },
   addBtn: {
-    borderRadius: 10, paddingVertical: 14, alignItems: 'center',
+    borderRadius: 14, paddingVertical: 15, alignItems: 'center',
     borderWidth: 1.5, borderColor: COLORS.darkGreen,
   },
-  addBtnText:  { fontSize: 15, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
-  scanAllBtn:  { backgroundColor: COLORS.darkGreen, borderRadius: 10, paddingVertical: 16, alignItems: 'center' },
-  scanAllText: { fontSize: 15, fontFamily: FONTS.bodyBold, color: COLORS.cream },
-  waitingNote: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
+  addBtnText:  { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
+  scanAllBtn:  { backgroundColor: COLORS.darkGreen, borderRadius: 14, paddingVertical: 17, alignItems: 'center' },
+  scanAllText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.onDark },
+  waitingNote: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
   finishBtn: {
-    backgroundColor: COLORS.softGreen, borderRadius: 10,
-    paddingVertical: 16, alignItems: 'center', marginTop: 4,
+    backgroundColor: COLORS.accent, borderRadius: 14,
+    paddingVertical: 17, alignItems: 'center', marginTop: 4,
   },
-  finishBtnText: { fontSize: 15, fontFamily: FONTS.bodyBold, color: COLORS.cream },
+  finishBtnText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.white },
   btnDisabled: { opacity: 0.35 },
-  expertWarning: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.terracotta, lineHeight: 17 },
-  scanError: { marginHorizontal: 20, marginBottom: 10, fontSize: 13, fontFamily: FONTS.body, color: COLORS.terracotta, textAlign: 'center' },
+  expertWarning: { fontSize: TYPE.body, fontFamily: FONTS.body, color: STATUS_COLORS.invasive.color, lineHeight: LINE.body },
+  scanError: { marginHorizontal: 20, marginBottom: 10, fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.error, textAlign: 'center' },
 });

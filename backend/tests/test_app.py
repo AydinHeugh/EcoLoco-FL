@@ -346,3 +346,19 @@ def test_letter_leaves_out_unchecked_plants(client, monkeypatch):
     letter = client.post("/letter", json={"plan": plan, "zip_code": "33496"}).get_json()["result"]
     assert kept in letter
     assert dropped not in letter
+
+
+def test_plan_shows_all_with_picked_extras(client):
+    short = client.post("/plan", json={"location": "33496", "plants": []}).get_json()["result"]
+    full = client.post("/plan", json={"location": "33496", "plants": [], "show_all": True}).get_json()["result"]
+    assert len(full["add"]) == len(short["add"]) + short["more_available"]
+    name = full["add"][-1]["scientific_name"]
+    picked = client.post("/plan", json={"location": "33496", "plants": [], "show_all": True,
+                                        "letter_extras": [name]}).get_json()["result"]
+    assert picked["add"][-1]["in_letter"] is True
+
+
+@pytest.mark.parametrize("body", [{"show_all": "yes"}, {"letter_extras": "Zamia integrifolia"}, {"letter_extras": [1]}])
+def test_plan_rejects_bad_show_all_options(client, body):
+    response = client.post("/plan", json={"location": "33496", "plants": [], **body})
+    assert response.status_code == 400

@@ -1,23 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  ActivityIndicator, Image, useWindowDimensions, Linking, TextInput,
+  ActivityIndicator, useWindowDimensions, Linking, TextInput,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useFonts } from 'expo-font';
 import { getPlan, getNearby, generateLetter, userMessage } from '../services/geminiService';
-import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS } from '../theme';
+import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS, TYPE, LINE } from '../theme';
 import StatusBadge from '../components/StatusBadge';
 import PercentRing from '../components/PercentRing';
+import CountUp from '../components/CountUp';
+import { COUNT_STAGGER, useDelayedFlag } from '../motion';
 import PlanCard, { NOT_CHECKED_HERE } from '../components/PlanCard';
 import SiteFilters, { ANY_SITE } from '../components/SiteFilters';
 import SourceLine from '../components/SourceLine';
 import StatusBars from '../components/StatusBars';
+import ScreenHeader from '../components/ScreenHeader';
+import ScanningLeaf from '../components/ScanningLeaf';
+import Reveal, { RevealProvider, useRevealScroll } from '../components/Reveal';
+import { PHOTOS } from '../photos';
 import CaterpillarBars from '../components/CaterpillarBars';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
 import { forgetScannedPlant } from './AuditScreen';
 
-const LOGO = require('../../assets/EcoLoco_logo.png');
 const NURSERY_URL = 'https://plantrealflorida.org';
 const NO_DATA = "We don't have wildlife info for this plant yet";
 
@@ -80,9 +85,14 @@ function LetterGenerator({ plan, zipCode }) {
   );
 }
 
-export default function AuditResultsScreen({ route, navigation }) {
+export default function AuditResultsScreen(props) {
+  return <RevealProvider><AuditResults {...props} /></RevealProvider>;
+}
+
+function AuditResults({ route, navigation }) {
+  const onScroll = useRevealScroll();
   const { plants = [], zipCode, lat, lon } = route.params ?? {};
-  const [request,  setRequest]  = useState({ plants, skip: [], site: ANY_SITE });
+  const [request,  setRequest]  = useState({ plants, skip: [], site: ANY_SITE, showAll: false, extras: [] });
   const [plan,     setPlan]     = useState(null);
   const [planFor,  setPlanFor]  = useState(null);
   const [loading,  setLoading]  = useState(true);
@@ -94,11 +104,12 @@ export default function AuditResultsScreen({ route, navigation }) {
   const maxWidth   = Math.min(width, 960);
   const [fontsLoaded] = useFonts(FONT_ASSETS);
   const stale = plan != null && planFor !== request;
+  const slow = useDelayedFlag(stale);
 
   useEffect(() => {
     let current = true;
     setError(null);
-    getPlan(request.plants.map(p => ({ scientific_name: p.scientific_name, plant_name: p.plant_name })), zipCode, request.skip, request.site)
+    getPlan(request.plants.map(p => ({ scientific_name: p.scientific_name, plant_name: p.plant_name })), zipCode, request.skip, request.site, request.showAll, request.extras)
       .then(data => { if (current) { setPlan(data.result); setPlanFor(request); } })
       .catch(err => { if (current) setError(userMessage(err, 'Could not check your plants. Check your connection and try again.')); })
       .finally(() => { if (current) setLoading(false); });
@@ -116,7 +127,12 @@ export default function AuditResultsScreen({ route, navigation }) {
     setRequest({ ...planFor, plants: planFor.plants.filter((_, i) => i !== index) });
   }
 
-  function toggleLetter(name) {
+  function toggleLetter(name, extra) {
+    if (extra) {
+      const extras = planFor.extras.includes(name) ? planFor.extras.filter(n => n !== name) : [...planFor.extras, name];
+      setRequest({ ...planFor, extras });
+      return;
+    }
     const skip = planFor.skip.includes(name) ? planFor.skip.filter(n => n !== name) : [...planFor.skip, name];
     setRequest({ ...planFor, skip });
   }
@@ -127,25 +143,25 @@ export default function AuditResultsScreen({ route, navigation }) {
   const addName = name => plan?.add.find(a => a.scientific_name === name)?.common_name;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}
+      onScroll={onScroll} scrollEventThrottle={64}>
       <View style={[styles.inner, { width: maxWidth }]}>
 
-        <View style={styles.header}>
-          <View style={styles.logoRow}>
-            <Image source={LOGO} style={styles.logoImg} />
-            <Text style={styles.logoText}>EcoLoco</Text>
-          </View>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backBtn}>← Back to EcoScan</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.divider} />
+        <ScreenHeader
+          photo={PHOTOS.results}
+          photoLabel="A school garden full of native plants"
+          title="Your plan"
+          right={(
+            <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+              <Text style={styles.backBtn}>← Back to EcoScan</Text>
+            </TouchableOpacity>
+          )}
+        />
         <OfflineNotice />
 
         {loading && (
           <View style={styles.centerSection}>
-            <ActivityIndicator color={COLORS.softGreen} size="large" />
+            <ScanningLeaf size={64} />
             <Text style={styles.mutedText}>Checking your plants against Florida lists…</Text>
           </View>
         )}
@@ -162,8 +178,7 @@ export default function AuditResultsScreen({ route, navigation }) {
         {!loading && plan && (
           <>
             <View style={styles.section}>
-              <Text style={styles.pageTitle}>Your plan</Text>
-              {stale && !error && <Text style={styles.mutedText}>Updating your plan…</Text>}
+              {slow && !error && <Text style={styles.mutedText}>Updating your plan…</Text>}
               {stale && error && (
                 <>
                   <Text style={styles.errorText}>{error}</Text>
@@ -172,25 +187,40 @@ export default function AuditResultsScreen({ route, navigation }) {
                   </TouchableOpacity>
                 </>
               )}
-              {plan.remove.map(card => (
-                <PlanCard key={card.scientific_name} card={card} kind="remove"
-                  replacementName={addName(card.replacement)} plantingsChecked={plan.plantings_checked !== false} />
+              {plan.remove.map((card, i) => (
+                <Reveal key={card.scientific_name} index={i}>
+                  <PlanCard card={card} kind="remove"
+                    replacementName={addName(card.replacement)} plantingsChecked={plan.plantings_checked !== false} />
+                </Reveal>
               ))}
               {plan.plantings_checked === false
                 ? <Text style={styles.mutedText}>{NOT_CHECKED_HERE}</Text>
                 : (
                   <>
-                    <SiteFilters site={request.site} hidden={plan.hidden_by_site ?? 0} disabled={stale}
+                    <SiteFilters site={request.site} hidden={plan.hidden_by_site ?? 0} disabled={slow}
                       onChange={site => setRequest({ ...planFor, site })} />
                     {plan.add.length === 0
                       ? <Text style={styles.mutedText}>{plan.hidden_by_site > 0 ? 'No checked plants fit all of those choices. Try setting one back to Any.' : 'No plants are ready to recommend yet. Our team is still checking each one.'}</Text>
                       : (
                         <>
                           <Text style={styles.sectionNote}>Untick a plant to leave it out of your letter and the "with the plan" numbers.</Text>
-                          {plan.add.map(card => (
-                            <PlanCard key={card.scientific_name} card={card} kind="add"
-                              inLetter={card.in_letter !== false} onToggleLetter={stale ? null : () => toggleLetter(card.scientific_name)} />
+                          {plan.add.map((card, i) => (
+                            <Reveal key={card.scientific_name} index={i}>
+                              <PlanCard card={card} kind="add"
+                                inLetter={card.in_letter !== false} onToggleLetter={stale ? null : () => toggleLetter(card.scientific_name, card.extra)} />
+                            </Reveal>
                           ))}
+                          {(plan.more_available > 0 || request.showAll) && (
+                            <>
+                              {request.showAll && <Text style={styles.sectionNote}>The extra plants start outside your letter. Tick one to add it.</Text>}
+                              <TouchableOpacity style={styles.btnOutline} disabled={stale}
+                                onPress={() => setRequest({ ...planFor, showAll: !planFor.showAll, extras: [] })}>
+                                <Text style={styles.btnOutlineText}>
+                                  {request.showAll ? 'Show fewer plants' : `Show all plants that fit (${plan.more_available} more)`}
+                                </Text>
+                              </TouchableOpacity>
+                            </>
+                          )}
                         </>
                       )}
                   </>
@@ -231,15 +261,30 @@ export default function AuditResultsScreen({ route, navigation }) {
 
             <View style={styles.divider} />
 
-            <View style={styles.ringSection}>
-              <Text style={styles.sectionTitle}>How native is your campus?</Text>
+            <View style={styles.ringBand}>
+              <Text style={[styles.sectionTitle, styles.onDarkTitle]}>How native is your campus?</Text>
               {summary.percent_native === null
-                ? <Text style={styles.mutedText}>Not enough identified plants yet</Text>
-                : <PercentRing now={summary.percent_native} withPlan={summary.percent_native_with_plan} />}
+                ? <Text style={[styles.mutedText, styles.onDarkMuted]}>Not enough identified plants yet</Text>
+                : (
+                  <>
+                    <View style={styles.rings}>
+                      <PercentRing onDark size={140} title="Kinds of plants" caption="kinds native"
+                        now={summary.percent_native_kinds} withPlan={summary.percent_native_kinds_with_plan} />
+                      <PercentRing onDark size={140} title="Every plant" caption="plants native" delay={COUNT_STAGGER}
+                        now={summary.percent_native} withPlan={summary.percent_native_with_plan} />
+                    </View>
+                    <Text style={[styles.mutedText, styles.onDarkMuted, styles.ringNote]}>
+                      Kinds of plants counts each species once, however many you scanned. Every plant counts each one you scanned.
+                    </Text>
+                  </>
+                )}
+            </View>
+
+            <View style={styles.ringSection}>
               <View style={styles.countRow}>
-                {BUCKETS.map(({ key, status, label }) => (
+                {BUCKETS.map(({ key, status, label }, i) => (
                   <View key={key} style={styles.countItem}>
-                    <Text style={[styles.countNum, { color: STATUS_COLORS[status].color }]}>{summary.counts[key]}</Text>
+                    <CountUp value={summary.counts[key]} style={[styles.countNum, { color: STATUS_COLORS[status].color }]} delay={i * COUNT_STAGGER} />
                     <Text style={styles.countLabel}>{label}</Text>
                   </View>
                 ))}
@@ -308,54 +353,50 @@ const styles = StyleSheet.create({
   scrollContent: { alignItems: 'center' },
   inner:         { alignSelf: 'center', width: '100%' },
 
-  header: {
-    flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 24, paddingTop: 52, paddingBottom: 16, rowGap: 8,
-  },
-  logoRow:  { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logoImg:  { width: 40, height: 40, resizeMode: 'contain' },
-  logoText: { fontSize: 20, fontFamily: FONTS.heading, color: COLORS.darkGreen, letterSpacing: 0.3 },
-  backBtn:  { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textBody },
+  backBtn:  { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.onDark, textDecorationLine: 'underline' },
 
-  divider: { height: 1, backgroundColor: COLORS.border },
+  divider: { height: 1, backgroundColor: COLORS.border, marginHorizontal: 20 },
 
   centerSection: { alignItems: 'center', paddingVertical: 60, gap: 14, paddingHorizontal: 24 },
   section:       { paddingHorizontal: 20, paddingVertical: 24, gap: 8 },
+  ringBand:      { alignItems: 'center', backgroundColor: COLORS.darkGreen, paddingHorizontal: 20, paddingTop: 32, paddingBottom: 36, gap: 18 },
+  onDarkTitle:   { color: COLORS.onDark, fontSize: TYPE.h2, lineHeight: LINE.h2, textAlign: 'center' },
+  onDarkMuted:   { color: COLORS.onDarkMuted },
+  rings:         { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 16, rowGap: 24 },
+  ringNote:      { maxWidth: 460 },
   ringSection:   { alignItems: 'center', paddingHorizontal: 20, paddingVertical: 24, gap: 12 },
 
-  pageTitle:    { fontSize: 30, fontFamily: FONTS.heading, color: COLORS.darkGreen, marginBottom: 8 },
-  sectionTitle: { fontSize: 22, fontFamily: FONTS.heading, color: COLORS.darkGreen, marginBottom: 4 },
-  sectionNote:  { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textMuted, lineHeight: 18 },
-  mutedText:    { fontSize: 14, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
-  errorText:    { fontSize: 13, fontFamily: FONTS.body, color: COLORS.error, textAlign: 'center' },
-  link:         { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.softGreen, textAlign: 'center', paddingVertical: 14 },
+  sectionTitle: { fontSize: TYPE.h3, lineHeight: LINE.h3, fontFamily: FONTS.heading, color: COLORS.darkGreen, marginBottom: 4 },
+  sectionNote:  { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, lineHeight: LINE.body },
+  mutedText:    { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
+  errorText:    { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.error, textAlign: 'center' },
+  link:         { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.softGreen, textAlign: 'center', paddingVertical: 14, textDecorationLine: 'underline' },
 
-  plantRow:  { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.lightBg, gap: 4 },
+  plantRow:  { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border, gap: 6 },
   plantHead: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  plantName: { fontSize: 15, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, flexShrink: 1 },
+  plantName: { fontSize: TYPE.lead, fontFamily: FONTS.heading, color: COLORS.darkGreen, flexShrink: 1 },
   plantActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  removeBtn: { fontSize: 12, fontFamily: FONTS.bodyBold, color: COLORS.terracotta },
+  removeBtn: { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.accent, textDecorationLine: 'underline' },
   whyLine:   { paddingVertical: 6 },
-  plantWhy:  { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: 19 },
+  plantWhy:  { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: LINE.body },
 
   countRow:   { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 16, marginTop: 12 },
   countItem:  { alignItems: 'center', width: 90 },
-  countNum:   { fontSize: 24, fontFamily: FONTS.heading },
-  countLabel: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
+  countNum:   { fontSize: TYPE.h2, fontFamily: FONTS.headingBlack },
+  countLabel: { fontSize: TYPE.caption, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
 
-  btn:            { backgroundColor: COLORS.darkGreen, borderRadius: 10, paddingVertical: 15, alignItems: 'center', marginTop: 8 },
+  btn:            { backgroundColor: COLORS.accent, borderRadius: 14, paddingVertical: 17, alignItems: 'center', marginTop: 8 },
   btnDisabled:    { opacity: 0.45 },
-  btnText:        { fontSize: 15, fontFamily: FONTS.bodyBold, color: COLORS.cream },
-  btnOutline:     { borderWidth: 1.5, borderColor: COLORS.darkGreen, borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 12 },
-  btnOutlineText: { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
+  btnText:        { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.white },
+  btnOutline:     { borderWidth: 1.5, borderColor: COLORS.darkGreen, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 12 },
+  btnOutlineText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
 
   letterCard: {
-    marginTop: 16, backgroundColor: COLORS.cardBg, borderRadius: 14,
-    borderWidth: 1, borderColor: COLORS.border, padding: 16, gap: 8,
+    marginTop: 16, backgroundColor: COLORS.seaGrapeSoft, borderRadius: 4, padding: 18, gap: 10,
   },
   letterInput: {
-    fontSize: 13, fontFamily: FONTS.body, color: COLORS.textBody,
-    lineHeight: 22, backgroundColor: COLORS.lightBg, borderRadius: 8, padding: 12, minHeight: 520,
+    fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textBody,
+    lineHeight: LINE.body, backgroundColor: COLORS.white, borderRadius: 4, padding: 16, minHeight: 520,
   },
 
   ctaSection: { padding: 24, paddingBottom: 52 },

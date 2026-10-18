@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, STATUS_COLORS, FONTS } from '../theme';
+import { COLORS, STATUS_COLORS, FONTS, TYPE } from '../theme';
 
 const SEGMENTS = [
   { key: 'native',     status: 'native',     label: 'Native' },
@@ -44,14 +44,14 @@ export default function StatusBars({ now, withPlan }) {
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: COLORS.white, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, padding: 16, gap: 12, alignSelf: 'stretch' },
-  title: { fontSize: 15, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
+  card: { paddingVertical: 8, gap: 12, alignSelf: 'stretch' },
+  title: { fontSize: TYPE.lead, fontFamily: FONTS.heading, color: COLORS.darkGreen },
   row: { gap: 4 },
-  rowLabel: { fontSize: 12, fontFamily: FONTS.bodyBold, color: COLORS.textBody },
-  track: { flexDirection: 'row', height: 18, borderRadius: 4, overflow: 'hidden', backgroundColor: COLORS.lightBg },
-  rowNote: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textMuted },
+  rowLabel: { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.textBody },
+  track: { flexDirection: 'row', height: 22, borderRadius: 11, overflow: 'hidden', backgroundColor: COLORS.lightBg },
+  rowNote: { fontSize: TYPE.caption, fontFamily: FONTS.body, color: COLORS.textMuted },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   swatch: { width: 10, height: 10, borderRadius: 2 },
-  legendText: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textBody },
+  legendText: { fontSize: TYPE.caption, fontFamily: FONTS.body, color: COLORS.textBody },
 });

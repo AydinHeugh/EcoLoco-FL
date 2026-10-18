@@ -150,9 +150,88 @@ def test_home_page_says_what_the_app_does():
                    "Every answer comes from Florida's official invasive list, USDA, and the USF Atlas. Our team checked every plant we recommend.",
                    "checked for Palm Beach County"):
         assert phrase in text
-    for gone in ("Welcome to", "EcoLoco_Scanning_Plant", "picked for South Florida", "one plant at a time"):
+    for gone in ("Welcome to", "picked for South Florida", "one plant at a time"):
         assert gone not in text
+    for piece in ("EcoLoco_Scanning_Plant.png", "<LetterDemo />", "<IdentifyDemo image={IMG_SCANNING} />",
+                  "PHOTOS.home", "count: '179'", "count: '5,322'", "count: '30'"):
+        assert piece in text
 
 
 def test_identify_shows_every_photo():
     assert "<PhotoStrip" in (FRONTEND / "screens" / "IdentificationScreen.js").read_text(encoding="utf-8")
+
+
+
+THEME = (FRONTEND / "theme.js").read_text(encoding="utf-8")
+
+
+def _theme_number(group, name):
+    block = THEME[THEME.index(f"export const {group} = {{"):]
+    return int(re.search(rf"\b{name}:\s*(\d+)", block).group(1))
+
+
+def test_type_scale_keeps_text_readable():
+    assert _theme_number("TYPE", "body") >= 16
+    assert _theme_number("TYPE", "link") >= 15
+
+
+def test_font_sizes_come_from_the_theme():
+    allowed = {"HomeDemos.js", "PercentRing.js"}
+    literal = [p.name for p in FILES if p.name not in allowed and re.search(r"fontSize:\s*\d", p.read_text(encoding="utf-8"))]
+    assert literal == []
+
+
+def test_motion_is_short_and_respects_reduce_motion():
+    motion = (FRONTEND / "motion.js").read_text(encoding="utf-8")
+    assert int(re.search(r"export const DURATION = (\d+);", motion).group(1)) <= 400
+    assert "isReduceMotionEnabled" in motion
+    for name in ("Reveal.js", "StatusBadge.js", "PercentRing.js", "ScanningLeaf.js", "HomeDemos.js", "PlanCard.js", "CountUp.js"):
+        assert "useReduceMotion" in (FRONTEND / "components" / name).read_text(encoding="utf-8"), name
+    assert "useReduceMotion" in (FRONTEND / "screens" / "HomeScreen.js").read_text(encoding="utf-8")
+    for p in FILES:
+        for ms in re.findall(r"duration:\s*(\d+)", p.read_text(encoding="utf-8")):
+            assert int(ms) <= 400, (p.name, ms)
+
+
+def test_invasive_results_get_their_own_haptic():
+    motion = (FRONTEND / "motion.js").read_text(encoding="utf-8")
+    assert "status === 'invasive'" in motion and "NotificationFeedbackType.Warning" in motion
+    assert "feelResult(status)" in (FRONTEND / "components" / "StatusBadge.js").read_text(encoding="utf-8")
+
+
+def test_scanning_shows_the_leaf_animation():
+    assert "leaf.json" in (FRONTEND / "components" / "ScanningLeaf.js").read_text(encoding="utf-8")
+    for screen in ("AuditScreen.js", "IdentificationScreen.js"):
+        assert "<ScanningLeaf" in (FRONTEND / "screens" / screen).read_text(encoding="utf-8")
+
+
+def test_ring_plays_when_it_scrolls_into_view():
+    assert "useInView(ref" in (FRONTEND / "components" / "PercentRing.js").read_text(encoding="utf-8")
+
+
+def test_results_show_kinds_and_every_plant():
+    text = (FRONTEND / "screens" / "AuditResultsScreen.js").read_text(encoding="utf-8")
+    assert "summary.percent_native_kinds" in text and "summary.percent_native}" in text
+    assert 'title="Kinds of plants"' in text and 'title="Every plant"' in text
+
+
+def test_results_can_show_every_plant_that_fits():
+    text = (FRONTEND / "screens" / "AuditResultsScreen.js").read_text(encoding="utf-8")
+    assert "Show all plants that fit (" in text and "Show fewer plants" in text
+    assert "The extra plants start outside your letter. Tick one to add it." in text
+
+
+def test_recommend_uses_the_last_place_from_other_tabs():
+    assert "lastPlace()" in (FRONTEND / "screens" / "RecommendationScreen.js").read_text(encoding="utf-8")
+    for screen in ("IdentificationScreen.js", "AuditScreen.js"):
+        assert "rememberPlace(" in (FRONTEND / "screens" / screen).read_text(encoding="utf-8")
+
+
+def test_quick_loads_do_not_flash():
+    for screen in ("RecommendationScreen.js", "AuditResultsScreen.js"):
+        assert "useDelayedFlag(" in (FRONTEND / "screens" / screen).read_text(encoding="utf-8")
+
+
+def test_ecoscan_location_can_change_after_scanning():
+    text = (FRONTEND / "screens" / "AuditScreen.js").read_text(encoding="utf-8")
+    assert "setChangingPlace(true)" in text and "Your scanned plants stay as they are." in text

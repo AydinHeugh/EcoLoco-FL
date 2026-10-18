@@ -237,3 +237,13 @@ def test_unknown_matches_never_agree(model, monkeypatch):
 def test_confident_match_has_no_agreement_flag(model):
     _says(model, "Zamia integrifolia", "Coontie")
     assert ai_service.identify_plant("img", ZIP)["agreed_status"] is None
+
+
+def test_letter_gives_the_kinds_percent_when_it_differs(rephrase):
+    plan = {"remove": [], "add": [], "gaps": [], "summary": {"percent_native": 75, "percent_native_with_plan": 75,
+                                                             "percent_native_kinds": 50}}
+    letter, _ = ai_service.generate_letter(plan, ZIP)
+    assert "Of the plants we checked, 75% are native to Florida. Counting each kind of plant once, 50% are native now." in letter
+    same = dict(plan, summary=dict(plan["summary"], percent_native_kinds=75))
+    letter, _ = ai_service.generate_letter(same, ZIP)
+    assert "Counting each kind" not in letter
