@@ -4,7 +4,7 @@ import pytest
 import requests
 
 from services import usda_service
-from services.fl_plants_service import DATA_DIR, get_status
+from services.fl_plants_service import DATA_DIR, get_status, plant_option
 
 ZIP = "33139"
 UNKNOWN = {"native": None, "invasive": None, "source": "unknown", "why": None}
@@ -144,3 +144,48 @@ def test_usda_error_is_unknown_and_not_cached(monkeypatch):
         [{"Plant": {"Id": 9, "Symbol": "FIBE", "ScientificName": "<i>Ficus benjamina</i> L."}}] if url.endswith("/PlantSearch")
         else {"Id": 9, "Symbol": "FIBE", "NativeStatuses": [{"Region": "L48", "Status": "I"}]}))
     assert get_status("Ficus benjamina", ZIP)["source"] == "USDA"
+
+
+def test_usda_failure_on_option_is_unknown_not_non_native(monkeypatch):
+    def down(name):
+        raise requests.ConnectionError("down")
+
+    monkeypatch.setattr(usda_service, "florida_status", down)
+    option = plant_option("Ixora coccinea", "", 0.44, "33496")
+    assert option["status"] == "unknown"
+    assert option["status_label"] == "Unknown: not on Florida lists"
+    assert option["source_label"] is None
+
+
+def test_option_name_falls_back_when_common_name_blank(monkeypatch):
+    monkeypatch.setattr(usda_service, "florida_status", lambda name: None)
+    assert plant_option("Zamia pumila", "", 0.12, "33496")["plant_name"] == "Coontie"
+    assert plant_option("Zamia loddigesii", "", 0.29, "33496")["plant_name"] == "Zamia loddigesii"
+
+
+def test_option_uses_canonical_name_and_list_labels():
+    option = plant_option("Schinus terebinthifolius", "Brazilian peppertree", 0.73, "33496")
+    assert option == {
+        "plant_name": "Brazilian pepper", "scientific_name": "Schinus terebinthifolia", "confidence": 0.73,
+        "status": "invasive", "status_label": "Invasive", "source": "FISC",
+        "source_label": "Florida Invasive Species Council 2026 list", "why": option["why"],
+        "removal_safety": option["removal_safety"],
+    }
+    assert option["why"]
+    assert "poison ivy" in option["removal_safety"]["text"]
+
+
+def test_non_native_gets_plain_why(monkeypatch):
+    monkeypatch.setattr(usda_service, "florida_status", lambda name: "introduced")
+    option = plant_option("Ixora coccinea", "Ixora", 0.44, "33496")
+    assert option["status_label"] == "Non-native"
+    assert option["source_label"] == "USDA PLANTS database"
+    assert option["why"] == "Not from Florida, and not on Florida's invasive list."
+
+
+def test_option_prefers_our_common_name():
+    assert plant_option("Zamia integrifolia", "Florida Arrowroot", 0.25, "33496")["plant_name"] == "Coontie"
+
+
+def test_option_name_starts_with_a_capital():
+    assert plant_option("Melaleuca quinquenervia", "", 0.5, "33496")["plant_name"] == "Punktree"

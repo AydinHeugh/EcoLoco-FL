@@ -2,7 +2,7 @@ import pytest
 import requests
 
 from services import identification_service, openai_client
-from services.identification_service import identify_species
+from services.identification_service import _merge_same_species, identify_species
 
 
 @pytest.fixture
@@ -17,44 +17,48 @@ def model_reply(monkeypatch):
     return reply
 
 
-def test_identify_species_returns_standard_shape(model_reply):
+def test_openai_fallback_returns_standard_shape(model_reply):
     model_reply["value"] = {
         "scientific_name": "Zamia integrifolia", "common_name": "Coontie", "confidence": 0.87,
         "candidates": [{"scientific_name": "Zamia furfuracea", "common_name": "Cardboard palm", "confidence": 0.1}],
     }
     assert identify_species("abc123", "33139") == {
-        "scientific_name": "Zamia integrifolia", "common_name": "Coontie", "confidence": 0.87,
-        "candidates": [{"scientific_name": "Zamia furfuracea", "common_name": "Cardboard palm", "confidence": 0.1}],
-        "source": "openai_fallback", "needs_confirmation": False,
+        "state": "identified",
+        "ranked": [
+            {"scientific_name": "Zamia integrifolia", "common_name": "Coontie", "confidence": 0.87},
+            {"scientific_name": "Zamia furfuracea", "common_name": "Cardboard palm", "confidence": 0.1},
+        ],
+        "suggested": 0, "source": "openai_fallback", "ai_unavailable": False,
     }
 
 
-def test_identify_species_cleans_messy_reply(model_reply):
-    model_reply["value"] = {"scientific_name": "  Zamia integrifolia ", "common_name": "Coontie",
-                            "confidence": "0.871", "candidates": ["junk", {"common_name": "Other"}]}
-    result = identify_species("abc123", "33139")
-    assert result["scientific_name"] == "Zamia integrifolia"
-    assert result["confidence"] == 0.87
-    assert result["candidates"] == [{"scientific_name": "", "common_name": "Other", "confidence": 0.0}]
+def test_openai_fallback_cleans_messy_reply(model_reply):
+    model_reply["value"] = {"scientific_name": "  Plantus alpha ", "common_name": "Alpha",
+                            "confidence": "0.871", "candidates": ["junk", {"common_name": "Other", "confidence": 0.3}]}
+    ranked = identify_species("abc123", "33139")["ranked"]
+    assert ranked[0] == {"scientific_name": "Plantus alpha", "common_name": "Alpha", "confidence": 0.87}
+    assert ranked[1] == {"scientific_name": "", "common_name": "Other", "confidence": 0.3}
 
 
-def test_identify_species_survives_missing_fields(model_reply):
+def test_openai_fallback_missing_fields_is_unidentified(model_reply):
     model_reply["value"] = {"common_name": "Mystery plant"}
-    assert identify_species("abc123", "33139") == {
-        "scientific_name": "", "common_name": "Mystery plant", "confidence": 0.0, "candidates": [],
-        "source": "openai_fallback", "needs_confirmation": True}
+    assert identify_species("abc123", "33139")["state"] == "unidentified"
 
 
-@pytest.mark.parametrize("value, expected", [(1.7, 1.0), (-0.2, 0.0), ("abc", 0.0), (None, 0.0)])
-def test_confidence_is_clamped(model_reply, value, expected):
+def test_confidence_above_one_is_clamped(model_reply):
+    model_reply["value"] = {"scientific_name": "X y", "common_name": "X", "confidence": 1.7}
+    assert identify_species("abc123", "33139")["ranked"][0]["confidence"] == 1.0
+
+
+@pytest.mark.parametrize("value", [-0.2, "abc", None])
+def test_bad_confidence_counts_as_zero(model_reply, value):
     model_reply["value"] = {"scientific_name": "X y", "common_name": "X", "confidence": value}
-    assert identify_species("abc123", "33139")["confidence"] == expected
+    assert identify_species("abc123", "33139")["state"] == "unidentified"
 
 
 @pytest.mark.parametrize("image, url", [
     ("abc123", "data:image/jpeg;base64,abc123"),
     ("data:image/png;base64,xyz", "data:image/png;base64,xyz"),
-    ("https://example.com/p.jpg", "https://example.com/p.jpg"),
 ])
 def test_image_is_sent_as_url(model_reply, image, url):
     identify_species(image, "33139")
@@ -104,94 +108,115 @@ def _image_parts(content):
     return [part for part in content if part["type"] == "image_url"]
 
 
+def test_merges_names_of_same_species():
+    ranked = _merge_same_species([
+        {"scientific_name": "Zamia loddigesii", "common_name": "", "confidence": 0.29},
+        {"scientific_name": "Zamia integrifolia", "common_name": "Florida Arrowroot", "confidence": 0.13},
+        {"scientific_name": "Zamia pumila", "common_name": "Coontie", "confidence": 0.12},
+    ])
+    assert [(r["scientific_name"], r["confidence"]) for r in ranked] == [
+        ("Zamia loddigesii", 0.29), ("Zamia integrifolia", 0.25)]
+    assert ranked[1]["common_name"] == "Florida Arrowroot"
+
+
+def test_merged_confidence_caps_at_one():
+    ranked = _merge_same_species([
+        {"scientific_name": "Zamia integrifolia", "common_name": "", "confidence": 0.70},
+        {"scientific_name": "Zamia pumila", "common_name": "Coontie", "confidence": 0.45},
+    ])
+    assert ranked == [{"scientific_name": "Zamia integrifolia", "common_name": "Coontie", "confidence": 1.0}]
+
+
+def test_unknown_names_are_not_merged():
+    ranked = [dict(A, scientific_name="Plantus alpha"), dict(B, scientific_name="Plantus beta")]
+    assert _merge_same_species(ranked) == ranked
+
+
+@pytest.mark.parametrize("top, state", [
+    (0.01, "unidentified"), (0.19, "unidentified"), (0.20, "confirm"), (0.79, "confirm"), (0.96, "identified")])
+def test_state_from_plantnet_score(plantnet, openai, top, state):
+    plantnet["ranked"] = [dict(C, confidence=top)]
+    assert identify_species("img", ZIP)["state"] == state
+
+
+def test_unidentified_never_asks_openai(plantnet, openai):
+    plantnet["ranked"] = [dict(C, confidence=0.04)]
+    identify_species("img", ZIP)
+    assert openai["calls"] == []
+
+
+def test_close_call_is_confirm(plantnet, openai):
+    plantnet["ranked"] = [dict(A, confidence=0.85), dict(B, confidence=0.70)]
+    assert identify_species("img", ZIP)["state"] == "confirm"
+
+
 def test_plantnet_confident_is_used_directly(plantnet, openai):
     plantnet["ranked"] = [dict(A, confidence=0.92), dict(B, confidence=0.03)]
     assert identify_species("img", ZIP) == {
-        "scientific_name": "Zamia integrifolia", "common_name": "Coontie", "confidence": 0.92,
-        "candidates": [dict(B, confidence=0.03)], "source": "plantnet", "needs_confirmation": False,
+        "state": "identified", "ranked": [dict(A, confidence=0.92), dict(B, confidence=0.03)],
+        "suggested": 0, "source": "plantnet", "ai_unavailable": False,
     }
     assert openai["calls"] == []
 
 
-def test_plantnet_ambiguous_is_adjudicated(plantnet, openai):
+def test_adjudication_only_suggests(plantnet, openai):
     plantnet["ranked"] = [A, B, C]
-    openai["reply"] = {"scientific_name": "Zamia furfuracea", "confidence": 0.7}
+    openai["reply"] = {"scientific_name": "Zamia furfuracea", "confidence": 0.95}
     result = identify_species(["img1", "img2"], ZIP)
-    assert result == {
-        "scientific_name": "Zamia furfuracea", "common_name": "Cardboard palm", "confidence": 0.7,
-        "candidates": [A, C], "source": "openai_adjudicated", "needs_confirmation": True,
-    }
+    assert result == {"state": "confirm", "ranked": [A, B, C], "suggested": 1, "source": "openai_adjudicated", "ai_unavailable": False}
     prompt = _text(openai["calls"][0])
     assert ZIP in prompt
     assert all(p["scientific_name"] in prompt for p in (A, B, C))
     assert len(_image_parts(openai["calls"][0])) == 2
 
 
-def test_plantnet_low_confidence_single_result_is_adjudicated(plantnet, openai):
-    plantnet["ranked"] = [dict(A, confidence=0.6)]
-    openai["reply"] = {"scientific_name": "Zamia integrifolia", "confidence": 0.75}
-    result = identify_species("img", ZIP)
-    assert result["source"] == "openai_adjudicated"
-    assert result["confidence"] == 0.75
-    assert len(openai["calls"]) == 1
-
-
-def test_adjudicator_off_list_answer_keeps_plantnet_top(plantnet, openai):
+def test_adjudicator_off_list_answer_keeps_plantnet_order(plantnet, openai):
     plantnet["ranked"] = [A, B, C]
     openai["reply"] = {"scientific_name": "Quercus virginiana", "confidence": 0.9}
-    result = identify_species("img", ZIP)
-    assert result["source"] == "plantnet"
-    assert result["scientific_name"] == "Zamia integrifolia"
-    assert result["confidence"] == 0.45
-    assert result["candidates"] == [B, C]
-    assert result["needs_confirmation"] is True
+    assert identify_species("img", ZIP) == {"state": "confirm", "ranked": [A, B, C], "suggested": 0, "source": "plantnet", "ai_unavailable": False}
 
 
-def test_adjudicator_error_keeps_plantnet_top(plantnet, openai):
+def test_adjudicator_error_keeps_plantnet_order(plantnet, openai):
     plantnet["ranked"] = [A, B, C]
-    openai["error"] = RuntimeError("OpenAI down")
+    openai["error"] = openai_client.AIUnavailable("down")
     result = identify_species("img", ZIP)
-    assert result["source"] == "plantnet"
-    assert result["scientific_name"] == "Zamia integrifolia"
-    assert result["needs_confirmation"] is True
+    assert (result["source"], result["suggested"], result["state"]) == ("plantnet", 0, "confirm")
+    assert result["ai_unavailable"] is True
 
 
 def test_plantnet_failure_falls_back_to_openai_vision(plantnet, openai):
     plantnet["error"] = RuntimeError("PlantNet down")
     openai["reply"] = {"scientific_name": "Zamia integrifolia", "common_name": "Coontie", "confidence": 0.88}
     result = identify_species("img", ZIP)
-    assert result["source"] == "openai_fallback"
-    assert result["scientific_name"] == "Zamia integrifolia"
-    assert result["needs_confirmation"] is False
+    assert (result["source"], result["state"]) == ("openai_fallback", "identified")
+    assert result["ranked"][0]["scientific_name"] == "Zamia integrifolia"
 
 
-def test_plantnet_empty_result_falls_back(plantnet, openai):
+def test_plantnet_no_match_is_unidentified_without_openai(plantnet, openai):
     plantnet["ranked"] = []
-    openai["reply"] = {"scientific_name": "Zamia integrifolia", "common_name": "Coontie", "confidence": 0.88}
-    assert identify_species("img", ZIP)["source"] == "openai_fallback"
+    assert identify_species("img", ZIP) == {"state": "unidentified", "ranked": [], "suggested": 0, "source": "plantnet", "ai_unavailable": False}
+    assert openai["calls"] == []
 
 
 def test_everything_failing_never_crashes(plantnet, openai):
     plantnet["error"] = RuntimeError("PlantNet down")
     openai["error"] = RuntimeError("OpenAI down")
-    assert identify_species("img", ZIP) == {
-        "scientific_name": "", "common_name": "", "confidence": 0.0, "candidates": [],
-        "source": "none", "needs_confirmation": True,
-    }
+    assert identify_species("img", ZIP) == {"state": "unidentified", "ranked": [], "suggested": 0, "source": "none", "ai_unavailable": True}
 
 
 @pytest.mark.parametrize("top, runner_up, expected", [
-    (0.92, 0.03, False),
-    (0.80, None, False),
-    (0.79, None, True),
-    (0.85, 0.72, True),
-    (0.85, 0.69, False),
+    (0.92, 0.03, "identified"),
+    (0.80, None, "identified"),
+    (0.79, None, "confirm"),
+    (0.85, 0.72, "confirm"),
+    (0.85, 0.69, "identified"),
+    (0.10, None, "unidentified"),
 ])
-def test_needs_confirmation(plantnet, openai, top, runner_up, expected):
+def test_openai_fallback_uses_same_thresholds(plantnet, openai, top, runner_up, expected):
     plantnet["error"] = RuntimeError("PlantNet down")
     candidates = [] if runner_up is None else [{"scientific_name": "Y y", "common_name": "Y", "confidence": runner_up}]
     openai["reply"] = {"scientific_name": "X x", "common_name": "X", "confidence": top, "candidates": candidates}
-    assert identify_species("img", ZIP)["needs_confirmation"] is expected
+    assert identify_species("img", ZIP)["state"] == expected
 
 
 def test_multiple_images_reach_both_identifiers(plantnet, openai):
@@ -215,3 +240,9 @@ def test_plantnet_failure_log_never_contains_key(plantnet, openai, caplog):
     identify_species("img", ZIP)
     assert "PlantNet" in caplog.text
     assert "test-key" not in caplog.text
+
+
+def test_links_are_never_sent_to_openai(model_reply):
+    with pytest.raises(ValueError):
+        identify_species(["https://example.com/p.jpg"], "33139")
+    assert model_reply["sent"] is None

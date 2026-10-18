@@ -5,11 +5,13 @@ import os
 import requests
 
 from services import openai_client
+from services.species_service import resolve
 
 log = logging.getLogger(__name__)
 
 PLANTNET_URL = "https://my-api.plantnet.org/v2/identify/all"
 MAX_IMAGES = 5
+NO_MATCH_BELOW = 0.20
 CONFIDENT = 0.80
 CLOSE_CALL = 0.15
 
@@ -41,8 +43,12 @@ Respond only in JSON:
   "candidates": [{{"scientific_name": "...", "common_name": "...", "confidence": 0.00}}]}}"""
 
 
+def _is_link(image):
+    return image.startswith(("http://", "https://"))
+
+
 def _image_url(image):
-    if image.startswith(("http://", "https://", "data:image")):
+    if image.startswith("data:image"):
         return image
     return f"data:image/jpeg;base64,{image}"
 
@@ -66,22 +72,34 @@ def _image_parts(images):
     return [{"type": "image_url", "image_url": {"url": _image_url(image)}} for image in images]
 
 
-def _needs_confirmation(ranked):
+def _state(ranked):
+    if not ranked or not ranked[0]["scientific_name"] or ranked[0]["confidence"] < NO_MATCH_BELOW:
+        return "unidentified"
     top = ranked[0]["confidence"]
     runner_up = ranked[1]["confidence"] if len(ranked) > 1 else 0.0
     # Rounded so float error can't push an exact 0.15 gap over the line.
-    return top < CONFIDENT or round(top - runner_up, 2) <= CLOSE_CALL
+    if top < CONFIDENT or round(top - runner_up, 2) <= CLOSE_CALL:
+        return "confirm"
+    return "identified"
 
 
-def _result(top, candidates, source, needs_confirmation):
-    return {
-        "scientific_name": top["scientific_name"],
-        "common_name": top["common_name"],
-        "confidence": top["confidence"],
-        "candidates": candidates,
-        "source": source,
-        "needs_confirmation": needs_confirmation,
-    }
+def _result(state, ranked, source, suggested=0, ai_unavailable=False):
+    if state == "unidentified":
+        ranked = []
+    return {"state": state, "ranked": ranked, "suggested": suggested, "source": source, "ai_unavailable": ai_unavailable}
+
+
+def _merge_same_species(ranked):
+    merged = {}
+    for candidate in ranked:
+        name = resolve(candidate["scientific_name"]) or candidate["scientific_name"]
+        if name in merged:
+            entry = merged[name]
+            entry["confidence"] = round(min(1.0, entry["confidence"] + candidate["confidence"]), 2)
+            entry["common_name"] = entry["common_name"] or candidate["common_name"]
+        else:
+            merged[name] = dict(candidate, scientific_name=name)
+    return sorted(merged.values(), key=lambda c: c["confidence"], reverse=True)
 
 
 def _describe(err):
@@ -101,7 +119,7 @@ def _adjudicate(images, ranked, location):
     picked = str(reply.get("scientific_name") or "").strip().lower()
     for i, candidate in enumerate(ranked):
         if candidate["scientific_name"].lower() == picked:
-            return i, _confidence(reply.get("confidence"))
+            return i
     return None
 
 
@@ -119,40 +137,38 @@ def identify_species(images, location):
         images = [images]
     if not 1 <= len(images) <= MAX_IMAGES:
         raise ValueError(f"expected 1 to {MAX_IMAGES} images, got {len(images)}")
+    if any(_is_link(image) for image in images):
+        raise ValueError("photos must be uploaded, not links")
 
     try:
-        ranked = identify_with_plantnet(images)
+        ranked = _merge_same_species(identify_with_plantnet(images))
     except Exception as err:
         # Never log str(err): the request URL carries the API key.
         log.warning("PlantNet failed (%s); falling back to OpenAI vision", _describe(err))
-        ranked = []
-
-    if ranked:
-        if not _needs_confirmation(ranked):
-            return _result(ranked[0], ranked[1:], "plantnet", False)
+    else:
+        state = _state(ranked)
+        if state != "confirm":
+            return _result(state, ranked, "plantnet")
         try:
             pick = _adjudicate(images, ranked, location)
         except Exception as err:
-            log.warning("OpenAI adjudication failed (%s); keeping PlantNet's top match", _describe(err))
-            pick = None
+            log.warning("OpenAI adjudication failed (%s); keeping PlantNet's order", _describe(err))
+            return _result(state, ranked, "plantnet", ai_unavailable=True)
         if pick is None:
-            return _result(ranked[0], ranked[1:], "plantnet", True)
-        i, confidence = pick
-        return _result(dict(ranked[i], confidence=confidence), ranked[:i] + ranked[i + 1:], "openai_adjudicated", True)
+            return _result(state, ranked, "plantnet")
+        return _result(state, ranked, "openai_adjudicated", pick)
 
     try:
-        ranked = _identify_with_openai(images, location)
+        ranked = _merge_same_species(_identify_with_openai(images, location))
     except Exception as err:
         log.warning("OpenAI vision failed (%s)", _describe(err))
-        return _result({"scientific_name": "", "common_name": "", "confidence": 0.0}, [], "none", True)
-    return _result(ranked[0], ranked[1:], "openai_fallback", _needs_confirmation(ranked))
+        return _result("unidentified", [], "none", ai_unavailable=True)
+    return _result(_state(ranked), ranked, "openai_fallback")
 
 
 def _image_bytes(image):
-    if image.startswith(("http://", "https://")):
-        response = requests.get(image, timeout=15)
-        response.raise_for_status()
-        return response.content
+    if _is_link(image):
+        raise ValueError("photos must be uploaded, not links")
     if image.startswith("data:"):
         image = image.split(",", 1)[1]
     return base64.b64decode(image)
@@ -180,6 +196,8 @@ def identify_with_plantnet(images):
         files=files,
         timeout=20,
     )
+    if response.status_code == 404:
+        return []
     response.raise_for_status()
     return [
         {

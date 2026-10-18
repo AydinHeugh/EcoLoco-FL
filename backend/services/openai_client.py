@@ -22,12 +22,13 @@ class AIUnavailable(Exception):
     pass
 
 
-def chat(content, json_reply=False):
+def chat(content, json_reply=False, system=None):
+    messages = [{"role": "system", "content": system}] if system else []
     try:
         response = _client().chat.completions.create(
             model=MODEL,
             temperature=0,
-            messages=[{"role": "user", "content": content}],
+            messages=[*messages, {"role": "user", "content": content}],
         )
         text = response.choices[0].message.content.strip()
         return json.loads(_FENCE.sub("", text)) if json_reply else text

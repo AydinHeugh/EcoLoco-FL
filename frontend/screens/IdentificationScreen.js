@@ -7,7 +7,6 @@ import {
   ScrollView,
   ActivityIndicator,
   Image,
-  TextInput,
   useWindowDimensions,
   Animated,
   Easing,
@@ -16,19 +15,18 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
 import { useFonts } from 'expo-font';
-import { Fraunces_700Bold, Fraunces_400Regular_Italic } from '@expo-google-fonts/fraunces';
-import { DMSans_400Regular, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
-import { identifyPlant } from '../services/geminiService';
+import { identifyPlant, userMessage } from '../services/geminiService';
+import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS } from '../theme';
+import StatusBadge from '../components/StatusBadge';
+import CandidatePicker, { NO_MATCH_TEXT, matchLabel } from '../components/CandidatePicker';
+import SourceLine from '../components/SourceLine';
+import OfflineNotice, { reportAi } from '../components/OfflineNotice';
+import { useProgressText } from '../components/ProgressText';
+import LocationPicker from '../components/LocationPicker';
 
-const CREAM      = '#f5f0e8';
-const DARK_GREEN = '#1e3a1e';
-const SOFT_GREEN = '#4a7a3a';
-const LIGHT_BG   = '#eaeee6';
-const TEXT_BODY  = '#4a4a3a';
-const TEXT_MUTED = '#7a7a6a';
-const BORDER     = '#d4cfc4';
 
 const EASE_OUT = Easing.bezier(0.22, 1, 0.36, 1);
+const MAX_PHOTOS = 5;
 const LOGO = require('../../assets/EcoLoco_logo.png');
 const PLANTNET_LOGO = require('../../assets/powered-by-plantnet-light.png');
 const PLANTNET_URL = 'https://plantnet.org';
@@ -66,8 +64,8 @@ function LoadingDots({ message }) {
 const ld = StyleSheet.create({
   wrap: { alignItems: 'center', paddingVertical: 32, gap: 14 },
   dots: { flexDirection: 'row', gap: 8, height: 20, alignItems: 'flex-end' },
-  dot:  { width: 8, height: 8, borderRadius: 4, backgroundColor: SOFT_GREEN },
-  text: { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED },
+  dot:  { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.softGreen },
+  text: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted },
 });
 
 // ─── Animated results wrapper ────────────────────────────────────────────────
@@ -106,7 +104,7 @@ const icon = StyleSheet.create({
   wrap: { alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   outer: {
     width: 52, height: 52, borderRadius: 14,
-    backgroundColor: LIGHT_BG,
+    backgroundColor: COLORS.lightBg,
     alignItems: 'center', justifyContent: 'flex-end',
     overflow: 'hidden', paddingBottom: 6,
   },
@@ -115,49 +113,30 @@ const icon = StyleSheet.create({
     width: 0, height: 0,
     borderLeftWidth: 14, borderRightWidth: 14, borderBottomWidth: 22,
     borderLeftColor: 'transparent', borderRightColor: 'transparent',
-    borderBottomColor: SOFT_GREEN, opacity: 0.5,
+    borderBottomColor: COLORS.softGreen, opacity: 0.5,
   },
   mountain2: {
     position: 'absolute', bottom: 4, left: 18,
     width: 0, height: 0,
     borderLeftWidth: 18, borderRightWidth: 18, borderBottomWidth: 28,
     borderLeftColor: 'transparent', borderRightColor: 'transparent',
-    borderBottomColor: SOFT_GREEN, opacity: 0.7,
+    borderBottomColor: COLORS.softGreen, opacity: 0.7,
   },
   sun: {
     position: 'absolute', top: 8, right: 10,
     width: 10, height: 10, borderRadius: 5,
-    backgroundColor: SOFT_GREEN, opacity: 0.45,
+    backgroundColor: COLORS.softGreen, opacity: 0.45,
   },
-});
-
-// ─── Status badge (native / non-native / invasive) ────────────────────────────
-function NativeBadge({ invasiveStatus, isNative }) {
-  const status = invasiveStatus?.toLowerCase() ?? (isNative ? 'native' : 'non-native');
-  const cfg = {
-    native:       { bg: LIGHT_BG,    color: SOFT_GREEN,  label: 'Native' },
-    'non-native': { bg: '#faf3e0',   color: '#c49a3a',   label: 'Non-Native' },
-    invasive:     { bg: '#fdf0ec',   color: '#C97D5D',   label: '⚠ Invasive' },
-  };
-  const c = cfg[status] ?? cfg['non-native'];
-  return (
-    <View style={[badge.wrap, { backgroundColor: c.bg }]}>
-      <Text style={[badge.text, { color: c.color }]}>{c.label}</Text>
-    </View>
-  );
-}
-
-const badge = StyleSheet.create({
-  wrap: { alignSelf: 'flex-start', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4 },
-  text: { fontSize: 12, fontFamily: 'DMSans_400Regular' },
 });
 
 export default function IdentificationScreen({ navigation }) {
   const [loading, setLoading]   = useState(false);
   const [result, setResult]     = useState(null);
+  const [picked, setPicked]     = useState(null);
   const [error, setError]       = useState(null);
-  const [photo, setPhoto]       = useState(null);
-  const [zipCode, setZipCode]   = useState('');
+  const [photos, setPhotos]     = useState([]);
+  const [place, setPlace]       = useState(null);
+  const zipCode = place?.zip ?? '';
   const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
@@ -171,17 +150,17 @@ export default function IdentificationScreen({ navigation }) {
       e.preventDefault();
       e.stopPropagation();
       setIsDragging(false);
-      const file = e.dataTransfer?.files?.[0];
-      if (!file || !file.type.startsWith('image/')) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result;
-        const base64 = dataUrl.split(',')[1];
-        setPhoto({ uri: dataUrl, base64 });
-        setResult(null);
+      const files = [...(e.dataTransfer?.files ?? [])].filter(f => f.type.startsWith('image/')).slice(0, MAX_PHOTOS);
+      if (files.length === 0) return;
+      Promise.all(files.map(file => new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = () => resolve({ uri: reader.result, base64: reader.result.split(',')[1] });
+        reader.readAsDataURL(file);
+      }))).then(read => {
+        setPhotos(read);
+        setResult(null); setPicked(null);
         setError(null);
-      };
-      reader.readAsDataURL(file);
+      });
     };
 
     el.addEventListener('dragover', onDragOver);
@@ -197,43 +176,47 @@ export default function IdentificationScreen({ navigation }) {
   const { width } = useWindowDimensions();
   const maxWidth = Math.min(width, 960);
 
-  const [fontsLoaded] = useFonts({
-    Fraunces_700Bold,
-    Fraunces_400Regular_Italic,
-    DMSans_400Regular,
-    DMSans_700Bold,
-  });
+  const [fontsLoaded] = useFonts(FONT_ASSETS);
+  const progress = useProgressText(loading);
 
   async function handleTakePhoto() {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') { setError('Camera permission is required.'); return; }
     const res = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.8 });
-    if (!res.canceled) { setPhoto(res.assets[0]); setResult(null); setError(null); }
+    if (!res.canceled) { setPhotos([res.assets[0]]); setResult(null); setPicked(null); setError(null); }
   }
 
   async function handleUploadPhoto() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') { setError('Photo library permission is required.'); return; }
-    const res = await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.8 });
-    if (!res.canceled) { setPhoto(res.assets[0]); setResult(null); setError(null); }
+    const res = await ImagePicker.launchImageLibraryAsync({
+      base64: true, quality: 0.8, allowsMultipleSelection: true, selectionLimit: MAX_PHOTOS,
+    });
+    if (!res.canceled) { setPhotos(res.assets.slice(0, MAX_PHOTOS)); setResult(null); setPicked(null); setError(null); }
   }
 
   async function handleIdentify() {
     setLoading(true);
-    setResult(null);
+    setResult(null); setPicked(null);
     setError(null);
     try {
-      const data = await identifyPlant(photo.base64, zipCode);
+      const data = await identifyPlant(photos.map(p => p.base64), zipCode);
       setResult(data.result);
+      reportAi(data.result.ai_unavailable);
+      setPicked(data.result.state === 'identified' ? 0 : null);
     } catch (err) {
-      console.error(err);
-      setError(err.message);
+      setError(userMessage(err, 'Could not identify this plant. Check your connection and try again.'));
     } finally {
       setLoading(false);
     }
   }
 
-  const canIdentify = !!photo && zipCode.length === 5 && !loading;
+  const photo = photos[0];
+  const narrow = width < 420;
+  const canIdentify = photos.length > 0 && zipCode.length === 5 && !loading;
+  const noMatch  = result && (result.state === 'unidentified' || picked === -1);
+  const choosing = result && result.state === 'confirm' && picked === null;
+  const shown    = result && !noMatch && picked !== null ? result.options[picked] : null;
 
   if (!fontsLoaded) return <View style={styles.container} />;
 
@@ -254,6 +237,7 @@ export default function IdentificationScreen({ navigation }) {
         </View>
 
         <View style={styles.divider} />
+        <OfflineNotice />
 
         {/* ── Title ── */}
         <View style={styles.titleSection}>
@@ -267,7 +251,14 @@ export default function IdentificationScreen({ navigation }) {
           style={[styles.uploadBox, isDragging && styles.uploadBoxDragging]}
         >
           {photo
-            ? <Image source={{ uri: photo.uri }} style={styles.uploadPreview} resizeMode="cover" />
+            ? (
+              <View>
+                <Image source={{ uri: photo.uri }} style={styles.uploadPreview} resizeMode="cover" />
+                <Text style={styles.photoCount}>
+                  {photos.length > 1 ? `${photos.length} photos of this plant` : 'Tip: add up to 5 photos of the same plant (leaf, flower, bark) for a surer match.'}
+                </Text>
+              </View>
+            )
             : (
               <View style={styles.uploadPlaceholder}>
                 <ImagePlaceholderIcon />
@@ -290,15 +281,7 @@ export default function IdentificationScreen({ navigation }) {
 
         {/* ── ZIP code ── */}
         <View style={styles.zipRow}>
-          <TextInput
-            style={styles.zipInput}
-            value={zipCode}
-            onChangeText={(t) => setZipCode(t.replace(/[^0-9]/g, '').slice(0, 5))}
-            placeholder="Enter ZIP code for your location"
-            placeholderTextColor={TEXT_MUTED}
-            keyboardType="numeric"
-            maxLength={5}
-          />
+          <LocationPicker place={place} onChange={setPlace} />
         </View>
 
         {/* ── Identify button ── */}
@@ -308,14 +291,14 @@ export default function IdentificationScreen({ navigation }) {
           disabled={!canIdentify}
         >
           {loading
-            ? <ActivityIndicator color={CREAM} size="small" />
+            ? <ActivityIndicator color={COLORS.cream} size="small" />
             : <Text style={styles.identifyBtnText}>Identify Plant</Text>
           }
         </TouchableOpacity>
 
         {error && <Text style={styles.errorText}>{error}</Text>}
 
-        {loading && <LoadingDots message="Analyzing your plant…" />}
+        {loading && <LoadingDots message={progress} />}
 
         {/* ── Results ── */}
         {result && (
@@ -323,48 +306,59 @@ export default function IdentificationScreen({ navigation }) {
           <View style={styles.resultsSection}>
             <View style={styles.resultsHeader}>
               <Text style={styles.resultsTitle}>Results</Text>
-              <Text style={styles.confidenceText}>
-                Confidence:{' '}
-                <Text style={styles.confidenceValue}>{Math.round(result.confidence * 100)}%</Text>
-              </Text>
-            </View>
-
-            {/* Result card */}
-            <View style={styles.resultCard}>
-              {photo && (
-                <Image source={{ uri: photo.uri }} style={styles.resultThumb} resizeMode="cover" />
+              {shown && (
+                <Text style={styles.confidenceText}>
+                  {matchLabel(result.id_source)} match:{' '}
+                  <Text style={styles.confidenceValue}>{Math.round(shown.confidence * 100)}%</Text>
+                </Text>
               )}
-              <View style={styles.resultInfo}>
-                <Text style={styles.plantName}>{result.plant_name}</Text>
-                <NativeBadge invasiveStatus={result.invasive_status} isNative={result.is_native} />
-              </View>
             </View>
 
-            {result.confidence < 0.80 && (
-              <View style={styles.expertBanner}>
-                <Text style={styles.expertBannerText}>
-                  ⚠ Confidence below 80% — identification may be inaccurate. Consult a botanist or field guide before taking action.
-                </Text>
+            {noMatch && (
+              <View style={styles.notice}>
+                <Text style={styles.noticeText}>{NO_MATCH_TEXT}</Text>
               </View>
             )}
 
-            {result.inat_note && (
-              <View style={styles.inatBanner}>
-                <Text style={styles.inatBannerText}>
-                  ◎ iNaturalist: {result.inat_note}
-                </Text>
+            {choosing && (
+              <CandidatePicker
+                options={result.options}
+                suggested={result.suggested}
+                idSource={result.id_source}
+                onPick={setPicked}
+                onNone={() => setPicked(-1)}
+              />
+            )}
+
+            {choosing && (
+              <Text style={styles.retakeTip}>For a surer match, add a photo of a leaf up close or a flower.</Text>
+            )}
+
+            {shown && (
+              <View style={[styles.resultCard, narrow && styles.resultCardNarrow]}>
+                {photo && (
+                  <Image source={{ uri: photo.uri }} style={[styles.resultThumb, narrow && styles.resultThumbNarrow]} resizeMode="cover" />
+                )}
+                <View style={styles.resultInfo}>
+                  <Text style={styles.plantName}>{shown.plant_name}</Text>
+                  <StatusBadge status={shown.status} label={shown.status_label} />
+                  {!shown.why && !shown.helps && <Text style={styles.noData}>We don't have wildlife info for this plant yet</Text>}
+                </View>
               </View>
             )}
 
-            {/* Actions */}
-            {result.actions?.length > 0 && (
-              <View style={styles.actionsSection}>
-                <Text style={styles.actionsLabel}>RECOMMENDED ACTIONS</Text>
-                {result.actions.map((item, i) => (
-                  <View key={i} style={styles.actionCard}>
-                    <Text style={styles.actionText}>{item.action}</Text>
-                    <View style={styles.actionDivider} />
-                    <Text style={styles.impactText}>{item.impact}</Text>
+            {shown && (shown.why || shown.helps || shown.watch_out || shown.removal_safety) && (
+              <View style={styles.facts}>
+                {[
+                  shown.why && { label: 'Why it matters', text: shown.why, source: { name: shown.source_label } },
+                  shown.helps && { label: 'Helps', text: shown.helps.text, source: shown.helps.source },
+                  ...(shown.watch_out ?? []).map(w => ({ label: 'Watch out', text: w.text, source: w.source })),
+                  shown.removal_safety && { label: 'Removing it safely', text: shown.removal_safety.text, source: shown.removal_safety.source },
+                ].filter(Boolean).map((fact, i) => (
+                  <View key={i} style={styles.fact}>
+                    <Text style={styles.factLabel}>{fact.label}</Text>
+                    <Text style={styles.factText}>{fact.text}</Text>
+                    <SourceLine source={fact.source} />
                   </View>
                 ))}
               </View>
@@ -398,7 +392,7 @@ export default function IdentificationScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: CREAM },
+  container: { flex: 1, backgroundColor: COLORS.cream },
   scrollContent: { alignItems: 'center' },
   inner: { alignSelf: 'center' },
 
@@ -410,112 +404,96 @@ const styles = StyleSheet.create({
   },
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   logoImg: { width: 40, height: 40, resizeMode: 'contain' },
-  logoText: { fontSize: 20, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, letterSpacing: 0.3 },
-  divider: { height: 1, backgroundColor: BORDER },
+  logoText: { fontSize: 20, fontFamily: FONTS.heading, color: COLORS.darkGreen, letterSpacing: 0.3 },
+  divider: { height: 1, backgroundColor: COLORS.border },
 
   // ── Title ──
   titleSection: { alignItems: 'center', paddingTop: 32, paddingBottom: 24, paddingHorizontal: 24 },
-  pageTitle: { fontSize: 34, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, marginBottom: 6 },
-  pageSubtitle: { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, textAlign: 'center' },
+  pageTitle: { fontSize: 34, fontFamily: FONTS.heading, color: COLORS.darkGreen, marginBottom: 6 },
+  pageSubtitle: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
 
   // ── Upload box ──
   uploadBox: {
-    marginHorizontal: 20, borderWidth: 1.5, borderColor: BORDER,
+    marginHorizontal: 20, borderWidth: 1.5, borderColor: COLORS.border,
     borderStyle: 'dashed', borderRadius: 16, overflow: 'hidden',
     marginBottom: 16,
   },
   uploadPlaceholder: {
     paddingTop: 36, paddingBottom: 24, alignItems: 'center', justifyContent: 'center',
   },
-  uploadBoxDragging: { borderColor: DARK_GREEN, backgroundColor: LIGHT_BG },
-  uploadPlaceholderText: { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED },
-  uploadDragHint: { fontSize: 11, fontFamily: 'DMSans_400Regular', color: BORDER, marginTop: 2 },
+  uploadBoxDragging: { borderColor: COLORS.darkGreen, backgroundColor: COLORS.lightBg },
+  uploadPlaceholderText: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted },
+  uploadDragHint: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.border, marginTop: 2 },
   uploadPreview: { width: '100%', height: 220 },
   uploadBtns: {
     flexDirection: 'row', gap: 12,
     paddingHorizontal: 16, paddingVertical: 16,
-    backgroundColor: CREAM,
+    backgroundColor: COLORS.cream,
   },
   btnOutlined: {
     flex: 1, borderRadius: 10, paddingVertical: 13,
-    alignItems: 'center', borderWidth: 1.5, borderColor: DARK_GREEN,
+    alignItems: 'center', borderWidth: 1.5, borderColor: COLORS.darkGreen,
   },
-  btnOutlinedText: { fontSize: 14, fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
+  btnOutlinedText: { fontSize: 14, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
   btnFilled: {
     flex: 1, borderRadius: 10, paddingVertical: 13,
-    alignItems: 'center', backgroundColor: DARK_GREEN,
+    alignItems: 'center', backgroundColor: COLORS.darkGreen,
   },
-  btnFilledText: { fontSize: 14, fontFamily: 'DMSans_700Bold', color: CREAM },
+  btnFilledText: { fontSize: 14, fontFamily: FONTS.bodyBold, color: COLORS.cream },
 
   // ── ZIP ──
   zipRow: { marginHorizontal: 20, marginBottom: 14 },
-  zipInput: {
-    backgroundColor: '#fff', color: TEXT_BODY,
-    borderRadius: 10, padding: 13, fontSize: 14,
-    fontFamily: 'DMSans_400Regular',
-    borderWidth: 1, borderColor: BORDER,
-  },
 
   // ── Identify button ──
   identifyBtn: {
     marginHorizontal: 20, marginBottom: 8,
-    backgroundColor: DARK_GREEN, borderRadius: 10,
+    backgroundColor: COLORS.darkGreen, borderRadius: 10,
     paddingVertical: 15, alignItems: 'center',
   },
   identifyBtnDisabled: { opacity: 0.4 },
-  identifyBtnText: { fontSize: 15, fontFamily: 'DMSans_700Bold', color: CREAM },
+  identifyBtnText: { fontSize: 15, fontFamily: FONTS.bodyBold, color: COLORS.cream },
 
-  errorText: { color: '#c0392b', fontSize: 13, fontFamily: 'DMSans_400Regular', marginHorizontal: 20, marginTop: 8 },
+  facts: { marginTop: 14, gap: 12 },
+  fact: { gap: 2 },
+  factLabel: { fontSize: 11, fontFamily: FONTS.bodyBold, color: COLORS.textMuted, letterSpacing: 0.5 },
+  factText: { fontSize: 14, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: 20 },
+  noData: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 6 },
+  errorText: { color: COLORS.error, fontSize: 13, fontFamily: FONTS.body, marginHorizontal: 20, marginTop: 8 },
 
   // ── Results ──
   resultsSection: { marginTop: 28, paddingHorizontal: 20, paddingBottom: 48 },
   resultsHeader: {
-    flexDirection: 'row', justifyContent: 'space-between',
+    flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, justifyContent: 'space-between',
     alignItems: 'baseline', marginBottom: 14,
   },
-  resultsTitle: { fontSize: 26, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN },
-  confidenceText: { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED },
-  confidenceValue: { fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
+  resultsTitle: { fontSize: 26, fontFamily: FONTS.heading, color: COLORS.darkGreen },
+  confidenceText: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted },
+  confidenceValue: { fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
 
   resultCard: {
-    backgroundColor: '#fff', borderRadius: 14,
-    borderWidth: 1, borderColor: BORDER,
+    backgroundColor: COLORS.white, borderRadius: 14,
+    borderWidth: 1, borderColor: COLORS.border,
     flexDirection: 'row', overflow: 'hidden', marginBottom: 16,
   },
+  resultCardNarrow: { flexDirection: 'column' },
   resultThumb: { width: 120, height: 120 },
+  resultThumbNarrow: { width: '100%', height: 180 },
+  photoCount: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', marginTop: 6 },
+  retakeTip: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textBody, marginTop: 8 },
   resultInfo: { flex: 1, padding: 16, justifyContent: 'center', gap: 10 },
-  plantName: { fontSize: 22, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, lineHeight: 28 },
-
-  // ── Actions ──
-  actionsSection: { gap: 10 },
-  actionsLabel: {
-    fontSize: 11, fontFamily: 'DMSans_700Bold',
-    color: SOFT_GREEN, letterSpacing: 1.5, marginBottom: 4,
-  },
-  actionCard: {
-    backgroundColor: '#fff', borderRadius: 12,
-    borderWidth: 1, borderColor: BORDER, padding: 16, gap: 4,
-  },
-  actionDivider: { height: 1, backgroundColor: BORDER, marginVertical: 6 },
-  actionText: { fontSize: 14, fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
-  impactText: { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_BODY, lineHeight: 19 },
+  plantName: { fontSize: 22, fontFamily: FONTS.heading, color: COLORS.darkGreen, lineHeight: 28 },
   recBtn: {
-    marginTop: 16, backgroundColor: '#1e3a1e', borderRadius: 10,
+    marginTop: 16, backgroundColor: COLORS.darkGreen, borderRadius: 10,
     paddingVertical: 14, alignItems: 'center',
   },
-  recBtnText: { fontSize: 13, fontFamily: 'DMSans_700Bold', color: '#f5f0e8' },
+  recBtnText: { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.cream },
 
   credit: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: 8, marginTop: 18, paddingVertical: 6 },
   creditLogo: { width: 102, height: 24 },
-  creditText: { fontSize: 11, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED },
-  expertBanner: {
-    backgroundColor: '#fdf0ec', borderRadius: 10, borderWidth: 1,
-    borderColor: '#C97D5D', padding: 12, marginTop: 10,
+  creditText: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textMuted },
+  notice: {
+    backgroundColor: STATUS_COLORS.invasive.bg, borderRadius: 10, borderWidth: 1,
+    borderColor: COLORS.terracotta, padding: 12, marginTop: 10,
   },
-  expertBannerText: { fontSize: 12, fontFamily: 'DMSans_400Regular', color: '#C97D5D', lineHeight: 18 },
-  inatBanner: {
-    backgroundColor: '#faf3e0', borderRadius: 10, borderWidth: 1,
-    borderColor: '#c49a3a', padding: 12, marginTop: 8,
-  },
-  inatBannerText: { fontSize: 12, fontFamily: 'DMSans_400Regular', color: '#c49a3a', lineHeight: 18 },
+  noticeText: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.terracotta, lineHeight: 18 },
 });

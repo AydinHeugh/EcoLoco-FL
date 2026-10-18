@@ -11,23 +11,9 @@ import {
   useWindowDimensions,
 } from 'react-native'
 import { useFonts } from 'expo-font'
-import {
-  Fraunces_400Regular,
-  Fraunces_700Bold,
-  Fraunces_700Bold_Italic,
-} from '@expo-google-fonts/fraunces'
-import {
-  DMSans_400Regular,
-  DMSans_700Bold,
-} from '@expo-google-fonts/dm-sans'
+import { COLORS, FONTS, FONT_ASSETS } from '../theme'
+import SourceLine from '../components/SourceLine'
 
-const CREAM      = '#f5f0e8'
-const DARK_GREEN = '#1e3a1e'
-const SOFT_GREEN = '#4a7a3a'
-const TEXT_BODY  = '#4a4a3a'
-const TEXT_MUTED = '#7a7a6a'
-const BORDER     = '#d4cfc4'
-const LIGHT_BG   = '#eaeee6'
 
 const EASE_OUT = Easing.bezier(0.22, 1, 0.36, 1)  // fast-out, ease-in-out feel
 
@@ -97,7 +83,7 @@ function Divider() {
 }
 
 // ─── Feature row ─────────────────────────────────────────────────────────────
-function FeatureRow({ image, heading, body, linkText, onLinkPress, imgHeight, reverse, animStyle }) {
+function FeatureRow({ image, heading, body, source, linkText, onLinkPress, imgHeight, reverse, animStyle }) {
   const imgBlock = (
     <View style={[styles.featureImgWrap, { height: imgHeight }]}>
       {image
@@ -110,6 +96,7 @@ function FeatureRow({ image, heading, body, linkText, onLinkPress, imgHeight, re
     <View style={[styles.featureText, reverse && { paddingLeft: 4 }]}>
       <Text style={styles.featureHeading}>{heading}</Text>
       <Text style={styles.featureBody}>{body}</Text>
+      {source && <SourceLine source={source} />}
       {linkText && (
         <TouchableOpacity onPress={onLinkPress} style={styles.linkBtn}>
           <Text style={styles.featureLink}>{linkText}</Text>
@@ -156,13 +143,7 @@ export default function HomeScreen({ navigation }) {
   const s3Anim = useFadeUp(440)
   const s4Anim = useFadeUp(560)
 
-  const [fontsLoaded] = useFonts({
-    Fraunces_400Regular,
-    Fraunces_700Bold,
-    Fraunces_700Bold_Italic,
-    DMSans_400Regular,
-    DMSans_700Bold,
-  })
+  const [fontsLoaded] = useFonts(FONT_ASSETS)
 
   if (!fontsLoaded) return <View style={styles.container} />
 
@@ -196,7 +177,7 @@ export default function HomeScreen({ navigation }) {
           </View>
           <Ornament delay={500} />
           <Animated.Text style={[styles.tagline, tagAnim]}>
-            Bring your local ecosystem back to life, one plant at a time.
+            Help wildlife on your campus, one plant at a time.
           </Animated.Text>
         </View>
 
@@ -207,9 +188,9 @@ export default function HomeScreen({ navigation }) {
           animStyle={s1Anim}
           image={IMG_SCANNING}
           imgHeight={imgHeight}
-          heading="Identify Plants"
-          body="Uncover information about plant type, native region, growing conditions, the pollinators it attracts, and whether it helps or hurts your local ecosystem, all from a single photo taken on your campus."
-          linkText="Go to Identification →"
+          heading="Identify a Plant"
+          body="Take a photo of a plant on campus. EcoLoco tells you if it's native to Florida, not native, or invasive, and where that answer comes from."
+          linkText="Identify a plant →"
           onLinkPress={() => navigation?.navigate('Camera')}
         />
 
@@ -221,8 +202,10 @@ export default function HomeScreen({ navigation }) {
           animStyle={s2Anim}
           image={IMG_POLLINATORS}
           imgHeight={imgHeight}
-          heading="Support Pollinators"
-          body="In recent years, pollinators and wildlife of all kinds have become threatened by habitat loss, climate change, and the spread of non-native species. By identifying what's growing on your school grounds and planting natives where it counts, your eco-club can make a real, measurable difference right where you are."
+          heading="Scan Your Campus"
+          body="Scan the plants around your school one by one. You'll see what share are native, which invasive plants to remove, and what to plant instead."
+          linkText="Start a campus scan →"
+          onLinkPress={() => navigation?.navigate('EcoScan')}
         />
 
         <Divider />
@@ -232,9 +215,9 @@ export default function HomeScreen({ navigation }) {
           animStyle={s3Anim}
           image={IMG_GROW}
           imgHeight={imgHeight}
-          heading="Grow with Confidence"
-          body="EcoLoco gives recommendations tailored to your school's location and conditions. Every suggestion is ranked by real ecological impact, so your club can choose the plants that do the most good while prioritizing species that are realistic to grow and care for."
-          linkText="Go to Recommendation →"
+          heading="Plant Florida Natives"
+          body="Get native plants picked for South Florida, with what each one helps and what to ask for at the nursery. Every fact shows its source."
+          linkText="See native plants →"
           onLinkPress={() => navigation?.navigate('Recommend')}
         />
 
@@ -246,8 +229,9 @@ export default function HomeScreen({ navigation }) {
           animStyle={s4Anim}
           image={IMG_ECOSYSTEM}
           imgHeight={imgHeight}
-          heading="Help Your Ecosystem"
-          body="While the climate crisis can feel global and overwhelming, EcoLoco brings it down to your own campus. Focusing on local impact lets students see the direct effects of their work, where one native oak can support over 500 butterfly and moth species and bring an entire food web back to life."
+          heading="Why It Matters"
+          body="Oaks feed 395 kinds of caterpillars in South Florida. Those caterpillars feed the birds that live here."
+          source={{ name: 'National Wildlife Federation', url: 'https://www.nwf.org/-/media/Documents/PDFs/Garden-for-Wildlife/Keystone-Plants/NWF-GFW-keystone-plant-list-ecoregion-15-tropical-wet-forests.pdf' }}
         />
 
         <View style={styles.footerDivider} />
@@ -266,7 +250,7 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: CREAM,
+    backgroundColor: COLORS.cream,
   },
   scrollContent: {
     alignItems: 'center',
@@ -296,14 +280,14 @@ const styles = StyleSheet.create({
   },
   logoText: {
     fontSize: 20,
-    fontFamily: 'Fraunces_700Bold',
-    color: DARK_GREEN,
+    fontFamily: FONTS.heading,
+    color: COLORS.darkGreen,
     letterSpacing: 0.3,
   },
   // ── Divider ──
   dividerLine: {
     height: 1,
-    backgroundColor: BORDER,
+    backgroundColor: COLORS.border,
   },
 
   // ── Hero ──
@@ -321,21 +305,21 @@ const styles = StyleSheet.create({
   },
   heroHeading: {
     fontSize: 36,
-    fontFamily: 'Fraunces_400Regular',
-    color: DARK_GREEN,
+    fontFamily: FONTS.headingLight,
+    color: COLORS.darkGreen,
     lineHeight: 46,
   },
   heroHeadingItalic: {
     fontSize: 36,
-    fontFamily: 'Fraunces_700Bold_Italic',
-    color: DARK_GREEN,
+    fontFamily: FONTS.headingItalic,
+    color: COLORS.darkGreen,
     lineHeight: 46,
   },
 
   tagline: {
     fontSize: 15,
-    fontFamily: 'DMSans_700Bold',
-    color: DARK_GREEN,
+    fontFamily: FONTS.bodyBold,
+    color: COLORS.darkGreen,
     textAlign: 'center',
     marginTop: 20,
     lineHeight: 23,
@@ -352,12 +336,12 @@ const styles = StyleSheet.create({
   ornamentLine: {
     flex: 1,
     height: 1,
-    backgroundColor: BORDER,
+    backgroundColor: COLORS.border,
   },
   ornamentDiamond: {
     width: 7,
     height: 7,
-    backgroundColor: SOFT_GREEN,
+    backgroundColor: COLORS.softGreen,
     opacity: 0.45,
     transform: [{ rotate: '45deg' }],
   },
@@ -374,8 +358,8 @@ const styles = StyleSheet.create({
     width: '42%',
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: LIGHT_BG,
-    shadowColor: '#1e3a1e',
+    backgroundColor: COLORS.lightBg,
+    shadowColor: COLORS.darkGreen,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -387,7 +371,7 @@ const styles = StyleSheet.create({
   },
   imgFallback: {
     flex: 1,
-    backgroundColor: LIGHT_BG,
+    backgroundColor: COLORS.lightBg,
   },
   featureText: {
     flex: 1,
@@ -396,32 +380,32 @@ const styles = StyleSheet.create({
   },
   featureHeading: {
     fontSize: 18,
-    fontFamily: 'Fraunces_700Bold',
-    color: DARK_GREEN,
+    fontFamily: FONTS.heading,
+    color: COLORS.darkGreen,
     lineHeight: 26,
   },
   featureBody: {
     fontSize: 12.5,
-    fontFamily: 'DMSans_400Regular',
-    color: TEXT_BODY,
+    fontFamily: FONTS.body,
+    color: COLORS.textBody,
     lineHeight: 20,
   },
   linkBtn: {
     alignSelf: 'flex-start',
     borderBottomWidth: 1,
-    borderBottomColor: DARK_GREEN,
+    borderBottomColor: COLORS.darkGreen,
     paddingBottom: 1,
   },
   featureLink: {
     fontSize: 12,
-    fontFamily: 'DMSans_700Bold',
-    color: DARK_GREEN,
+    fontFamily: FONTS.bodyBold,
+    color: COLORS.darkGreen,
   },
 
   // ── Footer ──
   footerDivider: {
     height: 1,
-    backgroundColor: BORDER,
+    backgroundColor: COLORS.border,
     marginTop: 8,
   },
   footer: {
@@ -437,8 +421,8 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 11,
-    fontFamily: 'DMSans_400Regular',
-    color: TEXT_MUTED,
+    fontFamily: FONTS.body,
+    color: COLORS.textMuted,
     letterSpacing: 0.4,
   },
 })

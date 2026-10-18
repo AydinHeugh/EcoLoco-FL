@@ -31,7 +31,13 @@
           "cameraPermission": "EcoLoco needs camera access so you can take photos of plants to identify them."
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "EcoLoco uses your location once to find your school's ZIP code and plants seen nearby. It is rounded to about 1 km and never saved."
+        }
+      ]
     ]
   }
 }

@@ -116,6 +116,8 @@ def merge(official, curated):
                          if n.lower() != entry["scientific_name"].lower() and n not in entry["synonyms"]]
                 entry["synonyms"] = entry["synonyms"] + extra
                 entry["why"] = cur["why"]
+                if "removal_safety" in cur:
+                    entry["removal_safety"] = cur["removal_safety"]
                 used.add(i)
                 break
         merged.append(entry)

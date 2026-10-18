@@ -2,42 +2,47 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 async function parseResponse(res) {
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || `Server error ${res.status}`);
+  if (!res.ok) {
+    const err = new Error(data.error || `Server error ${res.status}`);
+    err.status = res.status;
+    throw err;
+  }
   return data;
 }
 
-export async function identifyPlant(imageData, location) {
-  const res = await fetch(`${API_URL}/identify`, {
+async function post(path, body) {
+  const res = await fetch(`${API_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ image: imageData, location }),
+    body: JSON.stringify(body),
   });
   return parseResponse(res);
 }
 
-export async function getScore(plants) {
-  const res = await fetch(`${API_URL}/score`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ plants }),
-  });
-  return parseResponse(res);
+export async function identifyPlant(images, location) {
+  return post('/identify', { images, location });
+}
+
+export async function getPlan(plants, location) {
+  return post('/plan', { plants, location });
 }
 
 export async function getPlantRecommendations(location) {
-  const res = await fetch(`${API_URL}/recommend`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ location }),
-  });
-  return parseResponse(res);
+  return post('/recommend', { location });
 }
 
-export async function generateLetter(plantNames, score, zipCode) {
-  const res = await fetch(`${API_URL}/letter`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ plant_names: plantNames, score, zip_code: zipCode }),
-  });
-  return parseResponse(res);
+export async function generateLetter(plan, zipCode) {
+  return post('/letter', { plan, zip_code: zipCode });
+}
+
+export async function locate(place) {
+  return post('/locate', place);
+}
+
+export async function getNearby(lat, lon) {
+  return post('/nearby', { lat, lon });
+}
+
+export function userMessage(err, fallback) {
+  return err?.status === 400 ? err.message : fallback;
 }

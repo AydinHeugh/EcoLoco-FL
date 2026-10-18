@@ -1,398 +1,113 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  ActivityIndicator, Image, useWindowDimensions, Animated, Easing, Pressable, Linking,
-  Alert, TextInput,
+  ActivityIndicator, Image, useWindowDimensions, Linking, TextInput,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useFonts } from 'expo-font';
-import { Fraunces_700Bold } from '@expo-google-fonts/fraunces';
-import { DMSans_400Regular, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
-import { getScore, getPlantRecommendations, generateLetter } from '../services/geminiService';
-
-const CREAM      = '#f5f0e8';
-const DARK_GREEN = '#1e3a1e';
-const SOFT_GREEN = '#4a7a3a';
-const LIGHT_BG   = '#eaeee6';
-const TEXT_BODY  = '#4a4a3a';
-const TEXT_MUTED = '#7a7a6a';
-const BORDER     = '#d4cfc4';
-const AMBER      = '#c49a3a';
-const TERRACOTTA = '#C97D5D';
-
-const SUPPORT_STYLES = {
-  high:    { bg: '#eaf2e8', color: SOFT_GREEN, label: '↑ High' },
-  medium:  { bg: '#faf3e0', color: AMBER,      label: '→ Medium' },
-  low:     { bg: '#f5efec', color: TERRACOTTA, label: '↓ Low' },
-  unknown: { bg: '#eeeeea', color: TEXT_MUTED, label: '? Unknown' },
-};
-const CARD_BG    = '#fefcf8';
-const EASE_OUT   = Easing.bezier(0.22, 1, 0.36, 1);
+import { getPlan, getNearby, generateLetter, userMessage } from '../services/geminiService';
+import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS } from '../theme';
+import StatusBadge from '../components/StatusBadge';
+import PercentRing from '../components/PercentRing';
+import PlanCard from '../components/PlanCard';
+import SourceLine from '../components/SourceLine';
+import StatusBars from '../components/StatusBars';
+import CaterpillarBars from '../components/CaterpillarBars';
+import OfflineNotice, { reportAi } from '../components/OfflineNotice';
 
 const LOGO = require('../../assets/EcoLoco_logo.png');
+const NURSERY_URL = 'https://plantrealflorida.org';
+const NO_DATA = "We don't have wildlife info for this plant yet";
 
-function scoreColor(s) {
-  if (s >= 66) return SOFT_GREEN;
-  if (s >= 41) return AMBER;
-  return TERRACOTTA;
-}
+const BUCKETS = [
+  { key: 'native',     status: 'native',     label: 'Native' },
+  { key: 'non_native', status: 'non-native', label: 'Non-native (not invasive)' },
+  { key: 'invasive',   status: 'invasive',   label: 'Invasive (hurting wildlife)' },
+  { key: 'unknown',    status: 'unknown',    label: 'Unknown: not on Florida lists' },
+];
 
-function scoreLabel(s) {
-  if (s >= 80) return 'Outstanding';
-  if (s >= 65) return 'Good';
-  if (s >= 45) return 'Moderate';
-  if (s >= 25) return 'Low';
-  return 'Critical';
-}
-
-// ─── Animated score ring ──────────────────────────────────────────────────────
-function ScoreRing({ targetScore, label, size = 190 }) {
-  const anim   = useRef(new Animated.Value(0)).current;
-  const [shown, setShown] = useState(0);
-
-  useEffect(() => {
-    anim.stopAnimation();
-    anim.removeAllListeners();
-    anim.addListener(({ value }) => setShown(Math.round(value)));
-    Animated.timing(anim, {
-      toValue: targetScore,
-      duration: 700,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-    return () => { anim.stopAnimation(); anim.removeAllListeners(); };
-  }, [targetScore]);
-
-  const color = scoreColor(shown || targetScore);
-
-  return (
-    <View style={[
-      ring.wrap,
-      { width: size, height: size, borderRadius: size / 2, borderColor: color },
-    ]}>
-      <Text style={[ring.num, { color, fontSize: size * 0.3 }]}>{shown}</Text>
-      {label
-        ? <Text style={[ring.sub, { color, fontFamily: 'DMSans_700Bold' }]}>{label}</Text>
-        : <Text style={ring.sub}>out of 100</Text>
-      }
-    </View>
-  );
-}
-
-const ring = StyleSheet.create({
-  wrap: { borderWidth: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: CREAM },
-  num:  { fontFamily: 'Fraunces_700Bold' },
-  sub:  { fontSize: 11, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, marginTop: 2 },
-});
-
-// ─── Highlight plant name in green inside a text block ───────────────────────
-function HighlightedText({ text, plantName, style }) {
-  if (!plantName || !text || !text.includes(plantName)) {
-    return <Text style={style}>{text}</Text>;
-  }
-  const parts = text.split(plantName);
-  return (
-    <Text style={style}>
-      {parts.map((part, i) => (
-        <React.Fragment key={i}>
-          {part}
-          {i < parts.length - 1 && (
-            <Text style={{ color: SOFT_GREEN, fontFamily: 'DMSans_700Bold' }}>{plantName}</Text>
-          )}
-        </React.Fragment>
-      ))}
-    </Text>
-  );
-}
-
-// ─── Fade-in wrapper ──────────────────────────────────────────────────────────
-function FadeIn({ delay = 0, children }) {
-  const opacity    = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(14)).current;
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(opacity,    { toValue: 1, duration: 480, delay, easing: EASE_OUT, useNativeDriver: true }),
-      Animated.timing(translateY, { toValue: 0, duration: 480, delay, easing: EASE_OUT, useNativeDriver: true }),
-    ]).start();
-  }, []);
-  return <Animated.View style={{ opacity, transform: [{ translateY }] }}>{children}</Animated.View>;
-}
-
-// ─── Before→After pill ───────────────────────────────────────────────────────
-function BeforeAfterPill({ fromScore, toScore, visible }) {
-  const opacity = useRef(new Animated.Value(0)).current;
-  const scale   = useRef(new Animated.Value(0.85)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(opacity, { toValue: visible ? 1 : 0, duration: 220, easing: EASE_OUT, useNativeDriver: true }),
-      Animated.spring(scale,   { toValue: visible ? 1 : 0.85, useNativeDriver: true, tension: 140, friction: 8 }),
-    ]).start();
-  }, [visible]);
-
-  const delta = toScore - fromScore;
-
-  return (
-    <Animated.View style={[ba.wrap, { opacity, transform: [{ scale }] }]}>
-      <Text style={[ba.score, { color: scoreColor(fromScore) }]}>{fromScore}</Text>
-      <Text style={ba.arrow}>  →  </Text>
-      <Text style={[ba.score, { color: scoreColor(toScore) }]}>{toScore}</Text>
-      {delta > 0 && <Text style={ba.delta}>  +{delta} pts</Text>}
-    </Animated.View>
-  );
-}
-
-const ba = StyleSheet.create({
-  wrap:  { flexDirection: 'row', alignItems: 'center', backgroundColor: '#eaf2e8', borderRadius: 14, paddingHorizontal: 20, paddingVertical: 11, marginTop: 16 },
-  score: { fontSize: 22, fontFamily: 'Fraunces_700Bold' },
-  arrow: { fontSize: 16, color: TEXT_MUTED },
-  delta: { fontSize: 14, fontFamily: 'DMSans_700Bold', color: SOFT_GREEN },
-});
-
-// ─── Pressable action card ────────────────────────────────────────────────────
-function ActionCard({ rec, index, onHoverIn, onHoverOut, boost }) {
-  const num   = String(index + 1).padStart(2, '0');
-  const scale = useRef(new Animated.Value(1)).current;
-
-  function pressIn() {
-    onHoverIn();
-    Animated.spring(scale, { toValue: 0.975, useNativeDriver: true, tension: 160, friction: 7 }).start();
-  }
-
-  function pressOut() {
-    onHoverOut();
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 160, friction: 7 }).start();
-  }
-
-  return (
-    <FadeIn delay={index * 110}>
-      <Pressable onPressIn={pressIn} onPressOut={pressOut}>
-        <Animated.View style={[ac.card, { transform: [{ scale }] }]}>
-          <View style={ac.topRow}>
-            <Text style={ac.num}>{num}</Text>
-            <View style={ac.badgeRow}>
-              {boost != null && (
-                <View style={ac.boostBadge}>
-                  <Text style={ac.boostText}>+{boost} pts</Text>
-                </View>
-              )}
-              <View style={ac.badge}>
-                <Text style={ac.badgeText}>↑ Native Plant</Text>
-              </View>
-            </View>
-          </View>
-          <Text style={ac.problem}>{rec.problem}</Text>
-          <View style={ac.divider} />
-          <Text style={ac.label}>ACTION</Text>
-          <HighlightedText text={rec.action} plantName={rec.plant_name} style={ac.body} />
-          <View style={ac.divider} />
-          <Text style={ac.label}>ECOLOGICAL BENEFIT</Text>
-          <HighlightedText text={rec.impact} plantName={rec.plant_name} style={ac.body} />
-        </Animated.View>
-      </Pressable>
-    </FadeIn>
-  );
-}
-
-const ac = StyleSheet.create({
-  card: {
-    backgroundColor: CARD_BG, borderRadius: 16,
-    borderWidth: 1, borderColor: BORDER,
-    padding: 18, marginBottom: 14,
-  },
-  topRow:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  num:       { fontSize: 12, fontFamily: 'DMSans_700Bold', color: TEXT_MUTED, letterSpacing: 1 },
-  badgeRow:  { flexDirection: 'row', gap: 6, alignItems: 'center' },
-  boostBadge:{ backgroundColor: DARK_GREEN, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-  boostText: { fontSize: 11, fontFamily: 'DMSans_700Bold', color: CREAM },
-  badge:     { backgroundColor: '#eaf2e8', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-  badgeText: { fontSize: 11, fontFamily: 'DMSans_700Bold', color: SOFT_GREEN },
-  problem:  { fontSize: 17, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, lineHeight: 24, marginBottom: 14 },
-  divider:  { height: 1, backgroundColor: BORDER, marginVertical: 12 },
-  label:    { fontSize: 10, fontFamily: 'DMSans_700Bold', color: TEXT_MUTED, letterSpacing: 1.2, marginBottom: 5 },
-  body:     { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_BODY, lineHeight: 21 },
-});
-
-// ─── Letter Generator ────────────────────────────────────────────────────────
-function LetterGenerator({ recs, score, zipCode }) {
-  const [selected,      setSelected]      = useState(new Set([0, 1, 2]));
-  const [letterLoading, setLetterLoading] = useState(false);
-  const [letter,        setLetter]        = useState(null);
-  const [editedLetter,  setEditedLetter]  = useState('');
-  const [copied,        setCopied]        = useState(false);
-
-  function togglePlant(i) {
-    setSelected(prev => {
-      const next = new Set(prev);
-      next.has(i) ? next.delete(i) : next.add(i);
-      return next;
-    });
-    setLetter(null);
-    setEditedLetter('');
-  }
+function LetterGenerator({ plan, zipCode }) {
+  const [loading, setLoading] = useState(false);
+  const [letter,  setLetter]  = useState('');
+  const [copied,  setCopied]  = useState(false);
+  const [error,   setError]   = useState(null);
 
   async function handleGenerate() {
-    const plantNames = recs.filter((_, i) => selected.has(i)).map(r => r.plant_name);
-    if (plantNames.length === 0) return;
-    setLetterLoading(true);
-    setLetter(null);
-    setEditedLetter('');
+    setLoading(true);
+    setError(null);
     try {
-      const data = await generateLetter(plantNames, score, zipCode);
+      const data = await generateLetter(plan, zipCode);
       setLetter(data.result);
-      setEditedLetter(data.result);
-    } catch {
-      Alert.alert('Error', 'Could not generate letter. Please try again.');
+      reportAi(data.ai_unavailable);
+    } catch (err) {
+      setError(userMessage(err, 'Could not write the letter. Check your connection and try again.'));
     } finally {
-      setLetterLoading(false);
+      setLoading(false);
     }
   }
 
-  const anySelected = recs.some((_, i) => selected.has(i));
-
   return (
-    <View style={styles.letterSection}>
-      <Text style={styles.letterTitle}>Draft Letter to Administration</Text>
-      <Text style={styles.letterSubtitle}>
-        Select plants to include, then generate a ready-to-personalise letter.
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Letter to your principal</Text>
+      <Text style={styles.sectionNote}>
+        It lists the plants to remove and add, how to buy them, safety notes and sources.
       </Text>
-
-      {recs.map((rec, i) => (
-        <TouchableOpacity key={i} style={styles.checkRow} onPress={() => togglePlant(i)}>
-          <View style={[styles.checkbox, selected.has(i) && styles.checkboxChecked]}>
-            {selected.has(i) && <Text style={styles.checkmark}>✓</Text>}
-          </View>
-          <Text style={styles.checkLabel} numberOfLines={1}>{rec.plant_name}</Text>
-        </TouchableOpacity>
-      ))}
-
-      <TouchableOpacity
-        style={[styles.letterBtn, (!anySelected || letterLoading) && styles.letterBtnDisabled]}
-        onPress={handleGenerate}
-        disabled={!anySelected || letterLoading}
-      >
-        {letterLoading
-          ? <ActivityIndicator color={CREAM} size="small" />
-          : <Text style={styles.letterBtnText}>Generate Letter for Administration</Text>
-        }
+      <TouchableOpacity style={[styles.btn, loading && styles.btnDisabled]} onPress={handleGenerate} disabled={loading}>
+        {loading ? <ActivityIndicator color={COLORS.cream} size="small" /> : <Text style={styles.btnText}>Write the letter</Text>}
       </TouchableOpacity>
-
-      {letter && (
+      {error && <Text style={styles.errorText}>{error}</Text>}
+      {letter ? (
         <View style={styles.letterCard}>
-          <Text style={styles.letterEditHint}>Tap to edit — fill in the bracketed fields</Text>
-          <TextInput
-            multiline
-            scrollEnabled={false}
-            value={editedLetter}
-            onChangeText={setEditedLetter}
-            style={styles.letterInput}
-            textAlignVertical="top"
-          />
+          <Text style={styles.sectionNote}>Tap to edit. Fill in the parts in [brackets].</Text>
+          <TextInput multiline scrollEnabled={false} value={letter} onChangeText={setLetter}
+            style={styles.letterInput} textAlignVertical="top" />
           <TouchableOpacity
-            style={styles.copyBtn}
+            style={styles.btnOutline}
             onPress={async () => {
-              await Clipboard.setStringAsync(editedLetter);
+              await Clipboard.setStringAsync(letter);
               setCopied(true);
               setTimeout(() => setCopied(false), 2000);
             }}
           >
-            <Text style={styles.copyBtnText}>{copied ? 'Copied!' : 'Copy Letter'}</Text>
+            <Text style={styles.btnOutlineText}>{copied ? 'Copied!' : 'Copy Letter'}</Text>
           </TouchableOpacity>
-          <Text style={styles.letterNote}>Review and personalise before sending.</Text>
+          <Text style={styles.sectionNote}>Read it over and change anything before you send it.</Text>
         </View>
-      )}
+      ) : null}
     </View>
   );
 }
 
-// ─── AuditResultsScreen ───────────────────────────────────────────────────────
 export default function AuditResultsScreen({ route, navigation }) {
-  const { plants = [], zipCode } = route.params ?? {};
-
-  const [scoreData,    setScoreData]     = useState(null);
-  const [recs,         setRecs]          = useState([]);
-  const [loading,      setLoading]       = useState(true);
-  const [recsLoading,  setRecsLoading]   = useState(true);
-  const [showProjected,  setShowProjected]   = useState(false);
-  const [hovering,       setHovering]        = useState(null); // 0|1|2 = card index, 'all' = combined, null = none
-  const [viewAllExpanded,setViewAllExpanded] = useState(false);
-
-  const BOOST = { high: 8, medium: 6, low: 5 };
+  const { plants = [], zipCode, lat, lon } = route.params ?? {};
+  const [plan,    setPlan]    = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState(null);
+  const [nearby,  setNearby]  = useState([]);
 
   const { width } = useWindowDimensions();
   const maxWidth   = Math.min(width, 960);
-
-  const [fontsLoaded] = useFonts({ Fraunces_700Bold, DMSans_400Regular, DMSans_700Bold });
+  const [fontsLoaded] = useFonts(FONT_ASSETS);
 
   useEffect(() => {
-    async function fetchAll() {
-      try {
-        const plantsPayload = plants.map(p => ({
-          name:             p.plant_name,
-          invasive_status:  p.invasive_status  ?? 'non-native',
-          wildlife_support: p.wildlife_support ?? 'low',
-        }));
-        const data = await getScore(plantsPayload);
-        setScoreData(data.result);
-      } catch (err) {
-        console.error('Score fetch error:', err);
-      } finally {
-        setLoading(false);
-      }
-
-      if (zipCode) {
-        try {
-          const recData = await getPlantRecommendations(zipCode);
-          setRecs(recData.result ?? []);
-        } catch (err) {
-          console.error('Recs fetch error:', err);
-        } finally {
-          setRecsLoading(false);
-        }
-      } else {
-        setRecsLoading(false);
-      }
+    getPlan(plants.map(p => ({ scientific_name: p.scientific_name, plant_name: p.plant_name })), zipCode)
+      .then(data => setPlan(data.result))
+      .catch(err => setError(userMessage(err, 'Could not check your plants. Check your connection and try again.')))
+      .finally(() => setLoading(false));
+    if (lat != null && lon != null) {
+      getNearby(lat, lon).then(data => setNearby(data.result)).catch(() => setNearby([]));
     }
-    fetchAll();
   }, []);
-
-  // Combined projected score (top 3 actions only) — shown in subtitle + "all" hold
-  const projectedScore = (!recsLoading && recs.length > 0 && scoreData)
-    ? Math.min(100, scoreData.score + recs.slice(0, 3).reduce((sum, r) => sum + (BOOST[r.wildlife_support] ?? 5), 0))
-    : (scoreData?.projected_score ?? 0);
-
-  // Score preview: single card → that card's boost; 'all' → combined projected
-  const hoverScore = hovering === 'all'
-    ? projectedScore
-    : (hovering !== null && recs[hovering] && scoreData)
-      ? Math.min(100, scoreData.score + (BOOST[recs[hovering].wildlife_support] ?? 5))
-      : null;
-
-  const ringTarget = scoreData
-    ? (showProjected
-        ? (hovering !== null ? hoverScore : scoreData.score)
-        : scoreData.score)
-    : 0;
-
-  const ringLabel = showProjected
-    ? (hovering === 'all' ? 'all 3' : hovering !== null ? 'this action' : 'current')
-    : null;
-
-  const delta = scoreData ? projectedScore - scoreData.score : 0;
-
-  const onHoverOut = useCallback(() => setHovering(null), []);
 
   if (!fontsLoaded) return <View style={styles.container} />;
 
+  const summary = plan?.summary;
+  const addName = name => plan?.add.find(a => a.scientific_name === name)?.common_name;
+
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-    >
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
       <View style={[styles.inner, { width: maxWidth }]}>
 
-        {/* ── Header ── */}
         <View style={styles.header}>
           <View style={styles.logoRow}>
             <Image source={LOGO} style={styles.logoImg} />
@@ -404,269 +119,122 @@ export default function AuditResultsScreen({ route, navigation }) {
         </View>
 
         <View style={styles.divider} />
+        <OfflineNotice />
 
-        {/* ── Loading ── */}
         {loading && (
           <View style={styles.centerSection}>
-            <ActivityIndicator color={SOFT_GREEN} size="large" />
-            <Text style={styles.loadingText}>Calculating your biodiversity score…</Text>
+            <ActivityIndicator color={COLORS.softGreen} size="large" />
+            <Text style={styles.mutedText}>Checking your plants against Florida lists…</Text>
           </View>
         )}
 
-        {/* ── Results ── */}
-        {!loading && scoreData && (
+        {!loading && error && (
+          <View style={styles.centerSection}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.btn} onPress={() => navigation.goBack()}>
+              <Text style={styles.btnText}>Go Back</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {!loading && plan && (
           <>
-            {/* Score ring + toggle */}
-            <View style={styles.scoreSection}>
-              <Text style={styles.pageTitle}>Biodiversity Score</Text>
-              <Text style={styles.plantCountLabel}>
-                {scoreData.plant_count} plant{scoreData.plant_count !== 1 ? 's' : ''} scanned
-              </Text>
-
-              <View style={styles.ringWrap}>
-                <ScoreRing targetScore={ringTarget} label={ringLabel} size={190} />
-                <Text style={[styles.scoreLabel, { color: scoreColor(ringTarget) }]}>
-                  {scoreLabel(ringTarget)}
-                </Text>
-              </View>
-
-              {/* Before→After pill — only visible when hovering in After Actions */}
-              {showProjected && (
-                <BeforeAfterPill
-                  fromScore={scoreData.score}
-                  toScore={hoverScore ?? scoreData.score}
-                  visible={hovering !== null}
-                />
-              )}
-
-              {/* Current / After Actions toggle */}
-              <View style={[styles.toggle, showProjected && { marginTop: 20 }]}>
-                <TouchableOpacity
-                  style={[styles.toggleBtn, !showProjected && styles.toggleActive]}
-                  onPress={() => { setShowProjected(false); setHovering(null); }}
-                >
-                  <Text style={[styles.toggleText, !showProjected && styles.toggleTextActive]}>
-                    Current
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.toggleBtn, showProjected && styles.toggleActive]}
-                  onPress={() => setShowProjected(true)}
-                >
-                  <Text style={[styles.toggleText, showProjected && styles.toggleTextActive]}>
-                    After Actions
-                  </Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.section}>
+              <Text style={styles.pageTitle}>Your plan</Text>
+              {plan.remove.map(card => (
+                <PlanCard key={card.scientific_name} card={card} kind="remove" replacementName={addName(card.replacement)} />
+              ))}
+              {plan.add.length === 0
+                ? <Text style={styles.mutedText}>No plants are ready to recommend yet. Our team is still checking each one.</Text>
+                : plan.add.map(card => <PlanCard key={card.scientific_name} card={card} kind="add" />)}
+              <TouchableOpacity onPress={() => Linking.openURL(NURSERY_URL)}>
+                <Text style={styles.link}>Find a native plant nursery near you (plantrealflorida.org) →</Text>
+              </TouchableOpacity>
             </View>
 
             <View style={styles.divider} />
 
-            {/* ── CURRENT view ── */}
-            {!showProjected && (
-              <FadeIn>
-                <View style={styles.section}>
-                  <View style={styles.insightCard}>
-                    <Text style={styles.insightText}>{scoreData.insight}</Text>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>What your campus supports now</Text>
+              {summary.plants.map((p, i) => (
+                <View key={i} style={styles.plantRow}>
+                  <View style={styles.plantHead}>
+                    <Text style={styles.plantName}>{p.plant_name}</Text>
+                    <StatusBadge status={p.status} label={p.status_label} />
                   </View>
-
-                  <Text style={styles.sectionTitle}>What's on campus</Text>
-
-                  {scoreData.breakdown.helping.length > 0 && (
-                    <View style={styles.bCard}>
-                      <View style={styles.bHeader}>
-                        <View style={[styles.dot, { backgroundColor: SOFT_GREEN }]} />
-                        <Text style={styles.bLabel}>Helping your ecosystem</Text>
-                        <View style={styles.bBadge}><Text style={styles.bBadgeText}>{scoreData.breakdown.helping.length}</Text></View>
-                      </View>
-                      {scoreData.breakdown.helping.map((name, i) => (
-                        <Text key={i} style={styles.bItem}>· {name}</Text>
-                      ))}
-                    </View>
-                  )}
-
-                  {scoreData.breakdown.hurting.length > 0 && (
-                    <View style={styles.bCard}>
-                      <View style={styles.bHeader}>
-                        <View style={[styles.dot, { backgroundColor: TERRACOTTA }]} />
-                        <Text style={styles.bLabel}>Hurting your ecosystem</Text>
-                        <View style={styles.bBadge}><Text style={styles.bBadgeText}>{scoreData.breakdown.hurting.length}</Text></View>
-                      </View>
-                      {scoreData.breakdown.hurting.map((name, i) => (
-                        <Text key={i} style={styles.bItem}>· {name}</Text>
-                      ))}
-                    </View>
-                  )}
-
-                  {scoreData.breakdown.helping.length === 0 && scoreData.breakdown.hurting.length === 0 && (
-                    <View style={styles.bCard}>
-                      <View style={styles.bHeader}>
-                        <View style={[styles.dot, { backgroundColor: AMBER }]} />
-                        <Text style={styles.bLabel}>Neutral plants — not actively helping or hurting</Text>
-                      </View>
-                      {plants.map((p, i) => (
-                        <Text key={i} style={styles.bItem}>· {p.plant_name}</Text>
-                      ))}
-                    </View>
-                  )}
-
-                  {delta > 0 && (
-                    <TouchableOpacity
-                      style={styles.afterHint}
-                      onPress={() => setShowProjected(true)}
-                    >
-                      <Text style={styles.afterHintText}>
-                        See how you could reach {projectedScore} →
-                      </Text>
-                    </TouchableOpacity>
-                  )}
+                  <Text style={styles.plantWhy}>{p.why || NO_DATA}</Text>
+                  {p.why ? <SourceLine source={{ name: p.source_label }} /> : null}
                 </View>
-              </FadeIn>
-            )}
-
-            {/* ── AFTER ACTIONS view ── */}
-            {showProjected && (
-              <FadeIn>
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Your 3-Action Plan</Text>
-                  <Text style={styles.sectionSubtitle}>
-                    All 3 actions together could raise your score from{' '}
-                    <Text style={{ fontFamily: 'DMSans_700Bold', color: scoreColor(scoreData.score) }}>{scoreData.score}</Text>
-                    {' → '}
-                    <Text style={{ fontFamily: 'DMSans_700Bold', color: scoreColor(projectedScore) }}>{projectedScore}</Text>
-                    {' '}(+{delta} pts). Hold any card to preview.
-                  </Text>
-
-                  {recsLoading && (
-                    <View style={[styles.centerSection, { paddingVertical: 32 }]}>
-                      <ActivityIndicator color={SOFT_GREEN} />
-                      <Text style={styles.loadingText}>Finding native plants for your area…</Text>
-                    </View>
-                  )}
-
-                  {!recsLoading && recs.length === 0 && (
-                    <View style={styles.insightCard}>
-                      <Text style={styles.insightText}>
-                        No recommendations found for this ZIP. Use the Recommendations tab for full results.
-                      </Text>
-                    </View>
-                  )}
-
-                  {!recsLoading && recs.slice(0, 3).map((rec, i) => (
-                    <ActionCard
-                      key={i}
-                      rec={rec}
-                      index={i}
-                      onHoverIn={() => setHovering(i)}
-                      onHoverOut={onHoverOut}
-                      boost={BOOST[rec.wildlife_support] ?? 5}
-                    />
-                  ))}
-
-                  {/* ── All 3 combined hold button ── */}
-                  {!recsLoading && recs.length >= 3 && (
-                    <Pressable
-                      onPressIn={() => setHovering('all')}
-                      onPressOut={() => setHovering(null)}
-                    >
-                      <View style={[styles.allBtn, hovering === 'all' && styles.allBtnActive]}>
-                        <Text style={[styles.allBtnText, hovering === 'all' && { color: CREAM }]}>
-                          {hovering === 'all'
-                            ? `All 3 together: ${scoreData.score} → ${projectedScore}  (+${delta} pts)`
-                            : `Hold to preview all 3 combined  (+${delta} pts)`}
-                        </Text>
-                      </View>
-                    </Pressable>
-                  )}
-
-                  {/* ── More high-impact natives ── */}
-                  {!recsLoading && recs.length > 3 && (
-                    <View style={styles.viewAllSection}>
-                      <TouchableOpacity
-                        style={styles.viewAllToggle}
-                        onPress={() => setViewAllExpanded(v => !v)}
-                      >
-                        <Text style={styles.viewAllToggleText}>
-                          {viewAllExpanded ? '▲ Hide' : '▼ More high-impact natives for your area'} ({recs.length - 3} more)
-                        </Text>
-                      </TouchableOpacity>
-
-                      {viewAllExpanded && (
-                        <>
-                          {recs.slice(3).map((rec, i) => (
-                            <View key={i} style={styles.viewAllItem}>
-                              <View style={{ flex: 1, marginRight: 10 }}>
-                                <Text style={styles.viewAllName}>{rec.plant_name}</Text>
-                                {rec.scientific_name
-                                  ? <Text style={styles.viewAllSci}>{rec.scientific_name}</Text>
-                                  : null}
-                                {rec.benefit
-                                  ? <Text style={styles.viewAllBenefit}>{rec.benefit}</Text>
-                                  : null}
-                              </View>
-                              {(() => {
-                                const support = SUPPORT_STYLES[rec.wildlife_support] ?? SUPPORT_STYLES.unknown;
-                                return (
-                                  <View style={[styles.supportPill, { backgroundColor: support.bg }]}>
-                                    <Text style={[styles.supportPillText, { color: support.color }]}>
-                                      {support.label} Wildlife
-                                    </Text>
-                                  </View>
-                                );
-                              })()}
-                            </View>
-                          ))}
-
-                          <TouchableOpacity
-                            style={styles.nwfLink}
-                            onPress={() => Linking.openURL('https://nativeplantfinder.nwf.org')}
-                          >
-                            <Text style={styles.nwfLinkText}>
-                              Looking for the complete native plant database for your exact location? Explore NWF's Native Plant Finder →
-                            </Text>
-                          </TouchableOpacity>
-                        </>
-                      )}
-                    </View>
-                  )}
-
-                  {/* ── Draft Letter ── */}
-                  {!recsLoading && recs.length >= 1 && (
-                    <LetterGenerator
-                      recs={recs.slice(0, 3)}
-                      score={scoreData.score}
-                      zipCode={zipCode}
-                    />
-                  )}
-                </View>
-              </FadeIn>
-            )}
+              ))}
+            </View>
 
             <View style={styles.divider} />
 
-            {/* ── CTAs ── */}
+            <View style={styles.ringSection}>
+              <Text style={styles.sectionTitle}>How native is your campus?</Text>
+              {summary.percent_native === null
+                ? <Text style={styles.mutedText}>Not enough identified plants yet</Text>
+                : <PercentRing now={summary.percent_native} withPlan={summary.percent_native_with_plan} />}
+              <View style={styles.countRow}>
+                {BUCKETS.map(({ key, status, label }) => (
+                  <View key={key} style={styles.countItem}>
+                    <Text style={[styles.countNum, { color: STATUS_COLORS[status].color }]}>{summary.counts[key]}</Text>
+                    <Text style={styles.countLabel}>{label}</Text>
+                  </View>
+                ))}
+              </View>
+              {summary.counts.unknown > 0 && (
+                <Text style={styles.mutedText}>Unknown plants are not counted in the percentage.</Text>
+              )}
+              {summary.known > 0 && <StatusBars now={summary.counts} withPlan={summary.counts_with_plan} />}
+              <CaterpillarBars items={[
+                ...plan.add.filter(c => c.nwf).map(c => ({ name: c.common_name, kind: 'add', ...c.nwf, count: c.nwf.caterpillar_species })),
+                ...plan.remove.filter(c => c.nwf).map(c => ({ name: c.plant_name, kind: 'remove', ...c.nwf, count: c.nwf.caterpillar_species })),
+              ]} />
+            </View>
+
+            <View style={styles.divider} />
+
+            {nearby.length > 0 && (
+              <>
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Seen near you</Text>
+                  <Text style={styles.sectionNote}>Plants people photographed within about 5 km of your school, checked by other iNaturalist users.</Text>
+                  {nearby.map((p, i) => (
+                    <View key={i} style={styles.plantRow}>
+                      <View style={styles.plantHead}>
+                        <Text style={styles.plantName}>{p.plant_name}</Text>
+                        <StatusBadge status={p.status} label={p.status_label} />
+                      </View>
+                      <Text style={styles.plantWhy}>Seen {p.count} {p.count === 1 ? 'time' : 'times'} nearby</Text>
+                    </View>
+                  ))}
+                  <SourceLine source={{ name: 'iNaturalist', url: 'https://www.inaturalist.org' }} />
+                </View>
+                <View style={styles.divider} />
+              </>
+            )}
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Why this matters</Text>
+              {plan.why_this_matters.map((line, i) => (
+                <View key={i} style={styles.whyLine}>
+                  <Text style={styles.plantWhy}>{line.text}</Text>
+                  <SourceLine source={line.source} />
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.divider} />
+
+            <LetterGenerator plan={plan} zipCode={zipCode} />
+
             <View style={styles.ctaSection}>
-              <TouchableOpacity
-                style={styles.ctaBtn}
-                onPress={() => navigation.navigate('Main', { screen: 'Recommend', params: { prefillZip: zipCode } })}
-              >
-                <Text style={styles.ctaBtnText}>Full Recommendations</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.ctaSecondary} onPress={() => navigation.goBack()}>
-                <Text style={styles.ctaSecondaryText}>Scan More Plants</Text>
+              <TouchableOpacity style={styles.btnOutline} onPress={() => navigation.goBack()}>
+                <Text style={styles.btnOutlineText}>Scan More Plants</Text>
               </TouchableOpacity>
             </View>
           </>
-        )}
-
-        {/* ── Error ── */}
-        {!loading && !scoreData && (
-          <View style={styles.centerSection}>
-            <Text style={styles.loadingText}>Could not calculate score. Please try again.</Text>
-            <TouchableOpacity style={[styles.ctaBtn, { marginTop: 16 }]} onPress={() => navigation.goBack()}>
-              <Text style={styles.ctaBtnText}>Go Back</Text>
-            </TouchableOpacity>
-          </View>
         )}
 
       </View>
@@ -675,154 +243,57 @@ export default function AuditResultsScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: CREAM },
-  scrollContent:{ alignItems: 'center' },
-  inner:        { alignSelf: 'center', width: '100%' },
+  container:     { flex: 1, backgroundColor: COLORS.cream },
+  scrollContent: { alignItems: 'center' },
+  inner:         { alignSelf: 'center', width: '100%' },
 
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 24, paddingTop: 52, paddingBottom: 16,
+    flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 24, paddingTop: 52, paddingBottom: 16, rowGap: 8,
   },
   logoRow:  { flexDirection: 'row', alignItems: 'center', gap: 8 },
   logoImg:  { width: 40, height: 40, resizeMode: 'contain' },
-  logoText: { fontSize: 20, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, letterSpacing: 0.3 },
-  backBtn:  { fontSize: 12, fontFamily: 'DMSans_400Regular', color: TEXT_BODY },
+  logoText: { fontSize: 20, fontFamily: FONTS.heading, color: COLORS.darkGreen, letterSpacing: 0.3 },
+  backBtn:  { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textBody },
 
-  divider: { height: 1, backgroundColor: BORDER },
+  divider: { height: 1, backgroundColor: COLORS.border },
 
   centerSection: { alignItems: 'center', paddingVertical: 60, gap: 14, paddingHorizontal: 24 },
-  loadingText:   { fontSize: 14, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, textAlign: 'center' },
+  section:       { paddingHorizontal: 20, paddingVertical: 24, gap: 8 },
+  ringSection:   { alignItems: 'center', paddingHorizontal: 20, paddingVertical: 24, gap: 12 },
 
-  scoreSection:    { alignItems: 'center', paddingTop: 32, paddingHorizontal: 24, paddingBottom: 28 },
-  pageTitle:       { fontSize: 34, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, marginBottom: 4 },
-  plantCountLabel: { fontSize: 12, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, marginBottom: 28 },
-  ringWrap:        { alignItems: 'center', gap: 14, marginBottom: 8 },
-  scoreLabel:      { fontSize: 22, fontFamily: 'Fraunces_700Bold' },
+  pageTitle:    { fontSize: 30, fontFamily: FONTS.heading, color: COLORS.darkGreen, marginBottom: 8 },
+  sectionTitle: { fontSize: 22, fontFamily: FONTS.heading, color: COLORS.darkGreen, marginBottom: 4 },
+  sectionNote:  { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textMuted, lineHeight: 18 },
+  mutedText:    { fontSize: 14, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
+  errorText:    { fontSize: 13, fontFamily: FONTS.body, color: COLORS.error, textAlign: 'center' },
+  link:         { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.softGreen, textAlign: 'center', paddingVertical: 14 },
 
-  toggle: {
-    flexDirection: 'row', backgroundColor: LIGHT_BG,
-    borderRadius: 12, padding: 4, gap: 4, marginTop: 24,
-  },
-  toggleBtn:        { paddingHorizontal: 22, paddingVertical: 10, borderRadius: 10 },
-  toggleActive:     { backgroundColor: CREAM, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
-  toggleText:       { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED },
-  toggleTextActive: { fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
+  plantRow:  { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.lightBg, gap: 4 },
+  plantHead: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  plantName: { fontSize: 15, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, flexShrink: 1 },
+  whyLine:   { paddingVertical: 6 },
+  plantWhy:  { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: 19 },
 
-  section:         { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 8 },
-  sectionTitle:    { fontSize: 22, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, marginBottom: 6 },
-  sectionSubtitle: { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, lineHeight: 19, marginBottom: 20 },
+  countRow:   { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 16, marginTop: 12 },
+  countItem:  { alignItems: 'center', width: 90 },
+  countNum:   { fontSize: 24, fontFamily: FONTS.heading },
+  countLabel: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
 
-  insightCard: {
-    backgroundColor: CARD_BG, borderRadius: 14,
-    borderWidth: 1, borderColor: BORDER,
-    padding: 18, marginBottom: 20,
-  },
-  insightText: { fontSize: 14, fontFamily: 'DMSans_400Regular', color: TEXT_BODY, lineHeight: 22, textAlign: 'center' },
+  btn:            { backgroundColor: COLORS.darkGreen, borderRadius: 10, paddingVertical: 15, alignItems: 'center', marginTop: 8 },
+  btnDisabled:    { opacity: 0.45 },
+  btnText:        { fontSize: 15, fontFamily: FONTS.bodyBold, color: COLORS.cream },
+  btnOutline:     { borderWidth: 1.5, borderColor: COLORS.darkGreen, borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 12 },
+  btnOutlineText: { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
 
-  bCard: {
-    backgroundColor: CARD_BG, borderRadius: 14,
-    borderWidth: 1, borderColor: BORDER,
-    padding: 16, marginBottom: 12,
-  },
-  bHeader:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  dot:        { width: 8, height: 8, borderRadius: 4 },
-  bLabel:     { flex: 1, fontSize: 13, fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
-  bBadge:     { backgroundColor: LIGHT_BG, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 },
-  bBadgeText: { fontSize: 11, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED },
-  bItem:      { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_BODY, lineHeight: 22, paddingLeft: 4 },
-
-  afterHint: { alignItems: 'center', marginTop: 8, paddingVertical: 12 },
-  afterHintText: { fontSize: 13, fontFamily: 'DMSans_700Bold', color: SOFT_GREEN },
-
-  allBtn: {
-    borderRadius: 12, borderWidth: 1.5, borderColor: DARK_GREEN,
-    paddingVertical: 15, alignItems: 'center', marginBottom: 4,
-  },
-  allBtnActive: { backgroundColor: DARK_GREEN },
-  allBtnText: { fontSize: 13, fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
-
-  viewAllSection: { marginTop: 8, marginBottom: 4 },
-  viewAllToggle:  { paddingVertical: 14, alignItems: 'center' },
-  viewAllToggleText: { fontSize: 13, fontFamily: 'DMSans_700Bold', color: SOFT_GREEN },
-  viewAllItem: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: CARD_BG, borderRadius: 10,
-    borderWidth: 1, borderColor: BORDER,
-    paddingHorizontal: 14, paddingVertical: 12, marginBottom: 8,
-  },
-  viewAllName:    { fontSize: 14, fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
-  viewAllSci:     { fontSize: 11, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, fontStyle: 'italic', marginTop: 2 },
-  viewAllBenefit: { fontSize: 12, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED, lineHeight: 18, marginTop: 4 },
-  supportPill:     { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
-  supportPillText: { fontSize: 11, fontFamily: 'DMSans_700Bold' },
-
-  nwfLink: {
-    marginTop: 8, marginBottom: 16, paddingVertical: 14,
-    paddingHorizontal: 16, borderRadius: 10,
-    backgroundColor: '#eaf2e8', borderWidth: 1, borderColor: BORDER,
-    alignItems: 'center',
-  },
-  nwfLinkText: {
-    fontSize: 12, fontFamily: 'DMSans_400Regular', color: SOFT_GREEN,
-    textAlign: 'center', lineHeight: 18,
-  },
-
-  ctaSection: { padding: 24, paddingBottom: 52, alignItems: 'center', gap: 10 },
-  ctaBtn: {
-    backgroundColor: DARK_GREEN, borderRadius: 10,
-    paddingVertical: 15, alignItems: 'center', width: '100%',
-  },
-  ctaBtnText:       { fontSize: 15, fontFamily: 'DMSans_700Bold', color: CREAM },
-  ctaSecondary:     { paddingVertical: 10 },
-  ctaSecondaryText: { fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED },
-
-  letterSection: {
-    marginTop: 28, paddingTop: 24, borderTopWidth: 1, borderTopColor: BORDER,
-  },
-  letterTitle: {
-    fontSize: 20, fontFamily: 'Fraunces_700Bold', color: DARK_GREEN, marginBottom: 6,
-  },
-  letterSubtitle: {
-    fontSize: 12, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED,
-    lineHeight: 18, marginBottom: 16,
-  },
-  checkRow: {
-    flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: 12,
-  },
-  checkbox: {
-    width: 22, height: 22, borderRadius: 6,
-    borderWidth: 1.5, borderColor: BORDER,
-    backgroundColor: CREAM, alignItems: 'center', justifyContent: 'center',
-  },
-  checkboxChecked:  { backgroundColor: SOFT_GREEN, borderColor: SOFT_GREEN },
-  checkmark:        { fontSize: 13, color: CREAM, fontFamily: 'DMSans_700Bold' },
-  checkLabel:       { flex: 1, fontSize: 14, fontFamily: 'DMSans_400Regular', color: DARK_GREEN },
-  letterBtn: {
-    marginTop: 12, backgroundColor: DARK_GREEN, borderRadius: 10,
-    paddingVertical: 15, alignItems: 'center',
-  },
-  letterBtnDisabled: { opacity: 0.45 },
-  letterBtnText:     { fontSize: 15, fontFamily: 'DMSans_700Bold', color: CREAM },
   letterCard: {
-    marginTop: 16, backgroundColor: CARD_BG, borderRadius: 14,
-    borderWidth: 1, borderColor: BORDER, padding: 20,
-  },
-  letterEditHint: {
-    fontSize: 11, fontFamily: 'DMSans_400Regular', color: TEXT_MUTED,
-    fontStyle: 'italic', marginBottom: 10,
+    marginTop: 16, backgroundColor: COLORS.cardBg, borderRadius: 14,
+    borderWidth: 1, borderColor: COLORS.border, padding: 16, gap: 8,
   },
   letterInput: {
-    fontSize: 13, fontFamily: 'DMSans_400Regular', color: TEXT_BODY,
-    lineHeight: 22, backgroundColor: LIGHT_BG,
-    borderRadius: 8, padding: 12, minHeight: 520,
+    fontSize: 13, fontFamily: FONTS.body, color: COLORS.textBody,
+    lineHeight: 22, backgroundColor: COLORS.lightBg, borderRadius: 8, padding: 12, minHeight: 520,
   },
-  copyBtn: {
-    marginTop: 16, borderWidth: 1.5, borderColor: DARK_GREEN,
-    borderRadius: 10, paddingVertical: 12, alignItems: 'center',
-  },
-  copyBtnText: { fontSize: 13, fontFamily: 'DMSans_700Bold', color: DARK_GREEN },
-  letterNote: {
-    marginTop: 10, fontSize: 11, fontFamily: 'DMSans_400Regular',
-    color: TEXT_MUTED, textAlign: 'center', fontStyle: 'italic',
-  },
+
+  ctaSection: { padding: 24, paddingBottom: 52 },
 });

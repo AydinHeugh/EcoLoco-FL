@@ -557,7 +557,14 @@
       ],
       "fisc_category": "I",
       "zones": "N, C, S",
-      "why": "Forms dense thickets that crowd out mangroves, pinelands and Everglades natives across hundreds of thousands of acres."
+      "why": "Forms dense thickets that crowd out mangroves, pinelands and Everglades natives across hundreds of thousands of acres.",
+      "removal_safety": {
+        "text": "Brazilian pepper is in the poison ivy family, and its sap can cause a skin rash. Wear gloves and long sleeves, and let an adult or the grounds crew do the cutting.",
+        "source": {
+          "name": "UF/IFAS Extension Miami-Dade County",
+          "url": "https://blogs.ifas.ufl.edu/miamidadeco/2025/07/14/invasive-plants-they-affect-fruit-trees-too/"
+        }
+      }
     },
     {
       "scientific_name": "Scleria eggersiana",

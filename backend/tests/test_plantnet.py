@@ -79,21 +79,17 @@ def test_plantnet_detects_png(plantnet):
     assert plantnet["post"][0]["files"][0][1][2] == "image/png"
 
 
-def test_plantnet_accepts_data_url_and_http_url(plantnet, monkeypatch):
+def test_plantnet_accepts_data_url(plantnet):
+    identify_with_plantnet([f"data:image/jpeg;base64,{b64(JPEG)}"])
+    assert plantnet["post"][0]["files"][0][1][1] == JPEG
+
+
+def test_plantnet_never_fetches_links(plantnet, monkeypatch):
     fetched = []
-
-    def fake_get(url, **kwargs):
-        fetched.append(url)
-        response = FakeResponse()
-        response.content = PNG
-        return response
-
-    monkeypatch.setattr(requests, "get", fake_get)
-    identify_with_plantnet([f"data:image/jpeg;base64,{b64(JPEG)}", "https://example.com/leaf.png"])
-    files = plantnet["post"][0]["files"]
-    assert files[0][1][1] == JPEG
-    assert files[1][1][1] == PNG
-    assert fetched == ["https://example.com/leaf.png"]
+    monkeypatch.setattr(requests, "get", lambda url, **kw: fetched.append(url))
+    with pytest.raises(ValueError):
+        identify_with_plantnet(["https://example.com/leaf.png"])
+    assert fetched == [] and plantnet["post"] == []
 
 
 def test_plantnet_rejects_non_jpeg_png(plantnet):
@@ -112,3 +108,8 @@ def test_plantnet_http_error_raises(plantnet):
     plantnet["response"] = FakeResponse(status_code=401, body={"statusCode": 401, "message": "Bad token"})
     with pytest.raises(requests.HTTPError):
         identify_with_plantnet([b64(JPEG)])
+
+
+def test_plantnet_404_means_no_match(plantnet):
+    plantnet["response"] = FakeResponse(status_code=404, body={"statusCode": 404, "message": "Species not found"})
+    assert identify_with_plantnet([b64(JPEG)]) == []
