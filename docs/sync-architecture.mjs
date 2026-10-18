@@ -121,7 +121,8 @@ const planned = [
 ];
 
 const block = (name, body) => `<!-- GENERATED:${name} -->\n${body}\n<!-- /GENERATED:${name} -->`;
-let md = readFileSync(MD, 'utf8');
+const readMd = () => readFileSync(MD, 'utf8').replace(/\r\n/g, '\n');
+let md = readMd();
 const replace = (name, body) => {
   const re = new RegExp(`<!-- GENERATED:${name} -->[\\s\\S]*?<!-- /GENERATED:${name} -->`);
   if (!re.test(md)) { errors.push(`ARCHITECTURE.md is missing the GENERATED:${name} markers`); return; }
@@ -130,7 +131,7 @@ const replace = (name, body) => {
 replace('planned', planned.join('\n'));
 replace('mermaid', '```mermaid\n' + mermaid.join('\n') + '\n```');
 
-const stale = md !== readFileSync(MD, 'utf8');
+const stale = md !== readMd();
 
 // ── report ──────────────────────────────────────────────────────────────────
 for (const w of warnings) console.warn('warn  ' + w);
