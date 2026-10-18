@@ -109,7 +109,7 @@ You'll need Node.js, Python 3, an OpenAI API key, and a free PlantNet API key fr
    venv\Scripts\python -m pip install -r requirements-dev.txt
    ```
    On Mac or Linux, use `python3` instead of `py` and `venv/bin/python` instead of `venv\Scripts\python`.
-3. Start the server: `venv\Scripts\python app.py`. It runs on port 5000. Debug mode is off by default; while developing, add `ECOLOCO_DEV=1` to `.env` to get automatic reloading and detailed error pages. Never turn it on for a demo or a public server.
+3. Start the server: `venv\Scripts\python app.py`. It runs on port 5000. Debug mode is off by default; while developing, add `ECOLOCO_DEV=1` to `.env` to get automatic reloading and detailed error pages. Never turn it on for a demo or a public server. On a public server (like Render), start it with `gunicorn app:app --bind 0.0.0.0:$PORT` instead, and put the two keys in the host's environment settings, not in a `.env` file.
 
 **App** (from the top folder):
 1. Create a file called `.env` containing `EXPO_PUBLIC_API_URL=http://YOUR-COMPUTER-IP:5000`. If you're testing on a phone, use your computer's local network address, not `localhost`.
