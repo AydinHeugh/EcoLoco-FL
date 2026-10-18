@@ -175,7 +175,7 @@ def build_plan(plants, plantings_checked=True, skip=(), site=None):
     ranked = sorted(recs, key=lambda r: _rank_key(r, gaps, missing, invasives.keys()))
     known, native = base["known"], base["counts"]["native"]
 
-    chosen, remove, replaced = [], [], 0
+    chosen, remove, replaced, removed_kinds = [], [], 0, []
     for name, invasive in invasives.items():
         used = {c["scientific_name"] for c in chosen}
         matches = [r for r in ranked if r["scientific_name"] not in used
@@ -195,6 +195,7 @@ def build_plan(plants, plantings_checked=True, skip=(), site=None):
         })
         if pick is not None and pick["scientific_name"] not in skip:
             replaced += scans[name]
+            removed_kinds.append(name)
             remove[-1]["effect"] = (f"Replacing it takes you from {_percent(native, known)}% "
                                     f"to {_percent(native + scans[name], known)}% native.")
         if nwf := _nwf_count(name):
@@ -214,6 +215,7 @@ def build_plan(plants, plantings_checked=True, skip=(), site=None):
         fillers += rec["scientific_name"] not in skip
 
     add = []
+    added_kinds = [c["scientific_name"] for c in chosen if c["scientific_name"] not in skip]
     for rec in chosen:
         card = dict(rec, where=f"{rec['sun']}. {rec['mature_size']}.", in_letter=rec["scientific_name"] not in skip)
         if nwf := _nwf_count(rec["scientific_name"]):
@@ -222,6 +224,7 @@ def build_plan(plants, plantings_checked=True, skip=(), site=None):
             del card["effect"]
         add.append(card)
 
-    return {"remove": remove, "add": add, "gaps": sorted(gaps), "summary": with_plan(base, fillers, replaced),
+    summary = with_plan(base, fillers, replaced, added_kinds, removed_kinds)
+    return {"remove": remove, "add": add, "gaps": sorted(gaps), "summary": summary,
             "why_this_matters": _load("why_this_matters.json")["lines"], "plantings_checked": plantings_checked,
             "site": site, "hidden_by_site": len(verified) - len(recs)}

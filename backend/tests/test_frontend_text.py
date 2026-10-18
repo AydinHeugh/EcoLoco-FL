@@ -185,7 +185,7 @@ def test_motion_is_short_and_respects_reduce_motion():
     motion = (FRONTEND / "motion.js").read_text(encoding="utf-8")
     assert int(re.search(r"export const DURATION = (\d+);", motion).group(1)) <= 400
     assert "isReduceMotionEnabled" in motion
-    for name in ("Reveal.js", "StatusBadge.js", "PercentRing.js", "ScanningLeaf.js", "HomeDemos.js"):
+    for name in ("Reveal.js", "StatusBadge.js", "PercentRing.js", "ScanningLeaf.js", "HomeDemos.js", "PlanCard.js"):
         assert "useReduceMotion" in (FRONTEND / "components" / name).read_text(encoding="utf-8"), name
     assert "useReduceMotion" in (FRONTEND / "screens" / "HomeScreen.js").read_text(encoding="utf-8")
     for p in FILES:
@@ -203,3 +203,13 @@ def test_scanning_shows_the_leaf_animation():
     assert "leaf.json" in (FRONTEND / "components" / "ScanningLeaf.js").read_text(encoding="utf-8")
     for screen in ("AuditScreen.js", "IdentificationScreen.js"):
         assert "<ScanningLeaf" in (FRONTEND / "screens" / screen).read_text(encoding="utf-8")
+
+
+def test_ring_plays_when_it_scrolls_into_view():
+    assert "useInView(ref" in (FRONTEND / "components" / "PercentRing.js").read_text(encoding="utf-8")
+
+
+def test_results_show_kinds_and_every_plant():
+    text = (FRONTEND / "screens" / "AuditResultsScreen.js").read_text(encoding="utf-8")
+    assert "summary.percent_native_kinds" in text and "summary.percent_native}" in text
+    assert 'title="Kinds of plants"' in text and 'title="Every plant"' in text

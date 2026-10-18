@@ -18,28 +18,34 @@ export function useRevealScroll() {
   return useContext(ScrollTick)?.tick;
 }
 
-export default function Reveal({ index = 0, children, style }) {
-  const reduce = useReduceMotion();
+export function useInView(ref, margin = 40) {
   const scroll = useContext(ScrollTick);
-  const ref = useRef(null);
-  const [shown, setShown] = useState(false);
-  const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(16)).current;
+  const [inView, setInView] = useState(!scroll);
 
   useEffect(() => {
-    if (shown || !scroll) return undefined;
+    if (inView || !scroll) return undefined;
     const check = () => {
       ref.current?.measureInWindow?.((x, y) => {
-        if (y < Dimensions.get('window').height - 40) setShown(true);
+        if (y < Dimensions.get('window').height - margin) setInView(true);
       });
     };
     const off = scroll.subscribe(check);
     const first = setTimeout(check, 60);
     return () => { off(); clearTimeout(first); };
-  }, [shown, scroll]);
+  }, [inView, scroll]);
+
+  return inView;
+}
+
+export default function Reveal({ index = 0, children, style }) {
+  const reduce = useReduceMotion();
+  const ref = useRef(null);
+  const shown = useInView(ref);
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(16)).current;
 
   useEffect(() => {
-    if (!shown && scroll) return;
+    if (!shown) return;
     if (reduce) { opacity.setValue(1); translateY.setValue(0); return; }
     Animated.parallel([
       Animated.timing(opacity, { toValue: 1, duration: DURATION, delay: Math.min(index, 4) * STAGGER, easing: EASE_OUT, useNativeDriver: true }),

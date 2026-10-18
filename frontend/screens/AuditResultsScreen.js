@@ -246,7 +246,19 @@ function AuditResults({ route, navigation }) {
               <Text style={[styles.sectionTitle, styles.onDarkTitle]}>How native is your campus?</Text>
               {summary.percent_native === null
                 ? <Text style={[styles.mutedText, styles.onDarkMuted]}>Not enough identified plants yet</Text>
-                : <PercentRing onDark size={200} now={summary.percent_native} withPlan={summary.percent_native_with_plan} />}
+                : (
+                  <>
+                    <View style={styles.rings}>
+                      <PercentRing onDark size={140} title="Kinds of plants" caption="kinds native"
+                        now={summary.percent_native_kinds} withPlan={summary.percent_native_kinds_with_plan} />
+                      <PercentRing onDark size={140} title="Every plant" caption="plants native" delay={150}
+                        now={summary.percent_native} withPlan={summary.percent_native_with_plan} />
+                    </View>
+                    <Text style={[styles.mutedText, styles.onDarkMuted, styles.ringNote]}>
+                      Kinds of plants counts each species once, however many you scanned. Every plant counts each one you scanned.
+                    </Text>
+                  </>
+                )}
             </View>
 
             <View style={styles.ringSection}>
@@ -331,6 +343,8 @@ const styles = StyleSheet.create({
   ringBand:      { alignItems: 'center', backgroundColor: COLORS.darkGreen, paddingHorizontal: 20, paddingTop: 32, paddingBottom: 36, gap: 18 },
   onDarkTitle:   { color: COLORS.onDark, fontSize: TYPE.h2, lineHeight: LINE.h2, textAlign: 'center' },
   onDarkMuted:   { color: COLORS.onDarkMuted },
+  rings:         { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 16, rowGap: 24 },
+  ringNote:      { maxWidth: 460 },
   ringSection:   { alignItems: 'center', paddingHorizontal: 20, paddingVertical: 24, gap: 12 },
 
   sectionTitle: { fontSize: TYPE.h3, lineHeight: LINE.h3, fontFamily: FONTS.heading, color: COLORS.darkGreen, marginBottom: 4 },

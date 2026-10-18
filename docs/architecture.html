@@ -260,7 +260,7 @@
         "Your plan: a Remove `PlanCard` for each invasive (why, safety, replacement), then Add cards, then a link to plantrealflorida.org. Cards fade up one after another as they scroll into view (`Reveal`). Outside Palm Beach County the Remove cards stay, without a replacement, and the Add cards are replaced by \"Planting recommendations are only checked for Palm Beach County so far.\"",
         "Each Add card has an \"In my letter\" checkbox. Unticking one asks for the plan again with it skipped: the card stays, dimmed, and leaves the letter and the \"with the plan\" numbers.",
         "What your campus supports now: every plant with its status and one sourced line, or \"We don't have wildlife info for this plant yet\".",
-        "How native is your campus: `PercentRing` now and with the plan (or \"Not enough identified plants yet\") and counts for the four groups.",
+        "How native is your campus: two `PercentRing`s side by side, Kinds of plants (`percent_native_kinds`) and Every plant (`percent_native`), each now and with the plan, a line explaining the difference (or \"Not enough identified plants yet\"), and counts for the four groups.",
         "Charts: `StatusBars` (now vs with the plan) and `CaterpillarBars` (NWF group counts per card).",
         "Seen near you: if the scan has a location, the top 5 plants people photographed within about 5 km (iNaturalist), each with its status.",
         "Why this matters: up to 4 short lines from `why_this_matters.json`, each with its source.",
@@ -811,14 +811,15 @@
       "symbol": "def summarize(",
       "col": 6,
       "row": 5.5,
-      "what": "Counts the scanned plants by Florida status and works out the share that is native, now and with the plan. It replaced the old 0–100 score.",
+      "what": "Counts the scanned plants by Florida status and works out the share that is native, two ways: by every plant scanned, and by kind of plant (each species once). Both now and with the plan.",
       "how": [
         "Runs each plant's scientific name through `plant_option()`, so status comes from FISC, our natives list or USDA, never from the name the student typed or the AI.",
         "Looks every plant up once, in parallel.",
         "Counts `native`, `non_native`, `invasive` and `unknown`. An empty name counts as unknown.",
-        "`percent_native` = natives ÷ plants with a known status, rounded; `None` when no plant has a known status.",
+        "`percent_native` = native plants ÷ plants with a known status, rounded; `None` when no plant has a known status.",
+        "Kinds: each species with a known status counts once however many times it was scanned (two coonties are one kind). `kinds` holds the counts and `percent_native_kinds` the share of kinds that are native.",
         "\"With the plan\" numbers come from `with_plan()`; by default every invasive counts as replaced, but `build_plan()` passes only the ones that got a replacement.",
-        "Returns `{counts, known, plant_count, percent_native, percent_native_with_plan, plants}`; `plants` lists each one with its name, status label, `why` and source label, unknowns included."
+        "Returns `{counts, known, plant_count, percent_native, kinds, percent_native_kinds, kind_status, ... with-plan numbers, plants}`; `plants` lists each one with its name, status label, `why` and source label, unknowns included."
       ]
     },
     {
@@ -830,12 +831,12 @@
       "symbol": "export default function PercentRing",
       "col": 2,
       "row": 5,
-      "what": "Shows the share of plants that are native, now and with the plan, as a ring of dots.",
+      "what": "Shows a share of plants that are native, now and with the plan, as a ring of dots. The results screen shows two: kinds of plants and every plant.",
       "how": [
-        "Draws 40 dots in a circle with plain Views (no chart library).",
-        "Dark green dots = native now; the accent color = what the plan adds; grey = the rest. There is no target marker.",
-        "The number counts up and the dots fill in over 400 ms; with reduce motion turned on it shows the final number at once.",
-        "A legend underneath spells out both numbers."
+        "Draws 40 dots in a circle with plain Views (no chart library), with an optional title and caption.",
+        "Waits until it scrolls into view (`useInView`), then the number counts up as the white dots fill, the plan's accent-colored dots fill after, and the number settles with a small bounce. The leading dot is larger while the ring fills.",
+        "Each step is 400 ms or less; with reduce motion turned on it shows the final ring at once.",
+        "Under the ring: \"With the plan: Y%\"."
       ]
     },
     {
@@ -986,7 +987,7 @@
       "row": 8.8,
       "what": "The letter built only from our data, with no AI. Also used when the AI is down.",
       "how": [
-        "Opening: the ZIP and \"Of the plants we checked, X% are native to Florida.\", plus \"With these changes, it would be Y%.\" only when the plan changes the number.",
+        "Opening: the ZIP and \"Of the plants we checked, X% are native to Florida.\", plus \"With these changes, it would be Y%.\" only when the plan changes the number, and \"Counting each kind of plant once, Z% are native now.\" only when that differs from X.",
         "\"What we'd like to remove\": each invasive with its why and safety note.",
         "\"What we'd like to plant\": each Add card with what it helps and \"Buying it: ask for …\" plus look-alikes to avoid.",
         "\"Sources\": every source used, with links."
@@ -1003,9 +1004,9 @@
       "row": 4.2,
       "what": "One Remove or Add card in the plan, with every fact followed by its source.",
       "how": [
-        "Add cards: name, why it was picked, effect, then Helps / Where / Buying it / Watch out / Look into. On the results screen they have an \"In my letter\" checkbox and dim when unticked.",
+        "Add cards: name, why it was picked, effect, then Helps / Where / Buying it / Watch out / Look into. On the results screen they have an \"In my letter\" checkbox; ticking it pops the box with a light tap, and the card fades to dim when unticked.",
         "Remove cards: name, Invasive badge, Why, Safety, and what to replace it with (left out when `plantingsChecked` is false). `NOT_CHECKED_HERE` holds the message screens show instead of Add cards.",
-        "Shows 2 rows and a \"More\" button for the rest.",
+        "Shows 2 rows and a \"More\" button for the rest; the extra rows fade and slide in one after another.",
         "`SourceLine` (frontend/components/SourceLine.js) shows \"Source: …\" in small text and opens the link.",
         "Add cards end with `AtlasButton` (\"See where it grows\") when the card has an `atlas_url`."
       ]
@@ -1226,7 +1227,8 @@
       "what": "Works out the \"with the plan\" numbers from a summary, counting only changes the plan really makes.",
       "how": [
         "Takes the number of native plants added and the number of invasive plants that actually got a replacement.",
-        "Returns the summary with `percent_native_with_plan` and `counts_with_plan` updated; nothing is looked up again."
+        "For kinds, `build_plan()` passes the species the plan plants and the invasive species it really removes; a planted species already on campus is not counted twice.",
+        "Returns the summary with `percent_native_with_plan`, `counts_with_plan`, `percent_native_kinds_with_plan` and `kinds_with_plan`; nothing is looked up again."
       ]
     },
     {
@@ -1754,7 +1756,8 @@
       "how": [
         "`RevealProvider` wraps a screen and `useRevealScroll()` tells it when the page scrolls.",
         "Each `Reveal` checks whether it is on screen; when it first is, it fades and slides up over 300 ms, 70 ms after the one before.",
-        "With reduce motion turned on, cards just appear."
+        "With reduce motion turned on, cards just appear.",
+        "`useInView(ref)` is the same on-screen check on its own, used by `PercentRing`."
       ]
     }
   ],
