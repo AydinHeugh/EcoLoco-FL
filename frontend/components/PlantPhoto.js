@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, FONTS, TYPE } from '../theme';
 
 export function photoCredit(photo) {
@@ -21,7 +20,7 @@ export default function PlantPhoto({ photo, size = 72, radius = 14, label, style
   if (!photo?.url) {
     return (
       <View style={[styles.empty, box, style]} accessibilityLabel={label}>
-        <MaterialCommunityIcons name="sprout-outline" size={size * 0.42} color={COLORS.softGreen} />
+        <Text style={{ fontSize: size * 0.45 }} accessible={false}>🌱</Text>
       </View>
     );
   }
