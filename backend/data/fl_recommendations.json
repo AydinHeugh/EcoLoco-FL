@@ -73,7 +73,9 @@
           "why": "A low plant for the same shady beds."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Hamelia patens",
@@ -82,7 +84,7 @@
       "plant_type": "shrub",
       "effort": "medium",
       "sun": "Full sun is best; part shade works too",
-      "mature_size": "Usually 10 to 12 feet tall; can be kept at 5 to 8 feet",
+      "mature_size": "Usually 10 to 12 feet tall",
       "growing_source": {
         "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
         "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Hamepate"
@@ -146,7 +148,9 @@
           "why": "A bird and butterfly shrub for the same sunny spot."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Quercus virginiana",
@@ -155,7 +159,7 @@
       "plant_type": "tree",
       "effort": "big",
       "sun": "Full sun",
-      "mature_size": "Usually 30 to 50 feet tall in South Florida, and about as wide",
+      "mature_size": "Usually 30 to 50 feet tall in South Florida",
       "growing_source": {
         "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
         "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Quervirg"
@@ -186,7 +190,7 @@
       },
       "watch_out": [
         {
-          "text": "It spreads very wide. Give it lots of room away from buildings.",
+          "text": "Plant it away from buildings.",
           "source": {
             "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
             "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Quervirg"
@@ -202,7 +206,9 @@
           "why": "A big shade tree for the open spots where Australian pine grows."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Callicarpa americana",
@@ -249,15 +255,6 @@
       "buying": {
         "ask_for": "Callicarpa americana"
       },
-      "watch_out": [
-        {
-          "text": "Cut it back hard every so often to keep it full.",
-          "source": {
-            "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
-            "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Callamer"
-          }
-        }
-      ],
       "look_into": [
         "Which birds on campus might eat its berries in the fall?"
       ],
@@ -267,7 +264,9 @@
           "why": "A berry shrub that can fill the same spot."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Mimosa strigillosa",
@@ -373,7 +372,9 @@
           "why": "A shade-loving shrub for spots where umbrella trees pop up."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Ardisia escallonioides",
@@ -438,7 +439,9 @@
           "why": "A tall berry shrub for the same spot."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Chrysobalanus icaco",
@@ -497,7 +500,9 @@
           "why": "A hedge shrub for the same spot, with fruit wildlife eats."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Coccoloba uvifera",
@@ -553,7 +558,9 @@
           "why": "Handles salty wind near the coast, where Australian pine often grows."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Coccoloba diversifolia",
@@ -611,7 +618,9 @@
           "why": "A medium tree with fruit birds eat, for the spots where carrotwood grows."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Bursera simaruba",
@@ -673,7 +682,9 @@
           "why": "A native tree for spots where umbrella trees grow."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Acer rubrum",
@@ -735,7 +746,9 @@
           "why": "Grows well in the same wet, low spots."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Ilex cassine",
@@ -806,7 +819,9 @@
           "why": "A berry tree for birds where Brazilian pepper grew."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Pinus elliottii",
@@ -853,7 +868,9 @@
           "why": "A tall needle tree for the same open, sandy spots."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Myrcianthes fragrans",
@@ -908,7 +925,9 @@
           "why": "A berry shrub for a hedge where Brazilian pepper was."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Stachytarpheta jamaicensis",
@@ -974,7 +993,9 @@
           "why": "The native kind of the same plant."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Helianthus debilis",
@@ -1038,7 +1059,9 @@
           "why": "A yellow-flowered groundcover for the same sunny spots."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Ruellia caroliniensis",
@@ -1087,7 +1110,9 @@
           "why": "A native wild petunia instead of the invasive Mexican petunia."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Passiflora suberosa",
@@ -1148,7 +1173,9 @@
           "why": "A native climber instead of Old World climbing fern."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Passiflora incarnata",
@@ -1204,7 +1231,9 @@
           "why": "A native vine for the spots where air potato climbs."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Salvia coccinea",
@@ -1259,7 +1288,9 @@
           "why": "A hummingbird flower for the same sunny beds."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Tripsacum dactyloides",
@@ -1306,7 +1337,9 @@
       "look_into": [
         "Is there a damp spot near a drain or pond on campus?"
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Muhlenbergia capillaris",
@@ -1350,7 +1383,9 @@
       "look_into": [
         "Could a row of it border a walkway or parking lot?"
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Serenoa repens",
@@ -1413,7 +1448,9 @@
       "look_into": [
         "Are there saw palmettos growing wild anywhere near your school?"
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Rudbeckia hirta",
@@ -1455,7 +1492,9 @@
       "look_into": [
         "Which sunny beds could use a summer wildflower?"
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Solidago stricta",
@@ -1503,7 +1542,9 @@
       "look_into": [
         "Does anyone at school worry goldenrod causes hay fever? (It doesn't.)"
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Salix caroliniana",
@@ -1560,7 +1601,9 @@
           "why": "Grows in the same wet spots."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Zanthoxylum fagara",
@@ -1617,7 +1660,9 @@
       "look_into": [
         "Is there a corner away from walkways where a thorny shrub could go?"
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Asclepias incarnata",
@@ -1668,7 +1713,9 @@
       "look_into": [
         "Is there a rain garden or wet spot where it could grow?"
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Scaevola plumieri",
@@ -1722,7 +1769,9 @@
           "why": "The native beach shrub, instead of invasive beach naupaka."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Lantana involucrata",
@@ -1784,7 +1833,9 @@
           "why": "The native lantana, instead of the invasive kind."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     }
   ]
 }
