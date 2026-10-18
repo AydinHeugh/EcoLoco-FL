@@ -23,6 +23,14 @@ export async function identifyPlant(images, location) {
   return post('/identify', { images, location });
 }
 
+export async function searchNames(query) {
+  return post('/names', { query });
+}
+
+export async function choosePlant(scientificName, location) {
+  return post('/choose', { scientific_name: scientificName, location });
+}
+
 export async function getPlan(plants, location, skip = []) {
   return post('/plan', { plants, location, skip });
 }

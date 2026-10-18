@@ -86,6 +86,7 @@ flowchart LR
     ui_location["LocationPicker"]
     ui_charts["StatusBars + CaterpillarBars"]
     ui_atlas["AtlasButton"]
+    ui_namepicker["NamePicker"]
   end
   subgraph L_device["Device"]
     direction TB
@@ -102,6 +103,8 @@ flowchart LR
     c_user_message["userMessage()"]
     c_locate["locate()"]
     c_nearby["getNearby()"]
+    c_names["searchNames()"]
+    c_choose["choosePlant()"]
   end
   subgraph L_route["Flask routes"]
     direction TB
@@ -112,6 +115,8 @@ flowchart LR
     r_plan["POST /plan"]
     r_locate["POST /locate"]
     r_nearby["POST /nearby"]
+    r_names["POST /names"]
+    r_choose["POST /choose"]
   end
   subgraph L_svc["Services"]
     direction TB
@@ -136,6 +141,10 @@ flowchart LR
     s_zip_center["zip_center()"]
     s_region["plantings_checked()"]
     s_county["county()"]
+    s_choose["choose_plant()"]
+    s_namesearch["search()"]
+    s_isknown["is_known()"]
+    s_commonfor["common_name_for()"]
   end
   subgraph L_data["Bundled data"]
     direction TB
@@ -149,6 +158,8 @@ flowchart LR
     d_zip_counties["fl_zip_counties.json"]
     zip_builder["build_zip_counties.py"]
     d_non_natives["fl_non_natives.json"]
+    d_plantnames["fl_plant_names.json"]
+    names_builder["build_fl_plant_names.py"]
   end
   subgraph L_ext["External APIs"]
     direction TB
@@ -268,6 +279,20 @@ flowchart LR
   results -->|"forgetScannedPlant(id) on Remove"| audit
   s_county -->|"ZIP → county"| d_zip_counties
   s_fl -->|"not native per the Atlas"| d_non_natives
+  audit -->|"Choose by name on a plant card"| ui_namepicker
+  ident -->|"Choose by name"| ui_namepicker
+  ui_namepicker -->|"searchNames(text)"| c_names
+  audit -->|"choosePlant(name, zip)"| c_choose
+  ident -->|"choosePlant(name, zip)"| c_choose
+  c_names -->|"POST /names {query}"| r_names
+  c_choose -->|"POST /choose {scientific_name, location}"| r_choose
+  r_names -->|"search(query)"| s_namesearch
+  r_choose -->|"is_known(name)"| s_isknown
+  r_choose -->|"common_name_for(name)"| s_commonfor
+  r_choose -->|"choose_plant(name, common, zip)"| s_choose
+  s_choose -->|"same status check as a scan"| s_option
+  s_namesearch -->|"USDA Florida names"| d_plantnames
+  names_builder -->|"writes 5,322 Florida plants"| d_plantnames
   classDef ui fill:#e3f2e1,stroke:#2e7d32,color:#12301a
   classDef device fill:#eceff1,stroke:#607d8b,color:#263238
   classDef client fill:#e1effa,stroke:#1e6fb8,color:#0d2d4d
@@ -277,12 +302,12 @@ flowchart LR
   classDef ext fill:#fde4e1,stroke:#c0392b,color:#4a0f08
   classDef planned stroke-dasharray:6 4,stroke-width:2px
   classDef dead fill:#f3f3f3,stroke:#9e9e9e,color:#616161,stroke-dasharray:3 3
-  class app,home,ident,rec,audit,results,ui_why,ui_receipt,letter,ui_multiphoto,ui_ai_unknown,ui_picker,ui_ring,ui_plancard,ui_location,ui_charts,ui_atlas ui
+  class app,home,ident,rec,audit,results,ui_why,ui_receipt,letter,ui_multiphoto,ui_ai_unknown,ui_picker,ui_ring,ui_plancard,ui_location,ui_charts,ui_atlas,ui_namepicker ui
   class picker,clipboard device
-  class c_identify,c_rec,c_letter,c_local,c_plan,c_user_message,c_locate,c_nearby client
-  class flask,r_identify,r_recommend,r_letter,r_plan,r_locate,r_nearby route
-  class s_identify,s_letter,s_fl,s_species,s_plantnet,s_usda,s_resolve,s_option,s_common_name,s_summary,s_plan,s_guard,s_letter_facts,s_round,s_geocode,s_reverse,s_seen,s_with_plan,s_zip_center,s_region,s_county svc
-  class d_fisc,d_natives,fisc_builder,d_recs,d_nwf,d_terms,d_why,d_zip_counties,zip_builder,d_non_natives data
+  class c_identify,c_rec,c_letter,c_local,c_plan,c_user_message,c_locate,c_nearby,c_names,c_choose client
+  class flask,r_identify,r_recommend,r_letter,r_plan,r_locate,r_nearby,r_names,r_choose route
+  class s_identify,s_letter,s_fl,s_species,s_plantnet,s_usda,s_resolve,s_option,s_common_name,s_summary,s_plan,s_guard,s_letter_facts,s_round,s_geocode,s_reverse,s_seen,s_with_plan,s_zip_center,s_region,s_county,s_choose,s_namesearch,s_isknown,s_commonfor svc
+  class d_fisc,d_natives,fisc_builder,d_recs,d_nwf,d_terms,d_why,d_zip_counties,zip_builder,d_non_natives,d_plantnames,names_builder data
   class openai,usda,plantnet,nominatim,inaturalist,usf_atlas ext
   class c_local dead
 ```

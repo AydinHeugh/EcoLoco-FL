@@ -776,7 +776,8 @@
         "Marks OpenAI's pick as \"OpenAI's pick (78% sure)\" with OpenAI's own confidence, only when OpenAI actually picked; always offers \"None of these\".",
         "`AgreedStatus` shows the shared status and \"It's one of these: A or B\" so the app doesn't hide that the species is unsure.",
         "`StatusBadge` (frontend/components/StatusBadge.js) shows the backend's `status_label` with the color for its status, so the four labels look the same on every screen.",
-        "Colors and fonts come from `frontend/theme.js`, the one file a redesign needs to change."
+        "Colors and fonts come from `frontend/theme.js`, the one file a redesign needs to change.",
+        "`matchText()` says \"Chosen by name\" for plants picked by name instead of a match percentage."
       ]
     },
     {
@@ -1340,6 +1341,170 @@
         "Checked after our natives list and before USDA, so a USDA \"native\" answer can't override the Atlas.",
         "Today: tropical sage (Salvia coccinea), also called scarlet sage or blood sage."
       ]
+    },
+    {
+      "id": "ui_namepicker",
+      "label": "NamePicker",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/NamePicker.js",
+      "symbol": "export default function NamePicker",
+      "col": 2,
+      "row": 1.0,
+      "what": "\"Choose by name\": a type-to-search box over every plant recorded in Florida.",
+      "how": [
+        "After 2 letters and a short pause, calls `searchNames(text)`; only the latest search's answer is shown.",
+        "Each result shows the common name and the scientific name. It never shows a status: the status is checked after you pick, the same way as a scan.",
+        "Says \"No Florida plants match that. Try the scientific name.\" when nothing matches."
+      ]
+    },
+    {
+      "id": "c_names",
+      "label": "searchNames()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/services/geminiService.js",
+      "symbol": "export async function searchNames",
+      "col": 3,
+      "row": 1.0,
+      "what": "Asks the backend for plant names matching what was typed.",
+      "how": [
+        "POSTs `{query}` to `/names`."
+      ]
+    },
+    {
+      "id": "c_choose",
+      "label": "choosePlant()",
+      "layer": "client",
+      "status": "live",
+      "file": "frontend/services/geminiService.js",
+      "symbol": "export async function choosePlant",
+      "col": 3,
+      "row": 0.4,
+      "what": "Asks the backend to check the plant the user picked by name.",
+      "how": [
+        "POSTs `{scientific_name, location}` to `/choose` and gets back the same shape as a scan."
+      ]
+    },
+    {
+      "id": "r_names",
+      "label": "POST /names",
+      "layer": "route",
+      "status": "live",
+      "file": "backend/app.py",
+      "symbol": "def names(",
+      "col": 4,
+      "row": 1.0,
+      "what": "Type-to-search over Florida plant names.",
+      "how": [
+        "Reads `query` (text, at most 80 characters; otherwise 400).",
+        "Returns `{result: search(query)}`: up to 20 `{scientific_name, common_name}`, names only."
+      ]
+    },
+    {
+      "id": "r_choose",
+      "label": "POST /choose",
+      "layer": "route",
+      "status": "live",
+      "file": "backend/app.py",
+      "symbol": "def choose(",
+      "col": 4,
+      "row": 0.4,
+      "what": "Checks a plant the user picked by name.",
+      "how": [
+        "Needs `scientific_name` and a Florida `location`; a name not on the Florida list gets \"That plant isn't on our Florida plant list. Pick a name from the search results.\"",
+        "Returns `{result: choose_plant(name, common_name, location)}`."
+      ]
+    },
+    {
+      "id": "s_choose",
+      "label": "choose_plant()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/ai_service.py",
+      "symbol": "def choose_plant(",
+      "col": 5,
+      "row": 0.4,
+      "what": "Turns a plant picked by name into the same result a scan gives.",
+      "how": [
+        "Runs `plant_option()`, the same status check as a scan: the FISC list, our natives lists, then USDA.",
+        "Returns `state: identified`, one option, `id_source: by_name` and no confidence, so the app shows \"Chosen by name\" instead of a match percentage. No PlantNet or OpenAI call."
+      ]
+    },
+    {
+      "id": "s_namesearch",
+      "label": "search()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/name_search.py",
+      "symbol": "def search(",
+      "col": 5,
+      "row": 1.0,
+      "what": "Finds Florida plants by common or scientific name.",
+      "how": [
+        "Builds one index from `fl_plant_names.json` (USDA) plus every name in our own lists, merged by `resolve()` so \"coontie\" and \"Zamia pumila\" find the same plant.",
+        "Ranks exact matches, then names starting with the text, then any word starting with it, then names containing it; returns up to 20.",
+        "`is_known(name)` and `common_name_for(name)` are used by `/choose`."
+      ]
+    },
+    {
+      "id": "s_isknown",
+      "label": "is_known()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/name_search.py",
+      "symbol": "def is_known(",
+      "col": 6,
+      "row": 0.4,
+      "what": "Says whether a name is on the Florida plant list, so `/choose` only checks real Florida plants.",
+      "how": [
+        "Resolves the name and looks for it in the same index `search()` uses."
+      ]
+    },
+    {
+      "id": "s_commonfor",
+      "label": "common_name_for()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/name_search.py",
+      "symbol": "def common_name_for(",
+      "col": 6,
+      "row": 1.0,
+      "what": "Gives a plant's common name for `/choose`.",
+      "how": [
+        "Our own lists' common name comes first, then USDA's."
+      ]
+    },
+    {
+      "id": "d_plantnames",
+      "label": "fl_plant_names.json",
+      "layer": "data",
+      "status": "live",
+      "file": "backend/data/fl_plant_names.json",
+      "symbol": null,
+      "col": 7,
+      "row": 1.0,
+      "what": "Every plant the USDA PLANTS Database records in Florida, natives and non-natives, with common names.",
+      "how": [
+        "5,322 species and varieties, author names removed.",
+        "Names only: no status is stored here."
+      ]
+    },
+    {
+      "id": "names_builder",
+      "label": "build_fl_plant_names.py",
+      "layer": "data",
+      "status": "live",
+      "file": "backend/scripts/build_fl_plant_names.py",
+      "symbol": "def plant_names(",
+      "col": 9,
+      "row": 1.0,
+      "what": "Script that rebuilds fl_plant_names.json from USDA's Florida state checklist.",
+      "how": [
+        "Downloads the checklist from the PLANTS web service (the same request plants.usda.gov's State Search download makes), or reads a saved copy.",
+        "Keeps accepted names, strips author names (\"ssp.\" becomes \"subsp.\"), and drops repeats.",
+        "Run: `venv\\Scripts\\python scripts/build_fl_plant_names.py download data/fl_plant_names.json`."
+      ]
     }
   ],
   "edges": [
@@ -1895,6 +2060,76 @@
       "from": "s_fl",
       "to": "d_non_natives",
       "label": "not native per the Atlas"
+    },
+    {
+      "from": "audit",
+      "to": "ui_namepicker",
+      "label": "Choose by name on a plant card"
+    },
+    {
+      "from": "ident",
+      "to": "ui_namepicker",
+      "label": "Choose by name"
+    },
+    {
+      "from": "ui_namepicker",
+      "to": "c_names",
+      "label": "searchNames(text)"
+    },
+    {
+      "from": "audit",
+      "to": "c_choose",
+      "label": "choosePlant(name, zip)"
+    },
+    {
+      "from": "ident",
+      "to": "c_choose",
+      "label": "choosePlant(name, zip)"
+    },
+    {
+      "from": "c_names",
+      "to": "r_names",
+      "label": "POST /names {query}"
+    },
+    {
+      "from": "c_choose",
+      "to": "r_choose",
+      "label": "POST /choose {scientific_name, location}"
+    },
+    {
+      "from": "r_names",
+      "to": "s_namesearch",
+      "label": "search(query)"
+    },
+    {
+      "from": "r_choose",
+      "to": "s_isknown",
+      "label": "is_known(name)"
+    },
+    {
+      "from": "r_choose",
+      "to": "s_commonfor",
+      "label": "common_name_for(name)"
+    },
+    {
+      "from": "r_choose",
+      "to": "s_choose",
+      "label": "choose_plant(name, common, zip)"
+    },
+    {
+      "from": "s_choose",
+      "to": "s_option",
+      "label": "same status check as a scan"
+    },
+    {
+      "from": "s_namesearch",
+      "to": "d_plantnames",
+      "label": "USDA Florida names"
+    },
+    {
+      "from": "names_builder",
+      "to": "d_plantnames",
+      "label": "writes 5,322 Florida plants"
     }
   ]
 }

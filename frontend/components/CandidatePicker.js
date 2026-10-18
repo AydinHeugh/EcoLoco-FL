@@ -3,11 +3,14 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import StatusBadge from './StatusBadge';
 import { COLORS, STATUS_COLORS, FONTS } from '../theme';
 
+export const CHOSEN_BY_NAME = 'Chosen by name';
+
 export function matchLabel(idSource) {
   return idSource === 'openai_fallback' ? 'OpenAI' : 'PlantNet';
 }
 
 export function matchText(idSource, confidence) {
+  if (idSource === 'by_name') return CHOSEN_BY_NAME;
   return `${matchLabel(idSource)}: ${Math.round((confidence ?? 0) * 100)}% match`;
 }
 

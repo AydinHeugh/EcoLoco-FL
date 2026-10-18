@@ -14,6 +14,8 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 - One to five photos of the same plant (a leaf, a flower, the bark), taken with the camera or uploaded, up to 10 MB each. More photos give a surer match.
 - Your school's location: press "Use my location", or type an address or ZIP code. The app rounds your location to about 1 km before it leaves the phone and never saves it. Only Florida locations work; anywhere else gets a message saying so. Scanning and invasive checks work anywhere in Florida, but plants to add are only suggested in Palm Beach County, the one county our plant list was checked for. Elsewhere the app says "Planting recommendations are only checked for Palm Beach County so far."
 
+If you already know the plant, you can skip the photos: press "Know its name? Choose by name" and start typing a common or scientific name. The list covers every plant the USDA PLANTS Database records in Florida. It shows names only; the plant's status is checked after you pick it, the same way as a scan, and the result says "Chosen by name" instead of a match percentage.
+
 **You get back, for each plant:**
 - Its name and how sure PlantNet is about the match
 - When the app isn't sure, a short list of close matches to pick from ("Which one is it?"), each with its Florida status, a small chart of how PlantNet scored each one, OpenAI's pick with how sure it is, plus a "None of these" button. Guesses PlantNet scored under 5% are left out
@@ -71,7 +73,7 @@ The invasive list is generated from the official FISC PDF by a script in `backen
 | Folder | What's in it |
 |---|---|
 | `frontend/` | The phone app. `screens/` has one file per screen, `components/` has pieces shared between screens, `navigation/` sets up the tabs, and `services/` has the code that sends requests to the backend. All colors and fonts are in `theme.js`, so a new look only needs that one file. |
-| `backend/` | The Python server the app talks to. `app.py` lists the web addresses the app can call. `services/` does the actual work (identifying, looking up Florida status, counting, building the plan, writing the letter). `data/` holds the Florida plant lists: the invasive list, our natives list, the plants we recommend with their sources, the National Wildlife Federation's list of the plant groups that feed the most caterpillars, and which county each Florida ZIP code is in. `scripts/` has the tools that rebuild the invasive list from the official FISC PDF and the ZIP-to-county table from the Census file. `tests/` checks it all works. |
+| `backend/` | The Python server the app talks to. `app.py` lists the web addresses the app can call. `services/` does the actual work (identifying, looking up Florida status, counting, building the plan, writing the letter). `data/` holds the Florida plant lists: the invasive list, our natives list, the plants we recommend with their sources, the National Wildlife Federation's list of the plant groups that feed the most caterpillars, and which county each Florida ZIP code is in. `scripts/` has the tools that rebuild the invasive list from the official FISC PDF, the ZIP-to-county table from the Census file, and the Florida plant name list from USDA PLANTS. `tests/` checks it all works. |
 | `assets/` | Images used in the app, the app icon and splash screen, and the official "Powered by Pl@ntNet" logo shown under identification results. |
 | `docs/` | The interactive architecture map (`architecture.html`), the script that keeps it matched to the code, our written plans (`superpowers/plans/`), and the plant checklist (`plant-checklist.md`, plus `plant-checklist.xlsx` to fill in with Excel and `plant-checklist.csv` for other spreadsheet apps) for checking each recommended plant before the app can suggest it. |
 
@@ -114,6 +116,8 @@ You'll need Node.js, Python 3, an OpenAI API key, and a free PlantNet API key fr
 **Tests** (from the `backend` folder): `venv\Scripts\python -m pytest -v`. The tests don't need any API keys and never call OpenAI, PlantNet or USDA.
 
 **Rebuilding the invasive list** (from the `backend` folder, after `venv\Scripts\python -m pip install -r requirements-dev.txt`): `venv\Scripts\python scripts/build_fisc_list.py <link to the FISC PDF> data/fisc_list.json`.
+
+**Rebuilding the Florida plant name list** (from the `backend` folder): `venv\Scripts\python scripts/build_fl_plant_names.py download data/fl_plant_names.json`.
 
 **Rebuilding the ZIP-to-county table** (from the `backend` folder): `venv\Scripts\python scripts/build_zip_counties.py https://www2.census.gov/geo/docs/maps-data/data/rel2020/zcta520/tab20_zcta520_county20_natl.txt data/fl_zip_counties.json`.
 

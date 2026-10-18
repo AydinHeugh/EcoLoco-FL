@@ -111,3 +111,19 @@ def test_add_cards_can_leave_the_letter():
     text = (FRONTEND / "components" / "PlanCard.js").read_text(encoding="utf-8")
     assert "In my letter" in text
     assert "skip" in (FRONTEND / "services" / "geminiService.js").read_text(encoding="utf-8")
+
+
+def test_choose_by_name_never_shows_a_status_in_the_list():
+    picker = (FRONTEND / "components" / "NamePicker.js").read_text(encoding="utf-8")
+    assert "searchNames(text)" in picker
+    assert "StatusBadge" not in picker and "status" not in picker.replace("Florida status is checked", "")
+    for screen in ("AuditScreen.js", "IdentificationScreen.js"):
+        text = (FRONTEND / "screens" / screen).read_text(encoding="utf-8")
+        assert "Know its name? Choose by name" in text
+        assert "choosePlant(" in text
+
+
+def test_chosen_plants_say_so_instead_of_a_percent():
+    picker = (FRONTEND / "components" / "CandidatePicker.js").read_text(encoding="utf-8")
+    assert "export const CHOSEN_BY_NAME = 'Chosen by name';" in picker
+    assert "if (idSource === 'by_name') return CHOSEN_BY_NAME;" in picker

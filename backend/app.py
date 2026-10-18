@@ -6,8 +6,9 @@ import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
-from services.ai_service import generate_letter, identify_plant
+from services.ai_service import choose_plant, generate_letter, identify_plant
 from services.location_service import geocode, plantings_checked, reverse_zip, round_coords, seen_near, zip_center
+from services.name_search import common_name_for, is_known, search
 from services.plan_service import build_plan
 
 load_dotenv()
@@ -76,6 +77,30 @@ def identify():
 
     result = identify_plant(images, location)
     return jsonify({"result": result})
+
+
+@app.route("/names", methods=["POST"])
+def names():
+    query = (request.get_json() or {}).get("query")
+    if not isinstance(query, str) or len(query) > 80:
+        return jsonify({"error": "query must be text of at most 80 characters"}), 400
+    return jsonify({"result": search(query)})
+
+
+UNKNOWN_NAME = "That plant isn't on our Florida plant list. Pick a name from the search results."
+
+
+@app.route("/choose", methods=["POST"])
+def choose():
+    data = request.get_json() or {}
+    name, location = data.get("scientific_name"), data.get("location")
+    if not isinstance(name, str) or not name.strip() or not location:
+        return jsonify({"error": "scientific_name and location are required"}), 400
+    if not is_florida_zip(location):
+        return jsonify({"error": FLORIDA_ONLY}), 400
+    if not is_known(name):
+        return jsonify({"error": UNKNOWN_NAME}), 400
+    return jsonify({"result": choose_plant(name, common_name_for(name), location)})
 
 
 @app.route("/recommend", methods=["POST"])

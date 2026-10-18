@@ -6,13 +6,14 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useFonts } from 'expo-font';
-import { identifyPlant, userMessage } from '../services/geminiService';
+import { choosePlant, identifyPlant, userMessage } from '../services/geminiService';
 import { COLORS, FONTS, FONT_ASSETS } from '../theme';
 import StatusBadge from '../components/StatusBadge';
 import CandidatePicker, { AgreedStatus, NO_MATCH_TEXT, agreedName, matchText } from '../components/CandidatePicker';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
 import { useProgressText } from '../components/ProgressText';
 import LocationPicker from '../components/LocationPicker';
+import NamePicker from '../components/NamePicker';
 
 const EASE_OUT = Easing.bezier(0.22, 1, 0.36, 1);
 const MAX_PHOTOS = 5;
@@ -27,7 +28,7 @@ export function forgetScannedPlant(id) {
 }
 
 function newCard() {
-  return { _id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, photos: [], phase: 'draft', result: null, picked: null, pickingOne: false, error: null };
+  return { _id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, photos: [], phase: 'draft', result: null, picked: null, pickingOne: false, error: null, naming: false };
 }
 
 export function settledPlant(card) {
@@ -69,7 +70,7 @@ function PhotoStrip({ photos, onRemove, dimmed }) {
   );
 }
 
-function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan, onDelete, onPick, onNone, onPickOne }) {
+function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan, onDelete, onPick, onNone, onPickOne, onNaming, onChooseName }) {
   const opacity    = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(14)).current;
 
@@ -117,7 +118,14 @@ function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan,
 
       {card.photos.length > 0 && <PhotoStrip photos={card.photos} dimmed={scanning} onRemove={card.phase === 'draft' ? onRemovePhoto : null} />}
 
-      {card.phase === 'draft' && (
+      {card.phase === 'draft' && card.naming && (
+        <View style={styles.cardBody}>
+          {card.error && <Text style={styles.cardError}>{card.error}</Text>}
+          <NamePicker onChoose={onChooseName} onClose={() => onNaming(false)} />
+        </View>
+      )}
+
+      {card.phase === 'draft' && !card.naming && (
         <View style={styles.cardBody}>
           <Text style={styles.photoCount}>
             Photos of this one plant: {card.photos.length} of {MAX_PHOTOS}. A leaf up close and a flower work best.
@@ -137,6 +145,9 @@ function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan,
             onPress={onScan}
           >
             <Text style={styles.scanOneText}>Scan this plant</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => onNaming(true)} disabled={disabled} style={styles.byName}>
+            <Text style={styles.byNameText}>Know its name? Choose by name</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -251,6 +262,16 @@ export default function AuditScreen({ navigation }) {
     await Promise.all(Array.from({ length: Math.min(SCANS_AT_ONCE, queue.length) }, worker));
   }
 
+  async function chooseByName(card, plant) {
+    update(card._id, { phase: 'scanning', naming: false, error: null });
+    try {
+      const data = await choosePlant(plant.scientific_name, zipCode);
+      update(card._id, { phase: 'done', result: data.result, picked: 0, pickingOne: false });
+    } catch (err) {
+      update(card._id, { phase: 'draft', naming: true, error: userMessage(err, 'Could not check that plant. Check your connection and try again.') });
+    }
+  }
+
   function deleteCard(id) {
     setPlants(prev => prev.filter(p => p._id !== id));
   }
@@ -332,6 +353,8 @@ export default function AuditScreen({ navigation }) {
                 onPick={index => update(card._id, { picked: index })}
                 onNone={() => update(card._id, { picked: -1 })}
                 onPickOne={() => update(card._id, { pickingOne: true })}
+                onNaming={on => update(card._id, { naming: on, error: null })}
+                onChooseName={plant => chooseByName(card, plant)}
               />
             ))}
           </View>
@@ -444,6 +467,8 @@ const styles = StyleSheet.create({
   smallBtnText: { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, textAlign: 'center' },
   scanOneBtn:   { borderRadius: 8, paddingVertical: 11, alignItems: 'center', backgroundColor: COLORS.softGreen },
   scanOneText:  { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.cream },
+  byName:       { alignSelf: 'center', paddingVertical: 4 },
+  byNameText:   { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.softGreen },
   cardError:    { fontSize: 12, fontFamily: FONTS.body, color: COLORS.error },
 
   scanningRow:  { flexDirection: 'row', alignItems: 'center', gap: 10 },

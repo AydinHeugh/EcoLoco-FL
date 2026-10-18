@@ -33,6 +33,14 @@ def identify_plant(images, location):
     return {**options[0], **base, "options": options, "message": None}
 
 
+def choose_plant(scientific_name, common_name, location):
+    option = plant_option(scientific_name, common_name, None, location)
+    return {
+        **option, "state": "identified", "options": [option], "suggested": 0, "suggested_confidence": None,
+        "agreed_status": None, "id_source": "by_name", "ai_unavailable": False, "message": None,
+    }
+
+
 INVASIVE_WHY = "It is on Florida's official list of invasive plants."
 FISC_SOURCE = {"name": "Florida Invasive Species Council 2026 Plant List",
                "url": "https://www.floridainvasives.org/wp-content/uploads/2026/07/FISC-2026-Plant-List-Cat-I-II_April2026.pdf"}

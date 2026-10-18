@@ -15,10 +15,11 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
 import { useFonts } from 'expo-font';
-import { identifyPlant, userMessage } from '../services/geminiService';
+import { choosePlant, identifyPlant, userMessage } from '../services/geminiService';
 import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS } from '../theme';
 import StatusBadge from '../components/StatusBadge';
-import CandidatePicker, { AgreedStatus, NO_MATCH_TEXT, matchLabel } from '../components/CandidatePicker';
+import CandidatePicker, { AgreedStatus, CHOSEN_BY_NAME, NO_MATCH_TEXT, matchLabel } from '../components/CandidatePicker';
+import NamePicker from '../components/NamePicker';
 import SourceLine from '../components/SourceLine';
 import AtlasButton from '../components/AtlasButton';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
@@ -135,6 +136,8 @@ export default function IdentificationScreen({ navigation }) {
   const [result, setResult]     = useState(null);
   const [picked, setPicked]     = useState(null);
   const [pickingOne, setPickingOne] = useState(false);
+  const [naming, setNaming]     = useState(false);
+  const [checkingName, setCheckingName] = useState(false);
   const [error, setError]       = useState(null);
   const [photos, setPhotos]     = useState([]);
   const [place, setPlace]       = useState(null);
@@ -212,6 +215,22 @@ export default function IdentificationScreen({ navigation }) {
       setError(userMessage(err, 'Could not identify this plant. Check your connection and try again.'));
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleChooseName(plant) {
+    setCheckingName(true);
+    setResult(null); setPicked(null); setPickingOne(false);
+    setError(null);
+    try {
+      const data = await choosePlant(plant.scientific_name, zipCode);
+      setResult(data.result);
+      setPicked(0);
+      setNaming(false);
+    } catch (err) {
+      setError(userMessage(err, 'Could not check that plant. Check your connection and try again.'));
+    } finally {
+      setCheckingName(false);
     }
   }
 
@@ -304,6 +323,17 @@ export default function IdentificationScreen({ navigation }) {
           }
         </TouchableOpacity>
 
+        {zipCode.length === 5 && !naming && (
+          <TouchableOpacity style={styles.byName} onPress={() => setNaming(true)}>
+            <Text style={styles.byNameText}>Know its name? Choose by name</Text>
+          </TouchableOpacity>
+        )}
+        {naming && (
+          <View style={styles.namingBox}>
+            <NamePicker onChoose={handleChooseName} onClose={() => setNaming(false)} busy={checkingName} />
+          </View>
+        )}
+
         {error && <Text style={styles.errorText}>{error}</Text>}
 
         {loading && <LoadingDots message={progress} />}
@@ -316,8 +346,8 @@ export default function IdentificationScreen({ navigation }) {
               <Text style={styles.resultsTitle}>Results</Text>
               {shown && (
                 <Text style={styles.confidenceText}>
-                  {matchLabel(result.id_source)} match:{' '}
-                  <Text style={styles.confidenceValue}>{Math.round(shown.confidence * 100)}%</Text>
+                  {result.id_source === 'by_name' ? CHOSEN_BY_NAME : <>{matchLabel(result.id_source)} match:{' '}
+                  <Text style={styles.confidenceValue}>{Math.round(shown.confidence * 100)}%</Text></>}
                 </Text>
               )}
             </View>
@@ -483,6 +513,12 @@ const styles = StyleSheet.create({
     alignItems: 'baseline', marginBottom: 14,
   },
   resultsTitle: { fontSize: 26, fontFamily: FONTS.heading, color: COLORS.darkGreen },
+  byName: { alignSelf: 'center', paddingVertical: 8 },
+  byNameText: { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.softGreen },
+  namingBox: {
+    marginHorizontal: 20, marginTop: 8, padding: 16, borderRadius: 14,
+    borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.white,
+  },
   confidenceText: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted },
   confidenceValue: { fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
 
