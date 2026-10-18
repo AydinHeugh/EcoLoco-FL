@@ -1,3 +1,5 @@
+import base64
+import binascii
 import logging
 import os
 
@@ -11,6 +13,7 @@ from services.plan_service import build_plan
 load_dotenv()
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = 72 * 1024 * 1024
 log = logging.getLogger(__name__)
 CORS(app)
 
@@ -24,6 +27,27 @@ FLORIDA_ONLY = "EcoLoco's plant lists cover Florida only. Enter a Florida ZIP co
 
 def is_florida_zip(zip_code):
     return isinstance(zip_code, str) and len(zip_code) == 5 and zip_code.isdigit() and 32004 <= int(zip_code) <= 34997
+
+
+MAX_PHOTO_BYTES = 10 * 1024 * 1024
+PHOTO_LINK = "Photos must be uploaded, not links."
+PHOTO_TOO_BIG = "Each photo must be 10 MB or smaller."
+PHOTO_NOT_IMAGE = "Photos must be JPEG or PNG images."
+
+
+def _photo_error(image):
+    if image.startswith(("http://", "https://")):
+        return PHOTO_LINK
+    data = image.split(",", 1)[1] if image.startswith("data:") else image
+    try:
+        raw = base64.b64decode(data, validate=True)
+    except (binascii.Error, ValueError):
+        return PHOTO_NOT_IMAGE
+    if len(raw) > MAX_PHOTO_BYTES:
+        return PHOTO_TOO_BIG
+    if not raw.startswith((b"\xff\xd8\xff", b"\x89PNG")):
+        return PHOTO_NOT_IMAGE
+    return None
 
 
 def _valid_images(images):
@@ -46,6 +70,9 @@ def identify():
         return jsonify({"error": "1 to 5 images and a location are required"}), 400
     if not is_florida_zip(location):
         return jsonify({"error": FLORIDA_ONLY}), 400
+    for image in images:
+        if error := _photo_error(image):
+            return jsonify({"error": error}), 400
 
     result = identify_plant(images, location)
     return jsonify({"result": result})
@@ -118,6 +145,29 @@ def nearby():
     return jsonify({"result": seen_near(lat, lon)})
 
 
+BAD_PLAN = "The plan is missing details. Make the plan again and retry."
+
+
+def _has_text(value, key="text"):
+    return isinstance(value, dict) and isinstance(value.get(key), str) and bool(value[key])
+
+
+def _valid_plan(plan):
+    remove, add, summary = plan["remove"], plan["add"], plan["summary"]
+    if not (isinstance(remove, list) and isinstance(add, list) and isinstance(summary, dict)):
+        return False
+    if not {"percent_native", "percent_native_with_plan"} <= summary.keys():
+        return False
+    for card in remove:
+        if not (_has_text(card, "plant_name") and _has_text(card.get("removal_safety"))):
+            return False
+    for card in add:
+        if not (_has_text(card, "common_name") and _has_text(card.get("helps"))
+                and _has_text(card["helps"].get("source"), "name") and _has_text(card.get("buying"), "ask_for")):
+            return False
+    return True
+
+
 @app.route("/letter", methods=["POST"])
 def letter():
     data = request.get_json()
@@ -125,6 +175,10 @@ def letter():
     zip_code = data.get("zip_code")
     if not isinstance(plan, dict) or not {"remove", "add", "summary"} <= plan.keys() or not zip_code:
         return jsonify({"error": "plan and zip_code are required"}), 400
+    if not is_florida_zip(zip_code):
+        return jsonify({"error": FLORIDA_ONLY}), 400
+    if not _valid_plan(plan):
+        return jsonify({"error": BAD_PLAN}), 400
     result, ai_unavailable = generate_letter(plan, zip_code)
     return jsonify({"result": result, "ai_unavailable": ai_unavailable})
 

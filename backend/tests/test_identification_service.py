@@ -59,7 +59,6 @@ def test_bad_confidence_counts_as_zero(model_reply, value):
 @pytest.mark.parametrize("image, url", [
     ("abc123", "data:image/jpeg;base64,abc123"),
     ("data:image/png;base64,xyz", "data:image/png;base64,xyz"),
-    ("https://example.com/p.jpg", "https://example.com/p.jpg"),
 ])
 def test_image_is_sent_as_url(model_reply, image, url):
     identify_species(image, "33139")
@@ -241,3 +240,9 @@ def test_plantnet_failure_log_never_contains_key(plantnet, openai, caplog):
     identify_species("img", ZIP)
     assert "PlantNet" in caplog.text
     assert "test-key" not in caplog.text
+
+
+def test_links_are_never_sent_to_openai(model_reply):
+    with pytest.raises(ValueError):
+        identify_species(["https://example.com/p.jpg"], "33139")
+    assert model_reply["sent"] is None

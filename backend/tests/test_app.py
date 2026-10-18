@@ -2,7 +2,7 @@ import pytest
 
 import app as app_module
 from services import ai_service, openai_client
-from tests.helpers import species
+from tests.helpers import PHOTO, species
 
 
 @pytest.fixture
@@ -13,7 +13,7 @@ def client():
 
 def test_identify_returns_source_and_why(client, monkeypatch):
     monkeypatch.setattr(ai_service, "identify_species", lambda image, location: species("Schinus terebinthifolia", "Brazilian pepper", 0.93))
-    response = client.post("/identify", json={"image": "abc", "location": "33139"})
+    response = client.post("/identify", json={"image": PHOTO, "location": "33139"})
     assert response.status_code == 200
     result = response.get_json()["result"]
     assert result["source"] == "FISC"
@@ -38,20 +38,20 @@ def species_spy(monkeypatch):
 
 
 def test_identify_accepts_multiple_images(client, species_spy):
-    response = client.post("/identify", json={"images": ["a", "b", "c"], "location": "33139"})
+    response = client.post("/identify", json={"images": [PHOTO, PHOTO, PHOTO], "location": "33139"})
     assert response.status_code == 200
-    assert species_spy == [["a", "b", "c"]]
+    assert species_spy == [[PHOTO, PHOTO, PHOTO]]
     result = response.get_json()["result"]
     assert result["id_source"] == "plantnet"
     assert result["state"] == "identified"
 
 
 def test_identify_still_accepts_single_image(client, species_spy):
-    assert client.post("/identify", json={"image": "a", "location": "33139"}).status_code == 200
-    assert species_spy == [["a"]]
+    assert client.post("/identify", json={"image": PHOTO, "location": "33139"}).status_code == 200
+    assert species_spy == [[PHOTO]]
 
 
-@pytest.mark.parametrize("images", [[], ["a"] * 6, [""], ["a", 5], "a"])
+@pytest.mark.parametrize("images", [[], [PHOTO] * 6, [""], [PHOTO, 5], PHOTO])
 def test_identify_rejects_bad_image_counts(client, species_spy, images):
     assert client.post("/identify", json={"images": images, "location": "33139"}).status_code == 400
     assert species_spy == []
@@ -66,7 +66,7 @@ def _ai_down(monkeypatch):
 def test_identified_scan_does_not_need_ai(client, monkeypatch):
     monkeypatch.setattr(ai_service, "identify_species", lambda images, location: species("Schinus terebinthifolia", "Brazilian pepper", 0.9))
     _ai_down(monkeypatch)
-    response = client.post("/identify", json={"image": "abc", "location": "33139"})
+    response = client.post("/identify", json={"image": PHOTO, "location": "33139"})
     assert response.status_code == 200
     result = response.get_json()["result"]
     assert result["ai_unavailable"] is False
@@ -133,7 +133,7 @@ FLORIDA_ONLY = "EcoLoco's plant lists cover Florida only. Enter a Florida ZIP co
 
 @pytest.mark.parametrize("zip_code", ["10001", "00000", "3349", "abcde"])
 @pytest.mark.parametrize("route, body", [
-    ("/plan", {"plants": []}), ("/recommend", {}), ("/identify", {"image": "abc"})])
+    ("/plan", {"plants": []}), ("/recommend", {}), ("/identify", {"image": PHOTO})])
 def test_non_florida_zip_is_rejected(client, route, body, zip_code):
     response = client.post(route, json={**body, "location": zip_code})
     assert response.status_code == 400
@@ -156,7 +156,7 @@ def test_ai_down_is_reported_where_ai_is_used(client, monkeypatch):
     monkeypatch.setattr(ai_service, "identify_species", lambda images, location: dict(
         species("Zamia integrifolia", "Coontie", 0.4, "confirm"), ai_unavailable=True))
     _ai_down(monkeypatch)
-    assert client.post("/identify", json={"image": "abc", "location": "33139"}).get_json()["result"]["ai_unavailable"] is True
+    assert client.post("/identify", json={"image": PHOTO, "location": "33139"}).get_json()["result"]["ai_unavailable"] is True
     plan = client.post("/plan", json={"location": "33139", "plants": []}).get_json()
     assert "ai_unavailable" not in plan and "ai_unavailable" not in plan["result"]
     assert "ai_unavailable" not in client.post("/recommend", json={"location": "33139"}).get_json()
@@ -256,3 +256,69 @@ def test_typed_zip_without_coordinates_still_works(client, monkeypatch):
     monkeypatch.setattr(app_module, "geocode", _no_search)
     monkeypatch.setattr(app_module, "zip_center", lambda z: None)
     assert client.post("/locate", json={"query": "33496"}).get_json()["result"] == {"lat": None, "lon": None, "zip": "33496"}
+
+
+@pytest.mark.parametrize("link", ["https://example.com/p.jpg", "http://169.254.169.254/latest/meta-data"])
+def test_identify_refuses_links(client, species_spy, link):
+    response = client.post("/identify", json={"images": [link], "location": "33139"})
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "Photos must be uploaded, not links."
+    assert species_spy == []
+
+
+def test_identify_refuses_photos_over_10_mb(client, species_spy):
+    import base64
+    big = base64.b64encode(b"\xff\xd8\xff" + b"0" * (10 * 1024 * 1024)).decode()
+    response = client.post("/identify", json={"images": [big], "location": "33139"})
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "Each photo must be 10 MB or smaller."
+    assert species_spy == []
+
+
+@pytest.mark.parametrize("image", ["not base64 at all!!", "aGVsbG8gd29ybGQ="])
+def test_identify_refuses_things_that_are_not_photos(client, species_spy, image):
+    response = client.post("/identify", json={"images": [image], "location": "33139"})
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "Photos must be JPEG or PNG images."
+    assert species_spy == []
+
+
+def test_identify_accepts_data_url_photos(client, species_spy):
+    response = client.post("/identify", json={"images": [f"data:image/jpeg;base64,{PHOTO}"], "location": "33139"})
+    assert response.status_code == 200
+
+
+def test_whole_request_size_is_capped(client, monkeypatch):
+    monkeypatch.setitem(app_module.app.config, "MAX_CONTENT_LENGTH", 1000)
+    response = client.post("/identify", json={"images": [PHOTO * 100], "location": "33139"})
+    assert response.status_code == 413
+
+
+def test_request_cap_fits_five_full_size_photos():
+    assert app_module.app.config["MAX_CONTENT_LENGTH"] >= 5 * 10 * 1024 * 1024 * 4 // 3
+
+
+def _plan(client):
+    return client.post("/plan", json={"location": "33139", "plants": [{"scientific_name": "Schinus terebinthifolius"}]}).get_json()["result"]
+
+
+def test_letter_refuses_non_florida_zip(client):
+    response = client.post("/letter", json={"plan": _plan(client), "zip_code": "10001"})
+    assert response.status_code == 400
+    assert response.get_json()["error"] == FLORIDA_ONLY
+
+
+@pytest.mark.parametrize("break_it", [
+    lambda p: p["remove"][0].pop("removal_safety"),
+    lambda p: p["remove"][0].update(plant_name=5),
+    lambda p: p["add"].append({"common_name": "X"}),
+    lambda p: p["add"].append({"common_name": "X", "helps": {"text": "t"}, "buying": {}}),
+    lambda p: p.update(remove="nope"),
+    lambda p: p["summary"].pop("percent_native"),
+])
+def test_letter_refuses_malformed_plans(client, break_it):
+    plan = _plan(client)
+    break_it(plan)
+    response = client.post("/letter", json={"plan": plan, "zip_code": "33139"})
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "The plan is missing details. Make the plan again and retry."

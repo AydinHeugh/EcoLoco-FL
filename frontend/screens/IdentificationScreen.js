@@ -18,7 +18,7 @@ import { useFonts } from 'expo-font';
 import { identifyPlant, userMessage } from '../services/geminiService';
 import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS } from '../theme';
 import StatusBadge from '../components/StatusBadge';
-import CandidatePicker, { NO_MATCH_TEXT } from '../components/CandidatePicker';
+import CandidatePicker, { NO_MATCH_TEXT, matchLabel } from '../components/CandidatePicker';
 import SourceLine from '../components/SourceLine';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
 import { useProgressText } from '../components/ProgressText';
@@ -308,7 +308,7 @@ export default function IdentificationScreen({ navigation }) {
               <Text style={styles.resultsTitle}>Results</Text>
               {shown && (
                 <Text style={styles.confidenceText}>
-                  PlantNet match:{' '}
+                  {matchLabel(result.id_source)} match:{' '}
                   <Text style={styles.confidenceValue}>{Math.round(shown.confidence * 100)}%</Text>
                 </Text>
               )}
@@ -324,6 +324,7 @@ export default function IdentificationScreen({ navigation }) {
               <CandidatePicker
                 options={result.options}
                 suggested={result.suggested}
+                idSource={result.id_source}
                 onPick={setPicked}
                 onNone={() => setPicked(-1)}
               />

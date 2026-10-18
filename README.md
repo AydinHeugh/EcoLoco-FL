@@ -11,7 +11,7 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 ## What goes in and what comes out
 
 **You give it:**
-- One to five photos of the same plant (a leaf, a flower, the bark), taken with the camera or uploaded. More photos give a surer match.
+- One to five photos of the same plant (a leaf, a flower, the bark), taken with the camera or uploaded, up to 10 MB each. More photos give a surer match.
 - Your school's location: press "Use my location", or type an address or ZIP code. The app rounds your location to about 1 km before it leaves the phone and never saves it. Only Florida locations work; anywhere else gets a message saying so.
 
 **You get back, for each plant:**
@@ -27,7 +27,7 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 
 **After you scan a whole campus (the EcoScan tab):**
 - Every plant you scan stays in the list. Ones the app isn't sure about show the same "Which one is it?" list, and any card can be removed with ✕.
-- Plants are grouped as native, non-native (not harmful), invasive, and unknown. Only invasive plants count as hurting wildlife.
+- Plants are grouped as native, non-native (not invasive), invasive, and unknown. Only invasive plants count as hurting wildlife.
 - How many plants are native, non-native, invasive, or unknown, and what percent of the identified ones are native
 - What that percent would be with the plan: only invasive plants that have a ready replacement, and the native plants the plan adds, are counted
 - Plants the app couldn't identify are still listed, but they aren't counted in the percent
@@ -97,7 +97,7 @@ You'll need Node.js, Python 3, an OpenAI API key, and a free PlantNet API key fr
 2. Set up Python and install what it needs:
    ```
    py -m venv venv
-   venv\Scripts\python -m pip install Flask flask-cors openai python-dotenv requests pytest
+   venv\Scripts\python -m pip install -r requirements-dev.txt
    ```
    On Mac or Linux, use `python3` instead of `py` and `venv/bin/python` instead of `venv\Scripts\python`.
 3. Start the server: `venv\Scripts\python app.py`. It runs on port 5000. Debug mode is off by default; while developing, add `ECOLOCO_DEV=1` to `.env` to get automatic reloading and detailed error pages. Never turn it on for a demo or a public server.

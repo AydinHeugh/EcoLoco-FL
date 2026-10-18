@@ -426,8 +426,9 @@
       "row": 1.5,
       "what": "API endpoint for identifying one plant.",
       "how": [
-        "Reads `images` (a list of 1–5 non-empty strings) or, for the current app, a single `image`, plus `location`.",
-        "Returns 400 if the photos or the location are missing or invalid (0 or more than 5 photos, empty or non-text entries).",
+        "Reads `images` (1–5 photos) or a single `image`, plus `location`; 400 if missing, too many, or the ZIP is outside Florida.",
+        "Every photo must be uploaded data (base64 or a data URL), never a web link, JPEG or PNG, and at most 10 MB. Otherwise: \"Photos must be uploaded, not links.\", \"Photos must be JPEG or PNG images.\" or \"Each photo must be 10 MB or smaller.\"",
+        "The whole request is capped at 72 MB (enough for five 10 MB photos); bigger requests get HTTP 413.",
         "Calls `identify_plant(images, location)` and returns `{result}`."
       ]
     },
@@ -457,7 +458,8 @@
       "row": 6.4,
       "what": "API endpoint for the letter to the school admin.",
       "how": [
-        "Reads `plan` (with `remove`, `add`, `summary`) and `zip_code`; 400 if missing.",
+        "Reads `plan` and `zip_code`; 400 if missing or the ZIP is outside Florida.",
+        "Checks the plan's shape: remove cards need a name and removal safety text, add cards need a name, what it helps (with a source) and the name to ask for; otherwise \"The plan is missing details. Make the plan again and retry.\"",
         "Calls `generate_letter(plan, zip_code)` and returns `{result: letter text, ai_unavailable}`."
       ]
     },
@@ -598,6 +600,7 @@
       "what": "Turns 1–5 photos of one plant into a species: PlantNet first, OpenAI to break ties or as a backup, always in the same shape.",
       "how": [
         "Accepts one photo or a list of 1–5; anything else raises an error (the route rejects it first).",
+        "Never fetches web links: a link raises an error before PlantNet or OpenAI is asked.",
         "Asks PlantNet via `identify_with_plantnet(images)` for a ranked list of species with scores. A 404 from PlantNet means \"no plant found\" and returns an empty list.",
         "Merges names of the same species with `resolve()` and adds their scores (capped at 1.0). PlantNet often splits coontie between Zamia integrifolia and Zamia pumila.",
         "Sets `state` from PlantNet's own top score: under 0.20 → `unidentified`; under 0.80, or 0.15 or less ahead of the runner-up → `confirm`; otherwise `identified`.",
@@ -758,7 +761,7 @@
       "row": -0.4,
       "what": "Shared pieces used by Identify and EcoScan: the \"Which one is it?\" list and the four status labels.",
       "how": [
-        "Lists every option with its name, PlantNet match % and status badge; adds the scientific name only when two options share a common name.",
+        "Lists every option with its name, match % labelled with its real source (PlantNet, or OpenAI when PlantNet was unavailable) and status badge; adds the scientific name only when two options share a common name.",
         "Marks the AI's suggestion \"Best guess\" and always offers \"None of these\".",
         "`StatusBadge` (frontend/components/StatusBadge.js) shows the backend's `status_label` with the color for its status, so the four labels look the same on every screen.",
         "Colors and fonts come from `frontend/theme.js`, the one file a redesign needs to change."
@@ -877,7 +880,7 @@
       "how": [
         "Runs `summarize()` on the scanned plants for their statuses.",
         "Each distinct invasive becomes a Remove card with its `why`, removal safety (or \"Ask your grounds crew how to remove it safely.\"), a replacement, and (only when there is one) \"Replacing it takes you from X% to Y% native\", counting every scan of that plant.",
-        "Finds gaps on campus: none of NWF's important plant groups, nothing caterpillars eat, no fruit, months with nothing blooming.",
+        "Finds gaps on campus (invasive plants never count toward them): none of NWF's important plant groups, nothing caterpillars eat, no fruit, months with nothing blooming.",
         "Ranks verified plants from `fl_recommendations.json`: gaps filled + 2 if it replaces an invasive found + 0.5 if its group is on the NWF list; easy plants first on ties.",
         "Picks one replacement per invasive, then gap fillers, up to 5 Add cards; the first 3 have at most 1 tree and at least 1 easy plant.",
         "Cards whose plant group is on the NWF list carry `nwf: {group, caterpillar_species}` for the chart.",

@@ -9,7 +9,7 @@ import { useFonts } from 'expo-font';
 import { identifyPlant, userMessage } from '../services/geminiService';
 import { COLORS, FONTS, FONT_ASSETS } from '../theme';
 import StatusBadge from '../components/StatusBadge';
-import CandidatePicker, { NO_MATCH_TEXT } from '../components/CandidatePicker';
+import CandidatePicker, { NO_MATCH_TEXT, matchLabel } from '../components/CandidatePicker';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
 import { useProgressText } from '../components/ProgressText';
 import LocationPicker from '../components/LocationPicker';
@@ -20,11 +20,11 @@ const MAX_PHOTOS = 5;
 const LOGO = require('../../assets/EcoLoco_logo.png');
 
 // ─── Confidence badge ─────────────────────────────────────────────────────────
-function ConfidenceBadge({ confidence }) {
+function ConfidenceBadge({ confidence, idSource }) {
   const pct = Math.round((confidence ?? 0) * 100);
   const color = pct >= 85 ? COLORS.softGreen : pct >= 75 ? COLORS.amber : COLORS.terracotta;
   return (
-    <Text style={[cb.text, { color }]}>PlantNet: {pct}% match</Text>
+    <Text style={[cb.text, { color }]}>{matchLabel(idSource)}: {pct}% match</Text>
   );
 }
 
@@ -87,14 +87,14 @@ function PlantCard({ plant, onDelete, onPick, onNone }) {
             <View style={styles.badgeRow}>
               <StatusBadge status={plant.status} label={plant.status_label} />
             </View>
-            <ConfidenceBadge confidence={plant.confidence} />
+            <ConfidenceBadge confidence={plant.confidence} idSource={plant.id_source} />
           </>
         )}
       </View>
       </View>
       {choosing && (
         <View style={styles.cardBelow}>
-          <CandidatePicker options={plant.options} suggested={plant.suggested} onPick={onPick} onNone={onNone} />
+          <CandidatePicker options={plant.options} suggested={plant.suggested} idSource={plant.id_source} onPick={onPick} onNone={onNone} />
         </View>
       )}
     </Animated.View>

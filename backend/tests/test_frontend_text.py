@@ -57,3 +57,14 @@ def test_letter_template_has_no_jargon():
 def test_letter_prompt_lists_the_word_swaps(swap):
     from services import ai_service
     assert swap in ai_service.LETTER_SYSTEM
+
+
+@pytest.mark.parametrize("path", FILES, ids=lambda p: p.name)
+@pytest.mark.parametrize("phrase", ["PlantNet: {", "PlantNet match", "Non-native (not harmful)"])
+def test_scores_name_their_real_source(path, phrase):
+    assert phrase not in path.read_text(encoding="utf-8")
+
+
+def test_match_label_names_openai_for_fallback_scores():
+    text = (FRONTEND / "components" / "CandidatePicker.js").read_text(encoding="utf-8")
+    assert "openai_fallback" in text and "'OpenAI'" in text and "'PlantNet'" in text

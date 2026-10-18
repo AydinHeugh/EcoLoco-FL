@@ -43,8 +43,12 @@ Respond only in JSON:
   "candidates": [{{"scientific_name": "...", "common_name": "...", "confidence": 0.00}}]}}"""
 
 
+def _is_link(image):
+    return image.startswith(("http://", "https://"))
+
+
 def _image_url(image):
-    if image.startswith(("http://", "https://", "data:image")):
+    if image.startswith("data:image"):
         return image
     return f"data:image/jpeg;base64,{image}"
 
@@ -133,6 +137,8 @@ def identify_species(images, location):
         images = [images]
     if not 1 <= len(images) <= MAX_IMAGES:
         raise ValueError(f"expected 1 to {MAX_IMAGES} images, got {len(images)}")
+    if any(_is_link(image) for image in images):
+        raise ValueError("photos must be uploaded, not links")
 
     try:
         ranked = _merge_same_species(identify_with_plantnet(images))
@@ -161,10 +167,8 @@ def identify_species(images, location):
 
 
 def _image_bytes(image):
-    if image.startswith(("http://", "https://")):
-        response = requests.get(image, timeout=15)
-        response.raise_for_status()
-        return response.content
+    if _is_link(image):
+        raise ValueError("photos must be uploaded, not links")
     if image.startswith("data:"):
         image = image.split(",", 1)[1]
     return base64.b64decode(image)

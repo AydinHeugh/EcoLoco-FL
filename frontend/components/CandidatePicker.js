@@ -3,13 +3,17 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import StatusBadge from './StatusBadge';
 import { COLORS, FONTS } from '../theme';
 
+export function matchLabel(idSource) {
+  return idSource === 'openai_fallback' ? 'OpenAI' : 'PlantNet';
+}
+
 export const NO_MATCH_TEXT = "Couldn't identify this. Try a close-up of one leaf, or a flower";
 
 function sharesName(option, options) {
   return options.filter(o => o.plant_name === option.plant_name).length > 1;
 }
 
-export default function CandidatePicker({ options, suggested = 0, onPick, onNone }) {
+export default function CandidatePicker({ options, suggested = 0, idSource, onPick, onNone }) {
   return (
     <View style={styles.wrap}>
       <Text style={styles.title}>Which one is it?</Text>
@@ -22,7 +26,7 @@ export default function CandidatePicker({ options, suggested = 0, onPick, onNone
               {sharesName(option, options) ? ` (${option.scientific_name})` : ''}
             </Text>
             <Text style={styles.match}>
-              PlantNet: {Math.round(option.confidence * 100)}% match{i === suggested ? ' · Best guess' : ''}
+              {matchLabel(idSource)}: {Math.round(option.confidence * 100)}% match{i === suggested ? ' · Best guess' : ''}
             </Text>
           </View>
           <StatusBadge status={option.status} label={option.status_label} />

@@ -101,7 +101,8 @@ def _nwf_effect(rec):
 def build_plan(plants):
     base = summarize(plants)
     by_name = {rec["scientific_name"]: rec for rec in _all_entries()}
-    scanned = [dict(by_name.get(p["scientific_name"], {}), scientific_name=p["scientific_name"]) for p in base["plants"]]
+    scanned = [dict(by_name.get(p["scientific_name"], {}), scientific_name=p["scientific_name"])
+               for p in base["plants"] if p["status"] != "invasive"]
     gaps, missing = _gaps(scanned)
 
     invasives, scans = {}, Counter()

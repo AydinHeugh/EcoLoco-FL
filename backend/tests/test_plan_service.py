@@ -146,3 +146,9 @@ def test_plan_looks_each_plant_up_once(verified, monkeypatch):
     monkeypatch.setattr(summary_service, "plant_option", lambda *a: calls.append(a) or real(*a))
     build_plan([PEPPER, {"scientific_name": "Ixora coccinea"}, {"scientific_name": "Zamia integrifolia"}])
     assert len(calls) == 3
+
+
+def test_invasive_never_counts_as_important_wildlife_plant(verified):
+    gaps = build_plan([{"scientific_name": "Acacia auriculiformis"}])["gaps"]
+    assert "important_wildlife_plant" in gaps
+    assert "caterpillar_food" in gaps

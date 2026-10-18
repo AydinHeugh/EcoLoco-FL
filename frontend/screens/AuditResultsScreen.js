@@ -21,7 +21,7 @@ const NO_DATA = "We don't have wildlife info for this plant yet";
 
 const BUCKETS = [
   { key: 'native',     status: 'native',     label: 'Native' },
-  { key: 'non_native', status: 'non-native', label: 'Non-native (not harmful)' },
+  { key: 'non_native', status: 'non-native', label: 'Non-native (not invasive)' },
   { key: 'invasive',   status: 'invasive',   label: 'Invasive (hurting wildlife)' },
   { key: 'unknown',    status: 'unknown',    label: 'Unknown: not on Florida lists' },
 ];
