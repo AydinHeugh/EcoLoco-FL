@@ -207,7 +207,7 @@
       "how": [
         "You type a 5-digit ZIP (or arrive with one pre-filled) and press \"Show plants\".",
         "Calls `getPlantRecommendations(zip)` and shows each plant as a `PlanCard` (Helps, Where, Buying it, Watch out, Look into, with sources).",
-        "Outside South Florida (the server sends `south_florida: false`), shows \"Planting recommendations are only checked for South Florida so far.\" instead of cards.",
+        "Outside Palm Beach County (the server sends `plantings_checked: false`), shows \"Planting recommendations are only checked for Palm Beach County so far.\" instead of cards.",
         "If no plants are verified yet, says \"No plants are ready to recommend yet. Our team is still checking each one.\"",
         "Links to plantrealflorida.org to find a native nursery.",
         "Errors (bad ZIP, ZIP outside Florida, no connection) show as text, not pop-ups."
@@ -249,7 +249,7 @@
         "Receives `plants[]` and `zipCode` from AuditScreen.",
         "Calls `getPlan()` for the plants it has; the plan includes the summary.",
         "Each plant under What your campus supports now has a Remove button (for a fake or potted plant scanned by mistake). Removing one calls `getPlan()` again, so the counts, percent, charts, plan and letter all update; it shows \"Updating your plan…\", and if that fails, the error with Try again.",
-        "Your plan: a Remove `PlanCard` for each invasive (why, safety, replacement), then Add cards, then a link to plantrealflorida.org. Outside South Florida the Remove cards stay, without a replacement, and the Add cards are replaced by \"Planting recommendations are only checked for South Florida so far.\"",
+        "Your plan: a Remove `PlanCard` for each invasive (why, safety, replacement), then Add cards, then a link to plantrealflorida.org. Outside Palm Beach County the Remove cards stay, without a replacement, and the Add cards are replaced by \"Planting recommendations are only checked for Palm Beach County so far.\"",
         "What your campus supports now: every plant with its status and one sourced line, or \"We don't have wildlife info for this plant yet\".",
         "How native is your campus: `PercentRing` now and with the plan (or \"Not enough identified plants yet\") and counts for the four groups.",
         "Charts: `StatusBars` (now vs with the plan) and `CaterpillarBars` (NWF group counts per card).",
@@ -449,7 +449,7 @@
       "what": "API endpoint for the Recommend tab: native plants to add when there's no audit.",
       "how": [
         "Reads `location`; 400 if missing, and the Florida-only message for ZIPs outside Florida.",
-        "Returns `{result: build_plan([], south_florida).add, south_florida}`: verified plants from our data, ranked as if the campus had nothing yet, or no plants when the ZIP is outside South Florida (`in_south_florida()`). No AI is used."
+        "Returns `{result: build_plan([], checked).add, plantings_checked}`: verified plants from our data, ranked as if the campus had nothing yet, or no plants when the ZIP is outside Palm Beach County (`plantings_checked()`). No AI is used."
       ]
     },
     {
@@ -890,8 +890,8 @@
         "Picks one replacement per invasive, then gap fillers, up to 5 Add cards; the first 3 have at most 1 tree and at least 1 easy plant.",
         "Cards whose plant group is on the NWF list carry `nwf: {group, caterpillar_species}` for the chart.",
         "Add cards say why they were picked and their effect: \"Oaks feed 395 kinds of caterpillars here.\" for NWF groups, otherwise the percent-native change. Counts are never added up.",
-        "With `south_florida=False` no plant is recommended: Remove cards keep their why and safety but get no replacement or percent change, and there are no Add cards.",
-        "Returns `{remove, add, gaps, summary, why_this_matters, south_florida}`.",
+        "With `plantings_checked=False` no plant is recommended: Remove cards keep their why and safety but get no replacement or percent change, and there are no Add cards.",
+        "Returns `{remove, add, gaps, summary, why_this_matters, plantings_checked}`.",
         "Looks the scanned plants up once and reuses that for the final summary through `with_plan()`."
       ]
     },
@@ -908,7 +908,7 @@
       "how": [
         "Reads `plants` (a list, may be empty) and `location`; 400 if missing.",
         "ZIP codes outside Florida (32004–34997) get \"EcoLoco's plant lists cover Florida only. Enter a Florida ZIP code.\"",
-        "Returns `{result: build_plan(plants, in_south_florida(location))}`: scanning and invasive checks work anywhere in Florida; Add cards only for South Florida."
+        "Returns `{result: build_plan(plants, plantings_checked(location))}`: scanning and invasive checks work anywhere in Florida; Add cards only for Palm Beach County."
       ]
     },
     {
@@ -986,7 +986,7 @@
       "what": "One Remove or Add card in the plan, with every fact followed by its source.",
       "how": [
         "Add cards: name, why it was picked, effect, then Helps / Where / Buying it / Watch out / Look into.",
-        "Remove cards: name, Invasive badge, Why, Safety, and what to replace it with (left out when `southFlorida` is false). `NOT_SOUTH_FLORIDA` holds the message screens show instead of Add cards.",
+        "Remove cards: name, Invasive badge, Why, Safety, and what to replace it with (left out when `plantingsChecked` is false). `NOT_CHECKED_HERE` holds the message screens show instead of Add cards.",
         "Shows 2 rows and a \"More\" button for the rest.",
         "`SourceLine` (frontend/components/SourceLine.js) shows \"Source: …\" in small text and opens the link.",
         "Add cards end with `AtlasButton` (\"See where it grows\") when the card has an `atlas_url`."
@@ -1259,18 +1259,18 @@
     },
     {
       "id": "s_region",
-      "label": "in_south_florida()",
+      "label": "plantings_checked()",
       "layer": "svc",
       "status": "live",
       "file": "backend/services/location_service.py",
-      "symbol": "def in_south_florida(",
+      "symbol": "def plantings_checked(",
       "col": 5,
       "row": 11.4,
-      "what": "Says whether a ZIP code is in one of the 12 South Florida counties our planting advice was checked for.",
+      "what": "Says whether a ZIP code is in a county our planting advice was checked for. Today that is Palm Beach County only, the one county the team checked every plant for.",
       "how": [
         "`county(zip)` looks the ZIP up in `fl_zip_counties.json`.",
-        "True for Palm Beach, Broward, Miami-Dade, Martin, Monroe, Collier, Lee, Hendry, Glades, Okeechobee, St. Lucie and Charlotte.",
-        "A ZIP the file doesn't know (for example a PO box) counts as outside South Florida."
+        "`PLANTING_COUNTIES` is `{\"Palm Beach\"}`; add a county there once every plant has been checked for it.",
+        "A ZIP the file doesn't know (for example a PO box) counts as not checked."
       ]
     },
     {
@@ -1620,12 +1620,12 @@
     {
       "from": "r_plan",
       "to": "s_plan",
-      "label": "build_plan(plants, south_florida)"
+      "label": "build_plan(plants, plantings_checked)"
     },
     {
       "from": "r_recommend",
       "to": "s_plan",
-      "label": "build_plan([], south_florida) → add cards"
+      "label": "build_plan([], checked) → add cards"
     },
     {
       "from": "s_plan",
@@ -1841,12 +1841,12 @@
     {
       "from": "r_plan",
       "to": "s_region",
-      "label": "in_south_florida(location)"
+      "label": "plantings_checked(location)"
     },
     {
       "from": "r_recommend",
       "to": "s_region",
-      "label": "in_south_florida(location)"
+      "label": "plantings_checked(location)"
     },
     {
       "from": "s_region",

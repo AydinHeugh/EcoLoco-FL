@@ -9,7 +9,7 @@ import { getPlan, getNearby, generateLetter, userMessage } from '../services/gem
 import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS } from '../theme';
 import StatusBadge from '../components/StatusBadge';
 import PercentRing from '../components/PercentRing';
-import PlanCard, { NOT_SOUTH_FLORIDA } from '../components/PlanCard';
+import PlanCard, { NOT_CHECKED_HERE } from '../components/PlanCard';
 import SourceLine from '../components/SourceLine';
 import StatusBars from '../components/StatusBars';
 import CaterpillarBars from '../components/CaterpillarBars';
@@ -168,10 +168,10 @@ export default function AuditResultsScreen({ route, navigation }) {
               )}
               {plan.remove.map(card => (
                 <PlanCard key={card.scientific_name} card={card} kind="remove"
-                  replacementName={addName(card.replacement)} southFlorida={plan.south_florida !== false} />
+                  replacementName={addName(card.replacement)} plantingsChecked={plan.plantings_checked !== false} />
               ))}
-              {plan.south_florida === false
-                ? <Text style={styles.mutedText}>{NOT_SOUTH_FLORIDA}</Text>
+              {plan.plantings_checked === false
+                ? <Text style={styles.mutedText}>{NOT_CHECKED_HERE}</Text>
                 : plan.add.length === 0
                   ? <Text style={styles.mutedText}>No plants are ready to recommend yet. Our team is still checking each one.</Text>
                   : plan.add.map(card => <PlanCard key={card.scientific_name} card={card} kind="add" />)}

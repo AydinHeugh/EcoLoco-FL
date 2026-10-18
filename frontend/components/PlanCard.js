@@ -6,7 +6,7 @@ import AtlasButton from './AtlasButton';
 import { COLORS, FONTS } from '../theme';
 
 const SHOWN = 2;
-export const NOT_SOUTH_FLORIDA = 'Planting recommendations are only checked for South Florida so far.';
+export const NOT_CHECKED_HERE = 'Planting recommendations are only checked for Palm Beach County so far.';
 
 function addRows(card) {
   const buying = card.buying ?? {};
@@ -23,17 +23,17 @@ function addRows(card) {
   ];
 }
 
-function removeRows(card, replacementName, southFlorida) {
+function removeRows(card, replacementName, plantingsChecked) {
   return [
     { label: 'Why', text: card.why ?? "It is on Florida's official list of invasive plants.", source: { name: card.source_label } },
     { label: 'Safety', text: card.removal_safety?.text, source: card.removal_safety?.source },
-    southFlorida && { label: 'Replace with', text: replacementName ?? 'No replacement is ready yet. Our team is still checking plants.' },
+    plantingsChecked && { label: 'Replace with', text: replacementName ?? 'No replacement is ready yet. Our team is still checking plants.' },
   ];
 }
 
-export default function PlanCard({ card, kind, replacementName, southFlorida = true }) {
+export default function PlanCard({ card, kind, replacementName, plantingsChecked = true }) {
   const [open, setOpen] = useState(false);
-  const rows = (kind === 'remove' ? removeRows(card, replacementName, southFlorida) : addRows(card)).filter(r => r?.text);
+  const rows = (kind === 'remove' ? removeRows(card, replacementName, plantingsChecked) : addRows(card)).filter(r => r?.text);
   const shown = open ? rows : rows.slice(0, SHOWN);
 
   return (

@@ -7,7 +7,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 from services.ai_service import generate_letter, identify_plant
-from services.location_service import geocode, in_south_florida, reverse_zip, round_coords, seen_near, zip_center
+from services.location_service import geocode, plantings_checked, reverse_zip, round_coords, seen_near, zip_center
 from services.plan_service import build_plan
 
 load_dotenv()
@@ -87,8 +87,8 @@ def recommend():
         return jsonify({"error": "location is required"}), 400
     if not is_florida_zip(location):
         return jsonify({"error": FLORIDA_ONLY}), 400
-    south_florida = in_south_florida(location)
-    return jsonify({"result": build_plan([], south_florida)["add"], "south_florida": south_florida})
+    checked = plantings_checked(location)
+    return jsonify({"result": build_plan([], checked)["add"], "plantings_checked": checked})
 
 
 @app.route("/plan", methods=["POST"])
@@ -100,7 +100,7 @@ def plan():
         return jsonify({"error": "plants and location are required"}), 400
     if not is_florida_zip(location):
         return jsonify({"error": FLORIDA_ONLY}), 400
-    return jsonify({"result": build_plan(plants, in_south_florida(location))})
+    return jsonify({"result": build_plan(plants, plantings_checked(location))})
 
 
 NOT_FOUND = "We couldn't find that place. Try your school's ZIP code."

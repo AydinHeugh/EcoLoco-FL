@@ -134,7 +134,7 @@ flowchart LR
     s_seen["seen_near()"]
     s_with_plan["with_plan()"]
     s_zip_center["zip_center()"]
-    s_region["in_south_florida()"]
+    s_region["plantings_checked()"]
     s_county["county()"]
   end
   subgraph L_data["Bundled data"]
@@ -216,8 +216,8 @@ flowchart LR
   results -->|"getPlan([{scientific_name, plant_name}], zipCode)"| c_plan
   c_plan -->|"POST /plan {plants, location}"| r_plan
   flask -->|"registers"| r_plan
-  r_plan -->|"build_plan(plants, south_florida)"| s_plan
-  r_recommend -->|"build_plan([], south_florida) → add cards"| s_plan
+  r_plan -->|"build_plan(plants, plantings_checked)"| s_plan
+  r_recommend -->|"build_plan([], checked) → add cards"| s_plan
   s_plan -->|"summarize(plants, added_natives)"| s_summary
   s_plan -->|"verified plants, facts, replaces"| d_recs
   s_plan -->|"genus → caterpillar count for the group"| d_nwf
@@ -260,8 +260,8 @@ flowchart LR
   ui_plancard -->|"Add card's atlas_url"| ui_atlas
   ident -->|"verified plant's atlas_url"| ui_atlas
   ui_atlas -->|"openBrowserAsync(url)"| usf_atlas
-  r_plan -->|"in_south_florida(location)"| s_region
-  r_recommend -->|"in_south_florida(location)"| s_region
+  r_plan -->|"plantings_checked(location)"| s_region
+  r_recommend -->|"plantings_checked(location)"| s_region
   s_region -->|"county(zip)"| s_county
   zip_builder -->|"writes 1,013 Florida ZIPs"| d_zip_counties
   results -->|"forgetScannedPlant(id) on Remove"| audit
