@@ -169,7 +169,8 @@
         "Then six sections in different styles rather than identical cards: Scan Your Campus, Write to Your Principal, Identify a Plant, Plant Florida Natives (checked for Palm Beach County), Why It Matters (on a photo), How We Know (on dark green).",
         "Each links to its tab; the oak fact (\"Oaks feed 395 kinds of caterpillars in South Florida\") shows its National Wildlife Federation source. How We Know names the official invasive list, USDA and the USF Atlas.",
         "Write to Your Principal shows `LetterDemo` and Identify a Plant shows `IdentifyDemo`, two short looping animations; How We Know shows the three data sources with their numbers (179 FISC invasives, 5,322 USDA Florida plants, 30 plants checked in the USF Atlas).",
-        "Colors and fonts come from `frontend/theme.js`."
+        "Colors and fonts come from `frontend/theme.js`.",
+        "How We Know's three numbers count up when they scroll into view (`CountUp`)."
       ]
     },
     {
@@ -260,7 +261,7 @@
         "Your plan: a Remove `PlanCard` for each invasive (why, safety, replacement), then Add cards, then a link to plantrealflorida.org. Cards fade up one after another as they scroll into view (`Reveal`). Outside Palm Beach County the Remove cards stay, without a replacement, and the Add cards are replaced by \"Planting recommendations are only checked for Palm Beach County so far.\"",
         "Each Add card has an \"In my letter\" checkbox. Unticking one asks for the plan again with it skipped: the card stays, dimmed, and leaves the letter and the \"with the plan\" numbers.",
         "What your campus supports now: every plant with its status and one sourced line, or \"We don't have wildlife info for this plant yet\".",
-        "How native is your campus: two `PercentRing`s side by side, Kinds of plants (`percent_native_kinds`) and Every plant (`percent_native`), each now and with the plan, a line explaining the difference (or \"Not enough identified plants yet\"), and counts for the four groups.",
+        "How native is your campus: two `PercentRing`s side by side, Kinds of plants (`percent_native_kinds`) and Every plant (`percent_native`), each now and with the plan, a line explaining the difference (or \"Not enough identified plants yet\"), and counts for the four groups. The group counts count up when they scroll into view (`CountUp`).",
         "Charts: `StatusBars` (now vs with the plan) and `CaterpillarBars` (NWF group counts per card).",
         "Seen near you: if the scan has a location, the top 5 plants people photographed within about 5 km (iNaturalist), each with its status.",
         "Why this matters: up to 4 short lines from `why_this_matters.json`, each with its source.",
@@ -1212,7 +1213,8 @@
       "what": "Two simple charts on the results screen, drawn with plain Views (no chart library), white background and the three status colors.",
       "how": [
         "StatusBars: a \"Now\" and a \"With plan\" bar split into native, non-native and invasive, from `summary.counts` and `summary.counts_with_plan`, with the numbers written under each bar.",
-        "CaterpillarBars (frontend/components/CaterpillarBars.js): one bar per plan card whose plant group is on the NWF list, marked add or remove, showing that group's number of caterpillar species. Numbers are never added together, and the source is shown."
+        "CaterpillarBars (frontend/components/CaterpillarBars.js): one bar per plan card whose plant group is on the NWF list, marked add or remove, showing that group's number of caterpillar species. Numbers are never added together, and the source is shown.",
+        "Each caterpillar bar grows and its number counts up when it scrolls into view (`useCountUp`)."
       ]
     },
     {
@@ -1758,6 +1760,22 @@
         "Each `Reveal` checks whether it is on screen; when it first is, it fades and slides up over 300 ms, 70 ms after the one before.",
         "With reduce motion turned on, cards just appear.",
         "`useInView(ref)` is the same on-screen check on its own, used by `PercentRing`."
+      ]
+    },
+    {
+      "id": "ui_countup",
+      "label": "CountUp",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/CountUp.js",
+      "symbol": "export default function CountUp",
+      "col": 3,
+      "row": 7,
+      "what": "A number that counts up from 0 when it scrolls into view.",
+      "how": [
+        "Waits for `useInView`, then counts to the number over 400 ms and eases to a stop; numbers like \"5,322\" keep their comma.",
+        "`useCountUp()` is the same count on its own, used by the caterpillar bars so the bar grows with its number.",
+        "With reduce motion turned on it shows the number at once."
       ]
     }
   ],
@@ -2504,6 +2522,26 @@
       "from": "ui_picker",
       "to": "ui_motion",
       "label": "feelResult(status)"
+    },
+    {
+      "from": "results",
+      "to": "ui_countup",
+      "label": "group counts"
+    },
+    {
+      "from": "home",
+      "to": "ui_countup",
+      "label": "How We Know numbers"
+    },
+    {
+      "from": "ui_charts",
+      "to": "ui_countup",
+      "label": "useCountUp"
+    },
+    {
+      "from": "ui_countup",
+      "to": "ui_reveal",
+      "label": "useInView"
     }
   ]
 }</script>

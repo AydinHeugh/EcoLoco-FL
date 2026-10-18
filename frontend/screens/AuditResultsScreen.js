@@ -9,6 +9,7 @@ import { getPlan, getNearby, generateLetter, userMessage } from '../services/gem
 import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS, TYPE, LINE } from '../theme';
 import StatusBadge from '../components/StatusBadge';
 import PercentRing from '../components/PercentRing';
+import CountUp from '../components/CountUp';
 import PlanCard, { NOT_CHECKED_HERE } from '../components/PlanCard';
 import SiteFilters, { ANY_SITE } from '../components/SiteFilters';
 import SourceLine from '../components/SourceLine';
@@ -263,9 +264,9 @@ function AuditResults({ route, navigation }) {
 
             <View style={styles.ringSection}>
               <View style={styles.countRow}>
-                {BUCKETS.map(({ key, status, label }) => (
+                {BUCKETS.map(({ key, status, label }, i) => (
                   <View key={key} style={styles.countItem}>
-                    <Text style={[styles.countNum, { color: STATUS_COLORS[status].color }]}>{summary.counts[key]}</Text>
+                    <CountUp value={summary.counts[key]} style={[styles.countNum, { color: STATUS_COLORS[status].color }]} delay={i * 80} />
                     <Text style={styles.countLabel}>{label}</Text>
                   </View>
                 ))}

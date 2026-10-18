@@ -12,6 +12,8 @@ import { useFonts } from 'expo-font'
 import { COLORS, FONTS, FONT_ASSETS, TYPE, LINE } from '../theme'
 import SourceLine from '../components/SourceLine'
 import PhotoSlot from '../components/PhotoSlot'
+import CountUp from '../components/CountUp'
+import { RevealProvider, useRevealScroll } from '../components/Reveal'
 import { IdentifyDemo, LetterDemo } from '../components/HomeDemos'
 import { PHOTOS } from '../photos'
 import { useReduceMotion } from '../motion'
@@ -61,12 +63,17 @@ function Feature({ visual, heading, body, linkText, onLinkPress, reverse, wide, 
   return <View style={styles.featureRow}>{reverse ? <>{text}{art}</> : <>{art}{text}</>}</View>
 }
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen(props) {
+  return <RevealProvider><Home {...props} /></RevealProvider>
+}
+
+function Home({ navigation }) {
   const { width } = useWindowDimensions()
   const wide = width > 600
   const maxWidth = Math.min(width, 960)
   const reduce = useReduceMotion()
   const scrollY = useRef(new Animated.Value(0)).current
+  const tick = useRevealScroll()
   const [fontsLoaded] = useFonts(FONT_ASSETS)
 
   if (!fontsLoaded) return <View style={styles.container} />
@@ -84,7 +91,7 @@ export default function HomeScreen({ navigation }) {
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
       scrollEventThrottle={16}
-      onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+      onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true, listener: tick })}
     >
       <View style={styles.hero}>
         <Animated.View style={[styles.heroPhoto, { transform: [{ translateY: drift }] }]}>
@@ -171,9 +178,9 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.knowHeading} accessibilityRole="header">How We Know</Text>
           <Text style={styles.knowBody}>Every answer comes from Florida's official invasive list, USDA, and the USF Atlas. Our team checked every plant we recommend.</Text>
           <View style={[styles.sources, wide && styles.sourcesWide]} accessible accessibilityLabel={SOURCES.map(s => `${s.count} ${s.label}`).join('. ')}>
-            {SOURCES.map(source => (
+            {SOURCES.map((source, i) => (
               <View key={source.count} style={[styles.sourceItem, wide && styles.sourceItemWide]}>
-                <Text style={styles.sourceCount}>{source.count}</Text>
+                <CountUp value={source.count} style={styles.sourceCount} delay={i * 80} />
                 <Text style={styles.sourceLabel}>{source.label}</Text>
               </View>
             ))}

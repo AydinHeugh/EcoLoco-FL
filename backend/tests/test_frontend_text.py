@@ -185,7 +185,7 @@ def test_motion_is_short_and_respects_reduce_motion():
     motion = (FRONTEND / "motion.js").read_text(encoding="utf-8")
     assert int(re.search(r"export const DURATION = (\d+);", motion).group(1)) <= 400
     assert "isReduceMotionEnabled" in motion
-    for name in ("Reveal.js", "StatusBadge.js", "PercentRing.js", "ScanningLeaf.js", "HomeDemos.js", "PlanCard.js"):
+    for name in ("Reveal.js", "StatusBadge.js", "PercentRing.js", "ScanningLeaf.js", "HomeDemos.js", "PlanCard.js", "CountUp.js"):
         assert "useReduceMotion" in (FRONTEND / "components" / name).read_text(encoding="utf-8"), name
     assert "useReduceMotion" in (FRONTEND / "screens" / "HomeScreen.js").read_text(encoding="utf-8")
     for p in FILES:

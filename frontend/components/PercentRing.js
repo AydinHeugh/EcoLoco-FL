@@ -83,7 +83,7 @@ export default function PercentRing({ now, withPlan, size = 180, onDark = false,
       </View>
       <View style={styles.legend}>
         <Text style={[styles.legendText, onDark && styles.legendDark]}>
-          <Text style={{ color: planColor, opacity: onDark ? 1 : 0.35 }}>●</Text> With the plan: {withPlan}%
+          <Text style={{ color: planColor, opacity: onDark ? 1 : 0.35 }}>●</Text> With the plan: {shownPlan}%
         </Text>
       </View>
     </View>
