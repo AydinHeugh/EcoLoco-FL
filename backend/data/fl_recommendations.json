@@ -75,7 +75,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2105",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -151,7 +151,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2723",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -210,7 +210,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3904",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -269,7 +269,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3546",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -321,7 +321,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2162",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -381,7 +381,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2811",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -449,7 +449,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/760",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -511,7 +511,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2765",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -570,7 +570,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3791",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -631,7 +631,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3579",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -696,7 +696,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/727",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -761,7 +761,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2120",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -835,7 +835,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3866",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -885,7 +885,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3239",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -943,7 +943,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2832",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -1012,7 +1012,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/703",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -1079,7 +1079,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/660",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -1131,7 +1131,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/812",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -1195,7 +1195,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2080",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -1254,65 +1254,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3464",
       "verified": true,
-      "checked_by": "Hayne",
-      "checked_on": "2026-10-17"
-    },
-    {
-      "scientific_name": "Salvia coccinea",
-      "common_name": "Tropical sage",
-      "genus": "Salvia",
-      "plant_type": "wildflower",
-      "effort": "easy",
-      "sun": "Full sun to light shade",
-      "mature_size": "2 to 4 feet tall",
-      "growing_source": {
-        "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
-        "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Salvcocc"
-      },
-      "helps": {
-        "animals": [
-          "hummingbirds",
-          "butterflies",
-          "birds"
-        ],
-        "text": "Hummingbirds and butterflies drink from its red flowers, and other birds eat its seeds.",
-        "source": {
-          "name": "Institute for Regional Conservation, Natives for Your Neighborhood",
-          "url": "https://www.regionalconservation.org/beta/nfyn/plantdetail.asp?tx=Salvcocc"
-        }
-      },
-      "offers": [
-        "nectar"
-      ],
-      "bloom_months": [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12
-      ],
-      "buying": {
-        "ask_for": "Salvia coccinea"
-      },
-      "look_into": [
-        "Which flower beds on campus get at least half a day of sun?"
-      ],
-      "replaces": [
-        {
-          "scientific_name": "Lantana strigocamara",
-          "why": "A hummingbird flower for the same sunny beds."
-        }
-      ],
-      "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/1043",
-      "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -1362,7 +1304,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3607",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -1409,7 +1351,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2069",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -1475,7 +1417,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2664",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -1520,7 +1462,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2286",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -1571,7 +1513,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3967",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -1631,7 +1573,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/4040",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -1691,7 +1633,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2804",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -1745,7 +1687,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3626",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -1802,7 +1744,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/2179",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     },
     {
@@ -1867,7 +1809,7 @@
       ],
       "atlas_url": "https://florida.plantatlas.usf.edu/plant/species/3639",
       "verified": true,
-      "checked_by": "Hayne",
+      "checked_by": "Aydin",
       "checked_on": "2026-10-17"
     }
   ]

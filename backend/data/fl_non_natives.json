@@ -1,0 +1,19 @@
+{
+  "source": "USF Atlas of Florida Plants",
+  "species": [
+    {
+      "scientific_name": "Salvia coccinea",
+      "common_name": "Tropical sage",
+      "common_names": [
+        "Scarlet sage",
+        "Blood sage"
+      ],
+      "synonyms": [],
+      "why": "Not native to Florida. The USF Atlas of Florida Plants lists it as Not Native.",
+      "source": {
+        "name": "USF Atlas of Florida Plants",
+        "url": "https://florida.plantatlas.usf.edu/plant/species/1043"
+      }
+    }
+  ]
+}

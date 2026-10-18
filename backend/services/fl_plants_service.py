@@ -31,6 +31,8 @@ def get_status(scientific_name, zip_code):
         return {"native": False, "invasive": True, "source": "FISC", "why": entry["why"]}
     if entry := _by_name("fl_natives.json").get(canonical):
         return {"native": True, "invasive": False, "source": "fl_natives", "why": entry["why"]}
+    if entry := _by_name("fl_non_natives.json").get(canonical):
+        return {"native": False, "invasive": False, "source": "atlas", "why": entry["why"]}
     try:
         florida = usda_service.florida_status(scientific_name)
     except Exception as err:
@@ -50,6 +52,7 @@ STATUS_LABELS = {
 SOURCE_LABELS = {
     "FISC": "Florida Invasive Species Council 2026 list",
     "fl_natives": "EcoLoco South Florida native list",
+    "atlas": "USF Atlas of Florida Plants",
     "USDA": "USDA PLANTS database",
 }
 NON_NATIVE_WHY = "Not from Florida, and not on Florida's invasive list."

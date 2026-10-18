@@ -205,3 +205,20 @@ def test_unverified_plant_has_no_atlas_link(monkeypatch):
 
 def test_invasive_has_no_atlas_link():
     assert "atlas_url" not in plant_option("Schinus terebinthifolia", "", 0.9, ZIP)
+
+
+@pytest.mark.parametrize("name", ["Salvia coccinea", "Tropical sage", "Scarlet sage"])
+def test_tropical_sage_is_non_native_per_the_atlas(monkeypatch, name):
+    _usda_says(monkeypatch, AssertionError("USDA should not be asked"))
+    option = plant_option(name, "", 0.9, ZIP)
+    assert option["status"] == "non-native"
+    assert option["source_label"] == "USF Atlas of Florida Plants"
+    assert "helps" not in option and "atlas_url" not in option
+
+
+def test_non_natives_are_not_on_the_other_lists():
+    non_natives = _all_names("fl_non_natives.json")
+    assert non_natives
+    assert not non_natives & (_all_names("fl_natives.json") | _all_names("fisc_list.json") | _all_names("fl_recommendations.json"))
+    for entry in _species("fl_non_natives.json"):
+        assert entry["why"] and entry["source"]["url"].startswith("https://florida.plantatlas.usf.edu/plant/species/")
