@@ -23,8 +23,8 @@ export async function identifyPlant(images, location) {
   return post('/identify', { images, location });
 }
 
-export async function getPlan(plants, location) {
-  return post('/plan', { plants, location });
+export async function getPlan(plants, location, skip = []) {
+  return post('/plan', { plants, location, skip });
 }
 
 export async function getPlantRecommendations(location) {

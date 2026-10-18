@@ -31,16 +31,35 @@ function removeRows(card, replacementName, plantingsChecked) {
   ];
 }
 
-export default function PlanCard({ card, kind, replacementName, plantingsChecked = true }) {
+function LetterCheck({ checked, onToggle }) {
+  return (
+    <TouchableOpacity
+      style={styles.check}
+      onPress={onToggle ?? undefined}
+      disabled={!onToggle}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked, disabled: !onToggle }}
+      hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+    >
+      <View style={[styles.box, checked && styles.boxOn]}>
+        {checked && <Text style={styles.tick}>✓</Text>}
+      </View>
+      <Text style={styles.checkText}>In my letter</Text>
+    </TouchableOpacity>
+  );
+}
+
+export default function PlanCard({ card, kind, replacementName, plantingsChecked = true, inLetter = true, onToggleLetter }) {
   const [open, setOpen] = useState(false);
   const rows = (kind === 'remove' ? removeRows(card, replacementName, plantingsChecked) : addRows(card)).filter(r => r?.text);
   const shown = open ? rows : rows.slice(0, SHOWN);
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, kind === 'add' && !inLetter && styles.cardOff]}>
       <View style={styles.titleRow}>
         <Text style={styles.title}>{kind === 'remove' ? `Remove: ${card.plant_name}` : `Add: ${card.common_name}`}</Text>
         {kind === 'remove' && <StatusBadge status="invasive" label="Invasive" />}
+        {kind === 'add' && onToggleLetter !== undefined && <LetterCheck checked={inLetter} onToggle={onToggleLetter} />}
       </View>
       {card.reason && <Text style={styles.reason}>{card.reason[0].toUpperCase() + card.reason.slice(1)}</Text>}
       {card.effect && <Text style={styles.effect}>{card.effect}</Text>}
@@ -73,5 +92,11 @@ const styles = StyleSheet.create({
   row: { marginTop: 6 },
   label: { fontSize: 11, fontFamily: FONTS.bodyBold, color: COLORS.textMuted, letterSpacing: 0.5 },
   text: { fontSize: 14, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: 20 },
+  cardOff: { opacity: 0.55 },
+  check: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  box: { width: 20, height: 20, borderRadius: 4, borderWidth: 1.5, borderColor: COLORS.darkGreen, alignItems: 'center', justifyContent: 'center' },
+  boxOn: { backgroundColor: COLORS.darkGreen },
+  tick: { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.cream, lineHeight: 15 },
+  checkText: { fontSize: 12, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
   more: { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.softGreen, paddingVertical: 6 },
 });

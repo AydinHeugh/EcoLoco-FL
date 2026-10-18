@@ -214,7 +214,7 @@ flowchart LR
   s_common_name -->|"resolve(name)"| s_resolve
   s_summary -->|"plant_option(name) per plant → status"| s_option
   results -->|"percent_native, percent_native_with_plan"| ui_ring
-  results -->|"getPlan([{scientific_name, plant_name}], zipCode)"| c_plan
+  results -->|"getPlan(plants, zipCode, skip)"| c_plan
   c_plan -->|"POST /plan {plants, location}"| r_plan
   flask -->|"registers"| r_plan
   r_plan -->|"build_plan(plants, plantings_checked)"| s_plan

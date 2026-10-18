@@ -91,4 +91,23 @@ def test_atlas_button_opens_in_app_browser_only_with_a_link():
 def test_results_list_has_a_remove_button_that_rebuilds_the_plan():
     text = (FRONTEND / "screens" / "AuditResultsScreen.js").read_text(encoding="utf-8")
     assert "onPress={() => removePlant(i)}" in text
-    assert "}, [scanned, attempt]);" in text
+    assert "}, [request, attempt]);" in text
+
+
+def test_ecoscan_uses_plant_cards_with_scan_all():
+    text = (FRONTEND / "screens" / "AuditScreen.js").read_text(encoding="utf-8")
+    for phrase in ("Add plant", "Scan all (", "Scan this plant", "Photos of this one plant:", "Take photo", "Upload photos"):
+        assert phrase in text
+
+
+def test_picker_shows_openai_pick_and_agreement():
+    text = (FRONTEND / "components" / "CandidatePicker.js").read_text(encoding="utf-8")
+    assert "OpenAI's pick" in text
+    assert "It's one of these:" in text
+    assert "Best guess" not in text
+
+
+def test_add_cards_can_leave_the_letter():
+    text = (FRONTEND / "components" / "PlanCard.js").read_text(encoding="utf-8")
+    assert "In my letter" in text
+    assert "skip" in (FRONTEND / "services" / "geminiService.js").read_text(encoding="utf-8")

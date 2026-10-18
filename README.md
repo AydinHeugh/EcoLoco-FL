@@ -16,7 +16,8 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 
 **You get back, for each plant:**
 - Its name and how sure PlantNet is about the match
-- When the app isn't sure, a short list of close matches to pick from ("Which one is it?"), each with its Florida status, plus a "None of these" button
+- When the app isn't sure, a short list of close matches to pick from ("Which one is it?"), each with its Florida status, a small chart of how PlantNet scored each one, OpenAI's pick with how sure it is, plus a "None of these" button. Guesses PlantNet scored under 5% are left out
+- When every close match has the same status (for example two native tickseeds), the app shows that status and "It's one of these:" with the names, instead of asking. You can still pick the exact one
 - When the photo is too unclear to match anything, "Couldn't identify this. Try a close-up of one leaf, or a flower" instead of a guess
 - Whether it's Native, Non-native, Invasive, or "Unknown: not on Florida lists"
 - Where that verdict came from: the Florida invasive species list, our list of Florida natives, or the USDA plant database. The AI never decides this; if none of them know the plant, it stays unknown
@@ -26,7 +27,7 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 - If the AI part is down, a small notice says "Extra descriptions are offline. Plant names and Florida status still work."
 
 **After you scan a whole campus (the EcoScan tab):**
-- The screen reminds you to only scan real plants growing outdoors. Every plant you scan stays in the list. Ones the app isn't sure about show the same "Which one is it?" list, and any card can be removed with ✕.
+- The screen reminds you to only scan real plants growing outdoors. Press "Add plant" for each plant, give it up to 5 photos of that one plant (take them one at a time or upload several at once), then press "Scan all" to scan every plant together, or scan one card at a time. Ones the app isn't sure about show the same "Which one is it?" list, and any card can be removed with ✕.
 - On the results screen, each plant has a Remove button for mistakes like a fake or potted plant. Removing one updates the counts, the percent, the charts, the plan and the letter.
 - Plants are grouped as native, non-native (not invasive), invasive, and unknown. Only invasive plants count as hurting wildlife.
 - How many plants are native, non-native, invasive, or unknown, and what percent of the identified ones are native
@@ -37,6 +38,7 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 - Two simple charts: plants by status now and with the plan, and how many kinds of caterpillars each plant's group feeds (from the National Wildlife Federation)
 - "Seen near you": the five plants people have photographed most within about 5 km of your school (from iNaturalist), each marked native, non-native, invasive or unknown
 - A short "Why this matters" section: four facts about native plants, birds, water and flooding, each with its source
+- An "In my letter" checkbox on each plant to add. Untick one to leave it out of the letter and the "with the plan" numbers
 - An editable letter to your principal listing the plants to remove and add, how to buy them, safety notes, the percent native now and with the plan, and sources
 
 
@@ -46,7 +48,7 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
    - Different names for the same plant (for example "Zamia pumila" and "Zamia integrifolia", both coontie) are merged first, and their scores added together.
    - If PlantNet's top score is under 0.20, or it finds no plant at all, the app says it couldn't identify the photo.
    - If PlantNet is sure (top score 0.80 or higher, and clearly ahead of the next one), its answer is used.
-   - In between, you pick from the close matches. OpenAI's image model (gpt-4o-mini) only marks its best guess in that list; it doesn't change the scores.
+   - In between, you pick from the close matches. OpenAI's image model (gpt-4o-mini) marks its pick in that list and says how sure it is; it doesn't change PlantNet's scores. Guesses PlantNet scored under 5% are dropped first.
    - If PlantNet can't be reached, OpenAI identifies the plant from the photos on its own, using the same rules.
 2. **Native or invasive.** Any name for the plant (scientific name, older name, or common name like "Florida arrowroot") is turned into one species first, so every spelling gets the same answer. Then it's checked in this order, and the first one that knows the plant wins:
    - the full official Florida Invasive Species Council (FISC) 2026 list of 179 invasive plants, which ships with the backend;

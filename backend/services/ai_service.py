@@ -18,7 +18,8 @@ def _options(ranked, location):
 def identify_plant(images, location):
     species = identify_species(images, location)
     base = {"state": species["state"], "suggested": species["suggested"], "id_source": species["source"],
-            "ai_unavailable": species.get("ai_unavailable", False)}
+            "ai_unavailable": species.get("ai_unavailable", False),
+            "suggested_confidence": species.get("suggested_confidence"), "agreed_status": None}
     if species["state"] == "unidentified":
         return {
             **base, "options": [], "message": UNIDENTIFIED_MESSAGE,
@@ -26,6 +27,9 @@ def identify_plant(images, location):
             "status_label": STATUS_LABELS["unknown"], "source": "unknown", "source_label": None, "why": None,
         }
     options = _options(species["ranked"], location)
+    statuses = {option["status"] for option in options}
+    if species["state"] == "confirm" and len(statuses) == 1 and "unknown" not in statuses:
+        base["agreed_status"] = statuses.pop()
     return {**options[0], **base, "options": options, "message": None}
 
 

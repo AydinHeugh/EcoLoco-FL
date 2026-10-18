@@ -18,7 +18,7 @@ import { useFonts } from 'expo-font';
 import { identifyPlant, userMessage } from '../services/geminiService';
 import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS } from '../theme';
 import StatusBadge from '../components/StatusBadge';
-import CandidatePicker, { NO_MATCH_TEXT, matchLabel } from '../components/CandidatePicker';
+import CandidatePicker, { AgreedStatus, NO_MATCH_TEXT, matchLabel } from '../components/CandidatePicker';
 import SourceLine from '../components/SourceLine';
 import AtlasButton from '../components/AtlasButton';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
@@ -134,6 +134,7 @@ export default function IdentificationScreen({ navigation }) {
   const [loading, setLoading]   = useState(false);
   const [result, setResult]     = useState(null);
   const [picked, setPicked]     = useState(null);
+  const [pickingOne, setPickingOne] = useState(false);
   const [error, setError]       = useState(null);
   const [photos, setPhotos]     = useState([]);
   const [place, setPlace]       = useState(null);
@@ -184,21 +185,23 @@ export default function IdentificationScreen({ navigation }) {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') { setError('Camera permission is required.'); return; }
     const res = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.8 });
-    if (!res.canceled) { setPhotos([res.assets[0]]); setResult(null); setPicked(null); setError(null); }
+    if (!res.canceled) { setPhotos(prev => [...prev, res.assets[0]].slice(0, MAX_PHOTOS)); setResult(null); setPicked(null); setError(null); }
   }
 
   async function handleUploadPhoto() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') { setError('Photo library permission is required.'); return; }
+    const room = MAX_PHOTOS - photos.length;
+    if (room <= 0) return;
     const res = await ImagePicker.launchImageLibraryAsync({
-      base64: true, quality: 0.8, allowsMultipleSelection: true, selectionLimit: MAX_PHOTOS,
+      base64: true, quality: 0.8, allowsMultipleSelection: room > 1, selectionLimit: room,
     });
-    if (!res.canceled) { setPhotos(res.assets.slice(0, MAX_PHOTOS)); setResult(null); setPicked(null); setError(null); }
+    if (!res.canceled) { setPhotos(prev => [...prev, ...res.assets].slice(0, MAX_PHOTOS)); setResult(null); setPicked(null); setError(null); }
   }
 
   async function handleIdentify() {
     setLoading(true);
-    setResult(null); setPicked(null);
+    setResult(null); setPicked(null); setPickingOne(false);
     setError(null);
     try {
       const data = await identifyPlant(photos.map(p => p.base64), zipCode);
@@ -216,7 +219,8 @@ export default function IdentificationScreen({ navigation }) {
   const narrow = width < 420;
   const canIdentify = photos.length > 0 && zipCode.length === 5 && !loading;
   const noMatch  = result && (result.state === 'unidentified' || picked === -1);
-  const choosing = result && result.state === 'confirm' && picked === null;
+  const agreed   = result && result.state === 'confirm' && picked === null && result.agreed_status && !pickingOne;
+  const choosing = result && result.state === 'confirm' && picked === null && !agreed;
   const shown    = result && !noMatch && picked !== null ? result.options[picked] : null;
 
   if (!fontsLoaded) return <View style={styles.container} />;
@@ -256,8 +260,11 @@ export default function IdentificationScreen({ navigation }) {
               <View>
                 <Image source={{ uri: photo.uri }} style={styles.uploadPreview} resizeMode="cover" />
                 <Text style={styles.photoCount}>
-                  {photos.length > 1 ? `${photos.length} photos of this plant` : 'Tip: add up to 5 photos of the same plant (leaf, flower, bark) for a surer match.'}
+                  Photos of this one plant: {photos.length} of {MAX_PHOTOS}. Add a leaf up close or a flower for a surer match.
                 </Text>
+                <TouchableOpacity onPress={() => { setPhotos([]); setResult(null); setPicked(null); }} style={styles.clearPhotos}>
+                  <Text style={styles.clearPhotosText}>Clear photos</Text>
+                </TouchableOpacity>
               </View>
             )
             : (
@@ -321,11 +328,18 @@ export default function IdentificationScreen({ navigation }) {
               </View>
             )}
 
+            {agreed && (
+              <View style={styles.agreedBox}>
+                <AgreedStatus options={result.options} onPickOne={() => setPickingOne(true)} />
+              </View>
+            )}
+
             {choosing && (
               <CandidatePicker
                 options={result.options}
                 suggested={result.suggested}
                 idSource={result.id_source}
+                suggestedConfidence={result.suggested_confidence}
                 onPick={setPicked}
                 onNone={() => setPicked(-1)}
               />
@@ -480,6 +494,8 @@ const styles = StyleSheet.create({
   resultCardNarrow: { flexDirection: 'column' },
   resultThumb: { width: 120, height: 120 },
   resultThumbNarrow: { width: '100%', height: 180 },
+  clearPhotos: { alignSelf: 'center', paddingVertical: 4 },
+  clearPhotosText: { fontSize: 12, fontFamily: FONTS.bodyBold, color: COLORS.terracotta },
   photoCount: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', marginTop: 6 },
   retakeTip: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textBody, marginTop: 8 },
   resultInfo: { flex: 1, padding: 16, justifyContent: 'center', gap: 10 },
@@ -493,6 +509,9 @@ const styles = StyleSheet.create({
   credit: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: 8, marginTop: 18, paddingVertical: 6 },
   creditLogo: { width: 102, height: 24 },
   creditText: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textMuted },
+  agreedBox: {
+    backgroundColor: COLORS.white, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, padding: 16,
+  },
   notice: {
     backgroundColor: STATUS_COLORS.invasive.bg, borderRadius: 10, borderWidth: 1,
     borderColor: COLORS.terracotta, padding: 12, marginTop: 10,

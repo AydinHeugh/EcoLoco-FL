@@ -98,7 +98,8 @@ def _nwf_effect(rec):
     return None
 
 
-def build_plan(plants, plantings_checked=True):
+def build_plan(plants, plantings_checked=True, skip=()):
+    skip = set(skip)
     base = summarize(plants)
     by_name = {rec["scientific_name"]: rec for rec in _all_entries()}
     scanned = [dict(by_name.get(p["scientific_name"], {}), scientific_name=p["scientific_name"])
@@ -133,7 +134,7 @@ def build_plan(plants, plantings_checked=True):
             "removal_safety": _fisc_by_name().get(name, {}).get("removal_safety", GENERIC_SAFETY),
             "replacement": pick["scientific_name"] if pick else None,
         })
-        if pick is not None:
+        if pick is not None and pick["scientific_name"] not in skip:
             replaced += scans[name]
             remove[-1]["effect"] = (f"Replacing it takes you from {_percent(native, known)}% "
                                     f"to {_percent(native + scans[name], known)}% native.")
@@ -151,11 +152,11 @@ def build_plan(plants, plantings_checked=True):
         before, after = _percent(native, known), _percent(native + 1, known + 1)
         effect = _nwf_effect(rec) or (f"Adding it takes you from {before}% to {after}% native." if before is not None else None)
         chosen.append(dict(rec, reason=reason, effect=effect))
-        fillers += 1
+        fillers += rec["scientific_name"] not in skip
 
     add = []
     for rec in chosen:
-        card = dict(rec, where=f"{rec['sun']}. {rec['mature_size']}.")
+        card = dict(rec, where=f"{rec['sun']}. {rec['mature_size']}.", in_letter=rec["scientific_name"] not in skip)
         if nwf := _nwf_count(rec["scientific_name"]):
             card["nwf"] = nwf
         if card["effect"] is None:

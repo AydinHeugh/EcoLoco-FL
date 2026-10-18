@@ -100,7 +100,10 @@ def plan():
         return jsonify({"error": "plants and location are required"}), 400
     if not is_florida_zip(location):
         return jsonify({"error": FLORIDA_ONLY}), 400
-    return jsonify({"result": build_plan(plants, plantings_checked(location))})
+    skip = data.get("skip") or []
+    if not isinstance(skip, list) or not all(isinstance(name, str) for name in skip):
+        return jsonify({"error": "skip must be a list of scientific names"}), 400
+    return jsonify({"result": build_plan(plants, plantings_checked(location), skip)})
 
 
 NOT_FOUND = "We couldn't find that place. Try your school's ZIP code."
@@ -180,6 +183,7 @@ def letter():
         return jsonify({"error": FLORIDA_ONLY}), 400
     if not _valid_plan(plan):
         return jsonify({"error": BAD_PLAN}), 400
+    plan = dict(plan, add=[card for card in plan["add"] if card.get("in_letter") is not False])
     result, ai_unavailable = generate_letter(plan, zip_code)
     return jsonify({"result": result, "ai_unavailable": ai_unavailable})
 
