@@ -315,7 +315,9 @@
           "why": "A low, spreading groundcover for the same sunny ground."
         }
       ],
-      "verified": false
+      "verified": true,
+      "checked_by": "Hayne",
+      "checked_on": "2026-10-17"
     },
     {
       "scientific_name": "Psychotria nervosa",
