@@ -60,7 +60,7 @@ This is our entry for the 2026 Congressional App Challenge (FL-22). It started a
 
 The invasive list is generated from the official FISC PDF by a script in `backend/scripts/`. The 22 natives and the "why it matters" lines are our own and still need checking against UF/IFAS before the demo.
 
-**Before a plant can be recommended,** a teammate checks it in the USF Atlas of Florida Plants (https://florida.plantatlas.usf.edu) to make sure it's native to Palm Beach County, then changes `"verified": false` to `true` for that plant in `backend/data/fl_recommendations.json`. Until then the app shows "No plants are ready to recommend yet." The "replaces" pairings in that file are our own suggestions and should be reviewed too.
+**Before a plant can be recommended,** a teammate checks it in the USF Atlas of Florida Plants (https://florida.plantatlas.usf.edu) to make sure it's native to Palm Beach County, checks its facts and its "replaces" pairing, then changes `"verified": false` to `true` for that plant in `backend/data/fl_recommendations.json`, adding who checked it and when. 30 of the 31 plants have been checked this way (see `docs/plant-checklist.md`). Sunshine mimosa is on hold, so the app won't suggest it yet.
 
 ## Finding your way around
 
@@ -69,7 +69,7 @@ The invasive list is generated from the official FISC PDF by a script in `backen
 | `frontend/` | The phone app. `screens/` has one file per screen, `components/` has pieces shared between screens, `navigation/` sets up the tabs, and `services/` has the code that sends requests to the backend. All colors and fonts are in `theme.js`, so a new look only needs that one file. |
 | `backend/` | The Python server the app talks to. `app.py` lists the web addresses the app can call. `services/` does the actual work (identifying, looking up Florida status, counting, building the plan, writing the letter). `data/` holds the Florida plant lists: the invasive list, our natives list, the plants we recommend with their sources, and the National Wildlife Federation's list of the plant groups that feed the most caterpillars. `scripts/` has the tool that rebuilds the invasive list from the official FISC PDF. `tests/` checks it all works. |
 | `assets/` | Images used in the app, the app icon and splash screen, and the official "Powered by Pl@ntNet" logo shown under identification results. |
-| `docs/` | The interactive architecture map (`architecture.html`), the script that keeps it matched to the code, and our written plans (`superpowers/plans/`). |
+| `docs/` | The interactive architecture map (`architecture.html`), the script that keeps it matched to the code, our written plans (`superpowers/plans/`), and the plant checklist (`plant-checklist.md`, plus `plant-checklist.xlsx` to fill in with Excel and `plant-checklist.csv` for other spreadsheet apps) for checking each recommended plant before the app can suggest it. |
 
 Files in the top folder:
 - `App.js` and `index.js` start the app. `app.json` holds app settings like the name, icon, and camera permission text.
@@ -114,4 +114,4 @@ You'll need Node.js, Python 3, an OpenAI API key, and a free PlantNet API key fr
 ## Where things stand
 
 - Done: Florida plant lists drive the native/invasive verdict, every verdict comes with its source and a "why it matters" line, plants are identified by PlantNet with OpenAI as a backup, the full FISC invasive list and a USDA check are in place, scans keep working when OpenAI is down, unsure matches are confirmed by the user instead of guessed, every fact in the app shows its source, all text is written in plain language and fits a phone screen, results credit Pl@ntNet, and the backend has automated tests.
-- Next: check each recommended plant in the USF Atlas and mark it verified, double-check the plant lists against official sources, and put the backend online so the app works away from our computers.
+- Next: decide on sunshine mimosa, double-check the plant lists against official sources, and put the backend online so the app works away from our computers.

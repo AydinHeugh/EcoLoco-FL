@@ -60,7 +60,8 @@ def test_adds_only_from_our_data(verified):
     assert len(plan["add"]) <= 5
 
 
-def test_unverified_plants_are_never_recommended():
+def test_unverified_plants_are_never_recommended(monkeypatch):
+    monkeypatch.setattr(plan_service, "_recommendations", lambda: [dict(e, verified=False) for e in ALL])
     plan = build_plan([PEPPER])
     assert plan["add"] == []
     assert plan["remove"][0]["replacement"] is None
@@ -124,7 +125,8 @@ def test_cards_carry_nwf_group_counts(verified, monkeypatch):
     assert plan["remove"][0]["nwf"] == {"group": "acacias", "caterpillar_species": 29}
 
 
-def test_unreplaced_invasive_does_not_count_as_native():
+def test_unreplaced_invasive_does_not_count_as_native(monkeypatch):
+    monkeypatch.setattr(plan_service, "_recommendations", lambda: [dict(e, verified=False) for e in ALL])
     plan = build_plan([PEPPER, dict(PEPPER), {"scientific_name": "Zamia integrifolia"}])
     assert plan["add"] == []
     assert plan["summary"]["percent_native"] == 33

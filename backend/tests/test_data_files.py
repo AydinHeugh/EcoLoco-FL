@@ -77,7 +77,11 @@ def test_limits_and_allowed_values(entry):
 
 @pytest.mark.parametrize("entry", RECS, ids=lambda e: e["common_name"])
 def test_every_entry_has_verified_flag(entry):
-    assert entry["verified"] is False
+    assert isinstance(entry["verified"], bool)
+    if entry["verified"]:
+        assert entry["checked_by"] and re.fullmatch(r"\d{4}-\d{2}-\d{2}", entry["checked_on"])
+    else:
+        assert "checked_by" not in entry and "checked_on" not in entry
 
 
 @pytest.mark.parametrize("entry", RECS, ids=lambda e: e["common_name"])
