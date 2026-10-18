@@ -5,8 +5,8 @@ import { EASE_OUT, useReduceMotion } from '../motion';
 import { useInView } from './Reveal';
 
 const DOTS = 40;
-const FILL_MS = 400;
-const PLAN_MS = 300;
+const FILL_MS = 1100;
+const PLAN_MS = 700;
 
 function useRingProgress(play, delay) {
   const reduce = useReduceMotion();

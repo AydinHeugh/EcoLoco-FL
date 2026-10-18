@@ -138,7 +138,11 @@ def plan():
     site = data.get("site")
     if site is not None and not isinstance(site, dict):
         return jsonify({"error": BAD_SITE}), 400
-    return jsonify({"result": build_plan(plants, plantings_checked(location), skip, site)})
+    show_all = data.get("show_all", False)
+    extras = data.get("letter_extras") or []
+    if not isinstance(show_all, bool) or not isinstance(extras, list) or not all(isinstance(n, str) for n in extras):
+        return jsonify({"error": "show_all must be true or false and letter_extras a list of scientific names"}), 400
+    return jsonify({"result": build_plan(plants, plantings_checked(location), skip, site, show_all, extras)})
 
 
 NOT_FOUND = "We couldn't find that place. Try your school's ZIP code."

@@ -54,6 +54,7 @@ function LetterCheck({ checked, onToggle }) {
       disabled={!onToggle}
       accessibilityRole="checkbox"
       accessibilityState={{ checked, disabled: !onToggle }}
+      aria-checked={checked}
       hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
     >
       <Animated.View style={[styles.box, checked && styles.boxOn, { transform: [{ scale }] }]}>

@@ -213,3 +213,20 @@ def test_results_show_kinds_and_every_plant():
     text = (FRONTEND / "screens" / "AuditResultsScreen.js").read_text(encoding="utf-8")
     assert "summary.percent_native_kinds" in text and "summary.percent_native}" in text
     assert 'title="Kinds of plants"' in text and 'title="Every plant"' in text
+
+
+def test_results_can_show_every_plant_that_fits():
+    text = (FRONTEND / "screens" / "AuditResultsScreen.js").read_text(encoding="utf-8")
+    assert "Show all plants that fit (" in text and "Show fewer plants" in text
+    assert "The extra plants start outside your letter. Tick one to add it." in text
+
+
+def test_recommend_uses_the_last_place_from_other_tabs():
+    assert "lastPlace()" in (FRONTEND / "screens" / "RecommendationScreen.js").read_text(encoding="utf-8")
+    for screen in ("IdentificationScreen.js", "AuditScreen.js"):
+        assert "rememberPlace(" in (FRONTEND / "screens" / screen).read_text(encoding="utf-8")
+
+
+def test_quick_loads_do_not_flash():
+    for screen in ("RecommendationScreen.js", "AuditResultsScreen.js"):
+        assert "useDelayedFlag(" in (FRONTEND / "screens" / screen).read_text(encoding="utf-8")

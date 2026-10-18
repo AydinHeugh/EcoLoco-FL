@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useCountUp } from './CountUp';
+import { BAR_MS, COUNT_STAGGER } from '../motion';
 import { useInView } from './Reveal';
 import { COLORS, STATUS_COLORS, FONTS, TYPE } from '../theme';
 import SourceLine from './SourceLine';
@@ -12,7 +13,7 @@ const NWF_SOURCE = {
 
 function Row({ item, max, order }) {
   const ref = useRef(null);
-  const shown = useCountUp(item.count, useInView(ref), order * 80);
+  const shown = useCountUp(item.count, useInView(ref), order * COUNT_STAGGER, BAR_MS);
   const color = item.kind === 'add' ? STATUS_COLORS.native.color : STATUS_COLORS.invasive.color;
   return (
     <View ref={ref} collapsable={false} style={styles.row}>

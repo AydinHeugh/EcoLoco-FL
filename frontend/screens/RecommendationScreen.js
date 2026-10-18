@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
   ActivityIndicator, useWindowDimensions, Linking,
@@ -12,6 +12,8 @@ import ScreenHeader from '../components/ScreenHeader';
 import Reveal, { RevealProvider, useRevealScroll } from '../components/Reveal';
 import { PHOTOS } from '../photos';
 import LocationPicker from '../components/LocationPicker';
+import { rememberPlace, lastPlace } from '../lastPlace';
+import { useDelayedFlag } from '../motion';
 
 const NURSERY_URL = 'https://plantrealflorida.org';
 
@@ -19,14 +21,17 @@ export default function RecommendationScreen(props) {
   return <RevealProvider><Recommendations {...props} /></RevealProvider>;
 }
 
-function Recommendations({ route }) {
+function Recommendations({ route, navigation }) {
   const onScroll = useRevealScroll();
   const prefillZip = route?.params?.prefillZip ?? '';
+  const prefillAt = route?.params?.at;
+  const latest = useRef(0);
   const [place,   setPlace]   = useState(prefillZip ? { zip: prefillZip } : null);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
   const [error,   setError]   = useState(null);
   const [site,    setSite]    = useState(ANY_SITE);
+  const slow = useDelayedFlag(loading);
 
   const { width } = useWindowDimensions();
   const maxWidth  = Math.min(width, 960);
@@ -38,7 +43,15 @@ function Recommendations({ route }) {
       setPlace({ zip: prefillZip });
       handleRecommend(prefillZip);
     }
-  }, [prefillZip]);
+  }, [prefillZip, prefillAt]);
+
+  useEffect(() => navigation?.addListener?.('focus', () => {
+    const known = lastPlace();
+    if (known && !place && !loading && !results) {
+      setPlace(known);
+      handleRecommend(known.zip);
+    }
+  }), [navigation, place, loading, results]);
 
   async function handleRecommend(zip, siteChoice = site) {
     const target = zip ?? place?.zip ?? '';
@@ -48,13 +61,16 @@ function Recommendations({ route }) {
       return;
     }
     setLoading(true);
+    const id = ++latest.current;
     try {
       const data = await getPlantRecommendations(target, siteChoice);
+      if (id !== latest.current) return;
       setResults({ cards: data.result, plantingsChecked: data.plantings_checked !== false, hidden: data.hidden_by_site ?? 0 });
     } catch (err) {
+      if (id !== latest.current) return;
       setError(userMessage(err, 'Could not get recommendations. Check your connection and try again.'));
     } finally {
-      setLoading(false);
+      if (id === latest.current) setLoading(false);
     }
   }
 
@@ -74,15 +90,15 @@ function Recommendations({ route }) {
         <View style={styles.headerGap} />
 
         <View style={styles.inputSection}>
-          <LocationPicker place={place} onChange={found => { setPlace(found); handleRecommend(found.zip); }} />
-          {loading && <ActivityIndicator color={COLORS.softGreen} size="small" />}
+          <LocationPicker place={place} onChange={found => { setPlace(found); rememberPlace(found); handleRecommend(found.zip); }} />
+          {slow && <ActivityIndicator color={COLORS.softGreen} size="small" />}
           {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
 
         {results && (
           <View style={styles.resultsSection}>
             {results.plantingsChecked && (
-              <SiteFilters site={site} hidden={results.hidden} disabled={loading}
+              <SiteFilters site={site} hidden={results.hidden} disabled={slow}
                 onChange={next => { setSite(next); handleRecommend(place?.zip, next); }} />
             )}
             {!results.plantingsChecked

@@ -166,11 +166,12 @@
       "how": [
         "Opens on a big photo (`PHOTOS.home` from `frontend/photos.js`) with the name, \"Find out which plants on your campus help Florida wildlife, and which ones hurt it.\" in a large serif heading, and a \"Start a campus scan\" button.",
         "The photo moves a little slower than the page as you scroll (parallax); with reduce motion turned on it stays still.",
-        "Then six sections in different styles rather than identical cards: Scan Your Campus, Write to Your Principal, Identify a Plant, Plant Florida Natives (checked for Palm Beach County), Why It Matters (on a photo), How We Know (on dark green).",
+        "Then six sections in different styles rather than identical cards: Scan Your Campus, Write to Your Principal, Identify a Plant, Plant Florida Natives (checked for Palm Beach County), Why It Matters (on a photo), How We Know (on dark green). Each section comes into focus as you scroll to it: the picture fades in and grows slightly, then the text rises in.",
         "Each links to its tab; the oak fact (\"Oaks feed 395 kinds of caterpillars in South Florida\") shows its National Wildlife Federation source. How We Know names the official invasive list, USDA and the USF Atlas.",
         "Write to Your Principal shows `LetterDemo` and Identify a Plant shows `IdentifyDemo`, two short looping animations; How We Know shows the three data sources with their numbers (179 FISC invasives, 5,322 USDA Florida plants, 30 plants checked in the USF Atlas).",
         "Colors and fonts come from `frontend/theme.js`.",
-        "How We Know's three numbers count up when they scroll into view (`CountUp`)."
+        "How We Know's three numbers count up when they scroll into view (`CountUp`).",
+        "The oak fact's 395 counts up when it scrolls into view."
       ]
     },
     {
@@ -216,7 +217,9 @@
         "Outside Palm Beach County (the server sends `plantings_checked: false`), shows \"Planting recommendations are only checked for Palm Beach County so far.\" instead of cards.",
         "If no plants are verified yet, says \"No plants are ready to recommend yet. Our team is still checking each one.\"",
         "Links to plantrealflorida.org to find a native nursery.",
-        "Errors (bad ZIP, ZIP outside Florida, no connection) show as text, not pop-ups."
+        "Errors (bad ZIP, ZIP outside Florida, no connection) show as text, not pop-ups.",
+        "When you open the tab with no results yet, it uses the last location you set on Identify or EcoScan (`lastPlace()`) and loads the plants at once. The Identify button does the same every time it is pressed.",
+        "Quick loads show nothing: the spinner and the faded site choices only appear if loading takes longer than 0.4 seconds, and an older answer never replaces a newer one."
       ]
     },
     {
@@ -256,8 +259,8 @@
       "how": [
         "Starts with a `ScreenHeader` photo banner titled \"Your plan\", with \"← Back to EcoScan\" in its corner.",
         "Receives `plants[]` and `zipCode` from AuditScreen.",
-        "Calls `getPlan(plants, zipCode, skip)` for the plants it has and the Add plants you unticked; the plan includes the summary.",
-        "Each plant under What your campus supports now has a Remove button (for a fake or potted plant scanned by mistake). Removing one calls `getPlan()` again, so the counts, percent, charts, plan and letter all update; it shows \"Updating your plan…\", and if that fails, the error with Try again.",
+        "Calls `getPlan(plants, zipCode, skip, site, showAll, extras)` for the plants it has, the Add plants you unticked, your site choices, and whether to show every fitting plant; the plan includes the summary.",
+        "Each plant under What your campus supports now has a Remove button (for a fake or potted plant scanned by mistake). Removing one calls `getPlan()` again, so the counts, percent, charts, plan and letter all update; it shows \"Updating your plan…\" only if the update takes longer than 0.4 seconds, and if that fails, the error with Try again.",
         "Your plan: a Remove `PlanCard` for each invasive (why, safety, replacement), then Add cards, then a link to plantrealflorida.org. Cards fade up one after another as they scroll into view (`Reveal`). Outside Palm Beach County the Remove cards stay, without a replacement, and the Add cards are replaced by \"Planting recommendations are only checked for Palm Beach County so far.\"",
         "Each Add card has an \"In my letter\" checkbox. Unticking one asks for the plan again with it skipped: the card stays, dimmed, and leaves the letter and the \"with the plan\" numbers.",
         "What your campus supports now: every plant with its status and one sourced line, or \"We don't have wildlife info for this plant yet\".",
@@ -265,7 +268,8 @@
         "Charts: `StatusBars` (now vs with the plan) and `CaterpillarBars` (NWF group counts per card).",
         "Seen near you: if the scan has a location, the top 5 plants people photographed within about 5 km (iNaturalist), each with its status.",
         "Why this matters: up to 4 short lines from `why_this_matters.json`, each with its source.",
-        "`LetterGenerator` writes the letter from the plan; it starts fresh whenever the plants or ticks change. Errors show as text."
+        "`LetterGenerator` writes the letter from the plan; it starts fresh whenever the plants or ticks change. Errors show as text.",
+        "Below the Add cards, \"Show all plants that fit (N more)\" asks for every fitting plant; the extra ones start unticked (\"The extra plants start outside your letter. Tick one to add it.\"), and ticking one adds it to `extras`. \"Show fewer plants\" goes back to 5."
       ]
     },
     {
@@ -836,7 +840,7 @@
       "how": [
         "Draws 40 dots in a circle with plain Views (no chart library), with an optional title and caption.",
         "Waits until it scrolls into view (`useInView`), then the number counts up as the white dots fill, the plan's accent-colored dots fill after, and the number settles with a small bounce. The leading dot is larger while the ring fills.",
-        "Each step is 400 ms or less; with reduce motion turned on it shows the final ring at once.",
+        "The white dots take 1.1 s and the plan's dots 0.7 s; with reduce motion turned on it shows the final ring at once.",
         "Under the ring: \"With the plan: Y%\"."
       ]
     },
@@ -906,12 +910,12 @@
         "Each distinct invasive becomes a Remove card with its `why`, removal safety (or \"Ask your grounds crew how to remove it safely.\"), a replacement, and (only when there is one) \"Replacing it takes you from X% to Y% native\", counting every scan of that plant.",
         "Finds gaps on campus (invasive plants never count toward them): none of NWF's important plant groups, nothing caterpillars eat, no fruit, months with nothing blooming.",
         "Keeps verified plants from `fl_recommendations.json` that fit the site (`fits_site`), then ranks them: gaps filled + 2 if it replaces an invasive found + 0.5 if its group is on the NWF list; easy plants first on ties.",
-        "Picks one replacement per invasive, then gap fillers, up to 5 Add cards; the first 3 have at most 1 tree and at least 1 easy plant.",
+        "Picks one replacement per invasive, then gap fillers, up to 5 Add cards; the first 3 have at most 1 tree and at least 1 easy plant. A plant passed over by that rule can still fill a later spot. `more_available` says how many more fitting plants there are.",
         "Cards whose plant group is on the NWF list carry `nwf: {group, caterpillar_species}` for the chart.",
         "Add cards say why they were picked and their effect: \"Oaks feed 395 kinds of caterpillars here.\" for NWF groups, otherwise the percent-native change. Counts are never added up.",
         "With `plantings_checked=False` no plant is recommended: Remove cards keep their why and safety but get no replacement or percent change, and there are no Add cards.",
-        "`skip` lists Add plants the user unticked: they stay in `add` with `in_letter: false` but don't count in the \"with the plan\" numbers, and a Remove card whose replacement is skipped loses its percent change.",
-        "Returns `{remove, add, gaps, summary, why_this_matters, plantings_checked, site, hidden_by_site}`; every Add card has `in_letter`.",
+        "`skip` lists Add plants the user unticked: they stay in `add` with `in_letter: false` but don't count in the \"with the plan\" numbers, and a Remove card whose replacement is skipped loses its percent change. With `show_all`, every fitting plant is added; the ones past the first 5 have `extra: true` and stay out of the letter and the numbers unless they are in `letter_extras`.",
+        "Returns `{remove, add, gaps, summary, why_this_matters, plantings_checked, site, hidden_by_site, more_available}`; every Add card has `in_letter` and `extra`.",
         "Looks the scanned plants up once and reuses that for the final summary through `with_plan()`."
       ]
     },
@@ -926,9 +930,9 @@
       "row": 4.8,
       "what": "API endpoint for the campus plan.",
       "how": [
-        "Reads `plants` (a list, may be empty), `location`, an optional `skip` list of scientific names and an optional `site` object; 400 if missing, if `skip` isn't a list of names, or if `site` isn't an object.",
+        "Reads `plants` (a list, may be empty), `location`, an optional `skip` list of scientific names, an optional `site` object, an optional `show_all` (true or false) and an optional `letter_extras` list of names; 400 if any of them has the wrong type.",
         "ZIP codes outside Florida (32004–34997) get \"EcoLoco's plant lists cover Florida only. Enter a Florida ZIP code.\"",
-        "Returns `{result: build_plan(plants, plantings_checked(location), skip, site)}`: scanning and invasive checks work anywhere in Florida; Add cards only for Palm Beach County."
+        "Returns `{result: build_plan(plants, plantings_checked(location), skip, site, show_all, letter_extras)}`: scanning and invasive checks work anywhere in Florida; Add cards only for Palm Beach County."
       ]
     },
     {
@@ -1681,9 +1685,10 @@
       "row": 1,
       "what": "Shared animation settings and the result haptics.",
       "how": [
-        "`DURATION` (300 ms) is the length used by every animation; nothing runs longer than 400 ms.",
+        "`DURATION` (300 ms) is the length of quick UI motion. Count-ups take `COUNT_MS` (1.1 s), caterpillar bars `BAR_MS` (1.4 s), Home sections `FOCUS_MS` (0.55 s), and numbers in a row start `COUNT_STAGGER` (0.22 s) apart.",
         "`useReduceMotion()` reads the phone's reduce-motion setting, so animations can switch off.",
-        "`feelResult(status)` plays a light tap for a result, and a warning buzz when the plant is invasive (expo-haptics)."
+        "`feelResult(status)` plays a light tap for a result, and a warning buzz when the plant is invasive (expo-haptics).",
+        "`useDelayedFlag(flag)` turns true only after a flag has been true for 0.4 seconds, so quick loads don't flash a loading state."
       ]
     },
     {
@@ -1773,9 +1778,24 @@
       "row": 7,
       "what": "A number that counts up from 0 when it scrolls into view.",
       "how": [
-        "Waits for `useInView`, then counts to the number over 400 ms and eases to a stop; numbers like \"5,322\" keep their comma.",
+        "Waits for `useInView`, then counts to the number over `COUNT_MS` and eases to a stop; numbers like \"5,322\" keep their comma.",
         "`useCountUp()` is the same count on its own, used by the caterpillar bars so the bar grows with its number.",
         "With reduce motion turned on it shows the number at once."
+      ]
+    },
+    {
+      "id": "ui_lastplace",
+      "label": "lastPlace.js",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/lastPlace.js",
+      "symbol": "export function lastPlace",
+      "col": 3,
+      "row": 8,
+      "what": "Remembers the last location set on Identify or EcoScan while the app is open, so Recommend can use it.",
+      "how": [
+        "Kept in memory only; it is never saved and is gone when the app closes.",
+        "`rememberPlace(place)` stores it; `lastPlace()` reads it."
       ]
     }
   ],
@@ -2064,12 +2084,12 @@
     {
       "from": "results",
       "to": "c_plan",
-      "label": "getPlan(plants, zipCode, skip)"
+      "label": "getPlan(plants, zipCode, skip, site, showAll, extras)"
     },
     {
       "from": "c_plan",
       "to": "r_plan",
-      "label": "POST /plan {plants, location}",
+      "label": "POST /plan {plants, location, skip, site, show_all, letter_extras}",
       "detail": "Returns {result: remove, add, gaps, summary}."
     },
     {
@@ -2542,6 +2562,21 @@
       "from": "ui_countup",
       "to": "ui_reveal",
       "label": "useInView"
+    },
+    {
+      "from": "ident",
+      "to": "ui_lastplace",
+      "label": "rememberPlace(place)"
+    },
+    {
+      "from": "audit",
+      "to": "ui_lastplace",
+      "label": "rememberPlace(place)"
+    },
+    {
+      "from": "rec",
+      "to": "ui_lastplace",
+      "label": "lastPlace()"
     }
   ]
 }</script>

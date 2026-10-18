@@ -14,6 +14,7 @@ import OfflineNotice, { reportAi } from '../components/OfflineNotice';
 import { useProgressText } from '../components/ProgressText';
 import { DURATION, EASE_OUT, useReduceMotion } from '../motion';
 import LocationPicker from '../components/LocationPicker';
+import { rememberPlace } from '../lastPlace';
 import NamePicker from '../components/NamePicker';
 import PhotoStrip from '../components/PhotoStrip';
 import ScreenHeader from '../components/ScreenHeader';
@@ -171,7 +172,7 @@ export default function AuditScreen({ navigation }) {
   const [message, setMessage] = useState(null);
 
   useEffect(() => { _savedPlants = plants; }, [plants]);
-  useEffect(() => { _savedPlace = place; }, [place]);
+  useEffect(() => { _savedPlace = place; rememberPlace(place); }, [place]);
   useEffect(() => navigation.addListener('focus', () => {
     setPlants(prev => prev.filter(p => p.phase === 'scanning' || _savedPlants.some(s => s._id === p._id)));
   }), [navigation]);

@@ -29,6 +29,7 @@ import AtlasButton from '../components/AtlasButton';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
 import { useProgressText } from '../components/ProgressText';
 import LocationPicker from '../components/LocationPicker';
+import { rememberPlace } from '../lastPlace';
 
 
 const MAX_PHOTOS = 5;
@@ -286,7 +287,7 @@ export default function IdentificationScreen({ navigation }) {
 
         {/* ── ZIP code ── */}
         <View style={styles.zipRow}>
-          <LocationPicker place={place} onChange={setPlace} />
+          <LocationPicker place={place} onChange={found => { setPlace(found); rememberPlace(found); }} />
         </View>
 
         {/* ── Identify button ── */}
@@ -391,7 +392,7 @@ export default function IdentificationScreen({ navigation }) {
             {zipCode?.length === 5 && (
               <TouchableOpacity
                 style={styles.recBtn}
-                onPress={() => navigation.navigate('Recommend', { prefillZip: zipCode })}
+                onPress={() => navigation.navigate('Recommend', { prefillZip: zipCode, at: Date.now() })}
               >
                 <Text style={styles.recBtnText}>Get native plant recommendations for {zipCode}  →</Text>
               </TouchableOpacity>

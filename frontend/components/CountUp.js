@@ -1,11 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Text, View } from 'react-native';
-import { EASE_OUT, useReduceMotion } from '../motion';
+import { COUNT_MS, EASE_OUT, useReduceMotion } from '../motion';
 import { useInView } from './Reveal';
 
-const COUNT_MS = 400;
-
-export function useCountUp(target, play, delay = 0) {
+export function useCountUp(target, play, delay = 0, duration = COUNT_MS) {
   const reduce = useReduceMotion();
   const progress = useRef(new Animated.Value(0)).current;
   const [shown, setShown] = useState(0);
@@ -15,7 +13,7 @@ export function useCountUp(target, play, delay = 0) {
     if (!play) return undefined;
     progress.setValue(0);
     const id = progress.addListener(({ value }) => setShown(Math.round(value * target)));
-    Animated.timing(progress, { toValue: 1, duration: COUNT_MS, delay, easing: EASE_OUT, useNativeDriver: false }).start();
+    Animated.timing(progress, { toValue: 1, duration, delay, easing: EASE_OUT, useNativeDriver: false }).start();
     return () => progress.removeListener(id);
   }, [target, play, reduce]);
 

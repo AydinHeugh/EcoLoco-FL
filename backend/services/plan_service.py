@@ -155,7 +155,7 @@ def _nwf_effect(rec):
     return None
 
 
-def build_plan(plants, plantings_checked=True, skip=(), site=None):
+def build_plan(plants, plantings_checked=True, skip=(), site=None, show_all=False, letter_extras=()):
     skip = set(skip)
     site = clean_site(site)
     base = summarize(plants)
@@ -201,23 +201,28 @@ def build_plan(plants, plantings_checked=True, skip=(), site=None):
         if nwf := _nwf_count(name):
             remove[-1]["nwf"] = nwf
 
-    fillers = 0
-    for rec in ranked:
-        if len(chosen) >= MAX_ADDS:
-            break
+    fillers, more = 0, set()
+    for rec in ranked + ranked:
         if any(c["scientific_name"] == rec["scientific_name"] for c in chosen) or not _allowed(rec, chosen):
+            continue
+        extra = len(chosen) >= MAX_ADDS
+        if extra and not show_all:
+            more.add(rec["scientific_name"])
             continue
         fills = _fills(rec, gaps, missing)
         reason = f"fills a gap: {GAP_WORDS[fills[0]]}" if fills else "another good native for your campus"
         before, after = _percent(native, known), _percent(native + 1, known + 1)
         effect = _nwf_effect(rec) or (f"Adding it takes you from {before}% to {after}% native." if before is not None else None)
-        chosen.append(dict(rec, reason=reason, effect=effect))
+        chosen.append(dict(rec, reason=reason, effect=effect, extra=extra))
+        if extra and rec["scientific_name"] not in letter_extras:
+            skip.add(rec["scientific_name"])
         fillers += rec["scientific_name"] not in skip
 
     add = []
     added_kinds = [c["scientific_name"] for c in chosen if c["scientific_name"] not in skip]
     for rec in chosen:
         card = dict(rec, where=f"{rec['sun']}. {rec['mature_size']}.", in_letter=rec["scientific_name"] not in skip)
+        card.setdefault("extra", False)
         if nwf := _nwf_count(rec["scientific_name"]):
             card["nwf"] = nwf
         if card["effect"] is None:
@@ -227,4 +232,4 @@ def build_plan(plants, plantings_checked=True, skip=(), site=None):
     summary = with_plan(base, fillers, replaced, added_kinds, removed_kinds)
     return {"remove": remove, "add": add, "gaps": sorted(gaps), "summary": summary,
             "why_this_matters": _load("why_this_matters.json")["lines"], "plantings_checked": plantings_checked,
-            "site": site, "hidden_by_site": len(verified) - len(recs)}
+            "site": site, "hidden_by_site": len(verified) - len(recs), "more_available": len(more)}

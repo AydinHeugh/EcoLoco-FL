@@ -13,15 +13,17 @@ import { COLORS, FONTS, FONT_ASSETS, TYPE, LINE } from '../theme'
 import SourceLine from '../components/SourceLine'
 import PhotoSlot from '../components/PhotoSlot'
 import CountUp from '../components/CountUp'
-import { RevealProvider, useRevealScroll } from '../components/Reveal'
+import Reveal, { RevealProvider, useRevealScroll, useInView } from '../components/Reveal'
+import { useCountUp } from '../components/CountUp'
 import { IdentifyDemo, LetterDemo } from '../components/HomeDemos'
 import { PHOTOS } from '../photos'
-import { useReduceMotion } from '../motion'
+import { COUNT_STAGGER, FOCUS_MS, useReduceMotion } from '../motion'
 
 const LOGO         = require('../../assets/EcoLoco_logo.png')
 const IMG_SCANNING = require('../../assets/EcoLoco_Scanning_Plant.png')
 const HERO_HEIGHT  = 380
 const PARALLAX     = 0.35
+const OAK_KINDS    = 395
 
 const SOURCES = [
   { count: '179', label: "invasive plants on Florida's official 2026 list (FISC)" },
@@ -50,15 +52,32 @@ function SectionLink({ label, onPress, onDark }) {
   )
 }
 
+function OakFact() {
+  const ref = useRef(null)
+  const kinds = useCountUp(OAK_KINDS, useInView(ref, 120))
+  const sentence = `Oaks feed ${OAK_KINDS} kinds of caterpillars in South Florida. Those caterpillars feed the birds that live here.`
+  return (
+    <View ref={ref} collapsable={false}>
+      <Text style={styles.whyBody} accessibilityLabel={sentence}>
+        Oaks feed <Text style={styles.whyNumber}>{kinds}</Text> kinds of caterpillars in South Florida. Those caterpillars feed the birds that live here.
+      </Text>
+    </View>
+  )
+}
+
 function Feature({ visual, heading, body, linkText, onLinkPress, reverse, wide, visualWidth = '46%' }) {
   const text = (
-    <View style={[styles.featureText, wide && styles.featureTextWide]}>
+    <Reveal index={1} duration={FOCUS_MS} distance={24} style={[styles.featureText, wide && styles.featureTextWide]}>
       <Text style={styles.featureHeading} accessibilityRole="header">{heading}</Text>
       <Text style={styles.featureBody}>{body}</Text>
       {linkText && <SectionLink label={linkText} onPress={onLinkPress} />}
-    </View>
+    </Reveal>
   )
-  const art = <View style={wide ? { width: visualWidth } : styles.visualStacked}>{visual}</View>
+  const art = (
+    <Reveal duration={FOCUS_MS} scaleFrom={0.94} distance={24} style={wide ? { width: visualWidth } : styles.visualStacked}>
+      {visual}
+    </Reveal>
+  )
   if (!wide) return <View style={styles.featureStack}>{art}{text}</View>
   return <View style={styles.featureRow}>{reverse ? <>{text}{art}</> : <>{art}{text}</>}</View>
 }
@@ -168,7 +187,7 @@ function Home({ navigation }) {
         <View style={styles.whyScrim} />
         <View style={[styles.inner, styles.whyInner, { width: maxWidth }]}>
           <Text style={styles.whyHeading} accessibilityRole="header">Why It Matters</Text>
-          <Text style={styles.whyBody}>Oaks feed 395 kinds of caterpillars in South Florida. Those caterpillars feed the birds that live here.</Text>
+          <OakFact />
           <SourceLine onDark source={{ name: 'National Wildlife Federation', url: 'https://www.nwf.org/-/media/Documents/PDFs/Garden-for-Wildlife/Keystone-Plants/NWF-GFW-keystone-plant-list-ecoregion-15-tropical-wet-forests.pdf' }} />
         </View>
       </View>
@@ -180,7 +199,7 @@ function Home({ navigation }) {
           <View style={[styles.sources, wide && styles.sourcesWide]} accessible accessibilityLabel={SOURCES.map(s => `${s.count} ${s.label}`).join('. ')}>
             {SOURCES.map((source, i) => (
               <View key={source.count} style={[styles.sourceItem, wide && styles.sourceItemWide]}>
-                <CountUp value={source.count} style={styles.sourceCount} delay={i * 80} />
+                <CountUp value={source.count} style={styles.sourceCount} delay={i * COUNT_STAGGER} />
                 <Text style={styles.sourceLabel}>{source.label}</Text>
               </View>
             ))}
@@ -235,6 +254,7 @@ const styles = StyleSheet.create({
   whyInner: { paddingHorizontal: 20, paddingVertical: 36, gap: 12 },
   whyHeading: { fontSize: TYPE.lead, fontFamily: FONTS.bodyBold, color: COLORS.onDarkMuted },
   whyBody: { fontSize: TYPE.h2, lineHeight: LINE.h2, fontFamily: FONTS.headingItalic, color: COLORS.onDark, maxWidth: 640 },
+  whyNumber: { fontFamily: FONTS.headingBlack, color: COLORS.accentOnDark, fontVariant: ['tabular-nums'] },
 
   knowBand: { width: '100%', backgroundColor: COLORS.darkGreen, alignItems: 'center' },
   knowInner: { paddingHorizontal: 20, paddingVertical: 40, gap: 14 },

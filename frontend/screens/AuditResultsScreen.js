@@ -10,6 +10,7 @@ import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS, TYPE, LINE } from '../theme'
 import StatusBadge from '../components/StatusBadge';
 import PercentRing from '../components/PercentRing';
 import CountUp from '../components/CountUp';
+import { COUNT_STAGGER, useDelayedFlag } from '../motion';
 import PlanCard, { NOT_CHECKED_HERE } from '../components/PlanCard';
 import SiteFilters, { ANY_SITE } from '../components/SiteFilters';
 import SourceLine from '../components/SourceLine';
@@ -91,7 +92,7 @@ export default function AuditResultsScreen(props) {
 function AuditResults({ route, navigation }) {
   const onScroll = useRevealScroll();
   const { plants = [], zipCode, lat, lon } = route.params ?? {};
-  const [request,  setRequest]  = useState({ plants, skip: [], site: ANY_SITE });
+  const [request,  setRequest]  = useState({ plants, skip: [], site: ANY_SITE, showAll: false, extras: [] });
   const [plan,     setPlan]     = useState(null);
   const [planFor,  setPlanFor]  = useState(null);
   const [loading,  setLoading]  = useState(true);
@@ -103,11 +104,12 @@ function AuditResults({ route, navigation }) {
   const maxWidth   = Math.min(width, 960);
   const [fontsLoaded] = useFonts(FONT_ASSETS);
   const stale = plan != null && planFor !== request;
+  const slow = useDelayedFlag(stale);
 
   useEffect(() => {
     let current = true;
     setError(null);
-    getPlan(request.plants.map(p => ({ scientific_name: p.scientific_name, plant_name: p.plant_name })), zipCode, request.skip, request.site)
+    getPlan(request.plants.map(p => ({ scientific_name: p.scientific_name, plant_name: p.plant_name })), zipCode, request.skip, request.site, request.showAll, request.extras)
       .then(data => { if (current) { setPlan(data.result); setPlanFor(request); } })
       .catch(err => { if (current) setError(userMessage(err, 'Could not check your plants. Check your connection and try again.')); })
       .finally(() => { if (current) setLoading(false); });
@@ -125,7 +127,12 @@ function AuditResults({ route, navigation }) {
     setRequest({ ...planFor, plants: planFor.plants.filter((_, i) => i !== index) });
   }
 
-  function toggleLetter(name) {
+  function toggleLetter(name, extra) {
+    if (extra) {
+      const extras = planFor.extras.includes(name) ? planFor.extras.filter(n => n !== name) : [...planFor.extras, name];
+      setRequest({ ...planFor, extras });
+      return;
+    }
     const skip = planFor.skip.includes(name) ? planFor.skip.filter(n => n !== name) : [...planFor.skip, name];
     setRequest({ ...planFor, skip });
   }
@@ -171,7 +178,7 @@ function AuditResults({ route, navigation }) {
         {!loading && plan && (
           <>
             <View style={styles.section}>
-              {stale && !error && <Text style={styles.mutedText}>Updating your plan…</Text>}
+              {slow && !error && <Text style={styles.mutedText}>Updating your plan…</Text>}
               {stale && error && (
                 <>
                   <Text style={styles.errorText}>{error}</Text>
@@ -190,7 +197,7 @@ function AuditResults({ route, navigation }) {
                 ? <Text style={styles.mutedText}>{NOT_CHECKED_HERE}</Text>
                 : (
                   <>
-                    <SiteFilters site={request.site} hidden={plan.hidden_by_site ?? 0} disabled={stale}
+                    <SiteFilters site={request.site} hidden={plan.hidden_by_site ?? 0} disabled={slow}
                       onChange={site => setRequest({ ...planFor, site })} />
                     {plan.add.length === 0
                       ? <Text style={styles.mutedText}>{plan.hidden_by_site > 0 ? 'No checked plants fit all of those choices. Try setting one back to Any.' : 'No plants are ready to recommend yet. Our team is still checking each one.'}</Text>
@@ -200,9 +207,20 @@ function AuditResults({ route, navigation }) {
                           {plan.add.map((card, i) => (
                             <Reveal key={card.scientific_name} index={i}>
                               <PlanCard card={card} kind="add"
-                                inLetter={card.in_letter !== false} onToggleLetter={stale ? null : () => toggleLetter(card.scientific_name)} />
+                                inLetter={card.in_letter !== false} onToggleLetter={stale ? null : () => toggleLetter(card.scientific_name, card.extra)} />
                             </Reveal>
                           ))}
+                          {(plan.more_available > 0 || request.showAll) && (
+                            <>
+                              {request.showAll && <Text style={styles.sectionNote}>The extra plants start outside your letter. Tick one to add it.</Text>}
+                              <TouchableOpacity style={styles.btnOutline} disabled={stale}
+                                onPress={() => setRequest({ ...planFor, showAll: !planFor.showAll, extras: [] })}>
+                                <Text style={styles.btnOutlineText}>
+                                  {request.showAll ? 'Show fewer plants' : `Show all plants that fit (${plan.more_available} more)`}
+                                </Text>
+                              </TouchableOpacity>
+                            </>
+                          )}
                         </>
                       )}
                   </>
@@ -252,7 +270,7 @@ function AuditResults({ route, navigation }) {
                     <View style={styles.rings}>
                       <PercentRing onDark size={140} title="Kinds of plants" caption="kinds native"
                         now={summary.percent_native_kinds} withPlan={summary.percent_native_kinds_with_plan} />
-                      <PercentRing onDark size={140} title="Every plant" caption="plants native" delay={150}
+                      <PercentRing onDark size={140} title="Every plant" caption="plants native" delay={COUNT_STAGGER}
                         now={summary.percent_native} withPlan={summary.percent_native_with_plan} />
                     </View>
                     <Text style={[styles.mutedText, styles.onDarkMuted, styles.ringNote]}>
@@ -266,7 +284,7 @@ function AuditResults({ route, navigation }) {
               <View style={styles.countRow}>
                 {BUCKETS.map(({ key, status, label }, i) => (
                   <View key={key} style={styles.countItem}>
-                    <CountUp value={summary.counts[key]} style={[styles.countNum, { color: STATUS_COLORS[status].color }]} delay={i * 80} />
+                    <CountUp value={summary.counts[key]} style={[styles.countNum, { color: STATUS_COLORS[status].color }]} delay={i * COUNT_STAGGER} />
                     <Text style={styles.countLabel}>{label}</Text>
                   </View>
                 ))}

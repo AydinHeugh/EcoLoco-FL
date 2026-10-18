@@ -37,24 +37,25 @@ export function useInView(ref, margin = 40) {
   return inView;
 }
 
-export default function Reveal({ index = 0, children, style }) {
+export default function Reveal({ index = 0, children, style, scaleFrom = 1, distance = 16, duration = DURATION }) {
   const reduce = useReduceMotion();
   const ref = useRef(null);
   const shown = useInView(ref);
   const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(16)).current;
+  const translateY = useRef(new Animated.Value(distance)).current;
+  const scale = useRef(new Animated.Value(scaleFrom)).current;
 
   useEffect(() => {
     if (!shown) return;
-    if (reduce) { opacity.setValue(1); translateY.setValue(0); return; }
-    Animated.parallel([
-      Animated.timing(opacity, { toValue: 1, duration: DURATION, delay: Math.min(index, 4) * STAGGER, easing: EASE_OUT, useNativeDriver: true }),
-      Animated.timing(translateY, { toValue: 0, duration: DURATION, delay: Math.min(index, 4) * STAGGER, easing: EASE_OUT, useNativeDriver: true }),
-    ]).start();
+    if (reduce) { opacity.setValue(1); translateY.setValue(0); scale.setValue(1); return; }
+    const delay = Math.min(index, 4) * STAGGER;
+    Animated.parallel([opacity, translateY, scale].map((value, i) =>
+      Animated.timing(value, { toValue: i === 1 ? 0 : 1, duration, delay, easing: EASE_OUT, useNativeDriver: true }),
+    )).start();
   }, [shown, reduce]);
 
   return (
-    <Animated.View ref={ref} collapsable={false} style={[style, { opacity, transform: [{ translateY }] }]}>
+    <Animated.View ref={ref} collapsable={false} style={[style, { opacity, transform: [{ translateY }, { scale }] }]}>
       {children}
     </Animated.View>
   );
