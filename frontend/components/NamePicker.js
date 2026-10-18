@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { searchNames, userMessage } from '../services/geminiService';
-import { COLORS, FONTS } from '../theme';
+import { COLORS, FONTS, TYPE, LINE } from '../theme';
 
 const WAIT_MS = 250;
 
@@ -74,17 +74,17 @@ export default function NamePicker({ onChoose, onClose, busy }) {
 const styles = StyleSheet.create({
   wrap: { gap: 8 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  title: { fontSize: 16, fontFamily: FONTS.heading, color: COLORS.darkGreen },
-  close: { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.textMuted },
-  hint: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textMuted, lineHeight: 17 },
+  title: { fontSize: TYPE.body, fontFamily: FONTS.heading, color: COLORS.darkGreen },
+  close: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.textMuted },
+  hint: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, lineHeight: LINE.body },
   input: {
     minWidth: 0, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
-    fontSize: 14, fontFamily: FONTS.body, color: COLORS.textBody, backgroundColor: COLORS.white,
+    fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textBody, backgroundColor: COLORS.white,
   },
   spinner: { alignSelf: 'flex-start' },
-  error: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.error },
-  empty: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textMuted },
+  error: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.error },
+  empty: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted },
   row: { paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: COLORS.lightBg },
-  common: { fontSize: 14, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
-  sci: { fontSize: 12, fontFamily: FONTS.accentItalic, color: COLORS.textMuted },
+  common: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
+  sci: { fontSize: TYPE.caption, fontFamily: FONTS.accentItalic, color: COLORS.textMuted },
 });

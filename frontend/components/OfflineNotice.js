@@ -1,6 +1,6 @@
 import React, { useSyncExternalStore } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, STATUS_COLORS, FONTS } from '../theme';
+import { COLORS, STATUS_COLORS, FONTS, TYPE } from '../theme';
 
 let offline = false;
 const listeners = new Set();
@@ -31,5 +31,5 @@ const styles = StyleSheet.create({
     marginHorizontal: 20, marginVertical: 8, padding: 10, borderRadius: 8,
     backgroundColor: STATUS_COLORS['non-native'].bg, borderWidth: 1, borderColor: COLORS.amber,
   },
-  text: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textBody, textAlign: 'center' },
+  text: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textBody, textAlign: 'center' },
 });

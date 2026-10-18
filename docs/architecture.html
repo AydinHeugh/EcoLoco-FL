@@ -133,8 +133,7 @@
   edge:  from, to, label (call/endpoint + data, shown on the arrow), detail (shown in the panel),
          status (live|planned|dead)
 -->
-<script type="application/json" id="graph-data">
-{
+<script type="application/json" id="graph-data">{
   "nodes": [
     {
       "id": "app",
@@ -151,7 +150,7 @@
         "Wraps everything in a `NavigationContainer` with a native stack navigator.",
         "Stack screen 1, `Main`, is a bottom tab bar with four tabs: Home, Identify (`IdentificationScreen`), EcoScan (`AuditScreen`), Recommend (`RecommendationScreen`).",
         "Stack screen 2, `AuditResults`, slides over the tabs when an audit is finished.",
-        "Tab icons come from Ionicons; the bar is styled dark green."
+        "Tab icons come from Ionicons; the bar is live-oak green and tall enough that the \"Identify\" label is never cut off. Each screen loads the Inter and Fraunces fonts with expo-font before showing anything."
       ]
     },
     {
@@ -165,8 +164,9 @@
       "row": 0,
       "what": "Landing page that explains what EcoLoco does and links into the tools.",
       "how": [
-        "Opens with the name, \"Find out which plants on your campus help Florida wildlife, and which ones hurt it.\" and a \"Start a campus scan\" button.",
-        "Then six short sections: Scan Your Campus, Write to Your Principal, Identify a Plant, Plant Florida Natives (checked for Palm Beach County), Why It Matters, How We Know.",
+        "Opens on a big photo (`PHOTOS.home` from `frontend/photos.js`) with the name, \"Find out which plants on your campus help Florida wildlife, and which ones hurt it.\" in a large serif heading, and a \"Start a campus scan\" button.",
+        "The photo moves a little slower than the page as you scroll (parallax); with reduce motion turned on it stays still.",
+        "Then six sections in different styles rather than identical cards: Scan Your Campus, Write to Your Principal, Identify a Plant, Plant Florida Natives (checked for Palm Beach County), Why It Matters (on a photo), How We Know (on dark green).",
         "Each links to its tab; the oak fact (\"Oaks feed 395 kinds of caterpillars in South Florida\") shows its National Wildlife Federation source. How We Know names the official invasive list, USDA and the USF Atlas.",
         "Write to Your Principal shows `LetterDemo` and Identify a Plant shows `IdentifyDemo`, two short looping animations; How We Know shows the three data sources with their numbers (179 FISC invasives, 5,322 USDA Florida plants, 30 plants checked in the USF Atlas).",
         "Colors and fonts come from `frontend/theme.js`."
@@ -183,11 +183,12 @@
       "row": 1.5,
       "what": "Identify a single plant from a photo and see whether it helps or hurts the local ecosystem.",
       "how": [
+        "Starts with a `ScreenHeader` photo banner.",
         "You set the location and add up to 5 photos of one plant: Take Photo (camera) and Upload Photo (library, multi-select) both add to the photos instead of replacing them, and \"Clear photos\" starts over. On web you can also drag-and-drop images.",
         "A row of thumbnails (`PhotoStrip`) under the first photo shows every photo added, each with a ✕ to remove it.",
         "The Identify button only enables when there's a photo and a 5-digit ZIP.",
-        "`handleIdentify()` calls `identifyPlant(photo.base64, zipCode)` and shows loading dots.",
-        "`identified`: shows the name, the shared `StatusBadge`, and PlantNet's match percentage.",
+        "`handleIdentify()` calls `identifyPlant(photo.base64, zipCode)` and shows the `ScanningLeaf` animation while it waits.",
+        "`identified`: shows the name, the shared `StatusBadge` (it pops in with a haptic, a stronger one for invasive), and PlantNet's match percentage.",
         "`confirm`: if every close match shares a status, shows `AgreedStatus` (\"It's one of these: …\") with \"I know which one it is\"; otherwise `CandidatePicker` with the score chart, OpenAI's pick and \"None of these\".",
         "`unidentified` or \"None of these\": shows \"Couldn't identify this. Try a close-up of one leaf, or a flower\" and no name.",
         "Errors show as text; a 400 from the server (like the Florida-only message) shows the server's message.",
@@ -208,8 +209,9 @@
       "row": 3,
       "what": "Shows Florida native plants to add for a ZIP code, from our own data.",
       "how": [
+        "Starts with a `ScreenHeader` photo banner.",
         "You type a 5-digit ZIP (or arrive with one pre-filled) and press \"Show plants\".",
-        "Calls `getPlantRecommendations(zip)` and shows each plant as a `PlanCard` (Helps, Where, Buying it, Watch out, Look into, with sources).",
+        "Calls `getPlantRecommendations(zip)` and shows each plant as a `PlanCard` (Helps, Where, Buying it, Watch out, Look into, with sources). Each card fades up as it scrolls into view (`Reveal`).",
         "Outside Palm Beach County (the server sends `plantings_checked: false`), shows \"Planting recommendations are only checked for Palm Beach County so far.\" instead of cards.",
         "If no plants are verified yet, says \"No plants are ready to recommend yet. Our team is still checking each one.\"",
         "Links to plantrealflorida.org to find a native nursery.",
@@ -227,11 +229,12 @@
       "row": 4.5,
       "what": "The campus audit: one card per plant, each with up to 5 photos of that plant, then score the whole schoolyard.",
       "how": [
+        "Starts with a `ScreenHeader` photo banner, with \"New Scan\" in its corner.",
         "Under the title it says \"Only scan real plants growing outdoors.\"",
         "Uses `LocationPicker` for the school's location before scanning. The place lives in module-level variables (memory only) so it survives switching tabs.",
         "\"Add plant\" makes an empty card. Each card holds up to 5 photos of that one plant: \"Take photo\" adds one from the camera, \"Upload photos\" adds several at once (expo-image-picker, multi-select up to the room left). Photos can be removed before scanning.",
         "\"Scan this plant\" scans one card; \"Scan all (N)\" scans every card that has photos, 3 at a time, each calling `identifyPlant(photos, zipCode)`. A card that fails keeps its photos and shows the error.",
-        "While a card scans, its photos dim and it shows the progress text.",
+        "While a card scans, its photos dim and it shows the `ScanningLeaf` animation with the progress text. Results pop in with a haptic.",
         "Scanned cards show the result. `confirm` cards show `CandidatePicker`; when every close match shares a status they show `AgreedStatus` instead (\"It's one of these: …\"), with \"I know which one it is\" to pick. `unidentified` cards say \"Not identified\" with the retake tip. Any card can be removed with ✕ (read out as \"Remove this plant\").",
         "`forgetScannedPlant(id)` lets the results screen drop a plant from the saved list; when you come back to EcoScan the list matches.",
         "Problems (missing ZIP, permissions, network errors) appear as a message on the screen instead of a popup.",
@@ -250,10 +253,11 @@
       "row": 6,
       "what": "The audit results: the plan first, then what the campus supports now, the percent native, and the letter.",
       "how": [
+        "Starts with a `ScreenHeader` photo banner titled \"Your plan\", with \"← Back to EcoScan\" in its corner.",
         "Receives `plants[]` and `zipCode` from AuditScreen.",
         "Calls `getPlan(plants, zipCode, skip)` for the plants it has and the Add plants you unticked; the plan includes the summary.",
         "Each plant under What your campus supports now has a Remove button (for a fake or potted plant scanned by mistake). Removing one calls `getPlan()` again, so the counts, percent, charts, plan and letter all update; it shows \"Updating your plan…\", and if that fails, the error with Try again.",
-        "Your plan: a Remove `PlanCard` for each invasive (why, safety, replacement), then Add cards, then a link to plantrealflorida.org. Outside Palm Beach County the Remove cards stay, without a replacement, and the Add cards are replaced by \"Planting recommendations are only checked for Palm Beach County so far.\"",
+        "Your plan: a Remove `PlanCard` for each invasive (why, safety, replacement), then Add cards, then a link to plantrealflorida.org. Cards fade up one after another as they scroll into view (`Reveal`). Outside Palm Beach County the Remove cards stay, without a replacement, and the Add cards are replaced by \"Planting recommendations are only checked for Palm Beach County so far.\"",
         "Each Add card has an \"In my letter\" checkbox. Unticking one asks for the plan again with it skipped: the card stays, dimmed, and leaves the letter and the \"with the plan\" numbers.",
         "What your campus supports now: every plant with its status and one sourced line, or \"We don't have wildlife info for this plant yet\".",
         "How native is your campus: `PercentRing` now and with the plan (or \"Not enough identified plants yet\") and counts for the four groups.",
@@ -829,7 +833,8 @@
       "what": "Shows the share of plants that are native, now and with the plan, as a ring of dots.",
       "how": [
         "Draws 40 dots in a circle with plain Views (no chart library).",
-        "Dark green dots = native now; light green = what the plan adds; grey = the rest. There is no target marker.",
+        "Dark green dots = native now; the accent color = what the plan adds; grey = the rest. There is no target marker.",
+        "The number counts up and the dots fill in over 400 ms; with reduce motion turned on it shows the final number at once.",
         "A legend underneath spells out both numbers."
       ]
     },
@@ -1058,7 +1063,7 @@
       "file": "backend/services/location_service.py",
       "symbol": "def round_coords(",
       "col": 6,
-      "row": 8.0,
+      "row": 8,
       "what": "Rounds a location to 2 decimal places (about 1 km) and checks it is a real latitude and longitude.",
       "how": [
         "Used on every location the server receives, even though the phone already rounds it.",
@@ -1120,7 +1125,7 @@
       "file": "backend/app.py",
       "symbol": "def locate(",
       "col": 4,
-      "row": 8.0,
+      "row": 8,
       "what": "API endpoint that turns the phone's location or a typed address into a ZIP code.",
       "how": [
         "A typed 5-digit ZIP is checked against the Florida range and accepted directly; `zip_center()` only adds coordinates for \"Seen near you\".",
@@ -1354,7 +1359,7 @@
       "file": "frontend/components/NamePicker.js",
       "symbol": "export default function NamePicker",
       "col": 2,
-      "row": 1.0,
+      "row": 1,
       "what": "\"Choose by name\": a type-to-search box over every plant recorded in Florida.",
       "how": [
         "After 2 letters and a short pause, calls `searchNames(text)`; only the latest search's answer is shown.",
@@ -1370,7 +1375,7 @@
       "file": "frontend/services/geminiService.js",
       "symbol": "export async function searchNames",
       "col": 3,
-      "row": 1.0,
+      "row": 1,
       "what": "Asks the backend for plant names matching what was typed.",
       "how": [
         "POSTs `{query}` to `/names`."
@@ -1398,7 +1403,7 @@
       "file": "backend/app.py",
       "symbol": "def names(",
       "col": 4,
-      "row": 1.0,
+      "row": 1,
       "what": "Type-to-search over Florida plant names.",
       "how": [
         "Reads `query` (text, at most 80 characters; otherwise 400).",
@@ -1443,7 +1448,7 @@
       "file": "backend/services/name_search.py",
       "symbol": "def search(",
       "col": 5,
-      "row": 1.0,
+      "row": 1,
       "what": "Finds Florida plants by common or scientific name.",
       "how": [
         "Builds one index from `fl_plant_names.json` (USDA) plus every name in our own lists, merged by `resolve()` so \"coontie\" and \"Zamia pumila\" find the same plant.",
@@ -1473,7 +1478,7 @@
       "file": "backend/services/name_search.py",
       "symbol": "def common_name_for(",
       "col": 6,
-      "row": 1.0,
+      "row": 1,
       "what": "Gives a plant's common name for `/choose`.",
       "how": [
         "Our own lists' common name comes first, then USDA's."
@@ -1487,7 +1492,7 @@
       "file": "backend/data/fl_plant_names.json",
       "symbol": null,
       "col": 7,
-      "row": 1.0,
+      "row": 1,
       "what": "Every plant the USDA PLANTS Database records in Florida, natives and non-natives, with common names.",
       "how": [
         "5,322 species and varieties, author names removed.",
@@ -1502,7 +1507,7 @@
       "file": "backend/scripts/build_fl_plant_names.py",
       "symbol": "def plant_names(",
       "col": 9,
-      "row": 1.0,
+      "row": 1,
       "what": "Script that rebuilds fl_plant_names.json from USDA's Florida state checklist.",
       "how": [
         "Downloads the checklist from the PLANTS web service (the same request plants.usda.gov's State Search download makes), or reads a saved copy.",
@@ -1642,6 +1647,114 @@
       "what": "A small looping animation on the home page: a scan line sweeps over a plant photo, then \"Native to Florida\" pops in.",
       "how": [
         "Built with React Native's Animated; with reduce motion turned on it just shows the photo and the result."
+      ]
+    },
+    {
+      "layer": "ui",
+      "status": "live",
+      "id": "ui_theme",
+      "label": "theme.js",
+      "file": "frontend/theme.js",
+      "symbol": "export const PALETTE",
+      "col": 3,
+      "row": 0,
+      "what": "The app's colors, fonts and text sizes, in one place.",
+      "how": [
+        "Colors come from Florida native plants: live-oak green as the base, sand and off-white backgrounds, firebush red-orange as the one bold accent, sea-grape purple used sparingly.",
+        "Native, non-native and invasive each have their own color pair, checked to be readable (at least 4.5:1 contrast).",
+        "Headings use Fraunces (a serif) and body text uses Inter, both from Google Fonts. `FONT_ASSETS` lists the font files the screens load.",
+        "`TYPE` and `LINE` set the text sizes: body text 16, links 15. Screens use these instead of typing sizes by hand."
+      ]
+    },
+    {
+      "layer": "ui",
+      "status": "live",
+      "id": "ui_motion",
+      "label": "motion.js",
+      "file": "frontend/motion.js",
+      "symbol": "export function feelResult",
+      "col": 3,
+      "row": 1,
+      "what": "Shared animation settings and the result haptics.",
+      "how": [
+        "`DURATION` (300 ms) is the length used by every animation; nothing runs longer than 400 ms.",
+        "`useReduceMotion()` reads the phone's reduce-motion setting, so animations can switch off.",
+        "`feelResult(status)` plays a light tap for a result, and a warning buzz when the plant is invasive (expo-haptics)."
+      ]
+    },
+    {
+      "layer": "ui",
+      "status": "live",
+      "id": "ui_photos",
+      "label": "photos.js",
+      "file": "frontend/photos.js",
+      "symbol": "export const PHOTOS",
+      "col": 3,
+      "row": 2,
+      "what": "Which photo goes at the top of Home and each screen.",
+      "how": [
+        "One entry per spot (home, ecoscan, identify, recommend, results and the Home sections).",
+        "They point at the app's existing images for now; swap in campus photos here."
+      ]
+    },
+    {
+      "layer": "ui",
+      "status": "live",
+      "id": "ui_photoslot",
+      "label": "PhotoSlot",
+      "file": "frontend/components/PhotoSlot.js",
+      "symbol": "export default function PhotoSlot",
+      "col": 3,
+      "row": 3,
+      "what": "A photo that fills its space, or a plain leaf placeholder when there is no photo yet.",
+      "how": [
+        "Uses expo-image so photos fade in and fill the space without stretching."
+      ]
+    },
+    {
+      "layer": "ui",
+      "status": "live",
+      "id": "ui_header",
+      "label": "ScreenHeader",
+      "file": "frontend/components/ScreenHeader.js",
+      "symbol": "export default function ScreenHeader",
+      "col": 3,
+      "row": 4,
+      "what": "The photo banner at the top of Identify, EcoScan, Recommend and the results screen.",
+      "how": [
+        "Shows a `PhotoSlot` with a dark layer over it so the text stays readable.",
+        "The logo and \"EcoLoco\" sit at the top, with an optional button in the corner; the screen's title and subtitle sit at the bottom."
+      ]
+    },
+    {
+      "layer": "ui",
+      "status": "live",
+      "id": "ui_leaf",
+      "label": "ScanningLeaf",
+      "file": "frontend/components/ScanningLeaf.js",
+      "symbol": "export default function ScanningLeaf",
+      "col": 3,
+      "row": 5,
+      "what": "The moving leaf shown while a plant is being scanned, instead of a spinner.",
+      "how": [
+        "Plays `assets/lottie/leaf.json` with lottie-react-native (on the web it uses the dotLottie player).",
+        "With reduce motion turned on it shows a still leaf."
+      ]
+    },
+    {
+      "layer": "ui",
+      "status": "live",
+      "id": "ui_reveal",
+      "label": "Reveal",
+      "file": "frontend/components/Reveal.js",
+      "symbol": "export function Reveal",
+      "col": 3,
+      "row": 6,
+      "what": "Makes plan cards fade up one after another as they scroll into view.",
+      "how": [
+        "`RevealProvider` wraps a screen and `useRevealScroll()` tells it when the page scrolls.",
+        "Each `Reveal` checks whether it is on screen; when it first is, it fades and slides up over 300 ms, 70 ms after the one before.",
+        "With reduce motion turned on, cards just appear."
       ]
     }
   ],
@@ -2323,10 +2436,74 @@
       "from": "home",
       "to": "ui_identifydemo",
       "label": "Identify a Plant"
+    },
+    {
+      "from": "home",
+      "to": "ui_photos",
+      "label": "PHOTOS.home"
+    },
+    {
+      "from": "ident",
+      "to": "ui_header",
+      "label": "title, subtitle, photo"
+    },
+    {
+      "from": "audit",
+      "to": "ui_header",
+      "label": "title, photo, New Scan"
+    },
+    {
+      "from": "rec",
+      "to": "ui_header",
+      "label": "title, photo"
+    },
+    {
+      "from": "results",
+      "to": "ui_header",
+      "label": "Your plan, photo"
+    },
+    {
+      "from": "ui_header",
+      "to": "ui_photoslot",
+      "label": "photo"
+    },
+    {
+      "from": "ident",
+      "to": "ui_leaf",
+      "label": "while identifying"
+    },
+    {
+      "from": "audit",
+      "to": "ui_leaf",
+      "label": "while scanning"
+    },
+    {
+      "from": "rec",
+      "to": "ui_reveal",
+      "label": "PlanCards"
+    },
+    {
+      "from": "results",
+      "to": "ui_reveal",
+      "label": "PlanCards"
+    },
+    {
+      "from": "ui_ring",
+      "to": "ui_motion",
+      "label": "useReduceMotion"
+    },
+    {
+      "from": "ui_reveal",
+      "to": "ui_motion",
+      "label": "DURATION, useReduceMotion"
+    },
+    {
+      "from": "ui_picker",
+      "to": "ui_motion",
+      "label": "feelResult(status)"
     }
   ]
-}
-</script>
+}</script>
 
 <script type="module">
 import React, { useState, useMemo, useCallback } from 'react';

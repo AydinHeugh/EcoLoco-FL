@@ -8,7 +8,7 @@ import IdentificationScreen from '../screens/IdentificationScreen'
 import RecommendationScreen from '../screens/RecommendationScreen'
 import AuditScreen from '../screens/AuditScreen'
 import AuditResultsScreen from '../screens/AuditResultsScreen'
-import { COLORS } from '../theme'
+import { COLORS, FONTS, TYPE, LINE } from '../theme'
 
 const Tab   = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
@@ -22,11 +22,12 @@ function TabNavigator() {
         tabBarStyle: {
           backgroundColor: COLORS.darkGreen,
           borderTopWidth: 0,
-          height: 70,
-          paddingBottom: 10,
+          height: 78,
+          paddingBottom: 14,
           paddingTop: 8,
         },
-        tabBarActiveTintColor:   COLORS.white,
+        tabBarLabelStyle: { fontFamily: FONTS.bodyBold, fontSize: TYPE.caption, lineHeight: LINE.caption, paddingBottom: 2 },
+        tabBarActiveTintColor:   COLORS.accentOnDark,
         tabBarInactiveTintColor: COLORS.tabInactive,
         tabBarIcon: ({ color, size }) => {
           const icons = {

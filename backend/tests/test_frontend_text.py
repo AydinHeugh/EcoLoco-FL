@@ -152,9 +152,54 @@ def test_home_page_says_what_the_app_does():
         assert phrase in text
     for gone in ("Welcome to", "picked for South Florida", "one plant at a time"):
         assert gone not in text
-    for image in ("EcoLoco_Scanning_Plant.png", "<LetterDemo />", "<IdentifyDemo image={IMG_SCANNING} />", "<SourcesPanel />"):
-        assert image in text
+    for piece in ("EcoLoco_Scanning_Plant.png", "<LetterDemo />", "<IdentifyDemo image={IMG_SCANNING} />",
+                  "PHOTOS.home", "count: '179'", "count: '5,322'", "count: '30'"):
+        assert piece in text
 
 
 def test_identify_shows_every_photo():
     assert "<PhotoStrip" in (FRONTEND / "screens" / "IdentificationScreen.js").read_text(encoding="utf-8")
+
+
+
+THEME = (FRONTEND / "theme.js").read_text(encoding="utf-8")
+
+
+def _theme_number(group, name):
+    block = THEME[THEME.index(f"export const {group} = {{"):]
+    return int(re.search(rf"\b{name}:\s*(\d+)", block).group(1))
+
+
+def test_type_scale_keeps_text_readable():
+    assert _theme_number("TYPE", "body") >= 16
+    assert _theme_number("TYPE", "link") >= 15
+
+
+def test_font_sizes_come_from_the_theme():
+    allowed = {"HomeDemos.js", "PercentRing.js"}
+    literal = [p.name for p in FILES if p.name not in allowed and re.search(r"fontSize:\s*\d", p.read_text(encoding="utf-8"))]
+    assert literal == []
+
+
+def test_motion_is_short_and_respects_reduce_motion():
+    motion = (FRONTEND / "motion.js").read_text(encoding="utf-8")
+    assert int(re.search(r"export const DURATION = (\d+);", motion).group(1)) <= 400
+    assert "isReduceMotionEnabled" in motion
+    for name in ("Reveal.js", "StatusBadge.js", "PercentRing.js", "ScanningLeaf.js", "HomeDemos.js"):
+        assert "useReduceMotion" in (FRONTEND / "components" / name).read_text(encoding="utf-8"), name
+    assert "useReduceMotion" in (FRONTEND / "screens" / "HomeScreen.js").read_text(encoding="utf-8")
+    for p in FILES:
+        for ms in re.findall(r"duration:\s*(\d+)", p.read_text(encoding="utf-8")):
+            assert int(ms) <= 400, (p.name, ms)
+
+
+def test_invasive_results_get_their_own_haptic():
+    motion = (FRONTEND / "motion.js").read_text(encoding="utf-8")
+    assert "status === 'invasive'" in motion and "NotificationFeedbackType.Warning" in motion
+    assert "feelResult(status)" in (FRONTEND / "components" / "StatusBadge.js").read_text(encoding="utf-8")
+
+
+def test_scanning_shows_the_leaf_animation():
+    assert "leaf.json" in (FRONTEND / "components" / "ScanningLeaf.js").read_text(encoding="utf-8")
+    for screen in ("AuditScreen.js", "IdentificationScreen.js"):
+        assert "<ScanningLeaf" in (FRONTEND / "screens" / screen).read_text(encoding="utf-8")

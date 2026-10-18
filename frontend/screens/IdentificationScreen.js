@@ -9,18 +9,21 @@ import {
   Image,
   useWindowDimensions,
   Animated,
-  Easing,
   Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
 import { useFonts } from 'expo-font';
 import { choosePlant, identifyPlant, userMessage } from '../services/geminiService';
-import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS } from '../theme';
+import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS, TYPE, LINE } from '../theme';
 import StatusBadge from '../components/StatusBadge';
 import CandidatePicker, { AgreedStatus, CHOSEN_BY_NAME, NO_MATCH_TEXT, matchLabel } from '../components/CandidatePicker';
 import NamePicker from '../components/NamePicker';
 import PhotoStrip from '../components/PhotoStrip';
+import ScreenHeader from '../components/ScreenHeader';
+import ScanningLeaf from '../components/ScanningLeaf';
+import { PHOTOS } from '../photos';
+import { DURATION, EASE_OUT, useReduceMotion } from '../motion';
 import SourceLine from '../components/SourceLine';
 import AtlasButton from '../components/AtlasButton';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
@@ -28,60 +31,36 @@ import { useProgressText } from '../components/ProgressText';
 import LocationPicker from '../components/LocationPicker';
 
 
-const EASE_OUT = Easing.bezier(0.22, 1, 0.36, 1);
 const MAX_PHOTOS = 5;
-const LOGO = require('../../assets/EcoLoco_logo.png');
 const PLANTNET_LOGO = require('../../assets/powered-by-plantnet-light.png');
 const PLANTNET_URL = 'https://plantnet.org';
 
-// ─── Bouncing dots loader ────────────────────────────────────────────────────
-function LoadingDots({ message }) {
-  const d0 = useRef(new Animated.Value(0)).current;
-  const d1 = useRef(new Animated.Value(0)).current;
-  const d2 = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const dot = (v, delay) => Animated.loop(
-      Animated.sequence([
-        Animated.delay(delay),
-        Animated.timing(v, { toValue: -9, duration: 280, easing: EASE_OUT, useNativeDriver: true }),
-        Animated.timing(v, { toValue: 0,  duration: 280, easing: EASE_OUT, useNativeDriver: true }),
-        Animated.delay(500),
-      ])
-    );
-    Animated.parallel([dot(d0, 0), dot(d1, 160), dot(d2, 320)]).start();
-  }, []);
-
+function LoadingLeaf({ message }) {
   return (
     <View style={ld.wrap}>
-      <View style={ld.dots}>
-        {[d0, d1, d2].map((d, i) => (
-          <Animated.View key={i} style={[ld.dot, { transform: [{ translateY: d }] }]} />
-        ))}
-      </View>
+      <ScanningLeaf size={56} />
       <Text style={ld.text}>{message}</Text>
     </View>
   );
 }
 
 const ld = StyleSheet.create({
-  wrap: { alignItems: 'center', paddingVertical: 32, gap: 14 },
-  dots: { flexDirection: 'row', gap: 8, height: 20, alignItems: 'flex-end' },
-  dot:  { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.softGreen },
-  text: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted },
+  wrap: { alignItems: 'center', paddingVertical: 28, gap: 10 },
+  text: { fontSize: TYPE.body, fontFamily: FONTS.bodyMedium, color: COLORS.textMuted },
 });
 
 // ─── Animated results wrapper ────────────────────────────────────────────────
 function AnimatedResults({ children }) {
+  const reduce = useReduceMotion();
   const opacity    = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(18)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(opacity,    { toValue: 1, duration: 520, easing: EASE_OUT, useNativeDriver: true }),
-      Animated.timing(translateY, { toValue: 0, duration: 520, easing: EASE_OUT, useNativeDriver: true }),
+      Animated.timing(opacity,    { toValue: 1, duration: reduce ? 0 : DURATION, easing: EASE_OUT, useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: 0, duration: reduce ? 0 : DURATION, easing: EASE_OUT, useNativeDriver: true }),
     ]).start();
-  }, []);
+  }, [reduce]);
 
   return (
     <Animated.View style={{ opacity, transform: [{ translateY }] }}>
@@ -253,22 +232,14 @@ export default function IdentificationScreen({ navigation }) {
     >
       <View style={[styles.inner, { width: maxWidth }]}>
 
-        {/* ── Header ── */}
-        <View style={styles.header}>
-          <View style={styles.logoRow}>
-            <Image source={LOGO} style={styles.logoImg} />
-            <Text style={styles.logoText}>EcoLoco</Text>
-          </View>
-        </View>
-
-        <View style={styles.divider} />
+        <ScreenHeader
+          photo={PHOTOS.identify}
+          photoLabel="A native plant garden"
+          title="Identification"
+          subtitle="upload or photograph a plant to learn more about it."
+        />
         <OfflineNotice />
-
-        {/* ── Title ── */}
-        <View style={styles.titleSection}>
-          <Text style={styles.pageTitle}>Identification</Text>
-          <Text style={styles.pageSubtitle}>upload or photograph a plant to learn more about it.</Text>
-        </View>
+        <View style={styles.headerGap} />
 
         {/* ── Upload box ── */}
         <View
@@ -343,7 +314,7 @@ export default function IdentificationScreen({ navigation }) {
 
         {error && <Text style={styles.errorText}>{error}</Text>}
 
-        {loading && <LoadingDots message={progress} />}
+        {loading && <LoadingLeaf message={progress} />}
 
         {/* ── Results ── */}
         {result && (
@@ -392,7 +363,7 @@ export default function IdentificationScreen({ navigation }) {
                 )}
                 <View style={styles.resultInfo}>
                   <Text style={styles.plantName}>{shown.plant_name}</Text>
-                  <StatusBadge status={shown.status} label={shown.status_label} />
+                  <StatusBadge key={shown.scientific_name} pop status={shown.status} label={shown.status_label} />
                   {!shown.why && !shown.helps && <Text style={styles.noData}>We don't have wildlife info for this plant yet</Text>}
                   <AtlasButton url={shown.atlas_url} />
                 </View>
@@ -448,50 +419,35 @@ const styles = StyleSheet.create({
   scrollContent: { alignItems: 'center' },
   inner: { alignSelf: 'center' },
 
-  // ── Header ──
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24, paddingTop: 52, paddingBottom: 16,
-  },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logoImg: { width: 40, height: 40, resizeMode: 'contain' },
-  logoText: { fontSize: 20, fontFamily: FONTS.heading, color: COLORS.darkGreen, letterSpacing: 0.3 },
-  divider: { height: 1, backgroundColor: COLORS.border },
-
-  // ── Title ──
-  titleSection: { alignItems: 'center', paddingTop: 32, paddingBottom: 24, paddingHorizontal: 24 },
-  pageTitle: { fontSize: 34, fontFamily: FONTS.heading, color: COLORS.darkGreen, marginBottom: 6 },
-  pageSubtitle: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
+  headerGap: { height: 18 },
 
   // ── Upload box ──
   uploadBox: {
-    marginHorizontal: 20, borderWidth: 1.5, borderColor: COLORS.border,
-    borderStyle: 'dashed', borderRadius: 16, overflow: 'hidden',
+    marginHorizontal: 20, borderWidth: 1.5, borderColor: COLORS.softGreen,
+    borderStyle: 'dashed', borderRadius: 22, overflow: 'hidden',
     marginBottom: 16,
   },
   uploadPlaceholder: {
     paddingTop: 36, paddingBottom: 24, alignItems: 'center', justifyContent: 'center',
   },
   uploadBoxDragging: { borderColor: COLORS.darkGreen, backgroundColor: COLORS.lightBg },
-  uploadPlaceholderText: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted },
-  uploadDragHint: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.border, marginTop: 2 },
+  uploadPlaceholderText: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted },
+  uploadDragHint: { fontSize: TYPE.caption, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 2 },
   uploadPreview: { width: '100%', height: 220 },
   uploadBtns: {
     flexDirection: 'row', gap: 12,
     paddingHorizontal: 16, paddingVertical: 16,
-    backgroundColor: COLORS.cream,
   },
   btnOutlined: {
-    flex: 1, borderRadius: 10, paddingVertical: 13,
-    alignItems: 'center', borderWidth: 1.5, borderColor: COLORS.darkGreen,
+    flex: 1, borderRadius: 12, paddingVertical: 13,
+    alignItems: 'center', borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.cardBg,
   },
-  btnOutlinedText: { fontSize: 14, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
+  btnOutlinedText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
   btnFilled: {
-    flex: 1, borderRadius: 10, paddingVertical: 13,
+    flex: 1, borderRadius: 12, paddingVertical: 13,
     alignItems: 'center', backgroundColor: COLORS.darkGreen,
   },
-  btnFilledText: { fontSize: 14, fontFamily: FONTS.bodyBold, color: COLORS.cream },
+  btnFilledText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.onDark },
 
   // ── ZIP ──
   zipRow: { marginHorizontal: 20, marginBottom: 14 },
@@ -499,18 +455,18 @@ const styles = StyleSheet.create({
   // ── Identify button ──
   identifyBtn: {
     marginHorizontal: 20, marginBottom: 8,
-    backgroundColor: COLORS.darkGreen, borderRadius: 10,
-    paddingVertical: 15, alignItems: 'center',
+    backgroundColor: COLORS.accent, borderRadius: 14,
+    paddingVertical: 17, alignItems: 'center',
   },
   identifyBtnDisabled: { opacity: 0.4 },
-  identifyBtnText: { fontSize: 15, fontFamily: FONTS.bodyBold, color: COLORS.cream },
+  identifyBtnText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.white },
 
-  facts: { marginTop: 14, gap: 12 },
+  facts: { marginTop: 18, gap: 16, paddingLeft: 14, borderLeftWidth: 2, borderLeftColor: COLORS.border },
   fact: { gap: 2 },
-  factLabel: { fontSize: 11, fontFamily: FONTS.bodyBold, color: COLORS.textMuted, letterSpacing: 0.5 },
-  factText: { fontSize: 14, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: 20 },
-  noData: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 6 },
-  errorText: { color: COLORS.error, fontSize: 13, fontFamily: FONTS.body, marginHorizontal: 20, marginTop: 8 },
+  factLabel: { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.seaGrape },
+  factText: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: LINE.body },
+  noData: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 6 },
+  errorText: { color: COLORS.error, fontSize: TYPE.body, fontFamily: FONTS.body, marginHorizontal: 20, marginTop: 8 },
 
   // ── Results ──
   resultsSection: { marginTop: 28, paddingHorizontal: 20, paddingBottom: 48 },
@@ -518,19 +474,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, justifyContent: 'space-between',
     alignItems: 'baseline', marginBottom: 14,
   },
-  resultsTitle: { fontSize: 26, fontFamily: FONTS.heading, color: COLORS.darkGreen },
+  resultsTitle: { fontSize: TYPE.h2, fontFamily: FONTS.heading, color: COLORS.darkGreen },
   byName: { alignSelf: 'center', paddingVertical: 8 },
-  byNameText: { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.softGreen },
+  byNameText: { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.softGreen, textDecorationLine: 'underline' },
   namingBox: {
-    marginHorizontal: 20, marginTop: 8, padding: 16, borderRadius: 14,
-    borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.white,
+    marginHorizontal: 20, marginTop: 8, padding: 18, borderRadius: 20,
+    backgroundColor: COLORS.cardBg,
   },
-  confidenceText: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted },
+  confidenceText: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted },
   confidenceValue: { fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
 
   resultCard: {
-    backgroundColor: COLORS.white, borderRadius: 14,
-    borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: COLORS.cardBg, borderRadius: 22,
     flexDirection: 'row', overflow: 'hidden', marginBottom: 16,
   },
   resultCardNarrow: { flexDirection: 'column' },
@@ -538,26 +493,25 @@ const styles = StyleSheet.create({
   resultThumbNarrow: { width: '100%', height: 180 },
   thumbs: { paddingHorizontal: 16, paddingTop: 12 },
   clearPhotos: { alignSelf: 'center', paddingVertical: 4 },
-  clearPhotosText: { fontSize: 12, fontFamily: FONTS.bodyBold, color: COLORS.terracotta },
-  photoCount: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', marginTop: 6 },
-  retakeTip: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textBody, marginTop: 8 },
+  clearPhotosText: { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.accent, textDecorationLine: 'underline' },
+  photoCount: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', marginTop: 6 },
+  retakeTip: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textBody, marginTop: 8 },
   resultInfo: { flex: 1, padding: 16, justifyContent: 'center', gap: 10 },
-  plantName: { fontSize: 22, fontFamily: FONTS.heading, color: COLORS.darkGreen, lineHeight: 28 },
+  plantName: { fontSize: TYPE.h3, fontFamily: FONTS.heading, color: COLORS.darkGreen, lineHeight: LINE.h3 },
   recBtn: {
-    marginTop: 16, backgroundColor: COLORS.darkGreen, borderRadius: 10,
-    paddingVertical: 14, alignItems: 'center',
+    marginTop: 20, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.darkGreen,
+    paddingVertical: 15, paddingHorizontal: 12, alignItems: 'center',
   },
-  recBtnText: { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.cream },
+  recBtnText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, textAlign: 'center' },
 
   credit: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: 8, marginTop: 18, paddingVertical: 6 },
   creditLogo: { width: 102, height: 24 },
-  creditText: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textMuted },
+  creditText: { fontSize: TYPE.caption, fontFamily: FONTS.body, color: COLORS.textMuted },
   agreedBox: {
-    backgroundColor: COLORS.white, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, padding: 16,
+    backgroundColor: COLORS.cardBg, borderRadius: 20, padding: 18,
   },
   notice: {
-    backgroundColor: STATUS_COLORS.invasive.bg, borderRadius: 10, borderWidth: 1,
-    borderColor: COLORS.terracotta, padding: 12, marginTop: 10,
+    backgroundColor: STATUS_COLORS.invasive.bg, borderRadius: 12, padding: 14, marginTop: 10,
   },
-  noticeText: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.terracotta, lineHeight: 18 },
+  noticeText: { fontSize: TYPE.body, fontFamily: FONTS.body, color: STATUS_COLORS.invasive.color, lineHeight: LINE.body },
 });

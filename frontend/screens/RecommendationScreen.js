@@ -1,19 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  ActivityIndicator, Image, useWindowDimensions, Linking,
+  ActivityIndicator, useWindowDimensions, Linking,
 } from 'react-native';
 import { useFonts } from 'expo-font';
 import { getPlantRecommendations, userMessage } from '../services/geminiService';
-import { COLORS, FONTS, FONT_ASSETS } from '../theme';
+import { COLORS, FONTS, FONT_ASSETS, TYPE } from '../theme';
 import PlanCard, { NOT_CHECKED_HERE } from '../components/PlanCard';
 import SiteFilters, { ANY_SITE } from '../components/SiteFilters';
+import ScreenHeader from '../components/ScreenHeader';
+import Reveal, { RevealProvider, useRevealScroll } from '../components/Reveal';
+import { PHOTOS } from '../photos';
 import LocationPicker from '../components/LocationPicker';
 
-const LOGO = require('../../assets/EcoLoco_logo.png');
 const NURSERY_URL = 'https://plantrealflorida.org';
 
-export default function RecommendationScreen({ route }) {
+export default function RecommendationScreen(props) {
+  return <RevealProvider><Recommendations {...props} /></RevealProvider>;
+}
+
+function Recommendations({ route }) {
+  const onScroll = useRevealScroll();
   const prefillZip = route?.params?.prefillZip ?? '';
   const [place,   setPlace]   = useState(prefillZip ? { zip: prefillZip } : null);
   const [loading, setLoading] = useState(false);
@@ -54,24 +61,17 @@ export default function RecommendationScreen({ route }) {
   if (!fontsLoaded) return <View style={styles.container} />;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}
+      onScroll={onScroll} scrollEventThrottle={64}>
       <View style={[styles.inner, { width: maxWidth }]}>
 
-        <View style={styles.header}>
-          <View style={styles.logoRow}>
-            <Image source={LOGO} style={styles.logoImg} />
-            <Text style={styles.logoText}>EcoLoco</Text>
-          </View>
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.titleSection}>
-          <Text style={styles.pageTitle}>Native plants to add</Text>
-          <Text style={styles.pageSubtitle}>
-            Find your school's location to see Florida native plants that help wildlife.
-          </Text>
-        </View>
+        <ScreenHeader
+          photo={PHOTOS.recommend}
+          photoLabel="A native plant garden"
+          title="Native plants to add"
+          subtitle="Find your school's location to see Florida native plants that help wildlife."
+        />
+        <View style={styles.headerGap} />
 
         <View style={styles.inputSection}>
           <LocationPicker place={place} onChange={found => { setPlace(found); handleRecommend(found.zip); }} />
@@ -89,7 +89,9 @@ export default function RecommendationScreen({ route }) {
               ? <Text style={styles.emptyText}>{NOT_CHECKED_HERE}</Text>
               : results.cards.length === 0
                 ? <Text style={styles.emptyText}>{results.hidden > 0 ? 'No checked plants fit all of those choices. Try setting one back to Any.' : 'No plants are ready to recommend yet. Our team is still checking each one.'}</Text>
-                : results.cards.map(card => <PlanCard key={card.scientific_name} card={card} kind="add" />)}
+                : results.cards.map((card, i) => (
+                  <Reveal key={card.scientific_name} index={i}><PlanCard card={card} kind="add" /></Reveal>
+                ))}
             <TouchableOpacity onPress={() => Linking.openURL(NURSERY_URL)}>
               <Text style={styles.link}>Find a native plant nursery near you (plantrealflorida.org) →</Text>
             </TouchableOpacity>
@@ -106,24 +108,12 @@ const styles = StyleSheet.create({
   scrollContent: { alignItems: 'center' },
   inner: { alignSelf: 'center' },
 
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 24, paddingTop: 52, paddingBottom: 16,
-  },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logoImg: { width: 40, height: 40, resizeMode: 'contain' },
-  logoText: { fontSize: 20, fontFamily: FONTS.heading, color: COLORS.darkGreen, letterSpacing: 0.3 },
-
-  divider: { height: 1, backgroundColor: COLORS.border },
-
-  titleSection: { alignItems: 'center', paddingTop: 32, paddingBottom: 24, paddingHorizontal: 24 },
-  pageTitle: { fontSize: 30, fontFamily: FONTS.heading, color: COLORS.darkGreen, marginBottom: 6, textAlign: 'center' },
-  pageSubtitle: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
+  headerGap: { height: 18 },
 
   inputSection: { paddingHorizontal: 20, gap: 12, marginBottom: 8 },
-  errorText: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.error, textAlign: 'center' },
+  errorText: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.error, textAlign: 'center' },
 
   resultsSection: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 48 },
-  emptyText: { fontSize: 14, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', marginBottom: 16 },
-  link: { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.softGreen, textAlign: 'center', paddingVertical: 14 },
+  emptyText: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', marginBottom: 16 },
+  link: { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.softGreen, textAlign: 'center', paddingVertical: 14, textDecorationLine: 'underline' },
 });

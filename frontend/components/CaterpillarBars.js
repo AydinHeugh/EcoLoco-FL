@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, STATUS_COLORS, FONTS } from '../theme';
+import { COLORS, STATUS_COLORS, FONTS, TYPE } from '../theme';
 import SourceLine from './SourceLine';
 
 const NWF_SOURCE = {
@@ -35,11 +35,11 @@ export default function CaterpillarBars({ items }) {
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: COLORS.white, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, padding: 16, gap: 10, alignSelf: 'stretch' },
-  title: { fontSize: 15, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
+  card: { paddingVertical: 8, paddingTop: 20, gap: 10, alignSelf: 'stretch', borderTopWidth: 1, borderTopColor: COLORS.border },
+  title: { fontSize: TYPE.lead, fontFamily: FONTS.heading, color: COLORS.darkGreen },
   row: { gap: 3 },
-  label: { fontSize: 12, fontFamily: FONTS.bodyBold, color: COLORS.textBody },
+  label: { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.textBody },
   kind: { fontFamily: FONTS.body },
   track: { flexDirection: 'row', height: 14, borderRadius: 4, overflow: 'hidden', backgroundColor: COLORS.lightBg },
-  note: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textMuted },
+  note: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted },
 });

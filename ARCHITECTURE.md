@@ -91,6 +91,13 @@ flowchart LR
     ui_photostrip["PhotoStrip"]
     ui_letterdemo["LetterDemo"]
     ui_identifydemo["IdentifyDemo"]
+    ui_theme["theme.js"]
+    ui_motion["motion.js"]
+    ui_photos["photos.js"]
+    ui_photoslot["PhotoSlot"]
+    ui_header["ScreenHeader"]
+    ui_leaf["ScanningLeaf"]
+    ui_reveal["Reveal"]
   end
   subgraph L_device["Device"]
     direction TB
@@ -313,6 +320,19 @@ flowchart LR
   ident -->|"photos added"| ui_photostrip
   home -->|"Write to Your Principal"| ui_letterdemo
   home -->|"Identify a Plant"| ui_identifydemo
+  home -->|"PHOTOS.home"| ui_photos
+  ident -->|"title, subtitle, photo"| ui_header
+  audit -->|"title, photo, New Scan"| ui_header
+  rec -->|"title, photo"| ui_header
+  results -->|"Your plan, photo"| ui_header
+  ui_header -->|"photo"| ui_photoslot
+  ident -->|"while identifying"| ui_leaf
+  audit -->|"while scanning"| ui_leaf
+  rec -->|"PlanCards"| ui_reveal
+  results -->|"PlanCards"| ui_reveal
+  ui_ring -->|"useReduceMotion"| ui_motion
+  ui_reveal -->|"DURATION, useReduceMotion"| ui_motion
+  ui_picker -->|"feelResult(status)"| ui_motion
   classDef ui fill:#e3f2e1,stroke:#2e7d32,color:#12301a
   classDef device fill:#eceff1,stroke:#607d8b,color:#263238
   classDef client fill:#e1effa,stroke:#1e6fb8,color:#0d2d4d
@@ -322,7 +342,7 @@ flowchart LR
   classDef ext fill:#fde4e1,stroke:#c0392b,color:#4a0f08
   classDef planned stroke-dasharray:6 4,stroke-width:2px
   classDef dead fill:#f3f3f3,stroke:#9e9e9e,color:#616161,stroke-dasharray:3 3
-  class app,home,ident,rec,audit,results,ui_why,ui_receipt,letter,ui_multiphoto,ui_ai_unknown,ui_picker,ui_ring,ui_plancard,ui_location,ui_charts,ui_atlas,ui_namepicker,ui_sitefilters,ui_photostrip,ui_letterdemo,ui_identifydemo ui
+  class app,home,ident,rec,audit,results,ui_why,ui_receipt,letter,ui_multiphoto,ui_ai_unknown,ui_picker,ui_ring,ui_plancard,ui_location,ui_charts,ui_atlas,ui_namepicker,ui_sitefilters,ui_photostrip,ui_letterdemo,ui_identifydemo,ui_theme,ui_motion,ui_photos,ui_photoslot,ui_header,ui_leaf,ui_reveal ui
   class picker,clipboard device
   class c_identify,c_rec,c_letter,c_local,c_plan,c_user_message,c_locate,c_nearby,c_names,c_choose client
   class flask,r_identify,r_recommend,r_letter,r_plan,r_locate,r_nearby,r_names,r_choose route

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { COLORS, FONTS } from '../theme';
+import { COLORS, FONTS, TYPE } from '../theme';
 
 export default function PhotoStrip({ photos, onRemove, dimmed }) {
   return (
@@ -33,6 +33,6 @@ const styles = StyleSheet.create({
     position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: 10,
     backgroundColor: COLORS.cardBg, alignItems: 'center', justifyContent: 'center',
   },
-  removeText: { fontSize: 10, color: COLORS.terracotta, fontFamily: FONTS.bodyBold },
+  removeText: { fontSize: TYPE.caption, color: COLORS.terracotta, fontFamily: FONTS.bodyBold },
   dimmed: { opacity: 0.5 },
 });

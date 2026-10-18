@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import StatusBadge from './StatusBadge';
-import { COLORS, STATUS_COLORS, FONTS } from '../theme';
+import { COLORS, STATUS_COLORS, FONTS, TYPE, LINE } from '../theme';
 
 export const CHOSEN_BY_NAME = 'Chosen by name';
 
@@ -50,7 +50,7 @@ export function AgreedStatus({ options, onPickOne }) {
   const first = options[0];
   return (
     <View style={styles.agreed}>
-      <StatusBadge status={first.status} label={first.status_label} />
+      <StatusBadge pop status={first.status} label={first.status_label} />
       <Text style={styles.agreedText}>
         {options.length > 1
           ? `Every close match is ${first.status_label.toLowerCase()}. It's one of these: ${agreedName(options)}.`
@@ -95,26 +95,26 @@ export default function CandidatePicker({ options, suggested = 0, idSource, onPi
 
 const styles = StyleSheet.create({
   wrap: { gap: 8 },
-  title: { fontSize: 18, fontFamily: FONTS.heading, color: COLORS.darkGreen },
-  hint: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted },
+  title: { fontSize: TYPE.lead, fontFamily: FONTS.heading, color: COLORS.darkGreen },
+  hint: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted },
   chart: { gap: 6, paddingVertical: 6 },
   chartRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  chartName: { width: 110, fontSize: 12, fontFamily: FONTS.body, color: COLORS.textBody },
+  chartName: { width: 110, fontSize: TYPE.caption, fontFamily: FONTS.body, color: COLORS.textBody },
   chartTrack: { flex: 1, height: 10, borderRadius: 5, backgroundColor: COLORS.lightBg, overflow: 'hidden' },
   chartBar: { height: '100%', borderRadius: 5 },
   chartBarPick: { borderWidth: 2, borderColor: COLORS.darkGreen },
-  chartValue: { width: 36, textAlign: 'right', fontSize: 12, fontFamily: FONTS.bodyBold, color: COLORS.textBody },
-  chartNote: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textMuted },
+  chartValue: { width: 36, textAlign: 'right', fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.textBody },
+  chartNote: { fontSize: TYPE.caption, fontFamily: FONTS.body, color: COLORS.textMuted },
   option: {
     gap: 6,
     borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 12, backgroundColor: COLORS.cardBg,
   },
   optionText: { gap: 2 },
-  name: { fontSize: 15, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
-  match: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textMuted },
+  name: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
+  match: { fontSize: TYPE.caption, fontFamily: FONTS.body, color: COLORS.textMuted },
   none: { alignSelf: 'flex-start', paddingVertical: 6 },
-  noneText: { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.textMuted, textDecorationLine: 'underline' },
+  noneText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.textMuted, textDecorationLine: 'underline' },
   agreed: { gap: 6 },
-  agreedText: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: 19 },
-  pickOne: { fontSize: 13, fontFamily: FONTS.bodyBold, color: COLORS.softGreen },
+  agreedText: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: LINE.body },
+  pickOne: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.softGreen },
 });

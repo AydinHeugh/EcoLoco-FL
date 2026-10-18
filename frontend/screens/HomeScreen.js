@@ -1,87 +1,25 @@
-import React, { useRef, useEffect } from 'react'
+import React, { useRef } from 'react'
 import {
   View,
   Text,
-  ScrollView,
   StyleSheet,
   TouchableOpacity,
   Image,
   Animated,
-  Easing,
   useWindowDimensions,
 } from 'react-native'
 import { useFonts } from 'expo-font'
-import { COLORS, FONTS, FONT_ASSETS } from '../theme'
+import { COLORS, FONTS, FONT_ASSETS, TYPE, LINE } from '../theme'
 import SourceLine from '../components/SourceLine'
+import PhotoSlot from '../components/PhotoSlot'
 import { IdentifyDemo, LetterDemo } from '../components/HomeDemos'
+import { PHOTOS } from '../photos'
+import { useReduceMotion } from '../motion'
 
-
-const EASE_OUT = Easing.bezier(0.22, 1, 0.36, 1)  // fast-out, ease-in-out feel
-
-const LOGO            = require('../../assets/EcoLoco_logo.png')
-const IMG_SCANNING    = require('../../assets/EcoLoco_Scanning_Plant.png')
-const IMG_POLLINATORS = require('../../assets/EcoLoco_support_polinators.png')
-const IMG_GROW        = require('../../assets/GrowWithConfidence_Ecoloco.png')
-const IMG_ECOSYSTEM   = require('../../assets/EcoLoco_ecosystem.png')
-
-// ─── Staggered mount fade-up ──────────────────────────────────────────────────
-function useFadeUp(delay = 0) {
-  const opacity    = useRef(new Animated.Value(0)).current
-  const translateY = useRef(new Animated.Value(28)).current
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(opacity,    { toValue: 1, duration: 680, delay, easing: EASE_OUT, useNativeDriver: true }),
-      Animated.timing(translateY, { toValue: 0, duration: 680, delay, easing: EASE_OUT, useNativeDriver: true }),
-    ]).start()
-  }, [])
-
-  return { opacity, transform: [{ translateY }] }
-}
-
-// ─── Animated press button ────────────────────────────────────────────────────
-function AnimButton({ style, textStyle, label, onPress }) {
-  const scale = useRef(new Animated.Value(1)).current
-  const pressIn  = () => Animated.spring(scale, { toValue: 0.96, useNativeDriver: true, speed: 50 }).start()
-  const pressOut = () => Animated.spring(scale, { toValue: 1,    useNativeDriver: true, speed: 24 }).start()
-  return (
-    <TouchableOpacity onPress={onPress} onPressIn={pressIn} onPressOut={pressOut} activeOpacity={1}>
-      <Animated.View style={[style, { transform: [{ scale }] }]}>
-        <Text style={textStyle}>{label}</Text>
-      </Animated.View>
-    </TouchableOpacity>
-  )
-}
-
-// ─── Ornament that draws itself in ────────────────────────────────────────────
-function Ornament({ delay = 0 }) {
-  const scaleX  = useRef(new Animated.Value(0)).current
-  const opacity = useRef(new Animated.Value(0)).current
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(scaleX, {
-        toValue: 1, duration: 800, delay, easing: EASE_OUT, useNativeDriver: true,
-      }),
-      Animated.timing(opacity, {
-        toValue: 1, duration: 400, delay, useNativeDriver: true,
-      }),
-    ]).start()
-  }, [])
-
-  return (
-    <Animated.View style={[styles.ornamentRow, { opacity, transform: [{ scaleX }] }]}>
-      <View style={styles.ornamentLine} />
-      <View style={styles.ornamentDiamond} />
-      <View style={styles.ornamentLine} />
-    </Animated.View>
-  )
-}
-
-// ─── Section divider ──────────────────────────────────────────────────────────
-function Divider() {
-  return <View style={styles.dividerLine} />
-}
+const LOGO         = require('../../assets/EcoLoco_logo.png')
+const IMG_SCANNING = require('../../assets/EcoLoco_Scanning_Plant.png')
+const HERO_HEIGHT  = 380
+const PARALLAX     = 0.35
 
 const SOURCES = [
   { count: '179', label: "invasive plants on Florida's official 2026 list (FISC)" },
@@ -89,390 +27,220 @@ const SOURCES = [
   { count: '30', label: 'plants we recommend, each checked in the USF Atlas' },
 ]
 
-function SourcesPanel() {
+function PressButton({ style, textStyle, label, onPress }) {
+  const scale = useRef(new Animated.Value(1)).current
+  const pressIn  = () => Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, speed: 50 }).start()
+  const pressOut = () => Animated.spring(scale, { toValue: 1,    useNativeDriver: true, speed: 24 }).start()
   return (
-    <View style={styles.sources} accessible accessibilityLabel={SOURCES.map(s => `${s.count} ${s.label}`).join('. ')}>
-      {SOURCES.map(source => (
-        <View key={source.count} style={styles.sourceRow}>
-          <Text style={styles.sourceCount}>{source.count}</Text>
-          <Text style={styles.sourceLabel}>{source.label}</Text>
-        </View>
-      ))}
-    </View>
+    <TouchableOpacity onPress={onPress} onPressIn={pressIn} onPressOut={pressOut} activeOpacity={1} accessibilityRole="button">
+      <Animated.View style={[style, { transform: [{ scale }] }]}>
+        <Text style={textStyle}>{label}</Text>
+      </Animated.View>
+    </TouchableOpacity>
   )
 }
 
-// ─── Feature row ─────────────────────────────────────────────────────────────
-function FeatureRow({ image, visual, fitVisual, imageLabel, heading, body, source, linkText, onLinkPress, imgHeight, reverse, animStyle }) {
-  const imgBlock = image || visual ? (
-    <View style={[styles.featureImgWrap, fitVisual ? null : { height: imgHeight }]}>
-      {visual ?? <Image source={image} style={styles.featureImg} resizeMode="cover" accessibilityLabel={imageLabel} />}
-    </View>
-  ) : null
-  const textBlock = (
-    <View style={[styles.featureText, reverse && { paddingLeft: 4 }]}>
-      <Text style={styles.featureHeading}>{heading}</Text>
+function SectionLink({ label, onPress, onDark }) {
+  return (
+    <TouchableOpacity onPress={onPress} style={styles.linkBtn} accessibilityRole="link" hitSlop={{ top: 8, bottom: 8 }}>
+      <Text style={[styles.featureLink, onDark && styles.featureLinkDark]}>{label}</Text>
+    </TouchableOpacity>
+  )
+}
+
+function Feature({ visual, heading, body, linkText, onLinkPress, reverse, wide, visualWidth = '46%' }) {
+  const text = (
+    <View style={[styles.featureText, wide && styles.featureTextWide]}>
+      <Text style={styles.featureHeading} accessibilityRole="header">{heading}</Text>
       <Text style={styles.featureBody}>{body}</Text>
-      {source && <SourceLine source={source} />}
-      {linkText && (
-        <TouchableOpacity onPress={onLinkPress} style={styles.linkBtn} accessibilityRole="link">
-          <Text style={styles.featureLink}>{linkText}</Text>
-        </TouchableOpacity>
-      )}
+      {linkText && <SectionLink label={linkText} onPress={onLinkPress} />}
     </View>
   )
-  return (
-    <Animated.View style={[styles.featureRow, animStyle]}>
-      {reverse ? <>{textBlock}{imgBlock}</> : <>{imgBlock}{textBlock}</>}
-    </Animated.View>
-  )
+  const art = <View style={wide ? { width: visualWidth } : styles.visualStacked}>{visual}</View>
+  if (!wide) return <View style={styles.featureStack}>{art}{text}</View>
+  return <View style={styles.featureRow}>{reverse ? <>{text}{art}</> : <>{art}{text}</>}</View>
 }
 
-// ─── HomeScreen ───────────────────────────────────────────────────────────────
 export default function HomeScreen({ navigation }) {
   const { width } = useWindowDimensions()
-  const isWide   = width > 600
-  const imgHeight = isWide ? 280 : 190
-  const maxWidth  = Math.min(width, 960)
-
-  const nameAnim = useFadeUp(0)
-  const tagAnim  = useFadeUp(400)
-  const ctaAnim  = useFadeUp(560)
-  const s1Anim = useFadeUp(200)
-  const s2Anim = useFadeUp(320)
-  const s3Anim = useFadeUp(440)
-  const s4Anim = useFadeUp(560)
-  const s5Anim = useFadeUp(680)
-  const s6Anim = useFadeUp(800)
-
+  const wide = width > 600
+  const maxWidth = Math.min(width, 960)
+  const reduce = useReduceMotion()
+  const scrollY = useRef(new Animated.Value(0)).current
   const [fontsLoaded] = useFonts(FONT_ASSETS)
 
   if (!fontsLoaded) return <View style={styles.container} />
 
+  const drift = reduce ? 0 : scrollY.interpolate({
+    inputRange: [-HERO_HEIGHT, 0, HERO_HEIGHT],
+    outputRange: [-HERO_HEIGHT * PARALLAX, 0, HERO_HEIGHT * PARALLAX],
+    extrapolate: 'clamp',
+  })
+  const photoHeight = wide ? 300 : 230
+
   return (
-    <ScrollView
+    <Animated.ScrollView
       style={styles.container}
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
+      scrollEventThrottle={16}
+      onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
     >
+      <View style={styles.hero}>
+        <Animated.View style={[styles.heroPhoto, { transform: [{ translateY: drift }] }]}>
+          <PhotoSlot source={PHOTOS.home} label="A school garden full of native plants" style={styles.fill} />
+        </Animated.View>
+        <View style={styles.heroScrim} />
+        <View style={[styles.brand, { width: maxWidth }]}>
+          <Image source={LOGO} style={styles.logo} />
+          <Text style={styles.wordmark}>EcoLoco</Text>
+        </View>
+      </View>
+
       <View style={[styles.inner, { width: maxWidth }]}>
-
-        {/* ── Header ── */}
-        <View style={styles.header}>
-          <View style={styles.logoRow}>
-            <Image source={LOGO} style={styles.logoImg} />
-            <Text style={styles.logoText}>EcoLoco</Text>
-          </View>
-        </View>
-
-        <Divider />
-
-        {/* ── Hero ── */}
-        <View style={styles.hero}>
-          <Animated.Text style={[styles.heroHeadingItalic, styles.heroName, nameAnim]}>EcoLoco</Animated.Text>
-          <Ornament delay={300} />
-          <Animated.Text style={[styles.tagline, tagAnim]}>
+        <View style={styles.intro}>
+          <Text style={[styles.headline, wide && styles.headlineWide]} accessibilityRole="header">
             Find out which plants on your campus help Florida wildlife, and which ones hurt it.
-          </Animated.Text>
-          <Animated.View style={[styles.ctaWrap, ctaAnim]}>
-            <AnimButton
-              style={styles.cta}
-              textStyle={styles.ctaText}
-              label="Start a campus scan"
-              onPress={() => navigation?.navigate('EcoScan')}
-            />
-          </Animated.View>
+          </Text>
+          <PressButton
+            style={styles.cta}
+            textStyle={styles.ctaText}
+            label="Start a campus scan"
+            onPress={() => navigation?.navigate('EcoScan')}
+          />
         </View>
 
-        <Divider />
-
-        <FeatureRow
-          animStyle={s1Anim}
-          image={IMG_POLLINATORS}
-          imgHeight={imgHeight}
+        <Feature
+          wide={wide}
+          visual={<PhotoSlot source={PHOTOS.homeScan} label="Pollinators on native flowers" style={[styles.photo, { height: photoHeight }]} />}
           heading="Scan Your Campus"
           body="Add each plant around your school, give it up to 5 photos, then scan them all at once. You'll see what share are native, which invasive plants to remove, and what to plant instead."
           linkText="Start a campus scan →"
           onLinkPress={() => navigation?.navigate('EcoScan')}
         />
+      </View>
 
-        <Divider />
+      <View style={styles.letterBand}>
+        <View style={[styles.inner, { width: maxWidth }]}>
+          <Feature
+            wide={wide}
+            reverse
+            visualWidth="44%"
+            visual={<View style={styles.letterPaper}><LetterDemo /></View>}
+            heading="Write to Your Principal"
+            body="EcoLoco turns your scan into a letter for your principal: which invasive plants to remove and how to do it safely, which natives to plant and what to ask for at the nursery, with a source for every fact. You pick which plants go in it."
+            linkText="Make your plan →"
+            onLinkPress={() => navigation?.navigate('EcoScan')}
+          />
+        </View>
+      </View>
 
-        <FeatureRow
-          animStyle={s2Anim}
-          reverse
-          visual={<LetterDemo />}
-          fitVisual
-          imgHeight={imgHeight}
-          heading="Write to Your Principal"
-          body="EcoLoco turns your scan into a letter for your principal: which invasive plants to remove and how to do it safely, which natives to plant and what to ask for at the nursery, with a source for every fact. You pick which plants go in it."
-          linkText="Make your plan →"
-          onLinkPress={() => navigation?.navigate('EcoScan')}
-        />
-
-        <Divider />
-
-        <FeatureRow
-          animStyle={s3Anim}
-          visual={<IdentifyDemo image={IMG_SCANNING} />}
-          imgHeight={imgHeight}
+      <View style={[styles.inner, { width: maxWidth }]}>
+        <Feature
+          wide={wide}
+          visual={<View style={[styles.photo, { height: photoHeight }]}><IdentifyDemo image={IMG_SCANNING} /></View>}
           heading="Identify a Plant"
           body="Add up to 5 photos of one plant, or choose it by name. EcoLoco tells you if it's native to Florida, not native, or invasive, and where that answer comes from."
           linkText="Identify a plant →"
           onLinkPress={() => navigation?.navigate('Camera')}
         />
 
-        <Divider />
-
-        <FeatureRow
+        <Feature
+          wide={wide}
           reverse
-          animStyle={s4Anim}
-          image={IMG_GROW}
-          imgHeight={imgHeight}
+          visual={<PhotoSlot source={PHOTOS.homeNatives} label="A garden path lined with native plants" style={[styles.photo, { height: photoHeight }]} />}
           heading="Plant Florida Natives"
           body="See native plants checked for Palm Beach County, with what each one helps and what to ask for at the nursery. Every fact shows its source."
           linkText="See native plants →"
           onLinkPress={() => navigation?.navigate('Recommend')}
         />
-
-        <Divider />
-
-        <FeatureRow
-          animStyle={s5Anim}
-          image={IMG_ECOSYSTEM}
-          imgHeight={imgHeight}
-          heading="Why It Matters"
-          body="Oaks feed 395 kinds of caterpillars in South Florida. Those caterpillars feed the birds that live here."
-          source={{ name: 'National Wildlife Federation', url: 'https://www.nwf.org/-/media/Documents/PDFs/Garden-for-Wildlife/Keystone-Plants/NWF-GFW-keystone-plant-list-ecoregion-15-tropical-wet-forests.pdf' }}
-        />
-
-        <Divider />
-
-        <FeatureRow
-          reverse
-          animStyle={s6Anim}
-          visual={<SourcesPanel />}
-          fitVisual
-          imgHeight={imgHeight}
-          heading="How We Know"
-          body="Every answer comes from Florida's official invasive list, USDA, and the USF Atlas. Our team checked every plant we recommend."
-        />
-
-        <View style={styles.footerDivider} />
-
-        {/* ── Footer ── */}
-        <View style={styles.footer}>
-          <Image source={LOGO} style={styles.footerLogo} />
-          <Text style={styles.footerText}>EcoLoco</Text>
-        </View>
-
       </View>
-    </ScrollView>
+
+      <View style={styles.whyBand}>
+        <PhotoSlot source={PHOTOS.homeWhy} label="A hummingbird and a monarch butterfly at native flowers" style={StyleSheet.absoluteFillObject} />
+        <View style={styles.whyScrim} />
+        <View style={[styles.inner, styles.whyInner, { width: maxWidth }]}>
+          <Text style={styles.whyHeading} accessibilityRole="header">Why It Matters</Text>
+          <Text style={styles.whyBody}>Oaks feed 395 kinds of caterpillars in South Florida. Those caterpillars feed the birds that live here.</Text>
+          <SourceLine onDark source={{ name: 'National Wildlife Federation', url: 'https://www.nwf.org/-/media/Documents/PDFs/Garden-for-Wildlife/Keystone-Plants/NWF-GFW-keystone-plant-list-ecoregion-15-tropical-wet-forests.pdf' }} />
+        </View>
+      </View>
+
+      <View style={styles.knowBand}>
+        <View style={[styles.inner, styles.knowInner, { width: maxWidth }]}>
+          <Text style={styles.knowHeading} accessibilityRole="header">How We Know</Text>
+          <Text style={styles.knowBody}>Every answer comes from Florida's official invasive list, USDA, and the USF Atlas. Our team checked every plant we recommend.</Text>
+          <View style={[styles.sources, wide && styles.sourcesWide]} accessible accessibilityLabel={SOURCES.map(s => `${s.count} ${s.label}`).join('. ')}>
+            {SOURCES.map(source => (
+              <View key={source.count} style={[styles.sourceItem, wide && styles.sourceItemWide]}>
+                <Text style={styles.sourceCount}>{source.count}</Text>
+                <Text style={styles.sourceLabel}>{source.label}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.footer}>
+        <Image source={LOGO} style={styles.footerLogo} />
+        <Text style={styles.footerText}>EcoLoco</Text>
+      </View>
+    </Animated.ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.cream,
-  },
-  scrollContent: {
-    alignItems: 'center',
-  },
-  inner: {
-    alignSelf: 'center',
-  },
+  container: { flex: 1, backgroundColor: COLORS.cream },
+  scrollContent: { alignItems: 'center' },
+  inner: { alignSelf: 'center' },
+  fill: { width: '100%', height: '100%' },
 
-  // ── Header ──
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 52,
-    paddingBottom: 16,
-  },
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  logoImg: {
-    width: 40,
-    height: 40,
-    resizeMode: 'contain',
-  },
-  logoText: {
-    fontSize: 20,
-    fontFamily: FONTS.heading,
-    color: COLORS.darkGreen,
-    letterSpacing: 0.3,
-  },
-  // ── Divider ──
-  dividerLine: {
-    height: 1,
-    backgroundColor: COLORS.border,
-  },
+  hero: { width: '100%', height: HERO_HEIGHT, overflow: 'hidden', backgroundColor: COLORS.darkGreen, alignItems: 'center' },
+  heroPhoto: { ...StyleSheet.absoluteFillObject },
+  heroScrim: { position: 'absolute', left: 0, right: 0, top: 0, height: 120, backgroundColor: COLORS.scrimTop },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingTop: 52 },
+  logo: { width: 34, height: 34, resizeMode: 'contain', borderRadius: 7 },
+  wordmark: { fontSize: TYPE.h3, fontFamily: FONTS.heading, color: COLORS.onDark },
 
-  // ── Hero ──
-  hero: {
-    paddingHorizontal: 28,
-    paddingTop: 44,
-    paddingBottom: 40,
-    alignItems: 'center',
-  },
-  heroHeadingItalic: {
-    fontSize: 36,
-    fontFamily: FONTS.headingItalic,
-    color: COLORS.darkGreen,
-    lineHeight: 46,
-  },
+  intro: { paddingHorizontal: 20, paddingTop: 30, paddingBottom: 36, gap: 26 },
+  headline: { fontSize: TYPE.h1, lineHeight: LINE.h1, fontFamily: FONTS.headingBlack, color: COLORS.darkGreen, maxWidth: 680 },
+  headlineWide: { fontSize: TYPE.display, lineHeight: LINE.display },
+  cta: { backgroundColor: COLORS.accent, borderRadius: 14, paddingVertical: 18, paddingHorizontal: 24, alignItems: 'center', alignSelf: 'stretch', maxWidth: 420 },
+  ctaText: { fontSize: TYPE.lead, fontFamily: FONTS.bodyBold, color: COLORS.white },
 
-  tagline: {
-    fontSize: 15,
-    fontFamily: FONTS.bodyBold,
-    color: COLORS.darkGreen,
-    textAlign: 'center',
-    marginTop: 20,
-    lineHeight: 23,
-    paddingHorizontal: 16,
-  },
+  featureStack: { paddingHorizontal: 20, paddingVertical: 28, gap: 18 },
+  featureRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 40, gap: 36 },
+  visualStacked: { width: '100%' },
+  featureText: { gap: 12 },
+  featureTextWide: { flex: 1 },
+  featureHeading: { fontSize: TYPE.h2, lineHeight: LINE.h2, fontFamily: FONTS.heading, color: COLORS.darkGreen },
+  featureBody: { fontSize: TYPE.body, lineHeight: LINE.body, fontFamily: FONTS.body, color: COLORS.textBody, maxWidth: 560 },
+  linkBtn: { alignSelf: 'flex-start', paddingVertical: 4 },
+  featureLink: { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.accent, textDecorationLine: 'underline' },
+  featureLinkDark: { color: COLORS.onDark },
+  photo: { width: '100%', borderRadius: 24, overflow: 'hidden', backgroundColor: COLORS.photoBg },
 
-  heroName: {
-    marginBottom: 18,
-  },
-  ctaWrap: {
-    alignSelf: 'stretch',
-    marginTop: 24,
-    paddingHorizontal: 8,
-  },
-  cta: {
-    backgroundColor: COLORS.darkGreen,
-    borderRadius: 10,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  ctaText: {
-    fontSize: 15,
-    fontFamily: FONTS.bodyBold,
-    color: COLORS.cream,
-  },
+  letterBand: { width: '100%', backgroundColor: COLORS.seaGrapeSoft, alignItems: 'center', marginTop: 8 },
+  letterPaper: { borderRadius: 4, overflow: 'hidden', transform: [{ rotate: '-1.5deg' }] },
 
-  // ── Ornament ──
-  ornamentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    width: '50%',
-  },
-  ornamentLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: COLORS.border,
-  },
-  ornamentDiamond: {
-    width: 7,
-    height: 7,
-    backgroundColor: COLORS.softGreen,
-    opacity: 0.45,
-    transform: [{ rotate: '45deg' }],
-  },
+  whyBand: { width: '100%', minHeight: 340, justifyContent: 'flex-end', alignItems: 'center', overflow: 'hidden', marginTop: 8 },
+  whyScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: COLORS.scrim },
+  whyInner: { paddingHorizontal: 20, paddingVertical: 36, gap: 12 },
+  whyHeading: { fontSize: TYPE.lead, fontFamily: FONTS.bodyBold, color: COLORS.onDarkMuted },
+  whyBody: { fontSize: TYPE.h2, lineHeight: LINE.h2, fontFamily: FONTS.headingItalic, color: COLORS.onDark, maxWidth: 640 },
 
-  // ── Feature rows ──
-  featureRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 28,
-    gap: 20,
-  },
-  featureImgWrap: {
-    width: '42%',
-    borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: COLORS.lightBg,
-    shadowColor: COLORS.darkGreen,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  featureImg: {
-    width: '100%',
-    height: '100%',
-  },
-  featureText: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: 10,
-  },
-  featureHeading: {
-    fontSize: 18,
-    fontFamily: FONTS.heading,
-    color: COLORS.darkGreen,
-    lineHeight: 26,
-  },
-  featureBody: {
-    fontSize: 12.5,
-    fontFamily: FONTS.body,
-    color: COLORS.textBody,
-    lineHeight: 20,
-  },
-  linkBtn: {
-    alignSelf: 'flex-start',
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.darkGreen,
-    paddingBottom: 1,
-  },
-  featureLink: {
-    fontSize: 12,
-    fontFamily: FONTS.bodyBold,
-    color: COLORS.darkGreen,
-  },
+  knowBand: { width: '100%', backgroundColor: COLORS.darkGreen, alignItems: 'center' },
+  knowInner: { paddingHorizontal: 20, paddingVertical: 40, gap: 14 },
+  knowHeading: { fontSize: TYPE.h2, lineHeight: LINE.h2, fontFamily: FONTS.heading, color: COLORS.onDark },
+  knowBody: { fontSize: TYPE.body, lineHeight: LINE.body, fontFamily: FONTS.body, color: COLORS.onDarkMuted, maxWidth: 560 },
+  sources: { marginTop: 10, gap: 18 },
+  sourcesWide: { flexDirection: 'row', gap: 28 },
+  sourceItem: { gap: 2, borderTopWidth: 1, borderTopColor: COLORS.ringTrackDark, paddingTop: 12 },
+  sourceItemWide: { flex: 1 },
+  sourceCount: { fontSize: TYPE.h1, lineHeight: LINE.h1, fontFamily: FONTS.headingBlack, color: COLORS.accentOnDark },
+  sourceLabel: { fontSize: TYPE.body, lineHeight: LINE.body, fontFamily: FONTS.body, color: COLORS.onDark },
 
-  // ── Sources panel ──
-  sources: {
-    backgroundColor: COLORS.darkGreen,
-    padding: 14,
-    justifyContent: 'center',
-    gap: 12,
-  },
-  sourceRow: {
-    gap: 2,
-  },
-  sourceCount: {
-    fontSize: 22,
-    fontFamily: FONTS.heading,
-    color: COLORS.cream,
-  },
-  sourceLabel: {
-    fontSize: 11,
-    fontFamily: FONTS.body,
-    color: COLORS.tabInactive,
-    lineHeight: 15,
-  },
-
-  // ── Footer ──
-  footerDivider: {
-    height: 1,
-    backgroundColor: COLORS.border,
-    marginTop: 8,
-  },
-  footer: {
-    alignItems: 'center',
-    paddingVertical: 28,
-    gap: 8,
-  },
-  footerLogo: {
-    width: 26,
-    height: 26,
-    resizeMode: 'contain',
-    opacity: 0.45,
-  },
-  footerText: {
-    fontSize: 11,
-    fontFamily: FONTS.body,
-    color: COLORS.textMuted,
-    letterSpacing: 0.4,
-  },
+  footer: { alignItems: 'center', paddingVertical: 28, gap: 8 },
+  footerLogo: { width: 26, height: 26, resizeMode: 'contain', opacity: 0.45 },
+  footerText: { fontSize: TYPE.caption, fontFamily: FONTS.body, color: COLORS.textMuted, letterSpacing: 0.4 },
 })
