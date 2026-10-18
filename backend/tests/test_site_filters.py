@@ -30,11 +30,13 @@ def _checked(rec, **fields):
 
 
 @pytest.mark.parametrize("entry", RECS, ids=lambda e: e["common_name"])
-def test_every_plant_has_sourced_unverified_moisture_and_care(entry):
+def test_every_plant_has_sourced_moisture_and_care(entry):
     for field in ("moisture", "care"):
         assert entry[field]["source"]["url"].startswith("https://")
         assert entry[field]["basis"]
-        assert entry[field]["verified"] is False
+        assert isinstance(entry[field]["verified"], bool)
+        if entry[field]["verified"]:
+            assert entry[field]["checked_by"] and entry[field]["checked_on"]
     assert set(entry["moisture"]["value"]) <= {"dry", "average", "wet"} and entry["moisture"]["value"]
     assert entry["care"]["value"] in {"low", "moderate"}
 
@@ -74,7 +76,9 @@ def test_space_filter_allows_smaller_plants():
 
 
 def test_unchecked_moisture_and_care_never_hide_a_plant():
-    red_maple = BY_NAME["Red maple"]
+    red_maple = dict(BY_NAME["Red maple"])
+    for field in ("moisture", "care"):
+        red_maple[field] = dict(red_maple[field], verified=False)
     assert "dry" not in red_maple["moisture"]["value"]
     assert fits_site(red_maple, _site(moisture="dry", care="low"))
 
@@ -111,3 +115,8 @@ def test_recommend_route_takes_site(client):
 def test_routes_reject_a_bad_site(client, route, extra):
     response = client.post(route, json={"location": "33431", "site": "sunny", **extra})
     assert response.status_code == 400
+
+
+def test_checked_fields_filter_the_real_data():
+    names = {c["common_name"] for c in build_plan([], site={"moisture": "dry"})["add"]}
+    assert "Red maple" not in names and names
