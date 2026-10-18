@@ -20,6 +20,7 @@ import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS } from '../theme';
 import StatusBadge from '../components/StatusBadge';
 import CandidatePicker, { NO_MATCH_TEXT, matchLabel } from '../components/CandidatePicker';
 import SourceLine from '../components/SourceLine';
+import AtlasButton from '../components/AtlasButton';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
 import { useProgressText } from '../components/ProgressText';
 import LocationPicker from '../components/LocationPicker';
@@ -343,6 +344,7 @@ export default function IdentificationScreen({ navigation }) {
                   <Text style={styles.plantName}>{shown.plant_name}</Text>
                   <StatusBadge status={shown.status} label={shown.status_label} />
                   {!shown.why && !shown.helps && <Text style={styles.noData}>We don't have wildlife info for this plant yet</Text>}
+                  <AtlasButton url={shown.atlas_url} />
                 </View>
               </View>
             )}

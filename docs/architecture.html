@@ -190,6 +190,7 @@
         "Errors show as text; a 400 from the server (like the Florida-only message) shows the server's message.",
         "Plants with no wildlife facts in our data say \"We don't have wildlife info for this plant yet\".",
         "'Get native plant recommendations for ZIP' → `navigate('Recommend', {prefillZip})`. A \"Plant identification powered by Pl@ntNet\" credit links to plantnet.org.",
+        "Plants we recommend and have checked show a \"See where it grows\" button (`AtlasButton`) that opens that plant's USF Atlas page in an in-app browser.",
         "Colors and fonts come from `frontend/theme.js`."
       ]
     },
@@ -206,6 +207,7 @@
       "how": [
         "You type a 5-digit ZIP (or arrive with one pre-filled) and press \"Show plants\".",
         "Calls `getPlantRecommendations(zip)` and shows each plant as a `PlanCard` (Helps, Where, Buying it, Watch out, Look into, with sources).",
+        "Outside South Florida (the server sends `south_florida: false`), shows \"Planting recommendations are only checked for South Florida so far.\" instead of cards.",
         "If no plants are verified yet, says \"No plants are ready to recommend yet. Our team is still checking each one.\"",
         "Links to plantrealflorida.org to find a native nursery.",
         "Errors (bad ZIP, ZIP outside Florida, no connection) show as text, not pop-ups."
@@ -222,10 +224,12 @@
       "row": 4.5,
       "what": "The campus audit: scan many plants one after another, then score the whole schoolyard.",
       "how": [
+        "Under the title it says \"Only scan real plants growing outdoors.\"",
         "Uses `LocationPicker` for the school's location before scanning. The place lives in module-level variables (memory only) so it survives switching tabs.",
         "`scanPlant(source)` asks for camera or photo-library permission, then opens expo-image-picker (on the web both buttons open a file picker).",
         "Adds a loading card right away, then calls `identifyPlant(photo.base64, zipCode)`.",
-        "Every result is kept as a card. `confirm` cards show the `CandidatePicker` under the photo; `unidentified` cards say \"Not identified\" with the retake tip. Any card can be removed with ✕.",
+        "Every result is kept as a card. `confirm` cards show the `CandidatePicker` under the photo; `unidentified` cards say \"Not identified\" with the retake tip. Any card can be removed with ✕ (read out as \"Remove this plant\").",
+        "`forgetScannedPlant(id)` lets the results screen drop a plant from the saved list; when you come back to EcoScan the list matches.",
         "Problems (missing ZIP, permissions, network errors) appear as a message on the screen instead of a popup.",
         "Finish sends every card: picked or identified plants as they are, unconfirmed or unidentified ones as \"Unidentified plant\" with status `unknown`.",
         "\"New Scan\" clears the list after a confirm (browser confirm dialog on the web)."
@@ -243,8 +247,9 @@
       "what": "The audit results: the plan first, then what the campus supports now, the percent native, and the letter.",
       "how": [
         "Receives `plants[]` and `zipCode` from AuditScreen.",
-        "Calls `getPlan()` once; the plan includes the summary.",
-        "Your plan: a Remove `PlanCard` for each invasive (why, safety, replacement), then Add cards, then a link to plantrealflorida.org.",
+        "Calls `getPlan()` for the plants it has; the plan includes the summary.",
+        "Each plant under What your campus supports now has a Remove button (for a fake or potted plant scanned by mistake). Removing one calls `getPlan()` again, so the counts, percent, charts, plan and letter all update; it shows \"Updating your plan…\", and if that fails, the error with Try again.",
+        "Your plan: a Remove `PlanCard` for each invasive (why, safety, replacement), then Add cards, then a link to plantrealflorida.org. Outside South Florida the Remove cards stay, without a replacement, and the Add cards are replaced by \"Planting recommendations are only checked for South Florida so far.\"",
         "What your campus supports now: every plant with its status and one sourced line, or \"We don't have wildlife info for this plant yet\".",
         "How native is your campus: `PercentRing` now and with the plan (or \"Not enough identified plants yet\") and counts for the four groups.",
         "Charts: `StatusBars` (now vs with the plan) and `CaterpillarBars` (NWF group counts per card).",
@@ -444,7 +449,7 @@
       "what": "API endpoint for the Recommend tab: native plants to add when there's no audit.",
       "how": [
         "Reads `location`; 400 if missing, and the Florida-only message for ZIPs outside Florida.",
-        "Returns `{result: build_plan([]).add}`: verified plants from our data, ranked as if the campus had nothing yet. No AI is used."
+        "Returns `{result: build_plan([], south_florida).add, south_florida}`: verified plants from our data, ranked as if the campus had nothing yet, or no plants when the ZIP is outside South Florida (`in_south_florida()`). No AI is used."
       ]
     },
     {
@@ -746,7 +751,7 @@
         "Adds `status_label` (`Native`, `Non-native`, `Invasive`, `Unknown: not on Florida lists`) and `source_label` (for example `Florida Invasive Species Council 2026 list`).",
         "Uses our list's common name first, then PlantNet's, then the scientific name, so a name is never blank.",
         "Non-native plants from USDA with no curated line get `why`: \"Not from Florida, and not on Florida's invasive list.\"",
-        "Adds `helps` and `watch_out` from `fl_recommendations.json` and `removal_safety` from the FISC list when we have them.",
+        "Adds `helps` and `watch_out` from `fl_recommendations.json`, `atlas_url` when that plant is verified, and `removal_safety` from the FISC list when we have them.",
         "Returns `{plant_name, scientific_name, confidence, status, status_label, source, source_label, why}`."
       ]
     },
@@ -832,6 +837,7 @@
         "Facts come from IRC Natives for Your Neighborhood, UF/IFAS, ASPCA and the FISC list, each with a link.",
         "`replaces` pairs a plant with FISC invasives it can stand in for, with a plain reason. These pairings are EcoLoco suggestions for the team to review.",
         "Every Palm Beach County prohibited invasive has at least one replacement (a test checks this).",
+        "`atlas_url`: that plant's own species page in the USF Atlas of Florida Plants.",
         "Only entries with `verified: true` are recommended. All 31 were checked against the USF Atlas and their sources (docs/plant-checklist.md) and carry `checked_by` and `checked_on`."
       ]
     },
@@ -884,7 +890,8 @@
         "Picks one replacement per invasive, then gap fillers, up to 5 Add cards; the first 3 have at most 1 tree and at least 1 easy plant.",
         "Cards whose plant group is on the NWF list carry `nwf: {group, caterpillar_species}` for the chart.",
         "Add cards say why they were picked and their effect: \"Oaks feed 395 kinds of caterpillars here.\" for NWF groups, otherwise the percent-native change. Counts are never added up.",
-        "Returns `{remove, add, gaps, summary, why_this_matters}`.",
+        "With `south_florida=False` no plant is recommended: Remove cards keep their why and safety but get no replacement or percent change, and there are no Add cards.",
+        "Returns `{remove, add, gaps, summary, why_this_matters, south_florida}`.",
         "Looks the scanned plants up once and reuses that for the final summary through `with_plan()`."
       ]
     },
@@ -901,7 +908,7 @@
       "how": [
         "Reads `plants` (a list, may be empty) and `location`; 400 if missing.",
         "ZIP codes outside Florida (32004–34997) get \"EcoLoco's plant lists cover Florida only. Enter a Florida ZIP code.\"",
-        "Returns `{result: build_plan(plants)}`."
+        "Returns `{result: build_plan(plants, in_south_florida(location))}`: scanning and invasive checks work anywhere in Florida; Add cards only for South Florida."
       ]
     },
     {
@@ -979,9 +986,10 @@
       "what": "One Remove or Add card in the plan, with every fact followed by its source.",
       "how": [
         "Add cards: name, why it was picked, effect, then Helps / Where / Buying it / Watch out / Look into.",
-        "Remove cards: name, Invasive badge, Why, Safety, and what to replace it with.",
+        "Remove cards: name, Invasive badge, Why, Safety, and what to replace it with (left out when `southFlorida` is false). `NOT_SOUTH_FLORIDA` holds the message screens show instead of Add cards.",
         "Shows 2 rows and a \"More\" button for the rest.",
-        "`SourceLine` (frontend/components/SourceLine.js) shows \"Source: …\" in small text and opens the link."
+        "`SourceLine` (frontend/components/SourceLine.js) shows \"Source: …\" in small text and opens the link.",
+        "Add cards end with `AtlasButton` (\"See where it grows\") when the card has an `atlas_url`."
       ]
     },
     {
@@ -1216,6 +1224,98 @@
       "how": [
         "Asks Nominatim for that postal code (not a free-text search).",
         "Returns rounded `(lat, lon)`, or `None` if the lookup fails; the ZIP is accepted either way."
+      ]
+    },
+    {
+      "id": "ui_atlas",
+      "label": "AtlasButton",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/AtlasButton.js",
+      "symbol": "export default function AtlasButton",
+      "col": 2,
+      "row": 3.3,
+      "what": "The \"See where it grows\" button that opens a plant's USF Atlas page inside the app.",
+      "how": [
+        "Shows nothing when there's no link.",
+        "On press calls expo-web-browser's `openBrowserAsync(url)`: Chrome Custom Tabs on Android, an in-app Safari view on iPhone, a new tab on the web.",
+        "Used on Add cards and on the Identify result."
+      ]
+    },
+    {
+      "id": "usf_atlas",
+      "label": "USF Atlas of Florida Plants",
+      "layer": "ext",
+      "status": "live",
+      "file": "backend/data/fl_recommendations.json",
+      "symbol": "https://florida.plantatlas.usf.edu/plant/species/",
+      "col": 3,
+      "row": 2.4,
+      "what": "The University of South Florida's plant atlas: each species page shows whether it's native and a map of the Florida counties it's recorded in.",
+      "how": [
+        "We store one species page link per recommended plant; the app opens it, it never downloads from it.",
+        "The team used these pages to check each plant (docs/plant-checklist.md)."
+      ]
+    },
+    {
+      "id": "s_region",
+      "label": "in_south_florida()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/location_service.py",
+      "symbol": "def in_south_florida(",
+      "col": 5,
+      "row": 11.4,
+      "what": "Says whether a ZIP code is in one of the 12 South Florida counties our planting advice was checked for.",
+      "how": [
+        "`county(zip)` looks the ZIP up in `fl_zip_counties.json`.",
+        "True for Palm Beach, Broward, Miami-Dade, Martin, Monroe, Collier, Lee, Hendry, Glades, Okeechobee, St. Lucie and Charlotte.",
+        "A ZIP the file doesn't know (for example a PO box) counts as outside South Florida."
+      ]
+    },
+    {
+      "id": "d_zip_counties",
+      "label": "fl_zip_counties.json",
+      "layer": "data",
+      "status": "live",
+      "file": "backend/data/fl_zip_counties.json",
+      "symbol": null,
+      "col": 7,
+      "row": 11.4,
+      "what": "Every Florida ZIP code and the county it's in, from the 2020 Census.",
+      "how": [
+        "1,013 ZIP codes across all 67 counties.",
+        "A ZIP that crosses county lines goes to the county holding most of its land."
+      ]
+    },
+    {
+      "id": "zip_builder",
+      "label": "build_zip_counties.py",
+      "layer": "data",
+      "status": "live",
+      "file": "backend/scripts/build_zip_counties.py",
+      "symbol": "def zip_counties(",
+      "col": 9,
+      "row": 11.4,
+      "what": "Script that rebuilds fl_zip_counties.json from the Census ZIP-to-county file.",
+      "how": [
+        "Reads the Census relationship file (a download link or a local copy).",
+        "For each ZIP keeps the county with the most land in it, and keeps only Florida counties.",
+        "Run: `venv\\Scripts\\python scripts/build_zip_counties.py <file or URL> data/fl_zip_counties.json`."
+      ]
+    },
+    {
+      "id": "s_county",
+      "label": "county()",
+      "layer": "svc",
+      "status": "live",
+      "file": "backend/services/location_service.py",
+      "symbol": "def county(",
+      "col": 6,
+      "row": 11.4,
+      "what": "Gives the Florida county for a ZIP code.",
+      "how": [
+        "Looks the ZIP up in `fl_zip_counties.json` (loaded once) and returns the county name, like \"Palm Beach\", or `None` if the file doesn't know it."
       ]
     }
   ],
@@ -1520,12 +1620,12 @@
     {
       "from": "r_plan",
       "to": "s_plan",
-      "label": "build_plan(plants)"
+      "label": "build_plan(plants, south_florida)"
     },
     {
       "from": "r_recommend",
       "to": "s_plan",
-      "label": "build_plan([]) → add cards"
+      "label": "build_plan([], south_florida) → add cards"
     },
     {
       "from": "s_plan",
@@ -1545,7 +1645,7 @@
     {
       "from": "s_option",
       "to": "d_recs",
-      "label": "helps, watch_out for known plants"
+      "label": "helps, watch_out, atlas_url for known plants"
     },
     {
       "from": "s_resolve",
@@ -1722,6 +1822,51 @@
       "from": "s_zip_center",
       "to": "nominatim",
       "label": "postal code search"
+    },
+    {
+      "from": "ui_plancard",
+      "to": "ui_atlas",
+      "label": "Add card's atlas_url"
+    },
+    {
+      "from": "ident",
+      "to": "ui_atlas",
+      "label": "verified plant's atlas_url"
+    },
+    {
+      "from": "ui_atlas",
+      "to": "usf_atlas",
+      "label": "openBrowserAsync(url)"
+    },
+    {
+      "from": "r_plan",
+      "to": "s_region",
+      "label": "in_south_florida(location)"
+    },
+    {
+      "from": "r_recommend",
+      "to": "s_region",
+      "label": "in_south_florida(location)"
+    },
+    {
+      "from": "s_region",
+      "to": "s_county",
+      "label": "county(zip)"
+    },
+    {
+      "from": "zip_builder",
+      "to": "d_zip_counties",
+      "label": "writes 1,013 Florida ZIPs"
+    },
+    {
+      "from": "results",
+      "to": "audit",
+      "label": "forgetScannedPlant(id) on Remove"
+    },
+    {
+      "from": "s_county",
+      "to": "d_zip_counties",
+      "label": "ZIP → county"
     }
   ]
 }

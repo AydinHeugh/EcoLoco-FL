@@ -9,11 +9,12 @@ import { getPlan, getNearby, generateLetter, userMessage } from '../services/gem
 import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS } from '../theme';
 import StatusBadge from '../components/StatusBadge';
 import PercentRing from '../components/PercentRing';
-import PlanCard from '../components/PlanCard';
+import PlanCard, { NOT_SOUTH_FLORIDA } from '../components/PlanCard';
 import SourceLine from '../components/SourceLine';
 import StatusBars from '../components/StatusBars';
 import CaterpillarBars from '../components/CaterpillarBars';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
+import { forgetScannedPlant } from './AuditScreen';
 
 const LOGO = require('../../assets/EcoLoco_logo.png');
 const NURSERY_URL = 'https://plantrealflorida.org';
@@ -80,24 +81,39 @@ function LetterGenerator({ plan, zipCode }) {
 
 export default function AuditResultsScreen({ route, navigation }) {
   const { plants = [], zipCode, lat, lon } = route.params ?? {};
-  const [plan,    setPlan]    = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState(null);
-  const [nearby,  setNearby]  = useState([]);
+  const [scanned,  setScanned]  = useState(plants);
+  const [plan,     setPlan]     = useState(null);
+  const [planFor,  setPlanFor]  = useState(null);
+  const [loading,  setLoading]  = useState(true);
+  const [error,    setError]    = useState(null);
+  const [nearby,   setNearby]   = useState([]);
+  const [attempt,  setAttempt]  = useState(0);
 
   const { width } = useWindowDimensions();
   const maxWidth   = Math.min(width, 960);
   const [fontsLoaded] = useFonts(FONT_ASSETS);
+  const stale = plan != null && planFor !== scanned;
 
   useEffect(() => {
-    getPlan(plants.map(p => ({ scientific_name: p.scientific_name, plant_name: p.plant_name })), zipCode)
-      .then(data => setPlan(data.result))
-      .catch(err => setError(userMessage(err, 'Could not check your plants. Check your connection and try again.')))
-      .finally(() => setLoading(false));
+    let current = true;
+    setError(null);
+    getPlan(scanned.map(p => ({ scientific_name: p.scientific_name, plant_name: p.plant_name })), zipCode)
+      .then(data => { if (current) { setPlan(data.result); setPlanFor(scanned); } })
+      .catch(err => { if (current) setError(userMessage(err, 'Could not check your plants. Check your connection and try again.')); })
+      .finally(() => { if (current) setLoading(false); });
+    return () => { current = false; };
+  }, [scanned, attempt]);
+
+  useEffect(() => {
     if (lat != null && lon != null) {
       getNearby(lat, lon).then(data => setNearby(data.result)).catch(() => setNearby([]));
     }
   }, []);
+
+  function removePlant(index) {
+    forgetScannedPlant(planFor[index]._id);
+    setScanned(planFor.filter((_, i) => i !== index));
+  }
 
   if (!fontsLoaded) return <View style={styles.container} />;
 
@@ -128,7 +144,7 @@ export default function AuditResultsScreen({ route, navigation }) {
           </View>
         )}
 
-        {!loading && error && (
+        {!loading && error && !plan && (
           <View style={styles.centerSection}>
             <Text style={styles.errorText}>{error}</Text>
             <TouchableOpacity style={styles.btn} onPress={() => navigation.goBack()}>
@@ -141,12 +157,24 @@ export default function AuditResultsScreen({ route, navigation }) {
           <>
             <View style={styles.section}>
               <Text style={styles.pageTitle}>Your plan</Text>
+              {stale && !error && <Text style={styles.mutedText}>Updating your plan…</Text>}
+              {stale && error && (
+                <>
+                  <Text style={styles.errorText}>{error}</Text>
+                  <TouchableOpacity style={styles.btnOutline} onPress={() => setAttempt(a => a + 1)}>
+                    <Text style={styles.btnOutlineText}>Try again</Text>
+                  </TouchableOpacity>
+                </>
+              )}
               {plan.remove.map(card => (
-                <PlanCard key={card.scientific_name} card={card} kind="remove" replacementName={addName(card.replacement)} />
+                <PlanCard key={card.scientific_name} card={card} kind="remove"
+                  replacementName={addName(card.replacement)} southFlorida={plan.south_florida !== false} />
               ))}
-              {plan.add.length === 0
-                ? <Text style={styles.mutedText}>No plants are ready to recommend yet. Our team is still checking each one.</Text>
-                : plan.add.map(card => <PlanCard key={card.scientific_name} card={card} kind="add" />)}
+              {plan.south_florida === false
+                ? <Text style={styles.mutedText}>{NOT_SOUTH_FLORIDA}</Text>
+                : plan.add.length === 0
+                  ? <Text style={styles.mutedText}>No plants are ready to recommend yet. Our team is still checking each one.</Text>
+                  : plan.add.map(card => <PlanCard key={card.scientific_name} card={card} kind="add" />)}
               <TouchableOpacity onPress={() => Linking.openURL(NURSERY_URL)}>
                 <Text style={styles.link}>Find a native plant nursery near you (plantrealflorida.org) →</Text>
               </TouchableOpacity>
@@ -156,11 +184,24 @@ export default function AuditResultsScreen({ route, navigation }) {
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>What your campus supports now</Text>
+              <Text style={styles.sectionNote}>Scanned something by mistake, like a fake or potted plant? Remove it and your counts and plan update.</Text>
+              {summary.plants.length === 0 && <Text style={styles.mutedText}>No plants left. Go back to EcoScan to scan more.</Text>}
               {summary.plants.map((p, i) => (
-                <View key={i} style={styles.plantRow}>
+                <View key={planFor[i]?._id ?? i} style={styles.plantRow}>
                   <View style={styles.plantHead}>
                     <Text style={styles.plantName}>{p.plant_name}</Text>
-                    <StatusBadge status={p.status} label={p.status_label} />
+                    <View style={styles.plantActions}>
+                      <StatusBadge status={p.status} label={p.status_label} />
+                      <TouchableOpacity
+                        onPress={() => removePlant(i)}
+                        disabled={stale}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove ${p.plant_name}`}
+                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                      >
+                        <Text style={[styles.removeBtn, stale && styles.btnDisabled]}>Remove</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                   <Text style={styles.plantWhy}>{p.why || NO_DATA}</Text>
                   {p.why ? <SourceLine source={{ name: p.source_label }} /> : null}
@@ -227,7 +268,7 @@ export default function AuditResultsScreen({ route, navigation }) {
 
             <View style={styles.divider} />
 
-            <LetterGenerator plan={plan} zipCode={zipCode} />
+            <LetterGenerator key={planFor.length + ':' + planFor.map(p => p._id).join(',')} plan={plan} zipCode={zipCode} />
 
             <View style={styles.ctaSection}>
               <TouchableOpacity style={styles.btnOutline} onPress={() => navigation.goBack()}>
@@ -272,6 +313,8 @@ const styles = StyleSheet.create({
   plantRow:  { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.lightBg, gap: 4 },
   plantHead: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   plantName: { fontSize: 15, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, flexShrink: 1 },
+  plantActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  removeBtn: { fontSize: 12, fontFamily: FONTS.bodyBold, color: COLORS.terracotta },
   whyLine:   { paddingVertical: 6 },
   plantWhy:  { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: 19 },
 

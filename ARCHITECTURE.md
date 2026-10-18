@@ -85,6 +85,7 @@ flowchart LR
     ui_plancard["PlanCard + SourceLine"]
     ui_location["LocationPicker"]
     ui_charts["StatusBars + CaterpillarBars"]
+    ui_atlas["AtlasButton"]
   end
   subgraph L_device["Device"]
     direction TB
@@ -133,6 +134,8 @@ flowchart LR
     s_seen["seen_near()"]
     s_with_plan["with_plan()"]
     s_zip_center["zip_center()"]
+    s_region["in_south_florida()"]
+    s_county["county()"]
   end
   subgraph L_data["Bundled data"]
     direction TB
@@ -143,6 +146,8 @@ flowchart LR
     d_nwf["nwf_keystone_fl.json"]
     d_terms["nature_terms.json"]
     d_why["why_this_matters.json"]
+    d_zip_counties["fl_zip_counties.json"]
+    zip_builder["build_zip_counties.py"]
   end
   subgraph L_ext["External APIs"]
     direction TB
@@ -151,6 +156,7 @@ flowchart LR
     plantnet["PlantNet API"]
     nominatim["Nominatim (OpenStreetMap)"]
     inaturalist["iNaturalist API"]
+    usf_atlas["USF Atlas of Florida Plants"]
   end
   app -->|"tab: Home"| home
   app -->|"tab: Identify"| ident
@@ -210,12 +216,12 @@ flowchart LR
   results -->|"getPlan([{scientific_name, plant_name}], zipCode)"| c_plan
   c_plan -->|"POST /plan {plants, location}"| r_plan
   flask -->|"registers"| r_plan
-  r_plan -->|"build_plan(plants)"| s_plan
-  r_recommend -->|"build_plan([]) → add cards"| s_plan
+  r_plan -->|"build_plan(plants, south_florida)"| s_plan
+  r_recommend -->|"build_plan([], south_florida) → add cards"| s_plan
   s_plan -->|"summarize(plants, added_natives)"| s_summary
   s_plan -->|"verified plants, facts, replaces"| d_recs
   s_plan -->|"genus → caterpillar count for the group"| d_nwf
-  s_option -->|"helps, watch_out for known plants"| d_recs
+  s_option -->|"helps, watch_out, atlas_url for known plants"| d_recs
   s_resolve -->|"names, common names"| d_recs
   s_letter -->|"letter_facts(plan, zip) → template text"| s_letter_facts
   s_letter -->|"mentions_new_names(reply, opening)"| s_guard
@@ -251,6 +257,15 @@ flowchart LR
   s_summary -->|"with_plan(summary)"| s_with_plan
   r_locate -->|"typed 5-digit ZIP → zip_center(zip)"| s_zip_center
   s_zip_center -->|"postal code search"| nominatim
+  ui_plancard -->|"Add card's atlas_url"| ui_atlas
+  ident -->|"verified plant's atlas_url"| ui_atlas
+  ui_atlas -->|"openBrowserAsync(url)"| usf_atlas
+  r_plan -->|"in_south_florida(location)"| s_region
+  r_recommend -->|"in_south_florida(location)"| s_region
+  s_region -->|"county(zip)"| s_county
+  zip_builder -->|"writes 1,013 Florida ZIPs"| d_zip_counties
+  results -->|"forgetScannedPlant(id) on Remove"| audit
+  s_county -->|"ZIP → county"| d_zip_counties
   classDef ui fill:#e3f2e1,stroke:#2e7d32,color:#12301a
   classDef device fill:#eceff1,stroke:#607d8b,color:#263238
   classDef client fill:#e1effa,stroke:#1e6fb8,color:#0d2d4d
@@ -260,13 +275,13 @@ flowchart LR
   classDef ext fill:#fde4e1,stroke:#c0392b,color:#4a0f08
   classDef planned stroke-dasharray:6 4,stroke-width:2px
   classDef dead fill:#f3f3f3,stroke:#9e9e9e,color:#616161,stroke-dasharray:3 3
-  class app,home,ident,rec,audit,results,ui_why,ui_receipt,letter,ui_multiphoto,ui_ai_unknown,ui_picker,ui_ring,ui_plancard,ui_location,ui_charts ui
+  class app,home,ident,rec,audit,results,ui_why,ui_receipt,letter,ui_multiphoto,ui_ai_unknown,ui_picker,ui_ring,ui_plancard,ui_location,ui_charts,ui_atlas ui
   class picker,clipboard device
   class c_identify,c_rec,c_letter,c_local,c_plan,c_user_message,c_locate,c_nearby client
   class flask,r_identify,r_recommend,r_letter,r_plan,r_locate,r_nearby route
-  class s_identify,s_letter,s_fl,s_species,s_plantnet,s_usda,s_resolve,s_option,s_common_name,s_summary,s_plan,s_guard,s_letter_facts,s_round,s_geocode,s_reverse,s_seen,s_with_plan,s_zip_center svc
-  class d_fisc,d_natives,fisc_builder,d_recs,d_nwf,d_terms,d_why data
-  class openai,usda,plantnet,nominatim,inaturalist ext
+  class s_identify,s_letter,s_fl,s_species,s_plantnet,s_usda,s_resolve,s_option,s_common_name,s_summary,s_plan,s_guard,s_letter_facts,s_round,s_geocode,s_reverse,s_seen,s_with_plan,s_zip_center,s_region,s_county svc
+  class d_fisc,d_natives,fisc_builder,d_recs,d_nwf,d_terms,d_why,d_zip_counties,zip_builder data
+  class openai,usda,plantnet,nominatim,inaturalist,usf_atlas ext
   class c_local dead
 ```
 <!-- /GENERATED:mermaid -->

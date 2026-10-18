@@ -189,3 +189,19 @@ def test_option_prefers_our_common_name():
 
 def test_option_name_starts_with_a_capital():
     assert plant_option("Melaleuca quinquenervia", "", 0.5, "33496")["plant_name"] == "Punktree"
+
+
+def test_verified_plant_carries_its_atlas_link():
+    assert plant_option("Zamia integrifolia", "", 0.9, ZIP)["atlas_url"] == "https://florida.plantatlas.usf.edu/plant/species/2105"
+
+
+def test_unverified_plant_has_no_atlas_link(monkeypatch):
+    from services import fl_plants_service
+    entry = dict(fl_plants_service._by_name("fl_recommendations.json")["Zamia integrifolia"], verified=False)
+    monkeypatch.setattr(fl_plants_service, "_by_name",
+                        lambda name: {"Zamia integrifolia": entry} if name == "fl_recommendations.json" else {})
+    assert "atlas_url" not in plant_option("Zamia integrifolia", "", 0.9, ZIP)
+
+
+def test_invasive_has_no_atlas_link():
+    assert "atlas_url" not in plant_option("Schinus terebinthifolia", "", 0.9, ZIP)
