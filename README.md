@@ -126,6 +126,23 @@ You'll need Node.js, Python 3, an OpenAI API key, and a free PlantNet API key fr
 
 **Rebuilding the ZIP-to-county table** (from the `backend` folder): `venv\Scripts\python scripts/build_zip_counties.py https://www2.census.gov/geo/docs/maps-data/data/rel2020/zcta520/tab20_zcta520_county20_natl.txt data/fl_zip_counties.json`.
 
+## Publishing the website
+
+The website uses the `KianMainMerger` branch. Cloudflare Pages project `ecoloco` serves the static frontend at `https://ecoloco.app` and `https://www.ecoloco.app`; its preview address is `https://ecoloco-8ry.pages.dev`.
+
+To prepare a frontend update, run from the repository root:
+
+```sh
+npm ci
+EXPO_PUBLIC_API_URL=https://api.ecoloco.app npx expo export --platform web
+```
+
+Upload the contents of `dist` through the Cloudflare project's **Create deployment** action. If uploading a ZIP, put `index.html` at its root. This project uses direct uploads: pushing a Git commit does not update the website. The API address is embedded during the build, so changing it requires a new export and deployment. Never put backend keys in an `EXPO_PUBLIC_` variable or upload a `.env` file.
+
+The root `render.yaml` prepares a separate free Python service for the backend at `api.ecoloco.app`. Creating that service and supplying its server-only OpenAI and PlantNet keys are separate deployment steps; the configuration file alone does not create a running backend. After deployment, use the DNS target supplied by Render for the `api` CNAME and complete Render's custom-domain verification. Keep the default TCP health check: the existing backend has no GET health endpoint. Render's free server sleeps after 15 minutes without traffic, and its next request can take about a minute to start.
+
+Before calling a release complete, verify location lookup, plant-name selection, recommendations, a campus plan, letter creation, and a real photo identification through the public website. The automated backend tests use mocked provider responses and cannot verify live API credentials.
+
 ## Where things stand
 
 - Done: Florida plant lists drive the native/invasive verdict, every verdict comes with its source and a "why it matters" line, plants are identified by PlantNet with OpenAI as a backup, the full FISC invasive list and a USDA check are in place, scans keep working when OpenAI is down, unsure matches are confirmed by the user instead of guessed, every fact in the app shows its source, all text is written in plain language and fits a phone screen, results credit Pl@ntNet, and the backend has automated tests.

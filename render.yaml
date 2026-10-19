@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+services:
+  - type: web
+    name: ecoloco-api
+    runtime: python
+    plan: free
+    repo: https://github.com/AydinHeugh/EcoLoco-FL
+    branch: KianMainMerger
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: >-
+      gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4
+      --timeout 120 --access-logfile - --error-logfile -
+    domains:
+      - api.ecoloco.app
+    # Omit healthCheckPath to use Render's default TCP health check.
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.16"
+      - key: ECOLOCO_DEV
+        value: "0"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: PLANTNET_API_KEY
+        sync: false
