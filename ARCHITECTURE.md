@@ -29,10 +29,10 @@ and the answer comes back the same way.
 | green | **Screen / UI** | What the user sees and taps in the Expo app. | `frontend/screens/`, `frontend/navigation/AppNavigator.js` |
 | grey | **Device** | Phone features the app borrows: camera/photo library and clipboard. | `expo-image-picker`, `expo-clipboard` |
 | blue | **API client** | Small frontend functions that send requests over the internet to our backend. | `frontend/services/geminiService.js`, `plantService.js` |
-| orange | **Flask route** | A backend URL that receives those requests — the front door of the Python server. | `backend/app.py` |
+| orange | **Flask route** | A backend URL that receives those requests: the front door of the Python server. | `backend/app.py` |
 | purple | **Service** | Backend functions that do the real work once a route gets a request. | `backend/services/*.py` |
 | teal | **Bundled data** | Data files shipped with the backend instead of fetched online. | `backend/data/*.json` (planned) |
-| red | **External API** | Outside services the backend calls: OpenAI, iNaturalist, OpenStreetMap Nominatim (ZIP → location), USDA later. | — |
+| red | **External API** | Outside services the backend calls: OpenAI, iNaturalist, OpenStreetMap Nominatim (ZIP → location), USDA later. | Outside our code |
 
 ### Markers
 
@@ -49,17 +49,17 @@ and the answer comes back the same way.
 <!-- GENERATED:planned -->
 | Item | Status | Goal |
 |---|---|---|
-| `identifyPlant()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
-| `getPlantRecommendations()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
-| `generateLetter()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
-| `getLocalPlants()` (frontend/services/plantService.js) | DEAD | Delete plantService.js — the backend route it called has been removed. |
+| `identifyPlant()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js, since it calls our Flask API, not Gemini. |
+| `getPlantRecommendations()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js, since it calls our Flask API, not Gemini. |
+| `generateLetter()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js, since it calls our Flask API, not Gemini. |
+| `getLocalPlants()` (frontend/services/plantService.js) | DEAD | Delete plantService.js: the backend route it called has been removed. |
 | `Flask app (app.py)` (backend/app.py) | change planned | Deploy to a public host before the demo (today: localhost with debug=True). |
 | `get_status()` (backend/services/fl_plants_service.py) | change planned | Add ZIP-specific regional lists behind the same get_status(). |
 | `fisc_list.json` (backend/data/fisc_list.json) | change planned | Verify the 22 curated "why" lines against FISC / UF-IFAS before the demo. |
 | `fl_natives.json` (backend/data/fl_natives.json) | change planned | Verify every entry against UF/IFAS and the Atlas of Florida Plants before the demo. |
-| `getPlan()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
-| `locate()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
-| `getNearby()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js — it calls our Flask API, not Gemini. |
+| `getPlan()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js, since it calls our Flask API, not Gemini. |
+| `locate()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js, since it calls our Flask API, not Gemini. |
+| `getNearby()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js, since it calls our Flask API, not Gemini. |
 <!-- /GENERATED:planned -->
 
 ## Diagram
@@ -114,7 +114,7 @@ flowchart LR
     c_identify["identifyPlant()"]
     c_rec["getPlantRecommendations()"]
     c_letter["generateLetter()"]
-    c_local["getLocalPlants()<br/>DEAD — Delete plantService.js — the backend route it called has been removed."]
+    c_local["getLocalPlants()<br/>DEAD: Delete plantService.js: the backend route it called has been removed."]
     c_plan["getPlan()"]
     c_user_message["userMessage()"]
     c_locate["locate()"]

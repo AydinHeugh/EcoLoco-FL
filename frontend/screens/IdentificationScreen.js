@@ -54,7 +54,6 @@ const ld = StyleSheet.create({
   text: { fontSize: TYPE.body, fontFamily: FONTS.bodyMedium, color: COLORS.textMuted },
 });
 
-// ─── Animated results wrapper ────────────────────────────────────────────────
 function AnimatedResults({ children }) {
   const reduce = useReduceMotion();
   const opacity    = useRef(new Animated.Value(0)).current;
@@ -74,7 +73,6 @@ function AnimatedResults({ children }) {
   );
 }
 
-// ─── Placeholder icon inside upload box ──────────────────────────────────────
 function ImagePlaceholderIcon() {
   return (
     <View style={icon.wrap}>
@@ -246,7 +244,6 @@ export default function IdentificationScreen({ navigation }) {
         <OfflineNotice />
         <View style={styles.headerGap} />
 
-        {/* ── Upload box ── */}
         <View
           nativeID="plant-drop-zone"
           style={[styles.uploadBox, isDragging && styles.uploadBoxDragging]}
@@ -289,12 +286,10 @@ export default function IdentificationScreen({ navigation }) {
           </View>
         </View>
 
-        {/* ── ZIP code ── */}
         <View style={styles.zipRow}>
           <LocationPicker place={place} onChange={found => { setPlace(found); rememberPlace(found); }} />
         </View>
 
-        {/* ── Identify button ── */}
         <PressScale
           style={[styles.identifyBtn, !canIdentify && styles.identifyBtnDisabled]}
           onPress={handleIdentify}
@@ -321,7 +316,6 @@ export default function IdentificationScreen({ navigation }) {
 
         {loading && <LoadingLeaf message={progress} />}
 
-        {/* ── Results ── */}
         {result && (
           <AnimatedResults>
           <View style={styles.resultsSection}>
@@ -406,7 +400,6 @@ export default function IdentificationScreen({ navigation }) {
               </View>
             )}
 
-            {/* Navigate to full recommendations */}
             {zipCode?.length === 5 && (
               <TouchableOpacity
                 style={styles.recBtn}
@@ -440,7 +433,6 @@ const styles = StyleSheet.create({
 
   headerGap: { height: 18 },
 
-  // ── Upload box ──
   uploadBox: {
     marginHorizontal: 20, borderWidth: 1.5, borderColor: COLORS.softGreen,
     borderStyle: 'dashed', borderRadius: 22, overflow: 'hidden',
@@ -468,10 +460,8 @@ const styles = StyleSheet.create({
   },
   btnFilledText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.onDark },
 
-  // ── ZIP ──
   zipRow: { marginHorizontal: 20, marginBottom: 14 },
 
-  // ── Identify button ──
   identifyBtn: {
     marginHorizontal: 20, marginBottom: 8,
     backgroundColor: COLORS.accent, borderRadius: 14,
@@ -489,7 +479,6 @@ const styles = StyleSheet.create({
   noData: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 6 },
   errorText: { color: COLORS.error, fontSize: TYPE.body, fontFamily: FONTS.body, marginHorizontal: 20, marginTop: 8 },
 
-  // ── Results ──
   resultsSection: { marginTop: 28, paddingHorizontal: 20, paddingBottom: 48 },
   resultsHeader: {
     flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, justifyContent: 'space-between',
