@@ -4,9 +4,8 @@ import { COLORS, FONTS, TYPE } from '../theme';
 
 const LOGO = require('../../assets/EcoLoco_logo.png');
 
-export default function ScreenHeader({ title, subtitle, right }) {
+export function BrandHeader({ right }) {
   return (
-    <View style={styles.wrap}>
       <View style={styles.top}>
         <View style={styles.brand}>
           <Image source={LOGO} style={styles.logo} accessibilityLabel="EcoLoco" />
@@ -14,10 +13,23 @@ export default function ScreenHeader({ title, subtitle, right }) {
         </View>
         {right}
       </View>
-      <View style={styles.bottom}>
+  );
+}
+
+export function ScreenHeading({ title, subtitle, style }) {
+  return (
+      <View style={[styles.bottom, style]}>
         <Text style={styles.title} accessibilityRole="header">{title}</Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
+  );
+}
+
+export default function ScreenHeader({ title, subtitle, right }) {
+  return (
+    <View style={styles.wrap}>
+      <BrandHeader right={right} />
+      <ScreenHeading title={title} subtitle={subtitle} />
     </View>
   );
 }

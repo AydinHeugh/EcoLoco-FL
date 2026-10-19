@@ -1,16 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  ActivityIndicator, useWindowDimensions, Linking,
+  View, Text, StyleSheet, TouchableOpacity,
+  ActivityIndicator, Linking,
 } from 'react-native';
 import { useFonts } from 'expo-font';
 import { getPlantRecommendations, userMessage } from '../services/geminiService';
 import { COLORS, FONTS, FONT_ASSETS, TYPE } from '../theme';
 import PlanCard, { NOT_CHECKED_HERE } from '../components/PlanCard';
 import SiteFilters, { ANY_SITE } from '../components/SiteFilters';
-import ScreenHeader from '../components/ScreenHeader';
+import ScreenLayout from '../components/ScreenLayout';
 import Reveal, { RevealProvider, useRevealScroll } from '../components/Reveal';
-import { PHOTOS } from '../photos';
 import LocationPicker from '../components/LocationPicker';
 import { rememberPlace, lastPlace } from '../lastPlace';
 import { useDelayedFlag } from '../motion';
@@ -32,9 +31,6 @@ function Recommendations({ route, navigation }) {
   const [error,   setError]   = useState(null);
   const [site,    setSite]    = useState(ANY_SITE);
   const slow = useDelayedFlag(loading);
-
-  const { width } = useWindowDimensions();
-  const maxWidth  = Math.min(width, 960);
 
   const [fontsLoaded] = useFonts(FONT_ASSETS);
 
@@ -77,18 +73,13 @@ function Recommendations({ route, navigation }) {
   if (!fontsLoaded) return <View style={styles.container} />;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}
-      onScroll={onScroll} scrollEventThrottle={64}>
-      <View style={[styles.inner, { width: maxWidth }]}>
-
-        <ScreenHeader
-          photo={PHOTOS.recommend}
-          photoLabel="A native plant garden"
-          title="Native plants to add"
-          subtitle="Find Florida natives for your school. Planting suggestions are currently checked for Palm Beach County."
-        />
-        <View style={styles.headerGap} />
-
+    <ScreenLayout
+      title="Native plants to add"
+      subtitle="Find Florida natives for your school. Planting suggestions are currently checked for Palm Beach County."
+      contentWidth={results ? 840 : 560}
+      centered={!results}
+      onScroll={onScroll}
+    >
         <View style={styles.inputSection}>
           <LocationPicker place={place} onChange={found => { setPlace(found); rememberPlace(found); handleRecommend(found.zip); }} />
           {slow && <ActivityIndicator color={COLORS.softGreen} size="small" />}
@@ -114,22 +105,16 @@ function Recommendations({ route, navigation }) {
           </View>
         )}
 
-      </View>
-    </ScrollView>
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.cream },
-  scrollContent: { alignItems: 'center' },
-  inner: { alignSelf: 'center' },
-
-  headerGap: { height: 18 },
-
-  inputSection: { paddingHorizontal: 20, gap: 12, marginBottom: 8 },
+  inputSection: { gap: 12, marginBottom: 8 },
   errorText: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.error, textAlign: 'center' },
 
-  resultsSection: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 48 },
+  resultsSection: { paddingTop: 16, paddingBottom: 16 },
   emptyText: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', marginBottom: 16 },
   link: { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.softGreen, textAlign: 'center', paddingVertical: 14, textDecorationLine: 'underline' },
 });

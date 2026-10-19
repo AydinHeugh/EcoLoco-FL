@@ -30,8 +30,8 @@ function SectionLink({ label, onPress }) {
 }
 
 function Feature({ image, imageLabel, visual, heading, body, linkText, onLinkPress, reverse, wide, eyebrow, reduceMotion }) {
-  const art = <View style={[styles.featureVisual, wide && styles.featureVisualWide]}>
-    {visual || <Image source={image} style={[styles.featureImage, wide && styles.featureImageWide]} resizeMode="cover" accessibilityLabel={imageLabel} />}
+  const art = <View style={[styles.featureVisual, wide && styles.featureVisualWide, !visual && styles.featureImageFrame, !visual && wide && styles.featureImageFrameWide]}>
+    {visual || <Image source={image} style={styles.featureImage} resizeMode="cover" accessibilityLabel={imageLabel} />}
   </View>
   const copy = <View style={styles.featureText}>
     <Text style={styles.eyebrow}>{eyebrow}</Text>
@@ -62,6 +62,7 @@ export default function HomeScreen(props) {
 function Home({ navigation }) {
   const { width } = useWindowDimensions()
   const wide = width >= 640
+  const compact = width < 360
   const reduceMotion = useReduceMotion()
   const onScroll = useRevealScroll()
   const [fontsLoaded] = useFonts(FONT_ASSETS)
@@ -69,15 +70,15 @@ function Home({ navigation }) {
 
   return <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} onScroll={onScroll} scrollEventThrottle={64}>
     <View style={[styles.inner, { width: Math.min(width, 960) }]}>
-      <View style={styles.brand}>
+      <View style={[styles.brand, compact && styles.compactGutter]}>
         <Image source={LOGO} style={styles.logo} accessibilityLabel="EcoLoco" />
         <Text style={styles.wordmark}>EcoLoco</Text>
         {wide && <Text style={styles.brandNote}>A little local knowledge. A greener campus.</Text>}
       </View>
 
-      <View style={[styles.hero, wide && styles.heroWide]}>
+      <View style={[styles.hero, wide && styles.heroWide, compact && styles.compactGutter]}>
         <Text style={styles.eyebrow}>ROOTED IN FLORIDA</Text>
-        <Text style={[styles.headline, wide && styles.headlineWide]} accessibilityRole="header">Welcome to <Text style={styles.headlineItalic}>EcoLoco</Text></Text>
+        <Text style={[styles.headline, wide && styles.headlineWide, compact && styles.headlineCompact]} accessibilityRole="header">Welcome to <Text style={styles.headlineItalic}>EcoLoco</Text></Text>
         <View style={styles.ornament} accessible={false}><View style={styles.ornamentLine} /><View style={styles.diamond} /><View style={styles.ornamentLine} /></View>
         <Text style={styles.tagline}>Get to know the plants around you.</Text>
         <Text style={styles.heroBody}>Find out which plants on your campus help Florida wildlife, and what to plant next.</Text>
@@ -93,15 +94,17 @@ function Home({ navigation }) {
         </View>
       </View>
 
-      <View style={styles.features}>
+      <View style={[styles.features, compact && styles.compactGutter]}>
         <Feature wide={wide} reduceMotion={reduceMotion} image={IMG_CAMPUS} imageLabel="A school garden full of native plants" eyebrow="EXPLORE YOUR SCHOOL" heading="Scan your campus" body="Scan the plants around your school. See which are native, what to remove, and what to plant next." linkText="Start a campus scan" onLinkPress={() => navigation?.navigate('EcoScan')} />
         <Feature wide={wide} reduceMotion={reduceMotion} reverse eyebrow="TURN FINDINGS INTO ACTION" visual={<View style={styles.letterPaper}><LetterDemo /></View>} heading="A plan for your principal" body="Turn your scan into a letter: what to remove safely, which natives to plant, and what to ask for at the nursery. You choose the plants, with a source for every fact." linkText="Make your plan" onLinkPress={() => navigation?.navigate('EcoScan')} />
         <Feature wide={wide} reduceMotion={reduceMotion} image={IMG_SCANNING} imageLabel="Identifying a flowering plant with a phone" eyebrow="START WITH CURIOSITY" heading="Identify a plant" body="Add a photo or choose a plant by name. Find out whether it’s native, nonnative, or invasive, with sources for the answer." linkText="Identify a plant" onLinkPress={() => navigation?.navigate('Camera')} />
         <Feature wide={wide} reduceMotion={reduceMotion} reverse image={IMG_GROW} imageLabel="Native plants growing in a garden" eyebrow="GROW WITH CONFIDENCE" heading="Plant Florida natives" body="Find native plants checked for Palm Beach County, matched to your space. See the wildlife each one supports, its growing needs, and what to ask for at the nursery." linkText="Find native plants" onLinkPress={() => navigation?.navigate('Recommend')} />
       </View>
 
-      <View style={[styles.why, wide && styles.whyWide]}>
-        <Image source={IMG_POLLINATORS} style={[styles.whyImage, wide && styles.whyImageWide]} resizeMode="cover" accessibilityLabel="Pollinators visiting native flowers" />
+      <View style={[styles.why, wide && styles.whyWide, compact && styles.compactGutter]}>
+        <View style={[styles.whyImageFrame, wide && styles.whyImageFrameWide]}>
+          <Image source={IMG_POLLINATORS} style={styles.featureImage} resizeMode="cover" accessibilityLabel="Pollinators visiting native flowers" />
+        </View>
         <View style={styles.whyText}>
           <Text style={styles.eyebrow}>SMALL CHANGES, LIVING CONNECTIONS</Text>
           <Text style={styles.featureHeading} accessibilityRole="header">Help your ecosystem</Text>
@@ -110,7 +113,7 @@ function Home({ navigation }) {
         </View>
       </View>
 
-      <View style={styles.know}>
+      <View style={[styles.know, compact && styles.knowCompact]}>
         <Text style={styles.knowHeading} accessibilityRole="header">Good decisions start with good sources.</Text>
         <Text style={styles.knowBody}>Every answer comes from Florida’s official invasive list, USDA, and the USF Atlas. Our team checked every plant we recommend.</Text>
         <View style={[styles.sources, wide && styles.sourcesWide]} accessible accessibilityLabel={SOURCES.map(source => `${source.count} ${source.label}`).join('. ')}>
@@ -132,15 +135,17 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.cream },
   scrollContent: { alignItems: 'center' },
   inner: { alignSelf: 'center' },
+  compactGutter: { paddingHorizontal: 16 },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 24, paddingTop: Platform.OS === 'web' ? 24 : 48, paddingBottom: 18, borderBottomWidth: 1, borderColor: COLORS.border },
   logo: { width: 35, height: 35, resizeMode: 'contain' },
   wordmark: { fontSize: TYPE.h3, fontFamily: FONTS.heading, color: COLORS.darkGreen },
-  brandNote: { marginLeft: 'auto', fontSize: TYPE.small, fontFamily: FONTS.body, color: COLORS.textMuted },
+  brandNote: { marginLeft: 'auto', maxWidth: 320, flexShrink: 1, textAlign: 'right', fontSize: TYPE.small, fontFamily: FONTS.body, color: COLORS.textMuted },
   hero: { alignItems: 'center', paddingHorizontal: 24, paddingTop: 32, paddingBottom: 30, borderBottomWidth: 1, borderColor: COLORS.border },
   heroWide: { paddingTop: 46, paddingBottom: 44 },
   eyebrow: { fontSize: TYPE.eyebrow, lineHeight: 16, letterSpacing: 1.3, fontFamily: FONTS.bodyBold, color: COLORS.softGreen },
   headline: { fontSize: TYPE.h1, lineHeight: 44, fontFamily: FONTS.headingLight, color: COLORS.darkGreen, textAlign: 'center', marginTop: 9 },
   headlineWide: { fontSize: TYPE.displayLarge, lineHeight: 58 },
+  headlineCompact: { fontSize: TYPE.pageTitle, lineHeight: 40 },
   headlineItalic: { fontFamily: FONTS.accentItalic },
   ornament: { flexDirection: 'row', alignItems: 'center', width: 120, gap: 12, marginVertical: 18 },
   ornamentLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
@@ -158,9 +163,10 @@ const styles = StyleSheet.create({
   featureWide: { flexDirection: 'row', alignItems: 'center', gap: 36, paddingVertical: 36 },
   featureVisual: { width: '100%', borderRadius: 16, overflow: 'hidden' },
   featureVisualWide: { width: '43%' },
-  featureImage: { width: '100%', height: 200, borderRadius: 16, backgroundColor: COLORS.lightBg },
-  featureImageWide: { height: 265 },
-  featureText: { flex: 1, gap: 8 },
+  featureImageFrame: { aspectRatio: 1.65, backgroundColor: COLORS.lightBg },
+  featureImageFrameWide: { aspectRatio: 1.48 },
+  featureImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
+  featureText: { flex: 1, minWidth: 0, gap: 8 },
   featureHeading: { fontFamily: FONTS.heading, fontSize: TYPE.h2, lineHeight: 35, color: COLORS.darkGreen },
   featureBody: { fontFamily: FONTS.body, fontSize: TYPE.link, lineHeight: 24, color: COLORS.textBody },
   linkBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 8, minHeight: 44 },
@@ -168,18 +174,19 @@ const styles = StyleSheet.create({
   letterPaper: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, overflow: 'hidden', backgroundColor: COLORS.cardBg },
   why: { padding: 24, gap: 22, paddingVertical: 34 },
   whyWide: { flexDirection: 'row', gap: 30, alignItems: 'center' },
-  whyImage: { width: '100%', height: 200, borderRadius: 16 },
-  whyImageWide: { width: '36%', height: 240 },
-  whyText: { flex: 1, gap: 10 },
+  whyImageFrame: { width: '100%', aspectRatio: 1.65, borderRadius: 16, overflow: 'hidden', backgroundColor: COLORS.lightBg },
+  whyImageFrameWide: { width: '36%', aspectRatio: 1.36 },
+  whyText: { flex: 1, minWidth: 0, gap: 10 },
   whyBody: { fontSize: TYPE.lead, lineHeight: 29, fontFamily: FONTS.headingLight, color: COLORS.darkGreen },
   whyNumber: { fontFamily: FONTS.heading, fontVariant: ['tabular-nums'] },
   know: { marginHorizontal: 24, padding: 24, borderRadius: 18, backgroundColor: COLORS.lightBg, gap: 12 },
+  knowCompact: { marginHorizontal: 16, padding: 18 },
   knowHeading: { fontFamily: FONTS.heading, fontSize: TYPE.h3, lineHeight: 32, color: COLORS.darkGreen },
   knowBody: { fontFamily: FONTS.body, fontSize: TYPE.note, lineHeight: 23, color: COLORS.textMuted, maxWidth: 650 },
   sources: { gap: 16, marginTop: 8 },
   sourcesWide: { flexDirection: 'row', gap: 26 },
   sourceItem: { flexDirection: 'row', alignItems: 'center', gap: 15, borderTopWidth: 1, borderColor: COLORS.border, paddingTop: 16 },
-  sourceItemWide: { flex: 1, flexDirection: 'column', alignItems: 'flex-start', gap: 5 },
+  sourceItemWide: { flex: 1, minWidth: 0, flexDirection: 'column', alignItems: 'flex-start', gap: 5 },
   sourceCount: { fontFamily: FONTS.headingLight, fontSize: TYPE.h1, lineHeight: 42, color: COLORS.darkGreen, minWidth: 86, fontVariant: ['tabular-nums'] },
   sourceLabel: { fontFamily: FONTS.body, fontSize: TYPE.caption, lineHeight: 20, color: COLORS.textBody, flexShrink: 1 },
   footer: { alignItems: 'center', paddingHorizontal: 24, paddingVertical: 30, gap: 10 },

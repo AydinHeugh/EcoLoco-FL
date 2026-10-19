@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
   ActivityIndicator,
   Image,
   useWindowDimensions,
@@ -20,9 +19,8 @@ import StatusBadge from '../components/StatusBadge';
 import CandidatePicker, { AgreedStatus, CHOSEN_BY_NAME, NO_MATCH_TEXT, matchLabel } from '../components/CandidatePicker';
 import NamePicker from '../components/NamePicker';
 import PhotoStrip from '../components/PhotoStrip';
-import ScreenHeader from '../components/ScreenHeader';
+import ScreenLayout from '../components/ScreenLayout';
 import ScanningLeaf from '../components/ScanningLeaf';
-import { PHOTOS } from '../photos';
 import { DURATION, EASE_OUT, useReduceMotion } from '../motion';
 import SourceLine from '../components/SourceLine';
 import AtlasButton from '../components/AtlasButton';
@@ -143,8 +141,8 @@ export default function IdentificationScreen({ navigation }) {
     };
   }, [fontsLoaded, photos.length, busy, full]);
 
-  const { width } = useWindowDimensions();
-  const maxWidth = Math.min(width, 960);
+  const { width, height, fontScale } = useWindowDimensions();
+  const columns = (width >= 900 || (width >= 760 && height < 600)) && fontScale <= 1.3;
 
   const progress = useProgressText(loading);
 
@@ -216,24 +214,16 @@ export default function IdentificationScreen({ navigation }) {
   if (!fontsLoaded) return <View style={styles.container} />;
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
+    <ScreenLayout
+      title="Identify a plant"
+      contentWidth={columns ? 880 : 560}
+      centered={!result && !naming}
     >
-      <View style={[styles.inner, { width: maxWidth }]}>
-
-        <ScreenHeader
-          photo={PHOTOS.identify}
-          photoLabel="A native plant garden"
-          title="Identify a plant"
-        />
         <OfflineNotice />
-        <View style={[styles.workspace, width >= 760 && styles.workspaceWide]}>
+        <View style={[styles.workspace, columns && styles.workspaceWide]}>
 
         {/* ── Upload box ── */}
-        <View style={[styles.photoSection, width >= 760 && styles.workspaceColumn]}>
+        <View style={[styles.photoSection, columns && styles.workspaceColumn]}>
         <View
           nativeID="plant-drop-zone"
           style={[styles.uploadBox, !photo && styles.emptyUploadBox, (isDragging || uploadFocused) && styles.uploadBoxDragging]}
@@ -258,7 +248,7 @@ export default function IdentificationScreen({ navigation }) {
             )
             : (
               <TouchableOpacity
-                style={styles.uploadPlaceholder}
+                style={[styles.uploadPlaceholder, width < 600 && height < 800 && styles.uploadPlaceholderCompact]}
                 onPress={handleUploadPhoto}
                 onFocus={() => setUploadFocused(true)}
                 onBlur={() => setUploadFocused(false)}
@@ -272,7 +262,7 @@ export default function IdentificationScreen({ navigation }) {
                 <Text style={styles.uploadPlaceholderText}>
                   {isDragging ? 'Drop photos here' : 'Upload plant photos'}
                 </Text>
-                <Text style={styles.uploadDragHint}>{Platform.OS === 'web' && width >= 760 ? 'Drag & drop or click to browse' : 'Tap to choose photos'}</Text>
+                <Text style={styles.uploadDragHint}>{Platform.OS === 'web' && columns ? 'Drag & drop or click to browse' : 'Tap to choose photos'}</Text>
                 <Text style={styles.uploadTip}>One plant at a time</Text>
               </TouchableOpacity>
             )
@@ -291,7 +281,7 @@ export default function IdentificationScreen({ navigation }) {
         </View>
 
         {/* ── ZIP code ── */}
-        <View style={[styles.checkSection, width >= 760 && styles.workspaceColumn]}>
+        <View style={[styles.checkSection, columns && styles.workspaceColumn]}>
         <View style={styles.zipRow}>
           <LocationPicker place={place} onChange={found => { setPlace(found); rememberPlace(found); }} />
         </View>
@@ -435,18 +425,14 @@ export default function IdentificationScreen({ navigation }) {
           </AnimatedResults>
         )}
 
-      </View>
-    </ScrollView>
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.cream },
-  scrollContent: { alignItems: 'center' },
-  inner: { alignSelf: 'center' },
-
-  workspace: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 24, gap: 24 },
-  workspaceWide: { flexDirection: 'row', alignItems: 'flex-start', gap: 28 },
+  workspace: { paddingBottom: 8, gap: 24 },
+  workspaceWide: { flexDirection: 'row', alignItems: 'flex-start', gap: 32 },
   workspaceColumn: { flex: 1, minWidth: 0 },
   photoSection: { gap: 10 },
   checkSection: { gap: 10 },
@@ -460,6 +446,7 @@ const styles = StyleSheet.create({
   uploadPlaceholder: {
     minHeight: 220, paddingVertical: 28, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center',
   },
+  uploadPlaceholderCompact: { minHeight: 180, paddingVertical: 20 },
   uploadBoxDragging: { borderColor: COLORS.darkGreen, backgroundColor: COLORS.photoBg },
   uploadPlaceholderText: { fontSize: TYPE.h3, lineHeight: LINE.h3, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, textAlign: 'center', marginTop: 12 },
   uploadDragHint: { fontSize: TYPE.link, lineHeight: LINE.link, fontFamily: FONTS.body, color: COLORS.textBody, marginTop: 6, textAlign: 'center' },
@@ -500,7 +487,7 @@ const styles = StyleSheet.create({
   errorText: { color: COLORS.error, fontSize: TYPE.body, lineHeight: LINE.body, fontFamily: FONTS.body, backgroundColor: COLORS.invasiveTint, borderRadius: 10, padding: 14 },
 
   // ── Results ──
-  resultsSection: { marginTop: 8, paddingHorizontal: 20, paddingBottom: 48 },
+  resultsSection: { marginTop: 24, paddingBottom: 16 },
   resultsHeader: {
     flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, justifyContent: 'space-between',
     alignItems: 'baseline', marginBottom: 14,

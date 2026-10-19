@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  ActivityIndicator, useWindowDimensions,
+  View, Text, StyleSheet, TouchableOpacity,
+  ActivityIndicator,
   Animated, Alert, Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -18,9 +18,8 @@ import PressScale from '../components/PressScale';
 import { rememberPlace } from '../lastPlace';
 import NamePicker from '../components/NamePicker';
 import PhotoStrip from '../components/PhotoStrip';
-import ScreenHeader from '../components/ScreenHeader';
+import ScreenLayout from '../components/ScreenLayout';
 import ScanningLeaf from '../components/ScanningLeaf';
-import { PHOTOS } from '../photos';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const MAX_PHOTOS = 5;
@@ -186,8 +185,6 @@ export default function AuditScreen({ navigation }) {
 
   const zipCode = place?.zip ?? '';
   const zipValid = zipCode.length === 5;
-  const { width } = useWindowDimensions();
-  const maxWidth = Math.min(width, 960);
   const scrollRef = useRef(null);
   const [fontsLoaded] = useFonts(FONT_ASSETS);
 
@@ -283,18 +280,10 @@ export default function AuditScreen({ navigation }) {
   if (!fontsLoaded) return <View style={styles.container} />;
 
   return (
-    <ScrollView
-      ref={scrollRef}
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    >
-      <View style={[styles.inner, { width: maxWidth }]}>
-
-        <ScreenHeader
-          photo={PHOTOS.ecoscan}
-          photoLabel="Plants and pollinators on a school campus"
+    <ScreenLayout
+          scrollRef={scrollRef}
+          contentWidth={plants.length ? 760 : 560}
+          centered={plants.length === 0}
           title="EcoScan"
           subtitle="Scan outdoor plants. Plan your campus’s next native planting."
           right={plants.length > 0 ? (
@@ -302,7 +291,7 @@ export default function AuditScreen({ navigation }) {
               <Text style={styles.newAuditBtn}>New scan</Text>
             </TouchableOpacity>
           ) : null}
-        />
+        >
         <OfflineNotice />
 
         <View style={styles.zipSection}>
@@ -387,20 +376,17 @@ export default function AuditScreen({ navigation }) {
           )}
         </View>
 
-      </View>
-    </ScrollView>
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
   container:    { flex: 1, backgroundColor: COLORS.cream },
-  scrollContent:{ alignItems: 'center' },
-  inner:        { alignSelf: 'center' },
 
   headerAction: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 2 },
   newAuditBtn:{ fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, textDecorationLine: 'underline' },
 
-  zipSection: { paddingHorizontal: 20, marginTop: 12, marginBottom: 8 },
+  zipSection: { marginBottom: 8 },
   zipLocked: {
     flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: 16, rowGap: 0,
     borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, backgroundColor: COLORS.cardBg, paddingVertical: 8, paddingHorizontal: 14,
@@ -412,7 +398,7 @@ const styles = StyleSheet.create({
   textAction: { minHeight: 44, paddingHorizontal: 6, justifyContent: 'center' },
   changePlace:   { gap: 10, paddingVertical: 8 },
 
-  listSection: { paddingHorizontal: 20, paddingTop: 18, gap: 16 },
+  listSection: { paddingTop: 18, gap: 16 },
   listHeading: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingBottom: 2 },
   listTitle: { fontSize: TYPE.h3, lineHeight: LINE.h3, fontFamily: FONTS.heading, color: COLORS.darkGreen },
   listCount: { minWidth: 26, overflow: 'hidden', borderRadius: 13, paddingHorizontal: 8, paddingVertical: 4, textAlign: 'center', backgroundColor: COLORS.lightBg, color: COLORS.softGreen, fontSize: TYPE.small, fontFamily: FONTS.bodyBold },
@@ -450,7 +436,7 @@ const styles = StyleSheet.create({
   scanningText: { flex: 1, fontSize: TYPE.body, lineHeight: LINE.body, fontFamily: FONTS.bodyMedium, color: COLORS.textBody },
   matchText:    { fontSize: TYPE.caption, fontFamily: FONTS.body, color: COLORS.textMuted },
 
-  actions: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 52, gap: 12 },
+  actions: { paddingTop: 20, paddingBottom: 16, gap: 12 },
   addBtn: {
     borderRadius: 10, minHeight: 50, paddingVertical: 14, paddingHorizontal: 16, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: COLORS.darkGreen, backgroundColor: COLORS.cardBg,

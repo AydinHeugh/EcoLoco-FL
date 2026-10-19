@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Animated, View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import StatusBadge from './StatusBadge';
@@ -121,6 +121,7 @@ function reasonIcon(reason) {
 }
 
 export default function PlanCard({ card, kind, replacementName, plantingsChecked = true, inLetter = true, onToggleLetter }) {
+  const compact = useWindowDimensions().width < 360;
   const [open, setOpen] = useState(false);
   const rows = (kind === 'remove' ? removeRows(card, replacementName, plantingsChecked) : addRows(card)).filter(r => r?.text);
   const shown = open ? rows : rows.slice(0, SHOWN);
@@ -128,9 +129,9 @@ export default function PlanCard({ card, kind, replacementName, plantingsChecked
   const name = kind === 'remove' ? card.plant_name : card.common_name;
 
   return (
-    <View style={[styles.card, kind === 'remove' ? styles.removeCard : styles.addCard, kind === 'add' && !off && styles.selectedCard]}>
-      <View style={styles.header}>
-        <PlantPhoto photo={card.photo} size={68} radius={14} label={name} />
+    <View style={[styles.card, compact && styles.cardCompact, kind === 'remove' ? styles.removeCard : styles.addCard, kind === 'add' && !off && styles.selectedCard]}>
+      <View style={[styles.header, compact && styles.headerCompact]}>
+        <PlantPhoto photo={card.photo} size={compact ? 56 : 68} radius={14} label={name} />
         <View style={styles.headerText}>
           <Text style={[styles.eyebrow, kind === 'remove' && styles.removeEyebrow]}>{kind === 'remove' ? 'REMOVE INVASIVE' : 'NATIVE ADDITION'}</Text>
           <Text style={styles.title}>{name}</Text>
@@ -168,10 +169,12 @@ export default function PlanCard({ card, kind, replacementName, plantingsChecked
 
 const styles = StyleSheet.create({
   card: { padding: 20, marginBottom: 12, gap: 16, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border },
+  cardCompact: { padding: 16, gap: 14 },
   addCard: { backgroundColor: COLORS.cardBg },
   selectedCard: { borderColor: '#A1B596' },
   removeCard: { backgroundColor: COLORS.cardBg, borderColor: '#E2C6BE' },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 14 },
+  headerCompact: { gap: 12 },
   headerText: { flex: 1, minWidth: 0, gap: 5, alignItems: 'flex-start' },
   eyebrow: { fontSize: TYPE.eyebrow, lineHeight: 16, letterSpacing: 1.3, fontFamily: FONTS.bodyBold, color: COLORS.softGreen },
   removeEyebrow: { color: COLORS.terracotta },

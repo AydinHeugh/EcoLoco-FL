@@ -65,6 +65,7 @@ function NearbyRow({ plant, max, order }) {
 }
 
 function LetterGenerator({ plan, zipCode }) {
+  const compact = useWindowDimensions().width < 360;
   const [loading, setLoading] = useState(false);
   const [letter,  setLetter]  = useState('');
   const [copied,  setCopied]  = useState(false);
@@ -85,7 +86,7 @@ function LetterGenerator({ plan, zipCode }) {
   }
 
   return (
-    <View style={styles.section}>
+    <View style={[styles.section, compact && styles.sectionCompact]}>
       <Text style={styles.overline}>MAKE IT HAPPEN</Text>
       <Text accessibilityRole="header" style={styles.sectionTitle}>Letter to your principal</Text>
       <Text style={styles.sectionNote}>
@@ -96,10 +97,10 @@ function LetterGenerator({ plan, zipCode }) {
       </TouchableOpacity>
       {error && <Text style={styles.errorText}>{error}</Text>}
       {letter ? (
-        <View style={styles.letterCard}>
+        <View style={[styles.letterCard, compact && styles.letterCardCompact]}>
           <Text style={styles.sectionNote}>Tap to edit. Fill in the parts in [brackets].</Text>
           <TextInput accessibilityLabel="Edit your letter to the principal" multiline scrollEnabled={false} value={letter} onChangeText={setLetter}
-            style={styles.letterInput} textAlignVertical="top" />
+            style={[styles.letterInput, compact && styles.letterInputCompact]} textAlignVertical="top" />
           <TouchableOpacity
             accessibilityRole="button"
             style={styles.btnOutline}
@@ -134,8 +135,12 @@ function AuditResults({ route, navigation }) {
   const [attempt,  setAttempt]  = useState(0);
 
   const { width } = useWindowDimensions();
-  const maxWidth   = Math.min(width, 960);
-  const ringSize = Math.max(100, Math.min(148, Math.floor((maxWidth - 114) / 2)));
+  const maxWidth = Math.min(width, 760);
+  const compact = width < 360;
+  const gutter = compact ? 16 : 20;
+  const ringSize = Math.max(100, Math.min(148, Math.floor((maxWidth - gutter * 2 - 74) / 2)));
+  const countColumns = maxWidth >= 640 ? 4 : 2;
+  const countWidth = (maxWidth - gutter * 2 - (countColumns - 1) * 12) / countColumns;
   const [fontsLoaded] = useFonts(FONT_ASSETS);
   const stale = plan != null && planFor !== request;
   const slow = useDelayedFlag(stale);
@@ -212,7 +217,7 @@ function AuditResults({ route, navigation }) {
 
         {!loading && plan && (
           <>
-            <View style={styles.section}>
+            <View style={[styles.section, compact && styles.sectionCompact]}>
               {slow && !error && <Text style={styles.mutedText}>Updating your plan…</Text>}
               {stale && error && (
                 <>
@@ -277,9 +282,9 @@ function AuditResults({ route, navigation }) {
               </TouchableOpacity>
             </View>
 
-            <View style={styles.divider} />
+            <View style={[styles.divider, compact && styles.dividerCompact]} />
 
-            <View style={styles.section}>
+            <View style={[styles.section, compact && styles.sectionCompact]}>
               <Text style={styles.overline}>YOUR PLANT SURVEY</Text>
               <Text accessibilityRole="header" style={styles.sectionTitle}>What your campus supports now</Text>
               <Text style={styles.sectionNote}>Scanned something by mistake, like a fake or potted plant? Remove it and your counts and plan update.</Text>
@@ -313,9 +318,9 @@ function AuditResults({ route, navigation }) {
               ))}
             </View>
 
-            <View style={styles.divider} />
+            <View style={[styles.divider, compact && styles.dividerCompact]} />
 
-            <View style={styles.ringBand}>
+            <View style={[styles.ringBand, compact && styles.ringBandCompact]}>
               <Text style={styles.overline}>NOW & WITH YOUR PLAN</Text>
               <Text accessibilityRole="header" style={[styles.sectionTitle, styles.metricTitle]}>How native is your campus?</Text>
               {summary.percent_native === null
@@ -335,10 +340,10 @@ function AuditResults({ route, navigation }) {
                 )}
             </View>
 
-            <View style={styles.ringSection}>
+            <View style={[styles.ringSection, compact && styles.sectionCompact]}>
               <View style={styles.countRow}>
                 {BUCKETS.map(({ key, status, label }, i) => (
-                  <View key={key} style={styles.countItem}>
+                  <View key={key} style={[styles.countItem, { width: countWidth }]}>
                     <View style={[styles.countIcon, { backgroundColor: STATUS_COLORS[status].bg }]}>
                       <MaterialCommunityIcons name={STATUS_ICONS[status]} size={22} color={STATUS_COLORS[status].color} />
                     </View>
@@ -357,11 +362,11 @@ function AuditResults({ route, navigation }) {
               ]} />
             </View>
 
-            <View style={styles.divider} />
+            <View style={[styles.divider, compact && styles.dividerCompact]} />
 
             {nearby.length > 0 && (
               <>
-                <View style={styles.section}>
+                <View style={[styles.section, compact && styles.sectionCompact]}>
                   <Text style={styles.sectionTitle}>Seen near you</Text>
                   <Text style={styles.sectionNote}>Plants people photographed within about 5 km of your school, checked by other iNaturalist users.</Text>
                   <Text style={styles.sectionNote}>{NEARBY_WHY}</Text>
@@ -370,11 +375,11 @@ function AuditResults({ route, navigation }) {
                   ))}
                   <SourceLine source={{ name: 'iNaturalist', url: 'https://www.inaturalist.org' }} />
                 </View>
-                <View style={styles.divider} />
+                <View style={[styles.divider, compact && styles.dividerCompact]} />
               </>
             )}
 
-            <View style={styles.section}>
+            <View style={[styles.section, compact && styles.sectionCompact]}>
               <Text style={styles.sectionTitle}>Why this matters</Text>
               <Text style={styles.sectionNote}>{WHY_NOTE}</Text>
               {plan.why_this_matters.map((line, i) => (
@@ -390,11 +395,11 @@ function AuditResults({ route, navigation }) {
               ))}
             </View>
 
-            <View style={styles.divider} />
+            <View style={[styles.divider, compact && styles.dividerCompact]} />
 
             <LetterGenerator key={planFor.plants.map(p => p._id).join(',') + '|' + planFor.skip.join(',')} plan={plan} zipCode={zipCode} />
 
-            <View style={styles.ctaSection}>
+            <View style={[styles.ctaSection, compact && styles.sectionCompact]}>
               <TouchableOpacity style={styles.btnOutline} onPress={() => navigation.goBack()}>
                 <Text style={styles.btnOutlineText}>Scan More Plants</Text>
               </TouchableOpacity>
@@ -415,12 +420,15 @@ const styles = StyleSheet.create({
   backBtn:  { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, paddingVertical: 12 },
 
   divider: { height: 1, backgroundColor: COLORS.border, marginHorizontal: 20 },
+  dividerCompact: { marginHorizontal: 16 },
 
   centerSection: { alignItems: 'center', paddingVertical: 60, gap: 14, paddingHorizontal: 24 },
   section:       { paddingHorizontal: 20, paddingVertical: 30, gap: 12 },
+  sectionCompact: { paddingHorizontal: 16 },
   sectionIntro:  { gap: 6, paddingTop: 4, paddingBottom: 8 },
   overline:      { fontSize: TYPE.eyebrow, lineHeight: 16, fontFamily: FONTS.bodyBold, letterSpacing: 1.8, color: COLORS.softGreen },
   ringBand:      { alignItems: 'center', backgroundColor: COLORS.lightBg, borderRadius: 22, borderWidth: 1, borderColor: COLORS.border, marginHorizontal: 20, marginTop: 28, paddingHorizontal: 16, paddingVertical: 28, gap: 18 },
+  ringBandCompact: { marginHorizontal: 16 },
   metricTitle:   { fontSize: TYPE.h2, lineHeight: LINE.h2, textAlign: 'center' },
   rings:         { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 8, rowGap: 24, width: '100%' },
   ringNote:      { maxWidth: 480, fontSize: TYPE.caption, lineHeight: LINE.caption },
@@ -447,7 +455,7 @@ const styles = StyleSheet.create({
   plantWhy:  { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: LINE.body },
 
   countRow:   { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, width: '100%' },
-  countItem:  { alignItems: 'center', flexBasis: 120, flexGrow: 1, maxWidth: 210, gap: 5, padding: 16, backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 16 },
+  countItem:  { alignItems: 'center', gap: 5, padding: 16, backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 16 },
   countNum:   { fontSize: TYPE.h2, fontFamily: FONTS.headingBlack },
   countLabel: { fontSize: TYPE.caption, lineHeight: LINE.caption, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
 
@@ -460,10 +468,12 @@ const styles = StyleSheet.create({
   letterCard: {
     marginTop: 12, backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 20, padding: 18, gap: 14,
   },
+  letterCardCompact: { padding: 12 },
   letterInput: {
     fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textBody,
     lineHeight: LINE.body, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, padding: 16, minHeight: 520,
   },
+  letterInputCompact: { padding: 12 },
 
   ctaSection: { padding: 24, paddingBottom: 52 },
 });
