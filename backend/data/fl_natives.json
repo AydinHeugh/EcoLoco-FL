@@ -1,5 +1,5 @@
 {
-  "_comment": "STARTER DATA — VERIFY BEFORE THE DEMO. South Florida native plants with a one-line wildlife payoff. Check every name and claim against UF/IFAS, the Atlas of Florida Plants (https://florida.plantatlas.usf.edu/) and the Florida Native Plant Society before relying on it. Note: the non-native Hamelia patens var. glabra ('African firebush') is also sold as firebush and would match the native entry here. Synonyms are older or alternate names a model may return.",
+  "_comment": "STARTER DATA: VERIFY BEFORE THE DEMO. South Florida native plants with a one-line wildlife payoff. Check every name and claim against UF/IFAS, the Atlas of Florida Plants (https://florida.plantatlas.usf.edu/) and the Florida Native Plant Society before relying on it. Note: the non-native Hamelia patens var. glabra ('African firebush') is also sold as firebush and would match the native entry here. Synonyms are older or alternate names a model may return.",
   "source": "EcoLoco curated South Florida natives",
   "species": [
     { "scientific_name": "Zamia integrifolia", "common_name": "Coontie", "common_names": ["Florida arrowroot"], "synonyms": ["Zamia pumila", "Zamia floridana"],

@@ -52,7 +52,6 @@ const ld = StyleSheet.create({
   text: { fontSize: TYPE.body, fontFamily: FONTS.bodyMedium, color: COLORS.textMuted },
 });
 
-// ─── Animated results wrapper ────────────────────────────────────────────────
 function AnimatedResults({ children }) {
   const reduce = useReduceMotion();
   const opacity    = useRef(new Animated.Value(0)).current;
@@ -222,7 +221,6 @@ export default function IdentificationScreen({ navigation }) {
         <OfflineNotice />
         <View style={[styles.workspace, columns && styles.workspaceWide]}>
 
-        {/* ── Upload box ── */}
         <View style={[styles.photoSection, columns && styles.workspaceColumn]}>
         <View
           nativeID="plant-drop-zone"
@@ -280,13 +278,11 @@ export default function IdentificationScreen({ navigation }) {
           </View>}
         </View>
 
-        {/* ── ZIP code ── */}
         <View style={[styles.checkSection, columns && styles.workspaceColumn]}>
         <View style={styles.zipRow}>
           <LocationPicker place={place} onChange={found => { setPlace(found); rememberPlace(found); }} />
         </View>
 
-        {/* ── Identify button ── */}
         <PressScale
           style={[styles.identifyBtn, !canIdentify && styles.identifyBtnDisabled]}
           onPress={handleIdentify}
@@ -317,7 +313,6 @@ export default function IdentificationScreen({ navigation }) {
         </View>
         </View>
 
-        {/* ── Results ── */}
         {result && (
           <AnimatedResults>
           <View style={styles.resultsSection}>
@@ -402,7 +397,6 @@ export default function IdentificationScreen({ navigation }) {
               </View>
             )}
 
-            {/* Navigate to full recommendations */}
             {zipCode?.length === 5 && (
               <TouchableOpacity
                 accessibilityRole="button"
@@ -437,7 +431,6 @@ const styles = StyleSheet.create({
   photoSection: { gap: 10 },
   checkSection: { gap: 10 },
 
-  // ── Upload box ──
   uploadBox: {
     borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.cardBg,
     borderRadius: 18, overflow: 'hidden',
@@ -466,10 +459,8 @@ const styles = StyleSheet.create({
   },
   btnFilledText: { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
 
-  // ── ZIP ──
   zipRow: { marginBottom: 6 },
 
-  // ── Identify button ──
   identifyBtn: {
     backgroundColor: COLORS.darkGreen, borderRadius: 10, minHeight: 52,
     paddingVertical: 14, paddingHorizontal: 16, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center',
@@ -486,7 +477,6 @@ const styles = StyleSheet.create({
   noData: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 6 },
   errorText: { color: COLORS.error, fontSize: TYPE.body, lineHeight: LINE.body, fontFamily: FONTS.body, backgroundColor: COLORS.invasiveTint, borderRadius: 10, padding: 14 },
 
-  // ── Results ──
   resultsSection: { marginTop: 24, paddingBottom: 16 },
   resultsHeader: {
     flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, justifyContent: 'space-between',

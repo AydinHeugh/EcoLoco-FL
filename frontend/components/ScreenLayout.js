@@ -3,7 +3,6 @@ import { View, ScrollView, StyleSheet, useWindowDimensions } from 'react-native'
 import { BrandHeader, ScreenHeading } from './ScreenHeader';
 import { COLORS } from '../theme';
 
-// Short setup flows sit together in the available space; longer workspaces scroll from the top.
 export default function ScreenLayout({ title, subtitle, right, children, contentWidth = 560, centered = false, scrollRef, onScroll }) {
   const { width, height } = useWindowDimensions();
   const roomy = width >= 600 && height >= 600;

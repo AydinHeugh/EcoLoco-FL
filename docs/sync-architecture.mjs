@@ -18,13 +18,11 @@ const checkOnly = process.argv.includes('--check');
 const errors = [], warnings = [];
 const read = p => readFileSync(join(ROOT, p), 'utf8');
 
-// ── load graph ──────────────────────────────────────────────────────────────
 const m = readFileSync(HTML, 'utf8').match(/<script type="application\/json" id="graph-data">([\s\S]*?)<\/script>/);
 if (!m) { console.error('graph-data block not found in docs/architecture.html'); process.exit(1); }
 const G = JSON.parse(m[1]);
 const ids = new Set();
 
-// ── 1. graph is well-formed ─────────────────────────────────────────────────
 const LAYERS = ['ui', 'device', 'client', 'route', 'svc', 'data', 'ext'];
 for (const n of G.nodes) {
   if (ids.has(n.id)) errors.push(`duplicate node id "${n.id}"`);
@@ -38,13 +36,12 @@ for (const e of G.edges) {
   if (!ids.has(e.from) || !ids.has(e.to)) errors.push(`edge ${e.from} → ${e.to} points at a missing node`);
 }
 
-// ── 2. every node matches the code ──────────────────────────────────────────
 for (const n of G.nodes) {
   if (!n.file) continue;
   const exists = existsSync(join(ROOT, n.file));
   const has = exists && (!n.symbol || read(n.file).includes(n.symbol));
   if (n.status === 'planned') {
-    if (has) warnings.push(`${n.id}: ${n.file}${n.symbol ? ` has "${n.symbol}"` : ' exists'} — shipped? drop PLANNED`);
+    if (has) warnings.push(`${n.id}: ${n.file}${n.symbol ? ` has "${n.symbol}"` : ' exists'}: shipped? drop PLANNED`);
   } else if (!exists) {
     errors.push(`${n.id}: file ${n.file} not found`);
   } else if (!has) {
@@ -52,7 +49,6 @@ for (const n of G.nodes) {
   }
 }
 
-// ── 3. every real piece of code has a node ──────────────────────────────────
 const symbols = G.nodes.filter(n => n.status !== 'planned').map(n => `${n.file}::${n.symbol}`);
 const covered = (file, needle) => symbols.some(s => s.startsWith(file + '::') && s.includes(needle));
 const ls = dir => (existsSync(join(ROOT, dir)) ? readdirSync(join(ROOT, dir)) : []);
@@ -75,7 +71,6 @@ const app = read('backend/app.py').replace(/'''[\s\S]*?'''/g, '');   // ignore c
 for (const [, route, name] of app.matchAll(/@app\.route\("([^"]+)"[^\n]*\n\s*def (\w+)\(/g))
   if (!covered('backend/app.py', `def ${name}(`)) errors.push(`missing node for route ${route} (${name})`);
 
-// ── 4. regenerate ARCHITECTURE.md sections ──────────────────────────────────
 const esc = s => String(s).replace(/"/g, '#quot;').replace(/</g, '#lt;').replace(/>/g, '#gt;');
 const TITLES = { ui: 'Screens & UI', device: 'Device', client: 'API client', route: 'Flask routes',
                  svc: 'Services', data: 'Bundled data', ext: 'External APIs' };
@@ -92,8 +87,8 @@ for (const layer of LAYERS) {
   mermaid.push(`  subgraph L_${layer}["${TITLES[layer]}"]`, '    direction TB');
   for (const n of ns) {
     let label = esc(n.label);
-    if (n.status === 'planned') label += `<br/>PLANNED — goal: ${esc(n.goal)}`;
-    else if (n.status === 'dead') label += `<br/>DEAD — ${esc(n.goal)}`;
+    if (n.status === 'planned') label += `<br/>PLANNED, goal: ${esc(n.goal)}`;
+    else if (n.status === 'dead') label += `<br/>DEAD: ${esc(n.goal)}`;
     mermaid.push(`    ${n.id}["${label}"]`);
   }
   mermaid.push('  end');
@@ -133,15 +128,14 @@ replace('mermaid', '```mermaid\n' + mermaid.join('\n') + '\n```');
 
 const stale = md !== readMd();
 
-// ── report ──────────────────────────────────────────────────────────────────
 for (const w of warnings) console.warn('warn  ' + w);
 for (const e of errors) console.error('ERROR ' + e);
 if (checkOnly) {
-  if (stale) console.error('ERROR ARCHITECTURE.md is out of date — run: node docs/sync-architecture.mjs');
+  if (stale) console.error('ERROR ARCHITECTURE.md is out of date. Run: node docs/sync-architecture.mjs');
   if (errors.length || stale) process.exit(1);
-  console.log(`ok — ${G.nodes.length} nodes, ${G.edges.length} edges match the code`);
+  console.log(`ok: ${G.nodes.length} nodes, ${G.edges.length} edges match the code`);
 } else {
   if (stale) writeFileSync(MD, md);
-  console.log(`${stale ? 'updated' : 'unchanged'} ARCHITECTURE.md — ${G.nodes.length} nodes, ${G.edges.length} edges`);
+  console.log(`${stale ? 'updated' : 'unchanged'} ARCHITECTURE.md: ${G.nodes.length} nodes, ${G.edges.length} edges`);
   if (errors.length) process.exit(1);
 }

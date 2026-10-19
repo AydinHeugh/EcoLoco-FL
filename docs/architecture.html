@@ -102,9 +102,15 @@
   .empty { color: var(--muted); font-size: 13px; }
   .hint { position: absolute; left: 50%; transform: translateX(-50%); bottom: 14px; white-space: nowrap; z-index: 4; font-size: 12px; color: var(--muted);
     background: var(--card); border: 1px solid var(--line); padding: 5px 9px; border-radius: 6px; }
+  .filters { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .btn.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .react-flow.waiting .react-flow__nodes, .react-flow.waiting .react-flow__edges,
+  .react-flow.waiting .react-flow__edgelabel-renderer { visibility: hidden; }
+  .react-flow__edge:hover .react-flow__edge-path { stroke-width: 2.2; }
   #err { padding: 24px; color: #b00020; white-space: pre-wrap; }
   @media (max-width: 700px) { .panel { top: 40%; width: 100%; border-left: 0; border-top: 1px solid var(--line); } .tools { margin-left: 0; } .react-flow__minimap { display: none; } }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/elkjs@0.9.3/lib/elk.bundled.js"></script>
 <script type="importmap">
 {
   "imports": {
@@ -122,13 +128,13 @@
 <div id="root"></div>
 
 <!--
-  GRAPH DATA — the single source of truth for this page AND for ARCHITECTURE.md.
+  GRAPH DATA: the single source of truth for this page AND for ARCHITECTURE.md.
   After editing, run:  node docs/sync-architecture.mjs
   That checks every node against the real code and regenerates ARCHITECTURE.md.
 
   node:  id, label, layer (ui|device|client|route|svc|data|ext), status (live|planned|dead),
          file + symbol (a string that must appear in that file unless status is planned),
-         col/row (initial position), what (one sentence), how (ordered steps; `backticks` = code),
+         col/row (fallback position if the auto-layout cannot load), what (one sentence), how (ordered steps; `backticks` = code),
          goal (required for planned/dead; on a live node it means "change planned")
   edge:  from, to, label (call/endpoint + data, shown on the arrow), detail (shown in the panel),
          status (live|planned|dead)
@@ -364,7 +370,7 @@
       "symbol": "export async function identifyPlant",
       "col": 3,
       "row": 1.5,
-      "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
+      "goal": "File becomes apiClient.js, since it calls our Flask API, not Gemini.",
       "what": "Sends a photo and ZIP to the backend and returns the identification.",
       "how": [
         "POSTs `{images: [base64, …], location}` (1–5 photos of one plant) to `/identify`.",
@@ -381,7 +387,7 @@
       "symbol": "export async function getPlantRecommendations",
       "col": 3,
       "row": 3,
-      "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
+      "goal": "File becomes apiClient.js, since it calls our Flask API, not Gemini.",
       "what": "Asks the backend for native plants to add for a ZIP.",
       "how": [
         "POSTs `{location}` to `/recommend`.",
@@ -397,7 +403,7 @@
       "symbol": "export async function generateLetter",
       "col": 3,
       "row": 6.4,
-      "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
+      "goal": "File becomes apiClient.js, since it calls our Flask API, not Gemini.",
       "what": "Asks the backend to write the letter to the school admin.",
       "how": [
         "POSTs `{plan, zip_code}` to `/letter`.",
@@ -413,7 +419,7 @@
       "symbol": "export async function getLocalPlants",
       "col": 3,
       "row": 8,
-      "goal": "Delete plantService.js — the backend route it called has been removed.",
+      "goal": "Delete plantService.js: the backend route it called has been removed.",
       "what": "Leftover call to an endpoint that no longer exists.",
       "how": [
         "POSTs `{location}` to `/get_local_plants_endpoints`.",
@@ -950,7 +956,7 @@
       "symbol": "export async function getPlan",
       "col": 3,
       "row": 4.8,
-      "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
+      "goal": "File becomes apiClient.js, since it calls our Flask API, not Gemini.",
       "what": "Sends the audited plants to the backend and gets the plan back.",
       "how": [
         "POSTs `{plants: [{scientific_name, plant_name}], location, skip, site}` to `/plan`.",
@@ -1173,7 +1179,7 @@
       "symbol": "export async function locate",
       "col": 3,
       "row": 10.2,
-      "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
+      "goal": "File becomes apiClient.js, since it calls our Flask API, not Gemini.",
       "what": "Sends a rounded location or a typed address to the backend and gets the ZIP back.",
       "how": [
         "POSTs `{lat, lon}` or `{query}` to `/locate`.",
@@ -1189,7 +1195,7 @@
       "symbol": "export async function getNearby",
       "col": 3,
       "row": 11.4,
-      "goal": "File becomes apiClient.js — it calls our Flask API, not Gemini.",
+      "goal": "File becomes apiClient.js, since it calls our Flask API, not Gemini.",
       "what": "Asks the backend which plants have been seen near the school.",
       "how": [
         "POSTs `{lat, lon}` to `/nearby`.",
@@ -2705,10 +2711,10 @@
 }</script>
 
 <script type="module">
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ReactFlow, ReactFlowProvider, Background, Controls, MiniMap, Handle, Position, MarkerType,
-         useNodesState, useReactFlow, BaseEdge, EdgeLabelRenderer, getBezierPath } from '@xyflow/react';
+         useNodesState, useReactFlow, useNodesInitialized, BaseEdge, EdgeLabelRenderer, getSmoothStepPath } from '@xyflow/react';
 import htm from 'htm';
 const html = htm.bind(React.createElement);
 
@@ -2723,7 +2729,7 @@ const LAYERS = {
   client: { name: 'API client',   color: '#1e6fb8', where: 'frontend/services/',
             desc: 'Small frontend functions that send requests over the internet to our backend.' },
   route:  { name: 'Flask route',  color: '#c77800', where: 'backend/app.py',
-            desc: 'A backend URL that receives those requests — the front door of the Python server.' },
+            desc: 'A backend URL that receives those requests: the front door of the Python server.' },
   svc:    { name: 'Service',      color: '#7b3fa0', where: 'backend/services/',
             desc: 'Backend functions that do the real work once a route gets a request.' },
   data:   { name: 'Bundled data', color: '#00897b', where: 'backend/data/*.json (planned)',
@@ -2740,6 +2746,87 @@ const MARKERS = [
 ];
 const COL_W = 450, ROW_H = 118;
 
+const COLUMN = { ui: 0, device: 1, client: 1, route: 2, svc: 3, data: 4, ext: 4 };
+const columnOf = n => (n.file?.startsWith('backend/scripts/') ? 5 : COLUMN[n.layer]);
+
+const HELPERS = new Set(['ui_theme', 'ui_motion', 'ui_press', 'ui_countup', 'ui_header', 'ui_tabicon', 'clipboard']);
+
+const FEATURES = [
+  { key: 'all',      name: 'All' },
+  { key: 'identify', name: 'Identify',       seeds: ['ident'] },
+  { key: 'plan',     name: 'Recommend/Plan', seeds: ['rec', 'c_plan'] },
+  { key: 'audit',    name: 'Audit',          seeds: ['audit', 'results'] },
+  { key: 'location', name: 'Location',       seeds: ['ui_location', 'c_locate', 'c_nearby'] },
+];
+
+const OUT = {}, IN = {};
+for (const e of G.edges) { (OUT[e.from] ??= []).push(e.to); (IN[e.to] ??= []).push(e.from); }
+
+const SCREENS = new Set(G.nodes.filter(n => n.id === 'app' || n.file?.startsWith('frontend/screens/')).map(n => n.id));
+
+// A feature is everything its starting nodes use, followed all the way down, plus the screens or parts that call a
+// starting node. Following stops at other screens (navigating to another tab is a different feature) and at hidden nodes.
+function featureNodes(seeds, hidden) {
+  const found = new Set(seeds), queue = [...seeds];
+  while (queue.length) {
+    for (const next of OUT[queue.shift()] ?? []) {
+      if (found.has(next) || hidden.has(next) || SCREENS.has(next)) continue;
+      found.add(next);
+      queue.push(next);
+    }
+  }
+  for (const seed of seeds) {
+    if (SCREENS.has(seed)) continue;
+    for (const caller of IN[seed] ?? []) if (!hidden.has(caller)) found.add(caller);
+  }
+  return found;
+}
+const featureOf = (key, showHelpers) => {
+  const f = FEATURES.find(x => x.key === key);
+  return f?.seeds ? featureNodes(f.seeds, showHelpers ? new Set() : HELPERS) : null;
+};
+
+function visibleIds(feature, showHelpers) {
+  const only = featureOf(feature, showHelpers);
+  return new Set(G.nodes.filter(n => (showHelpers || !HELPERS.has(n.id)) && (!only || only.has(n.id))).map(n => n.id));
+}
+
+const edgeId = e => `${e.from}->${e.to}`;
+const elk = typeof ELK === 'function' ? new ELK() : null;
+const ELK_OPTIONS = {
+  'elk.algorithm': 'layered',
+  'elk.direction': 'RIGHT',
+  'elk.edgeRouting': 'ORTHOGONAL',
+  'elk.partitioning.activate': 'true',
+  'elk.layered.spacing.nodeNodeBetweenLayers': '150',
+  'elk.layered.spacing.edgeNodeBetweenLayers': '28',
+  'elk.layered.spacing.edgeEdgeBetweenLayers': '10',
+  'elk.spacing.nodeNode': '26',
+  'elk.spacing.edgeNode': '18',
+  'elk.spacing.edgeEdge': '10',
+  'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
+  'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
+  'elk.layered.thoroughness': '20',
+};
+
+async function runLayout(ids, sizes) {
+  const result = await elk.layout({
+    id: 'root',
+    layoutOptions: ELK_OPTIONS,
+    children: [...ids].map(id => ({
+      id, width: sizes[id]?.w ?? 240, height: sizes[id]?.h ?? 80,
+      layoutOptions: { 'elk.partitioning.partition': String(columnOf(BY_ID[id])) },
+    })),
+    edges: G.edges.filter(e => ids.has(e.from) && ids.has(e.to))
+      .map(e => ({ id: edgeId(e), sources: [e.from], targets: [e.to] })),
+  });
+  return {
+    positions: Object.fromEntries(result.children.map(c => [c.id, { x: c.x, y: c.y }])),
+    routes: Object.fromEntries(result.edges.map(e => [e.id,
+      (e.sections ?? []).flatMap(s => [s.startPoint, ...(s.bendPoints ?? []), s.endPoint])])),
+  };
+}
+
 // GitHub Pages serves only docs/, so source files must link to github.com instead.
 const SOURCE_BASE = location.hostname.endsWith('.github.io')
   ? `https://github.com/${location.hostname.split('.')[0]}/${location.pathname.split('/')[1]}/blob/master/`
@@ -2754,7 +2841,6 @@ function centerOn(inst, id, zoom) {
   inst.setCenter(n.position.x + 120 + shift, n.position.y + 45, { zoom, duration: 400 });
 }
 
-// `code` spans in prose → <code>
 const rich = s => String(s).split('`').map((p, i) => i % 2 ? html`<code key=${i}>${p}</code>` : p);
 
 function CodeNode({ data }) {
@@ -2774,15 +2860,17 @@ function CodeNode({ data }) {
 }
 const nodeTypes = { code: CodeNode };
 
-// Same control points as React Flow's getBezierPath for a Right → Left edge,
-// so a label placed at parameter t sits exactly on the drawn curve.
-function bezierPoint(sx, sy, tx, ty, t) {
-  const d = tx - sx, c = d >= 0 ? 0.5 * d : 0.25 * 25 * Math.sqrt(-d);
-  const c1x = sx + c, c2x = tx - c, u = 1 - t;
-  return {
-    x: u * u * u * sx + 3 * u * u * t * c1x + 3 * u * t * t * c2x + t * t * t * tx,
-    y: u * u * u * sy + 3 * u * u * t * sy + 3 * u * t * t * ty + t * t * t * ty,
-  };
+function roundedPath(points, radius = 8) {
+  let d = `M${points[0].x},${points[0].y}`;
+  for (let i = 1; i < points.length - 1; i++) {
+    const a = points[i - 1], b = points[i], c = points[i + 1];
+    const r = Math.min(radius, Math.hypot(b.x - a.x, b.y - a.y) / 2, Math.hypot(c.x - b.x, c.y - b.y) / 2);
+    const before = { x: b.x - Math.sign(b.x - a.x) * r, y: b.y - Math.sign(b.y - a.y) * r };
+    const after = { x: b.x + Math.sign(c.x - b.x) * r, y: b.y + Math.sign(c.y - b.y) * r };
+    d += ` L${before.x},${before.y} Q${b.x},${b.y} ${after.x},${after.y}`;
+  }
+  const last = points[points.length - 1];
+  return `${d} L${last.x},${last.y}`;
 }
 
 const LABEL_MAX_W = 180;
@@ -2794,50 +2882,56 @@ function labelSize(text) {
   return { w: Math.min(w + 10, LABEL_MAX_W), h: lines * 14 + 6 };
 }
 
-const T_CANDIDATES = [0.5, ...Array.from({ length: 14 }, (_, i) => [0.5 - (i + 1) * 0.03, 0.5 + (i + 1) * 0.03]).flat()];
-const overlap = (a, b) => Math.max(0, Math.min(a.x2, b.x2) - Math.max(a.x1, b.x1)) * Math.max(0, Math.min(a.y2, b.y2) - Math.max(a.y1, b.y1));
-
-// Midpoint labels land on nodes when an edge skips a column or stays in one, so
-// slide each label along its curve to the free spot nearest the middle.
-function placeLabels(nodes, edges) {
-  const byId = Object.fromEntries(nodes.map(n => [n.id, n]));
-  const size = n => ({ w: n.measured?.width ?? 240, h: n.measured?.height ?? 80 });
-  const taken = nodes.map(n => {
-    const { w, h } = size(n);
-    return { x1: n.position.x - 6, y1: n.position.y - 6, x2: n.position.x + w + 6, y2: n.position.y + h + 6 };
-  });
-  const placed = {};
-  for (const e of edges) {
-    const s = byId[e.source], t = byId[e.target];
-    const sx = s.position.x + size(s).w + 3, sy = s.position.y + size(s).h / 2;
-    const tx = t.position.x - 3, ty = t.position.y + size(t).h / 2;
-    const { w, h } = labelSize(e.text);
-    let best;
-    for (const tt of T_CANDIDATES) {
-      const p = bezierPoint(sx, sy, tx, ty, tt);
-      const box = { x1: p.x - w / 2, y1: p.y - h / 2, x2: p.x + w / 2, y2: p.y + h / 2 };
-      const cost = taken.reduce((sum, b) => sum + overlap(box, b), 0);
-      if (!best || cost < best.cost) best = { t: tt, cost, box };
-      if (cost === 0) break;
-    }
-    taken.push(best.box);
-    placed[e.id] = best.t;
+const FRACTIONS = [0.5, 0.35, 0.65, 0.2, 0.8];
+function candidates(points) {
+  const segments = [];
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1], b = points[i];
+    segments.push({ a, b, flat: a.y === b.y, len: Math.hypot(b.x - a.x, b.y - a.y) });
   }
-  return placed;
+  segments.sort((s, u) => (u.flat - s.flat) || (u.len - s.len));
+  return segments.flatMap(({ a, b }) => FRACTIONS.map(f => ({ x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f })));
 }
 
-function LabelledEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style, markerEnd, data }) {
-  const [path] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
-  const p = data.text && bezierPoint(sourceX, sourceY, targetX, targetY, data.t ?? 0.5);
+const overlap = (a, b) => Math.max(0, Math.min(a.x2, b.x2) - Math.max(a.x1, b.x1)) * Math.max(0, Math.min(a.y2, b.y2) - Math.max(a.y1, b.y1));
+
+function placeLabels(items, boxes) {
+  const taken = [...boxes], spots = {};
+  for (const item of items) {
+    const { w, h } = labelSize(item.text);
+    let best;
+    for (const p of candidates(item.points)) {
+      const box = { x1: p.x - w / 2, y1: p.y - h / 2, x2: p.x + w / 2, y2: p.y + h / 2 };
+      const cost = taken.reduce((sum, b) => sum + overlap(box, b), 0);
+      if (!best || cost < best.cost) best = { cost, p, box };
+      if (cost === 0) break;
+    }
+    if (!best) continue;
+    taken.push(best.box);
+    spots[item.id] = best.p;
+  }
+  return spots;
+}
+
+function RoutedEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style, markerEnd, data }) {
+  let path, spot;
+  if (data.points?.length > 1) {
+    path = roundedPath(data.points);
+    spot = data.spot ?? data.points[Math.floor(data.points.length / 2)];
+  } else {
+    const [p, x, y] = getSmoothStepPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, borderRadius: 8 });
+    path = p;
+    spot = { x, y };
+  }
   return html`
     <${React.Fragment}>
-      <${BaseEdge} id=${id} path=${path} style=${style} markerEnd=${markerEnd} />
-      ${p && html`<${EdgeLabelRenderer}>
-        <div class="elabel" style=${{ transform: `translate(-50%, -50%) translate(${p.x}px, ${p.y}px)`, zIndex: data.front ? 10 : 0 }}>${data.text.replace(/\(/g, '(​')}</div>
+      <${BaseEdge} id=${id} path=${path} style=${style} markerEnd=${markerEnd} interactionWidth=${14} />
+      ${data.showLabel && html`<${EdgeLabelRenderer}>
+        <div class="elabel" style=${{ transform: `translate(-50%, -50%) translate(${spot.x}px, ${spot.y}px)`, zIndex: data.front ? 10 : 0 }}>${data.text.replace(/\(/g, '(​')}</div>
       <//>`}
     <//>`;
 }
-const edgeTypes = { labelled: LabelledEdge };
+const edgeTypes = { routed: RoutedEdge };
 
 const initialNodes = G.nodes.map(n => ({
   id: n.id, type: 'code', data: n, position: { x: n.col * COL_W, y: n.row * ROW_H },
@@ -2861,7 +2955,7 @@ function LinkList({ title, edges, side, kind, onPick }) {
 
 function Panel({ node, out, inc, onPick, onClose }) {
   const L = LAYERS[node.layer];
-  const goalLabel = node.status === 'planned' ? 'PLANNED — goal' : node.status === 'dead' ? 'DEAD — goal' : 'Change planned';
+  const goalLabel = node.status === 'planned' ? 'Planned goal' : node.status === 'dead' ? 'Dead code, goal' : 'Change planned';
   return html`
     <aside class="panel">
       <button class="close" onClick=${onClose} title="Close">×</button>
@@ -2896,24 +2990,34 @@ function Glossary({ onClose }) {
       ${Object.entries(LAYERS).map(([k, L]) => html`
         <div key=${k} class="gl">
           <span class="sw" style=${{ '--c': L.color }}></span>
-          <div><b>${L.name}</b> — ${L.desc}<div class="gl-where">${L.where}</div></div>
+          <div><b>${L.name}</b>: ${L.desc}<div class="gl-where">${L.where}</div></div>
         </div>`)}
       <h3>Markers</h3>
       ${MARKERS.map(m => html`
         <div key=${m.cls} class="gl">
           <span class=${'sw ' + m.cls}></span>
-          <div><b>${m.name}</b> — ${m.desc}</div>
+          <div><b>${m.name}</b>: ${m.desc}</div>
         </div>`)}
     </aside>`;
 }
 
+const START = BY_ID[location.hash.slice(1)] ? location.hash.slice(1) : null;
+
 function App() {
-  const [nodes, , onNodesChange] = useNodesState(initialNodes);
-  const [sel, setSel] = useState(() => (BY_ID[location.hash.slice(1)] ? location.hash.slice(1) : null));
-  const [showLabels, setShowLabels] = useState(true);
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [sel, setSel] = useState(START);
+  const [feature, setFeature] = useState('all');
+  const [showHelpers, setShowHelpers] = useState(HELPERS.has(START));
+  const [showLabels, setShowLabels] = useState(false);
+  const [hoverEdge, setHoverEdge] = useState(null);
   const [showHelp, setShowHelp] = useState(false);
+  const [layout, setLayout] = useState(null);
+  const sizes = useRef(null);
+  const pending = useRef(START);
+  const initialized = useNodesInitialized();
   const rf = useReactFlow();
 
+  const visible = useMemo(() => visibleIds(feature, showHelpers), [feature, showHelpers]);
   const out = useMemo(() => (sel ? G.edges.filter(e => e.from === sel) : []), [sel]);
   const inc = useMemo(() => (sel ? G.edges.filter(e => e.to === sel) : []), [sel]);
 
@@ -2924,6 +3028,43 @@ function App() {
     if (id && center) centerOn(rf, id, Math.max(rf.getZoom(), 0.85));
   }, [rf]);
 
+  const reveal = useCallback(id => {
+    if (visible.has(id)) return select(id, true);
+    pending.current = id;
+    setSel(id);
+    if (HELPERS.has(id)) setShowHelpers(true);
+    const only = featureOf(feature, true);
+    if (only && !only.has(id)) setFeature('all');
+  }, [visible, feature, select]);
+
+  useEffect(() => {
+    if (!initialized && !sizes.current) return undefined;
+    if (!sizes.current) {
+      sizes.current = Object.fromEntries(rf.getNodes().map(n => [n.id, { w: n.measured?.width ?? 240, h: n.measured?.height ?? 80 }]));
+    }
+    let live = true;
+    const job = elk ? runLayout(visible, sizes.current) : Promise.reject(new Error('ELK did not load'));
+    job.catch(err => { console.warn('Auto-layout unavailable, using saved positions:', err); return { positions: {}, routes: {} }; })
+      .then(result => {
+        if (!live) return;
+        setNodes(ns => ns.map(n => ({ ...n, hidden: !visible.has(n.id), position: result.positions[n.id] ?? n.position })));
+        setLayout({ ...result, ids: visible });
+        setSel(s => (s && !visible.has(s) ? null : s));
+      });
+    return () => { live = false; };
+  }, [initialized, visible]);
+
+  useEffect(() => {
+    if (!layout) return undefined;
+    const frame = requestAnimationFrame(() => requestAnimationFrame(() => {
+      const target = pending.current;
+      pending.current = null;
+      if (target && layout.ids.has(target)) centerOn(rf, target, 0.9);
+      else rf.fitView({ nodes: [...layout.ids].map(id => ({ id })), padding: 0.06, duration: 300 });
+    }));
+    return () => cancelAnimationFrame(frame);
+  }, [layout]);
+
   const viewNodes = useMemo(() => {
     const callees = new Set(out.map(e => e.to)), callers = new Set(inc.map(e => e.from));
     return nodes.map(n => {
@@ -2932,31 +3073,49 @@ function App() {
     });
   }, [nodes, sel, out, inc]);
 
-  const visibleLabels = useMemo(() => (showLabels ? G.edges : [])
-    .filter(e => !sel || e.from === sel || e.to === sel)
-    .map(e => ({ id: `${e.from}->${e.to}`, source: e.from, target: e.to, text: e.label })), [sel, showLabels]);
-  const labelT = useMemo(() => placeLabels(nodes, visibleLabels), [nodes, visibleLabels]);
-
-  const viewEdges = useMemo(() => G.edges.map(e => {
-    const id = `${e.from}->${e.to}`;
-    const isOut = sel === e.from, isIn = sel === e.to, faded = sel && !isOut && !isIn;
-    const color = isOut ? 'var(--callee)' : isIn ? 'var(--caller)' : e.status === 'dead' ? '#9ca3af' : 'var(--edge)';
-    return {
-      id, source: e.from, target: e.to, type: 'labelled',
-      data: { text: id in labelT ? e.label : null, t: labelT[id], front: isOut || isIn },
-      animated: !!(isOut || isIn),
-      zIndex: isOut || isIn ? 10 : 0,
-      style: { stroke: color, strokeWidth: isOut || isIn ? 2.2 : 1.3, opacity: faded ? 0.1 : 1,
-               strokeDasharray: e.status === 'planned' ? '6 4' : e.status === 'dead' ? '2 4' : undefined },
-      markerEnd: { type: MarkerType.ArrowClosed, color, width: 16, height: 16 },
+  const viewEdges = useMemo(() => {
+    const at = Object.fromEntries(nodes.map(n => [n.id, n.position]));
+    const unmoved = id => {
+      const p = layout?.positions[id];
+      return p && at[id] && p.x === at[id].x && p.y === at[id].y;
     };
-  }), [sel, labelT]);
+    const routeOf = e => (unmoved(e.from) && unmoved(e.to) ? layout.routes[edgeId(e)] : null);
+    const wanted = G.edges.filter(e => visible.has(e.from) && visible.has(e.to) && routeOf(e)?.length > 1
+      && (showLabels || hoverEdge === edgeId(e) || sel === e.from || sel === e.to));
+    wanted.sort((a, b) => (b.from === sel || b.to === sel) - (a.from === sel || a.to === sel));
+    const boxes = nodes.filter(n => !n.hidden).map(n => {
+      const w = n.measured?.width ?? sizes.current?.[n.id]?.w ?? 240, h = n.measured?.height ?? sizes.current?.[n.id]?.h ?? 80;
+      return { x1: n.position.x - 4, y1: n.position.y - 4, x2: n.position.x + w + 4, y2: n.position.y + h + 4 };
+    });
+    const spots = placeLabels(wanted.map(e => ({ id: edgeId(e), text: e.label, points: routeOf(e) })), boxes);
+    return G.edges.map(e => {
+      const id = edgeId(e);
+      const isOut = sel === e.from, isIn = sel === e.to, faded = sel && !isOut && !isIn;
+      const color = isOut ? 'var(--callee)' : isIn ? 'var(--caller)' : e.status === 'dead' ? '#9ca3af' : 'var(--edge)';
+      const shown = visible.has(e.from) && visible.has(e.to);
+      return {
+        id, source: e.from, target: e.to, type: 'routed', hidden: !shown,
+        data: {
+          text: e.label,
+          points: routeOf(e),
+          spot: spots[id],
+          showLabel: shown && (showLabels || hoverEdge === id || isOut || isIn),
+          front: isOut || isIn || hoverEdge === id,
+        },
+        animated: !!(isOut || isIn),
+        zIndex: isOut || isIn || hoverEdge === id ? 10 : 0,
+        style: { stroke: color, strokeWidth: isOut || isIn || hoverEdge === id ? 2.2 : 1.3, opacity: faded ? 0.1 : 1,
+                 strokeDasharray: e.status === 'planned' ? '6 4' : e.status === 'dead' ? '2 4' : undefined },
+        markerEnd: { type: MarkerType.ArrowClosed, color, width: 16, height: 16 },
+      };
+    });
+  }, [nodes, layout, sel, visible, showLabels, hoverEdge]);
 
   function onSearch(ev) {
     if (ev.key !== 'Enter') return;
     const q = ev.target.value.toLowerCase().trim();
     const hit = q && G.nodes.find(n => [n.label, n.file, n.symbol, n.id].join(' ').toLowerCase().includes(q));
-    if (hit) select(hit.id, true);
+    if (hit) reveal(hit.id);
   }
 
   return html`
@@ -2971,26 +3130,34 @@ function App() {
           <button class="btn" onClick=${() => { if (!showHelp) select(null); setShowHelp(!showHelp); }}>${showHelp ? 'Close glossary' : 'Glossary'}</button>
           <input type="search" placeholder="Find a file or function… ⏎" onKeyDown=${onSearch} />
           <label class="toggle"><input type="checkbox" checked=${showLabels} onChange=${e => setShowLabels(e.target.checked)} />Arrow labels</label>
+          <label class="toggle"><input type="checkbox" checked=${showHelpers} onChange=${e => setShowHelpers(e.target.checked)} />Show UI helpers</label>
+        </div>
+        <div class="filters" role="group" aria-label="Show one feature">
+          ${FEATURES.map(f => html`<button key=${f.key} class=${'btn' + (feature === f.key ? ' on' : '')}
+              aria-pressed=${feature === f.key} onClick=${() => setFeature(f.key)}>${f.name}</button>`)}
         </div>
       </header>
       <div class="main">
         <${ReactFlow}
+          className=${layout ? '' : 'waiting'}
           nodes=${viewNodes} edges=${viewEdges} nodeTypes=${nodeTypes} edgeTypes=${edgeTypes}
           onNodesChange=${onNodesChange}
           onNodeClick=${(_, n) => select(n.id, rf.getZoom() < 0.6)}
           onPaneClick=${() => select(null)}
-          onInit=${inst => sel && centerOn(inst, sel, 0.9)}
+          onEdgeMouseEnter=${(_, e) => setHoverEdge(e.id)}
+          onEdgeMouseLeave=${() => setHoverEdge(null)}
           nodesConnectable=${false} edgesFocusable=${false}
-          fitView=${!sel} fitViewOptions=${{ padding: 0.08 }} minZoom=${0.1} maxZoom=${2.5}
+          minZoom=${0.1} maxZoom=${2.5}
           colorMode="system" proOptions=${{ hideAttribution: true }}>
           <${Background} gap=${22} size=${1} />
           <${Controls} showInteractive=${false} />
           <${MiniMap} pannable zoomable nodeColor=${n => LAYERS[n.data.layer].color} nodeStrokeWidth=${0}
                       style=${{ right: sel || showHelp ? 436 : 12 }} />
         <//>
+        ${!layout && html`<div class="hint">Arranging the map…</div>`}
         ${showHelp && !sel && html`<${Glossary} onClose=${() => setShowHelp(false)} />`}
-        ${!sel && !showHelp && html`<div class="hint">Drag nodes or the canvas · scroll to zoom · click a node to see what it does and what it connects to</div>`}
-        ${sel && html`<${Panel} node=${BY_ID[sel]} out=${out} inc=${inc} onPick=${id => select(id, true)} onClose=${() => select(null)} />`}
+        ${layout && !sel && !showHelp && html`<div class="hint">Pick a feature to see only its parts · click a box to focus it · hover a line for its label</div>`}
+        ${sel && html`<${Panel} node=${BY_ID[sel]} out=${out} inc=${inc} onPick=${reveal} onClose=${() => select(null)} />`}
       </div>
     </div>`;
 }
