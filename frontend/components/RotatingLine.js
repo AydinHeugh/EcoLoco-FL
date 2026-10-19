@@ -38,5 +38,5 @@ export default function RotatingLine({ lines, style }) {
 
 const styles = StyleSheet.create({
   ghost: { opacity: 0 },
-  live: { ...StyleSheet.absoluteFillObject },
+  live: { position: 'absolute', left: 0, right: 0, bottom: 0 },
 });

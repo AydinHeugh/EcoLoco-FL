@@ -223,5 +223,5 @@ const styles = StyleSheet.create({
 
   footer: { alignItems: 'center', paddingHorizontal: GUTTER, paddingVertical: 32, gap: 10 },
   footerLogo: { width: 30, height: 30, resizeMode: 'contain' },
-  footerText: { fontFamily: FONTS.bodyMedium, fontSize: TYPE.link, color: COLORS.textMuted, textAlign: 'center' },
+  footerText: { fontFamily: FONTS.bodyBold, fontSize: TYPE.body, color: COLORS.darkGreen, textAlign: 'center' },
 })

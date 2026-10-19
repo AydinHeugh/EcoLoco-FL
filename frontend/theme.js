@@ -18,8 +18,8 @@ export const PALETTE = {
   duneSand:  '#F5F0E8',
   shell:     '#FFFCF6',
   firebush:  '#B8431A',
-  ink:       '#35482F',
-  driftwood: '#646454',
+  ink:       '#1F2A22',
+  driftwood: '#4D574C',
   wrack:     '#D6D9CD',
 };
 
