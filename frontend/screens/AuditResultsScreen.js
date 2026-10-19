@@ -87,11 +87,8 @@ function LetterGenerator({ plan, zipCode }) {
 
   return (
     <View style={[styles.section, compact && styles.sectionCompact]}>
-      <Text style={styles.overline}>MAKE IT HAPPEN</Text>
       <Text accessibilityRole="header" style={styles.sectionTitle}>Letter to your principal</Text>
-      <Text style={styles.sectionNote}>
-        It lists the plants to remove and add, how to buy them, safety notes and sources.
-      </Text>
+      <Text style={styles.sectionNote}>A draft from your plan. Change anything, or don't use it at all.</Text>
       <TouchableOpacity accessibilityRole="button" style={[styles.btn, loading && styles.btnDisabled]} onPress={handleGenerate} disabled={loading}>
         {loading ? <ActivityIndicator color={COLORS.cream} size="small" /> : <Text style={styles.btnText}>Write the letter</Text>}
       </TouchableOpacity>
@@ -190,7 +187,6 @@ function AuditResults({ route, navigation }) {
           photo={PHOTOS.results}
           photoLabel="A school garden full of native plants"
           title="Your plan"
-          subtitle="A healthier campus, one plant at a time."
           right={(
             <TouchableOpacity accessibilityRole="button" onPress={() => navigation.goBack()} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
               <Text style={styles.backBtn}>← Back to EcoScan</Text>
@@ -229,9 +225,7 @@ function AuditResults({ route, navigation }) {
               )}
               {plan.remove.length > 0 && (
                 <View style={styles.sectionIntro}>
-                  <Text style={styles.overline}>START HERE</Text>
                   <Text accessibilityRole="header" style={styles.sectionTitle}>Make room for natives</Text>
-                  <Text style={styles.sectionNote}>Review these invasive plants and their removal guidance.</Text>
                 </View>
               )}
               {plan.remove.map((card, i) => (
@@ -245,9 +239,7 @@ function AuditResults({ route, navigation }) {
                 : (
                   <>
                     <View style={styles.sectionIntro}>
-                      <Text style={styles.overline}>GROW YOUR IMPACT</Text>
                       <Text accessibilityRole="header" style={styles.sectionTitle}>Choose native additions</Text>
-                      <Text style={styles.sectionNote}>Find plants that suit your campus and support local wildlife.</Text>
                     </View>
                     <SiteFilters site={request.site} hidden={plan.hidden_by_site ?? 0} disabled={slow}
                       onChange={site => setRequest({ ...planFor, site })} />
@@ -282,10 +274,8 @@ function AuditResults({ route, navigation }) {
               </TouchableOpacity>
             </View>
 
-            <View style={[styles.divider, compact && styles.dividerCompact]} />
 
             <View style={[styles.section, compact && styles.sectionCompact]}>
-              <Text style={styles.overline}>YOUR PLANT SURVEY</Text>
               <Text accessibilityRole="header" style={styles.sectionTitle}>What your campus supports now</Text>
               <Text style={styles.sectionNote}>Scanned something by mistake, like a fake or potted plant? Remove it and your counts and plan update.</Text>
               {summary.plants.length === 0 && <Text style={styles.mutedText}>No plants left. Go back to EcoScan to scan more.</Text>}
@@ -318,10 +308,8 @@ function AuditResults({ route, navigation }) {
               ))}
             </View>
 
-            <View style={[styles.divider, compact && styles.dividerCompact]} />
 
             <View style={[styles.ringBand, compact && styles.ringBandCompact]}>
-              <Text style={styles.overline}>NOW & WITH YOUR PLAN</Text>
               <Text accessibilityRole="header" style={[styles.sectionTitle, styles.metricTitle]}>How native is your campus?</Text>
               {summary.percent_native === null
                 ? <Text style={styles.mutedText}>Not enough identified plants yet</Text>
@@ -362,7 +350,6 @@ function AuditResults({ route, navigation }) {
               ]} />
             </View>
 
-            <View style={[styles.divider, compact && styles.dividerCompact]} />
 
             {nearby.length > 0 && (
               <>
@@ -375,7 +362,6 @@ function AuditResults({ route, navigation }) {
                   ))}
                   <SourceLine source={{ name: 'iNaturalist', url: 'https://www.inaturalist.org' }} />
                 </View>
-                <View style={[styles.divider, compact && styles.dividerCompact]} />
               </>
             )}
 
@@ -395,7 +381,6 @@ function AuditResults({ route, navigation }) {
               ))}
             </View>
 
-            <View style={[styles.divider, compact && styles.dividerCompact]} />
 
             <LetterGenerator key={planFor.plants.map(p => p._id).join(',') + '|' + planFor.skip.join(',')} plan={plan} zipCode={zipCode} />
 
@@ -412,6 +397,8 @@ function AuditResults({ route, navigation }) {
   );
 }
 
+const SOFT = { shadowColor: COLORS.shadow, shadowOpacity: 0.07, shadowRadius: 14, shadowOffset: { width: 0, height: 4 }, elevation: 2 };
+
 const styles = StyleSheet.create({
   container:     { flex: 1, backgroundColor: COLORS.cream },
   scrollContent: { alignItems: 'center' },
@@ -419,15 +406,12 @@ const styles = StyleSheet.create({
 
   backBtn:  { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, paddingVertical: 12 },
 
-  divider: { height: 1, backgroundColor: COLORS.border, marginHorizontal: 20 },
-  dividerCompact: { marginHorizontal: 16 },
 
   centerSection: { alignItems: 'center', paddingVertical: 60, gap: 14, paddingHorizontal: 24 },
   section:       { paddingHorizontal: 20, paddingVertical: 30, gap: 12 },
   sectionCompact: { paddingHorizontal: 16 },
   sectionIntro:  { gap: 6, paddingTop: 4, paddingBottom: 8 },
-  overline:      { fontSize: TYPE.eyebrow, lineHeight: 16, fontFamily: FONTS.bodyBold, letterSpacing: 1.8, color: COLORS.softGreen },
-  ringBand:      { alignItems: 'center', backgroundColor: COLORS.lightBg, borderRadius: 22, borderWidth: 1, borderColor: COLORS.border, marginHorizontal: 20, marginTop: 28, paddingHorizontal: 16, paddingVertical: 28, gap: 18 },
+  ringBand:      { alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 28, ...SOFT, marginHorizontal: 20, marginTop: 28, paddingHorizontal: 16, paddingVertical: 28, gap: 18 },
   ringBandCompact: { marginHorizontal: 16 },
   metricTitle:   { fontSize: TYPE.h2, lineHeight: LINE.h2, textAlign: 'center' },
   rings:         { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 8, rowGap: 24, width: '100%' },
@@ -440,7 +424,7 @@ const styles = StyleSheet.create({
   errorText:    { fontSize: TYPE.body, lineHeight: LINE.body, fontFamily: FONTS.body, color: COLORS.error, textAlign: 'center' },
   link:         { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.softGreen, textAlign: 'center', paddingVertical: 14, textDecorationLine: 'underline' },
 
-  plantRow:  { paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: COLORS.border, gap: 6 },
+  plantRow:  { padding: 16, borderRadius: 20, backgroundColor: COLORS.cardBg, ...SOFT, gap: 6 },
   plantHead: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   plantName: { fontSize: TYPE.lead, lineHeight: LINE.lead, fontFamily: FONTS.heading, color: COLORS.darkGreen, flexShrink: 1 },
   plantActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 12 },
@@ -455,7 +439,7 @@ const styles = StyleSheet.create({
   plantWhy:  { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: LINE.body },
 
   countRow:   { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, width: '100%' },
-  countItem:  { alignItems: 'center', gap: 5, padding: 16, backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 16 },
+  countItem:  { alignItems: 'center', gap: 5, padding: 16, backgroundColor: COLORS.cardBg, borderRadius: 20, ...SOFT },
   countNum:   { fontSize: TYPE.h2, fontFamily: FONTS.headingBlack },
   countLabel: { fontSize: TYPE.caption, lineHeight: LINE.caption, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
 

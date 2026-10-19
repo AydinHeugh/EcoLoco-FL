@@ -133,9 +133,10 @@ export default function PlanCard({ card, kind, replacementName, plantingsChecked
       <View style={[styles.header, compact && styles.headerCompact]}>
         <PlantPhoto photo={card.photo} size={compact ? 56 : 68} radius={14} label={name} />
         <View style={styles.headerText}>
-          <Text style={[styles.eyebrow, kind === 'remove' && styles.removeEyebrow]}>{kind === 'remove' ? 'REMOVE INVASIVE' : 'NATIVE ADDITION'}</Text>
           <Text style={styles.title}>{name}</Text>
-          {kind === 'remove' && <StatusBadge status="invasive" label="Invasive" />}
+          {kind === 'remove'
+            ? <StatusBadge status="invasive" label="Invasive: remove" />
+            : <StatusBadge status="native" label="Native: add" />}
         </View>
       </View>
       {kind === 'add' && card.reason && (
@@ -168,21 +169,20 @@ export default function PlanCard({ card, kind, replacementName, plantingsChecked
 }
 
 const styles = StyleSheet.create({
-  card: { padding: 20, marginBottom: 12, gap: 16, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border },
+  card: { padding: 20, marginBottom: 14, gap: 16, borderRadius: 24, shadowColor: COLORS.shadow, shadowOpacity: 0.07, shadowRadius: 16, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
   cardCompact: { padding: 16, gap: 14 },
   addCard: { backgroundColor: COLORS.cardBg },
-  selectedCard: { borderColor: '#A1B596' },
-  removeCard: { backgroundColor: COLORS.cardBg, borderColor: '#E2C6BE' },
+  selectedCard: {},
+  removeCard: { backgroundColor: COLORS.cardBg },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 14 },
   headerCompact: { gap: 12 },
   headerText: { flex: 1, minWidth: 0, gap: 5, alignItems: 'flex-start' },
-  eyebrow: { fontSize: TYPE.eyebrow, lineHeight: 16, letterSpacing: 1.3, fontFamily: FONTS.bodyBold, color: COLORS.softGreen },
-  removeEyebrow: { color: COLORS.terracotta },
   title: { fontSize: TYPE.h3, lineHeight: LINE.h3, fontFamily: FONTS.heading, color: COLORS.darkGreen },
   tag: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 7, maxWidth: '100%',
+    flexDirection: 'row', alignItems: 'center', gap: 7, maxWidth: '100%', alignSelf: 'flex-start',
+    backgroundColor: COLORS.lightBg, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 7,
   },
-  tagText: { flexShrink: 1, fontSize: TYPE.caption, lineHeight: LINE.caption, fontFamily: FONTS.bodyMedium, color: COLORS.textMuted },
+  tagText: { flexShrink: 1, fontSize: TYPE.link, lineHeight: LINE.link, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
   impact: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.lightBg, borderRadius: 12, padding: 13 },
   impactOnTint: { backgroundColor: COLORS.invasiveTint },
   impactText: { flex: 1, fontSize: TYPE.link, lineHeight: LINE.link, fontFamily: FONTS.bodyMedium, color: COLORS.textBody },
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   rowBody: { flex: 1, minWidth: 0, gap: 3 },
   label: { fontSize: TYPE.caption, lineHeight: LINE.caption, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
   text: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: LINE.body },
-  footer: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: 12, rowGap: 4, borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 6 },
+  footer: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: 12, rowGap: 4 },
   moreBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44 },
   more: { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.softGreen },
   check: { flexDirection: 'row', alignItems: 'center', gap: 9, minHeight: 44, alignSelf: 'flex-start' },

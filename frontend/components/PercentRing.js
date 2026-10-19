@@ -1,22 +1,39 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, View, Text, StyleSheet } from 'react-native';
-import { COLORS, STATUS_COLORS, FONTS, TYPE } from '../theme';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { COLORS, FONTS, TYPE } from '../theme';
 import { EASE_OUT, useReduceMotion } from '../motion';
 import { useInView } from './Reveal';
 
-const DOTS = 40;
+const LEAVES = 50;
 const FILL_MS = 1100;
 const PLAN_MS = 700;
+const STOPS = [[0, [178, 58, 46]], [50, [201, 154, 30]], [100, [46, 125, 50]]];
+
+export function scoreColor(percent) {
+  const p = Math.max(0, Math.min(100, percent));
+  const [lo, hi] = p <= 50 ? [STOPS[0], STOPS[1]] : [STOPS[1], STOPS[2]];
+  const t = (p - lo[0]) / (hi[0] - lo[0]);
+  const [r, g, b] = lo[1].map((c, i) => Math.round(c + (hi[1][i] - c) * t));
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+function mood(percent) {
+  if (percent >= 70) return { icon: 'emoticon-happy-outline', word: 'good' };
+  if (percent >= 40) return { icon: 'emoticon-neutral-outline', word: 'okay' };
+  return { icon: 'emoticon-sad-outline', word: 'low' };
+}
 
 function useRingProgress(play, delay) {
   const reduce = useReduceMotion();
   const fill = useRef(new Animated.Value(0)).current;
   const plan = useRef(new Animated.Value(0)).current;
-  const settle = useRef(new Animated.Value(1)).current;
+  const pop = useRef(new Animated.Value(0)).current;
   const [shown, setShown] = useState({ fill: 0, plan: 0, moving: false });
 
   useEffect(() => {
-    if (reduce) { setShown({ fill: 1, plan: 1, moving: false }); return undefined; }
+    if (reduce) { setShown({ fill: 1, plan: 1, moving: false }); pop.setValue(1); return undefined; }
     if (!play) return undefined;
     const ids = [
       fill.addListener(({ value }) => setShown(s => ({ ...s, fill: value, moving: value < 1 }))),
@@ -26,66 +43,73 @@ function useRingProgress(play, delay) {
       Animated.delay(delay),
       Animated.timing(fill, { toValue: 1, duration: FILL_MS, easing: EASE_OUT, useNativeDriver: false }),
       Animated.timing(plan, { toValue: 1, duration: PLAN_MS, easing: EASE_OUT, useNativeDriver: false }),
-      Animated.timing(settle, { toValue: 1.08, duration: 120, easing: Easing.out(Easing.quad), useNativeDriver: false }),
-      Animated.spring(settle, { toValue: 1, friction: 5, tension: 160, useNativeDriver: false }),
-    ]).start();
+    ]).start(({ finished }) => {
+      if (!finished) return;
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      Animated.spring(pop, { toValue: 1, friction: 6, tension: 180, useNativeDriver: true }).start();
+    });
     return () => { fill.removeListener(ids[0]); plan.removeListener(ids[1]); };
   }, [play, reduce]);
 
-  return { ...shown, settle };
+  return { ...shown, pop };
 }
 
-export default function PercentRing({ now, withPlan, size = 180, onDark = false, title, caption = 'native now', delay = 0 }) {
+export default function PercentRing({ now, withPlan, size = 180, title, caption = 'native now', delay = 0 }) {
   const ref = useRef(null);
   const play = useInView(ref, 80);
-  const { fill, plan, moving, settle } = useRingProgress(play, delay);
+  const { fill, plan, moving, pop } = useRingProgress(play, delay);
 
   const shownNow = Math.round(fill * now);
   const shownPlan = shownNow + Math.round(plan * (withPlan - now));
-  const dot = size / 14;
-  const radius = size / 2 - dot;
-  const filledNow = Math.round((shownNow / 100) * DOTS);
-  const filledPlan = Math.round((shownPlan / 100) * DOTS);
+  const leaf = size / 11;
+  const radius = size / 2 - leaf * 0.75;
+  const filledNow = Math.round((shownNow / 100) * LEAVES);
+  const filledPlan = Math.round((shownPlan / 100) * LEAVES);
   const head = moving ? Math.max(filledNow, filledPlan) - 1 : -1;
-  const nowColor = onDark ? COLORS.onDark : STATUS_COLORS.native.color;
-  const planColor = onDark ? COLORS.accentOnDark : STATUS_COLORS.native.color;
-  const track = onDark ? COLORS.ringTrackDark : COLORS.border;
+  const nowColor = scoreColor(shownNow);
+  const planColor = scoreColor(withPlan);
+  const feeling = mood(now);
+  const badge = Math.round(size * 0.24);
 
   return (
     <View ref={ref} collapsable={false} style={[styles.wrap, title && { width: size + 16 }]} accessible
-      accessibilityLabel={`${title ? `${title}: ` : ''}${now}% native now, ${withPlan}% with the plan`}>
-      {title ? <Text style={[styles.title, onDark && styles.titleDark]}>{title}</Text> : null}
+      accessibilityLabel={`${title ? `${title}: ` : ''}${now}% native now, ${feeling.word}. ${withPlan}% with the plan.`}>
+      {title ? <Text style={styles.title}>{title}</Text> : null}
       <View style={{ width: size, height: size }}>
-        {Array.from({ length: DOTS }, (_, i) => {
-          const angle = (i / DOTS) * 2 * Math.PI - Math.PI / 2;
+        {Array.from({ length: LEAVES }, (_, i) => {
+          const angle = (i / LEAVES) * 2 * Math.PI - Math.PI / 2;
           const isNow = i < filledNow;
           const isPlan = !isNow && i < filledPlan;
-          const d = i === head ? dot * 1.4 : dot;
+          const s = i === head ? leaf * 1.35 : leaf;
           return (
-            <View
+            <MaterialCommunityIcons
               key={i}
+              name="leaf"
+              size={s}
+              color={isNow ? nowColor : isPlan ? planColor : COLORS.border}
               style={{
-                position: 'absolute', width: d, height: d, borderRadius: d / 2,
-                backgroundColor: isNow ? nowColor : isPlan ? planColor : track,
-                opacity: isPlan && !onDark ? 0.35 : 1,
-                left: size / 2 + radius * Math.cos(angle) - d / 2,
-                top: size / 2 + radius * Math.sin(angle) - d / 2,
+                position: 'absolute',
+                opacity: isPlan ? 0.4 : 1,
+                left: size / 2 + radius * Math.cos(angle) - s / 2,
+                top: size / 2 + radius * Math.sin(angle) - s / 2,
+                transform: [{ rotate: `${(angle * 180) / Math.PI + 45}deg` }],
               }}
             />
           );
         })}
         <View style={styles.center}>
-          <Animated.Text style={[styles.percent, { fontSize: size * 0.22, color: onDark ? COLORS.onDark : COLORS.darkGreen, transform: [{ scale: settle }] }]}>
-            {shownNow}%
-          </Animated.Text>
-          <Text style={[styles.caption, onDark && styles.captionDark]}>{caption}</Text>
+          <Text style={[styles.percent, { fontSize: size * 0.22 }]}>{shownNow}%</Text>
+          <Text style={styles.caption}>{caption}</Text>
         </View>
+        <Animated.View
+          style={[styles.badge, { width: badge, height: badge, borderRadius: badge / 2, opacity: pop,
+            transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) }] }]}>
+          <MaterialCommunityIcons name={feeling.icon} size={badge * 0.72} color={scoreColor(now)} />
+        </Animated.View>
       </View>
-      <View style={styles.legend}>
-        <Text style={[styles.legendText, onDark && styles.legendDark]}>
-          <Text style={{ color: planColor, opacity: onDark ? 1 : 0.35 }}>●</Text> With the plan: {shownPlan}%
-        </Text>
-      </View>
+      <Text style={styles.legendText}>
+        <Text style={{ color: planColor }}>●</Text> With the plan: {shownPlan}%
+      </Text>
     </View>
   );
 }
@@ -93,12 +117,12 @@ export default function PercentRing({ now, withPlan, size = 180, onDark = false,
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center', gap: 12 },
   title: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
-  titleDark: { color: COLORS.onDark },
   center: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
-  percent: { fontFamily: FONTS.headingBlack },
+  percent: { fontFamily: FONTS.heading, color: COLORS.darkGreen, fontVariant: ['tabular-nums'] },
   caption: { fontSize: TYPE.caption, fontFamily: FONTS.bodyMedium, color: COLORS.textMuted },
-  captionDark: { color: COLORS.onDarkMuted },
-  legend: { gap: 4, alignItems: 'center' },
+  badge: {
+    position: 'absolute', right: -4, top: -4, backgroundColor: COLORS.cardBg, alignItems: 'center', justifyContent: 'center',
+    shadowColor: COLORS.shadow, shadowOpacity: 0.12, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3,
+  },
   legendText: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textBody, textAlign: 'center' },
-  legendDark: { color: COLORS.onDark },
 });

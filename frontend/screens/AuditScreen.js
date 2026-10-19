@@ -18,6 +18,7 @@ import PressScale from '../components/PressScale';
 import { rememberPlace } from '../lastPlace';
 import NamePicker from '../components/NamePicker';
 import PhotoStrip from '../components/PhotoStrip';
+import PlantPhoto from '../components/PlantPhoto';
 import ScreenLayout from '../components/ScreenLayout';
 import ScanningLeaf from '../components/ScanningLeaf';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -73,6 +74,7 @@ function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan,
   const choosing = done && !noMatch && card.picked == null && !agreed && (r.state === 'confirm');
   const shown = done && !noMatch && card.picked != null && card.picked >= 0 ? r.options[card.picked] : null;
   const full = card.photos.length >= MAX_PHOTOS;
+  const known = shown ?? (agreed ? r.options[0] : null);
 
   const title = !done ? `Plant ${number}`
     : noMatch ? 'Not identified'
@@ -83,9 +85,10 @@ function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan,
   return (
     <Animated.View style={[styles.plantCard, card.phase === 'draft' && styles.draftCard, { opacity, transform: [{ translateY }] }]}>
       <View style={styles.cardHead}>
+        {known?.photo && <PlantPhoto photo={known.photo} size={60} radius={16} label={title} />}
         <View style={styles.cardHeading}>
-          {done && <Text style={styles.cardEyebrow}>{`PLANT ${number} · SCANNED`}</Text>}
           <Text style={styles.plantName} numberOfLines={2}>{title}</Text>
+          {shown && <StatusBadge key={shown.scientific_name} pop status={shown.status} label={shown.status_label} />}
         </View>
         {!scanning && (
           <TouchableOpacity
@@ -113,7 +116,7 @@ function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan,
 
       {card.phase === 'draft' && !card.naming && (
         <View style={styles.cardBody}>
-          {card.photos.length > 0 && <Text style={styles.photoCount}>Photos of this plant · {card.photos.length} / {MAX_PHOTOS}</Text>}
+          {card.photos.length > 0 && <Text style={styles.photoCount}>{card.photos.length} of {MAX_PHOTOS} photos of this plant</Text>}
           {card.error && <Text style={styles.cardError}>{card.error}</Text>}
           <View style={styles.cardButtons}>
             <TouchableOpacity accessibilityRole="button" style={[styles.smallBtn, (full || disabled) && styles.btnDisabled]} disabled={full || disabled} onPress={() => onAddPhotos('camera')}>
@@ -149,12 +152,7 @@ function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan,
       {done && (
         <View style={styles.cardBody}>
           {noMatch && <Text style={styles.expertWarning}>{NO_MATCH_TEXT}</Text>}
-          {shown && (
-            <>
-              <StatusBadge key={shown.scientific_name} pop status={shown.status} label={shown.status_label} />
-              <Text style={styles.matchText}>{matchText(r.id_source, shown.confidence)}</Text>
-            </>
-          )}
+          {shown && <Text style={styles.matchText}>{matchText(r.id_source, shown.confidence)}</Text>}
           {agreed && <AgreedStatus options={r.options} onPickOne={onPickOne} />}
           {choosing && (
             <CandidatePicker
@@ -285,7 +283,7 @@ export default function AuditScreen({ navigation }) {
           contentWidth={plants.length ? 760 : 560}
           centered={plants.length === 0}
           title="EcoScan"
-          subtitle="Scan outdoor plants. Plan your campus’s next native planting."
+          subtitle="Only scan real plants growing outdoors."
           right={plants.length > 0 ? (
             <TouchableOpacity accessibilityRole="button" style={styles.headerAction} onPress={handleNewAudit} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
               <Text style={styles.newAuditBtn}>New scan</Text>
@@ -404,13 +402,12 @@ const styles = StyleSheet.create({
   listCount: { minWidth: 26, overflow: 'hidden', borderRadius: 13, paddingHorizontal: 8, paddingVertical: 4, textAlign: 'center', backgroundColor: COLORS.lightBg, color: COLORS.softGreen, fontSize: TYPE.small, fontFamily: FONTS.bodyBold },
 
   plantCard: {
-    backgroundColor: COLORS.cardBg, borderRadius: 18,
-    borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden', padding: 18, gap: 14,
+    backgroundColor: COLORS.cardBg, borderRadius: 24, padding: 18, gap: 14,
+    shadowColor: COLORS.shadow, shadowOpacity: 0.07, shadowRadius: 16, shadowOffset: { width: 0, height: 5 }, elevation: 2,
   },
   draftCard: { backgroundColor: COLORS.cardBg },
-  cardHead:  { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  cardHeading: { flex: 1, minWidth: 0, gap: 4 },
-  cardEyebrow: { fontSize: TYPE.eyebrow, lineHeight: 16, fontFamily: FONTS.bodyBold, letterSpacing: 1.2, color: COLORS.softGreen },
+  cardHead:  { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  cardHeading: { flex: 1, minWidth: 0, gap: 6, alignItems: 'flex-start' },
   cardBody:  { gap: 10 },
   plantName: { fontSize: TYPE.h3, fontFamily: FONTS.heading, color: COLORS.darkGreen, lineHeight: LINE.h3 },
   deleteBtn:      { minWidth: 44, minHeight: 44, alignItems: 'flex-end', justifyContent: 'center' },
@@ -423,7 +420,7 @@ const styles = StyleSheet.create({
   cardButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   smallBtn: {
     flex: 1, minWidth: 120, minHeight: 48, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 8, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: COLORS.lightBg,
   },
   smallBtnText: { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, textAlign: 'center' },
   scanOneBtn:   { borderRadius: 10, minHeight: 48, paddingVertical: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.darkGreen },

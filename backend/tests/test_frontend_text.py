@@ -96,7 +96,7 @@ def test_results_list_has_a_remove_button_that_rebuilds_the_plan():
 
 def test_ecoscan_uses_plant_cards_with_scan_all():
     text = (FRONTEND / "screens" / "AuditScreen.js").read_text(encoding="utf-8")
-    for phrase in ("Add plant", "Scan all (", "Scan this plant", "Photos of this one plant:", "Take photo", "Upload photos"):
+    for phrase in ("Add plant", "Scan all (", "Scan this plant", "photos of this plant", "Take photo", "Upload photos"):
         assert phrase in text
 
 
@@ -119,7 +119,7 @@ def test_choose_by_name_never_shows_a_status_in_the_list():
     assert "StatusBadge" not in picker and "status" not in picker.replace("Florida status is checked", "")
     for screen in ("AuditScreen.js", "IdentificationScreen.js"):
         text = (FRONTEND / "screens" / screen).read_text(encoding="utf-8")
-        assert "Know its name? Choose by name" in text
+        assert "Choose by name" in text
         assert "choosePlant(" in text
 
 
@@ -131,7 +131,7 @@ def test_chosen_plants_say_so_instead_of_a_percent():
 
 def test_site_filters_are_on_both_planting_screens():
     filters = (FRONTEND / "components" / "SiteFilters.js").read_text(encoding="utf-8")
-    for label in ("Light", "Moisture", "Space", "Care", "Any"):
+    for label in ("Light", "Moisture", "Space", "Care", "Not sure"):
         assert f"'{label}'" in filters or f'"{label}"' in filters
     for screen in ("RecommendationScreen.js", "AuditResultsScreen.js"):
         assert "<SiteFilters" in (FRONTEND / "screens" / screen).read_text(encoding="utf-8")
@@ -146,11 +146,11 @@ def test_openai_pick_shows_no_number():
 def test_home_page_says_what_the_app_does():
     text = (FRONTEND / "screens" / "HomeScreen.js").read_text(encoding="utf-8")
     for phrase in ("Find out which plants on your campus help Florida wildlife, and which ones hurt it.",
-                   "Start a campus scan", "Write to Your Principal", "How We Know",
+                   "Start a campus scan", "A letter draft for your principal", "Where our answers come from",
                    "Every answer comes from Florida's official invasive list, USDA, and the USF Atlas. Our team checked every plant we recommend.",
-                   "checked for Palm Beach County"):
+                   "checked for Palm Beach County", "Help Florida wildlife, one plant at a time", "<RotatingLine"):
         assert phrase in text
-    for gone in ("Welcome to", "picked for South Florida", "one plant at a time"):
+    for gone in ("Welcome to", "picked for South Florida", "ROOTED IN", "Good decisions start", "Growing communities"):
         assert gone not in text
     for piece in ("EcoLoco_Scanning_Plant.png", "<LetterDemo />", "<IdentifyDemo image={IMG_SCANNING} />",
                   "PHOTOS.home", "count: '179'", "count: '5,322'", "count: '30'"):
@@ -254,3 +254,15 @@ def test_every_why_line_has_an_icon():
     import json
     lines = json.loads((DATA / "why_this_matters.json").read_text(encoding="utf-8"))["lines"]
     assert all(line.get("icon") for line in lines)
+
+
+@pytest.mark.parametrize("path", FILES, ids=lambda p: p.name)
+def test_no_all_caps_labels_or_purple(path):
+    text = path.read_text(encoding="utf-8")
+    assert not re.search(r"letterSpacing: [0-9.]+|>[A-Z][A-Z &,']{6,}<|'[A-Z][A-Z &,]{6,}'", text)
+    assert "seaGrape" not in text
+
+
+def test_ring_color_follows_the_score():
+    ring = (FRONTEND / "components" / "PercentRing.js").read_text(encoding="utf-8")
+    assert "export function scoreColor(" in ring and 'name="leaf"' in ring and "LEAVES = 50" in ring

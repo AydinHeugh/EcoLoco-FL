@@ -170,14 +170,12 @@
       "row": 0,
       "what": "Landing page that explains what EcoLoco does and links into the tools.",
       "how": [
-        "Opens on a big photo (`PHOTOS.home` from `frontend/photos.js`) with the name, \"Find out which plants on your campus help Florida wildlife, and which ones hurt it.\" in a large serif heading, and a \"Start a campus scan\" button.",
-        "The photo moves a little slower than the page as you scroll (parallax); with reduce motion turned on it stays still.",
-        "Then six sections in different styles rather than identical cards: Scan Your Campus, Write to Your Principal, Identify a Plant, Plant Florida Natives (checked for Palm Beach County), Why It Matters (on a photo), How We Know (on dark green). Each section comes into focus as you scroll to it: the picture fades in and grows slightly, then the text rises in.",
-        "Each links to its tab; the oak fact (\"Oaks feed 395 kinds of caterpillars in South Florida\") shows its National Wildlife Federation source. How We Know names the official invasive list, USDA and the USF Atlas.",
-        "Write to Your Principal shows `LetterDemo` and Identify a Plant shows `IdentifyDemo`, two short looping animations; How We Know shows the three data sources with their numbers (179 FISC invasives, 5,322 USDA Florida plants, 30 plants checked in the USF Atlas).",
-        "Colors and fonts come from `frontend/theme.js`.",
-        "How We Know's three numbers count up when they scroll into view (`CountUp`).",
-        "The oak fact's 395 counts up when it scrolls into view."
+        "Opens with a large heading that rotates through six short lines about what EcoLoco does (`RotatingLine`), a plain sentence saying what it is for, and Start a campus scan / Identify one plant buttons.",
+        "Each section looks like what it is rather than repeating one layout: a campus photo for Scan your campus, the letter itself as a paper page, a short scan demo beside Identify a plant, a full-width garden photo for Plant Florida natives, and the oak fact as a big number that counts up.",
+        "Where our answers come from shows the three data sources with their numbers (179 FISC invasives, 5,322 USDA Florida plants, 30 plants checked in the USF Atlas) on dark green.",
+        "The footer says \"Help Florida wildlife, one plant at a time\".",
+        "Sections fade up as they scroll into view; with reduce motion on, nothing moves and the heading shows one line.",
+        "Colors and fonts come from `frontend/theme.js`."
       ]
     },
     {
@@ -848,12 +846,12 @@
       "symbol": "export default function PercentRing",
       "col": 2,
       "row": 5,
-      "what": "Shows a share of plants that are native, now and with the plan, as a ring of dots. The results screen shows two: kinds of plants and every plant.",
+      "what": "Shows a share of plants that are native, now and with the plan, as a ring of 50 leaves. The results screen shows two: kinds of plants and every plant.",
       "how": [
-        "Draws 40 dots in a circle with plain Views (no chart library), with an optional title and caption.",
-        "Waits until it scrolls into view (`useInView`), then the number counts up as the white dots fill, the plan's accent-colored dots fill after, and the number settles with a small bounce. The leading dot is larger while the ring fills.",
-        "The white dots take 1.1 s and the plan's dots 0.7 s; with reduce motion turned on it shows the final ring at once.",
-        "Under the ring: \"With the plan: Y%\"."
+        "Draws 50 leaf icons in a circle; filled leaves are colored by the score, from red (low) through yellow (around 50%) to green (high).",
+        "Waits until it scrolls into view, then the number counts up as the leaves fill, and the plan adds lighter leaves after.",
+        "When it stops, a face pops in with a light tap: happy at 70% or more, neutral from 40%, sad below. 70% matches the chickadee study in Why this matters.",
+        "With reduce motion turned on it shows the final ring at once. Under the ring: \"With the plan: Y%\"."
       ]
     },
     {
@@ -1886,6 +1884,22 @@
       "how": [
         "The pop turns off with reduce motion; the tap still happens on phones."
       ]
+    },
+    {
+      "id": "ui_rotating",
+      "label": "RotatingLine",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/RotatingLine.js",
+      "symbol": "export default function RotatingLine",
+      "col": 3,
+      "row": 11,
+      "what": "A heading that changes between a few short lines every few seconds.",
+      "how": [
+        "Fades each line out and the next one in; holding a finger on it pauses the change.",
+        "Keeps the height of the longest line so the page never jumps.",
+        "With reduce motion turned on it shows only the first line."
+      ]
     }
   ],
   "edges": [
@@ -2706,6 +2720,11 @@
       "from": "s_option",
       "to": "s_photo",
       "label": "photo_for(name)"
+    },
+    {
+      "from": "home",
+      "to": "ui_rotating",
+      "label": "six catchphrases"
     }
   ]
 }</script>

@@ -18,7 +18,6 @@ export const PALETTE = {
   duneSand:  '#F5F0E8',
   shell:     '#FFFCF6',
   firebush:  '#B8431A',
-  seaGrape:  '#5A3355',
   ink:       '#35482F',
   driftwood: '#646454',
   wrack:     '#D6D9CD',
@@ -38,8 +37,6 @@ export const COLORS = {
   accentOnDark:'#FFFCF6',
   accentInk:   PALETTE.liveOak,
   invasiveTint:'#FCF1F2',
-  seaGrape:    PALETTE.seaGrape,
-  seaGrapeSoft:'#EEE8ED',
   textBody:    PALETTE.ink,
   textMuted:   PALETTE.driftwood,
   onDark:      PALETTE.shell,
@@ -74,11 +71,11 @@ export const FONTS = {
 };
 
 export const TYPE = {
-  eyebrow: 10,
-  fine:    11,
-  small:   12,
+  eyebrow: 13,
+  fine:    13,
+  small:   13,
   caption: 13,
-  note:    14,
+  note:    15,
   link:    15,
   body:    16,
   lead:    18,
@@ -88,6 +85,7 @@ export const TYPE = {
   h1:      34,
   display: 44,
   displayLarge: 48,
+  stat:    72,
 };
 
 export const LINE = {

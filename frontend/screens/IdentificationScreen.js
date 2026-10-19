@@ -261,7 +261,7 @@ export default function IdentificationScreen({ navigation }) {
                   {isDragging ? 'Drop photos here' : 'Upload plant photos'}
                 </Text>
                 <Text style={styles.uploadDragHint}>{Platform.OS === 'web' && columns ? 'Drag & drop or click to browse' : 'Tap to choose photos'}</Text>
-                <Text style={styles.uploadTip}>One plant at a time</Text>
+                <Text style={styles.uploadTip}>Add photos of one plant only</Text>
               </TouchableOpacity>
             )
           }
@@ -385,7 +385,7 @@ export default function IdentificationScreen({ navigation }) {
                 ].filter(Boolean).map((fact, i) => (
                   <Reveal key={`${shown.scientific_name}-${i}`} index={i} style={styles.fact}>
                     <View style={styles.factIcon}>
-                      <MaterialCommunityIcons name={fact.icon} size={18} color={COLORS.seaGrape} />
+                      <MaterialCommunityIcons name={fact.icon} size={18} color={COLORS.softGreen} />
                     </View>
                     <View style={styles.factBody}>
                       <Text style={styles.factLabel}>{fact.label}</Text>
@@ -470,7 +470,7 @@ const styles = StyleSheet.create({
 
   facts: { marginTop: 8, gap: 20, backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 16, padding: 20 },
   fact: { flexDirection: 'row', gap: 12 },
-  factIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.seaGrapeSoft, alignItems: 'center', justifyContent: 'center' },
+  factIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.lightBg, alignItems: 'center', justifyContent: 'center' },
   factBody: { flex: 1, minWidth: 0, gap: 2 },
   factLabel: { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
   factText: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: LINE.body },
