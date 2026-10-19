@@ -91,7 +91,7 @@ Files in the top folder:
 - **Online:** go to https://aydinheugh.github.io/EcoLoco-FL/
 - **From a copy of the repo:** double-click `docs/architecture.html` to open it in your browser. It needs an internet connection.
 
-Click any box to see what that part of the code does, step by step, and which parts it connects to. The **Glossary** button explains the colors. Dashed boxes are things we've planned but haven't built yet.
+Click any box to see what that part of the code does, step by step, and which parts it connects to; everything else fades until you click the background. The buttons along the top (Identify, Recommend/Plan, Audit, Location) show only the parts one feature uses. Small helper files like the colors and animation settings are hidden until you tick **Show UI helpers**, and a line's label appears when you point at it. The **Glossary** button explains the colors. Dashed boxes are things we've planned but haven't built yet.
 
 ## Running it yourself
 
