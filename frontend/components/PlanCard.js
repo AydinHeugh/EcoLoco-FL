@@ -6,11 +6,10 @@ import StatusBadge from './StatusBadge';
 import SourceLine from './SourceLine';
 import AtlasButton from './AtlasButton';
 import PlantPhoto, { PhotoCredit } from './PlantPhoto';
-import { COLORS, STATUS_COLORS, FONTS, TYPE, LINE } from '../theme';
+import { COLORS, FONTS, TYPE, LINE } from '../theme';
 import { DURATION, EASE_OUT, useReduceMotion } from '../motion';
 
 const SHOWN = 2;
-const DIMMED = 0.55;
 const ROW_ICONS = {
   Helps: 'butterfly-outline', Where: 'white-balance-sunny', 'Buying it': 'storefront-outline', 'Watch out': 'alert-outline',
   'Look into': 'magnify', Why: 'alert-octagon-outline', Safety: 'hand-back-right-outline', 'Replace with': 'swap-horizontal',
@@ -86,7 +85,7 @@ function Row({ row }) {
   return (
     <View style={styles.row}>
       <View style={styles.rowIcon}>
-        <MaterialCommunityIcons name={ROW_ICONS[row.label]} size={18} color={COLORS.seaGrape} />
+        <MaterialCommunityIcons name={ROW_ICONS[row.label]} size={18} color={COLORS.softGreen} />
       </View>
       <View style={styles.rowBody}>
         <Text style={styles.label}>{row.label}</Text>
@@ -107,7 +106,7 @@ function MoreToggle({ open, onPress }) {
   const rotate = turn.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
   return (
     <TouchableOpacity style={styles.moreBtn} onPress={onPress} accessibilityRole="button" accessibilityState={{ expanded: open }}>
-      <Text style={styles.more}>{open ? 'Less' : 'More'}</Text>
+      <Text style={styles.more}>{open ? 'Hide details' : 'Details & sources'}</Text>
       <Animated.View style={{ transform: [{ rotate }] }}>
         <MaterialCommunityIcons name="chevron-down" size={20} color={COLORS.softGreen} />
       </Animated.View>
@@ -123,34 +122,27 @@ function reasonIcon(reason) {
 
 export default function PlanCard({ card, kind, replacementName, plantingsChecked = true, inLetter = true, onToggleLetter }) {
   const [open, setOpen] = useState(false);
-  const reduce = useReduceMotion();
   const rows = (kind === 'remove' ? removeRows(card, replacementName, plantingsChecked) : addRows(card)).filter(r => r?.text);
   const shown = open ? rows : rows.slice(0, SHOWN);
   const off = kind === 'add' && !inLetter;
-  const dim = useRef(new Animated.Value(off ? DIMMED : 1)).current;
   const name = kind === 'remove' ? card.plant_name : card.common_name;
 
-  useEffect(() => {
-    if (reduce) { dim.setValue(off ? DIMMED : 1); return; }
-    Animated.timing(dim, { toValue: off ? DIMMED : 1, duration: DURATION, easing: EASE_OUT, useNativeDriver: true }).start();
-  }, [off, reduce]);
-
   return (
-    <Animated.View style={[styles.card, kind === 'remove' ? styles.removeCard : styles.addCard, { opacity: dim }]}>
+    <View style={[styles.card, kind === 'remove' ? styles.removeCard : styles.addCard, kind === 'add' && !off && styles.selectedCard]}>
       <View style={styles.header}>
-        <PlantPhoto photo={card.photo} size={76} radius={kind === 'remove' ? 8 : 16} label={name} />
+        <PlantPhoto photo={card.photo} size={68} radius={14} label={name} />
         <View style={styles.headerText}>
-          <Text style={styles.title}>{kind === 'remove' ? `Remove: ${card.plant_name}` : `Add: ${card.common_name}`}</Text>
+          <Text style={[styles.eyebrow, kind === 'remove' && styles.removeEyebrow]}>{kind === 'remove' ? 'REMOVE INVASIVE' : 'NATIVE ADDITION'}</Text>
+          <Text style={styles.title}>{name}</Text>
           {kind === 'remove' && <StatusBadge status="invasive" label="Invasive" />}
-          {kind === 'add' && card.reason && (
-            <View style={styles.tag}>
-              <MaterialCommunityIcons name={reasonIcon(card.reason)} size={15} color={COLORS.seaGrape} />
-              <Text style={styles.tagText}>{card.reason[0].toUpperCase() + card.reason.slice(1)}</Text>
-            </View>
-          )}
-          {kind === 'add' && onToggleLetter !== undefined && <LetterCheck checked={inLetter} onToggle={onToggleLetter} />}
         </View>
       </View>
+      {kind === 'add' && card.reason && (
+        <View style={styles.tag}>
+          <MaterialCommunityIcons name={reasonIcon(card.reason)} size={16} color={COLORS.softGreen} />
+          <Text style={styles.tagText}>{card.reason[0].toUpperCase() + card.reason.slice(1)}</Text>
+        </View>
+      )}
       {card.effect && (
         <View style={[styles.impact, kind === 'remove' && styles.impactOnTint]}>
           <MaterialCommunityIcons name={card.nwf && kind === 'add' ? 'butterfly-outline' : 'trending-up'} size={20} color={COLORS.softGreen} />
@@ -162,6 +154,7 @@ export default function PlanCard({ card, kind, replacementName, plantingsChecked
           ? <Row key={i} row={row} />
           : <OpenedRow key={i} order={i - SHOWN}><Row row={row} /></OpenedRow>))}
       </View>
+      {kind === 'add' && onToggleLetter !== undefined && <LetterCheck checked={inLetter} onToggle={onToggleLetter} />}
       {(rows.length > SHOWN || card.atlas_url) && (
         <View style={styles.footer}>
           {rows.length > SHOWN ? <MoreToggle open={open} onPress={() => setOpen(o => !o)} /> : <View />}
@@ -169,36 +162,38 @@ export default function PlanCard({ card, kind, replacementName, plantingsChecked
         </View>
       )}
       <PhotoCredit photo={card.photo} />
-    </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { padding: 18, marginBottom: 14, gap: 14 },
-  addCard: { backgroundColor: COLORS.cardBg, borderRadius: 22, borderWidth: 1, borderColor: COLORS.border },
-  removeCard: { backgroundColor: COLORS.invasiveTint, borderRadius: 6 },
+  card: { padding: 20, marginBottom: 12, gap: 16, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border },
+  addCard: { backgroundColor: COLORS.cardBg },
+  selectedCard: { borderColor: '#A1B596' },
+  removeCard: { backgroundColor: COLORS.cardBg, borderColor: '#E2C6BE' },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 14 },
-  headerText: { flex: 1, minWidth: 0, gap: 8, alignItems: 'flex-start' },
+  headerText: { flex: 1, minWidth: 0, gap: 5, alignItems: 'flex-start' },
+  eyebrow: { fontSize: TYPE.eyebrow, lineHeight: 16, letterSpacing: 1.3, fontFamily: FONTS.bodyBold, color: COLORS.softGreen },
+  removeEyebrow: { color: COLORS.terracotta },
   title: { fontSize: TYPE.h3, lineHeight: LINE.h3, fontFamily: FONTS.heading, color: COLORS.darkGreen },
   tag: {
-    flexDirection: 'row', alignItems: 'center', gap: 6, maxWidth: '100%',
-    backgroundColor: COLORS.seaGrapeSoft, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 5,
+    flexDirection: 'row', alignItems: 'flex-start', gap: 7, maxWidth: '100%',
   },
-  tagText: { flexShrink: 1, fontSize: TYPE.caption, lineHeight: LINE.caption, fontFamily: FONTS.bodyBold, color: COLORS.seaGrape },
-  impact: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.lightBg, borderRadius: 12, padding: 12 },
-  impactOnTint: { backgroundColor: COLORS.cardBg },
-  impactText: { flex: 1, fontSize: TYPE.body, lineHeight: LINE.body, fontFamily: FONTS.bodyMedium, color: COLORS.textBody },
+  tagText: { flexShrink: 1, fontSize: TYPE.caption, lineHeight: LINE.caption, fontFamily: FONTS.bodyMedium, color: COLORS.textMuted },
+  impact: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.lightBg, borderRadius: 12, padding: 13 },
+  impactOnTint: { backgroundColor: COLORS.invasiveTint },
+  impactText: { flex: 1, fontSize: TYPE.link, lineHeight: LINE.link, fontFamily: FONTS.bodyMedium, color: COLORS.textBody },
   rows: { gap: 14 },
-  row: { flexDirection: 'row', gap: 12 },
-  rowIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.seaGrapeSoft, alignItems: 'center', justifyContent: 'center' },
-  rowBody: { flex: 1, minWidth: 0, gap: 2 },
+  row: { flexDirection: 'row', gap: 10 },
+  rowIcon: { width: 26, height: 26, alignItems: 'center', justifyContent: 'center' },
+  rowBody: { flex: 1, minWidth: 0, gap: 3 },
   label: { fontSize: TYPE.caption, lineHeight: LINE.caption, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
   text: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: LINE.body },
-  footer: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  moreBtn: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingVertical: 6 },
+  footer: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: 12, rowGap: 4, borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 6 },
+  moreBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44 },
   more: { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.softGreen },
-  check: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  box: { width: 20, height: 20, borderRadius: 4, borderWidth: 1.5, borderColor: COLORS.darkGreen, alignItems: 'center', justifyContent: 'center' },
+  check: { flexDirection: 'row', alignItems: 'center', gap: 9, minHeight: 44, alignSelf: 'flex-start' },
+  box: { width: 24, height: 24, borderRadius: 7, borderWidth: 1.5, borderColor: COLORS.softGreen, alignItems: 'center', justifyContent: 'center' },
   boxOn: { backgroundColor: COLORS.darkGreen },
   tick: { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.onDark, lineHeight: LINE.caption },
   checkText: { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },

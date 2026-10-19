@@ -85,7 +85,7 @@ function Recommendations({ route, navigation }) {
           photo={PHOTOS.recommend}
           photoLabel="A native plant garden"
           title="Native plants to add"
-          subtitle="Find your school's location to see Florida native plants that help wildlife."
+          subtitle="Find Florida natives for your school. Planting suggestions are currently checked for Palm Beach County."
         />
         <View style={styles.headerGap} />
 
@@ -104,7 +104,7 @@ function Recommendations({ route, navigation }) {
             {!results.plantingsChecked
               ? <Text style={styles.emptyText}>{NOT_CHECKED_HERE}</Text>
               : results.cards.length === 0
-                ? <Text style={styles.emptyText}>{results.hidden > 0 ? 'No checked plants fit all of those choices. Try setting one back to Any.' : 'No plants are ready to recommend yet. Our team is still checking each one.'}</Text>
+                ? <Text style={styles.emptyText}>{results.hidden > 0 ? 'No checked plants fit all of those choices. Try setting one back to Not sure.' : 'No plants are ready to recommend yet. Our team is still checking each one.'}</Text>
                 : results.cards.map((card, i) => (
                   <Reveal key={card.scientific_name} index={i}><PlanCard card={card} kind="add" /></Reveal>
                 ))}

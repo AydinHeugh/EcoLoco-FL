@@ -21,6 +21,7 @@ import PhotoStrip from '../components/PhotoStrip';
 import ScreenHeader from '../components/ScreenHeader';
 import ScanningLeaf from '../components/ScanningLeaf';
 import { PHOTOS } from '../photos';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const MAX_PHOTOS = 5;
 const SCANS_AT_ONCE = 3;
@@ -83,7 +84,10 @@ function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan,
   return (
     <Animated.View style={[styles.plantCard, card.phase === 'draft' && styles.draftCard, { opacity, transform: [{ translateY }] }]}>
       <View style={styles.cardHead}>
-        <Text style={styles.plantName} numberOfLines={2}>{title}</Text>
+        <View style={styles.cardHeading}>
+          <Text style={styles.cardEyebrow}>{done ? `PLANT ${number} · SCANNED` : `PLANT ${number}`}</Text>
+          <Text style={styles.plantName} numberOfLines={2}>{!done ? 'Add a plant' : title}</Text>
+        </View>
         {!scanning && (
           <TouchableOpacity
             onPress={onDelete}
@@ -93,7 +97,7 @@ function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan,
             accessibilityLabel="Remove this plant"
           >
             <View style={styles.deleteBtnInner}>
-              <Text style={styles.deleteBtnText}>✕</Text>
+              <MaterialCommunityIcons name="close" size={19} color={COLORS.textMuted} />
             </View>
           </TouchableOpacity>
         )}
@@ -111,14 +115,16 @@ function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan,
       {card.phase === 'draft' && !card.naming && (
         <View style={styles.cardBody}>
           <Text style={styles.photoCount}>
-            Photos of this one plant: {card.photos.length} of {MAX_PHOTOS}. A leaf up close and a flower work best.
+            Photos of this one plant: {card.photos.length} of {MAX_PHOTOS}. A leaf close-up or flower works best.
           </Text>
           {card.error && <Text style={styles.cardError}>{card.error}</Text>}
           <View style={styles.cardButtons}>
-            <TouchableOpacity style={[styles.smallBtn, (full || disabled) && styles.btnDisabled]} disabled={full || disabled} onPress={() => onAddPhotos('camera')}>
+            <TouchableOpacity accessibilityRole="button" style={[styles.smallBtn, (full || disabled) && styles.btnDisabled]} disabled={full || disabled} onPress={() => onAddPhotos('camera')}>
+              <MaterialCommunityIcons name="camera-outline" size={18} color={COLORS.darkGreen} />
               <Text style={styles.smallBtnText}>Take photo</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.smallBtn, (full || disabled) && styles.btnDisabled]} disabled={full || disabled} onPress={() => onAddPhotos('gallery')}>
+            <TouchableOpacity accessibilityRole="button" style={[styles.smallBtn, (full || disabled) && styles.btnDisabled]} disabled={full || disabled} onPress={() => onAddPhotos('gallery')}>
+              <MaterialCommunityIcons name="image-plus" size={18} color={COLORS.darkGreen} />
               <Text style={styles.smallBtnText}>Upload photos</Text>
             </TouchableOpacity>
           </View>
@@ -126,10 +132,11 @@ function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan,
             style={[styles.scanOneBtn, (card.photos.length === 0 || disabled) && styles.btnDisabled]}
             disabled={card.photos.length === 0 || disabled}
             onPress={onScan}
+            accessibilityRole="button"
           >
             <Text style={styles.scanOneText}>Scan this plant</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => onNaming(true)} disabled={disabled} style={styles.byName}>
+          <TouchableOpacity accessibilityRole="button" onPress={() => onNaming(true)} disabled={disabled} style={styles.byName}>
             <Text style={styles.byNameText}>Know its name? Choose by name</Text>
           </TouchableOpacity>
         </View>
@@ -138,7 +145,7 @@ function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan,
       {scanning && (
         <View style={styles.scanningRow}>
           <ScanningLeaf size={40} />
-          <Text style={styles.scanningText}>{progress}</Text>
+          <Text accessibilityLiveRegion="polite" style={styles.scanningText}>{progress}</Text>
         </View>
       )}
 
@@ -291,16 +298,17 @@ export default function AuditScreen({ navigation }) {
           photo={PHOTOS.ecoscan}
           photoLabel="Plants and pollinators on a school campus"
           title="EcoScan"
-          subtitle="Scan the plants around campus to see how many are native to Florida, and what to change."
+          subtitle="Scan your campus. See what supports wildlife and plan what to plant next."
           right={plants.length > 0 ? (
-            <TouchableOpacity onPress={handleNewAudit} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
-              <Text style={styles.newAuditBtn}>New Scan</Text>
+            <TouchableOpacity accessibilityRole="button" style={styles.headerAction} onPress={handleNewAudit} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+              <Text style={styles.newAuditBtn}>New scan</Text>
             </TouchableOpacity>
           ) : null}
         />
         <OfflineNotice />
 
         <View style={styles.titleSection}>
+          <MaterialCommunityIcons name="sprout-outline" size={18} color={COLORS.softGreen} />
           <Text style={styles.realOnly}>Only scan real plants growing outdoors.</Text>
         </View>
 
@@ -318,8 +326,9 @@ export default function AuditScreen({ navigation }) {
           ) : (
             <View style={styles.zipLocked}>
               <View style={styles.zipLockedLeft}>
-                <Text style={styles.zipLockedText}>📍 ZIP {zipCode}</Text>
-                <TouchableOpacity onPress={() => setChangingPlace(true)} accessibilityRole="button"
+                <MaterialCommunityIcons name="map-marker-outline" size={18} color={COLORS.softGreen} />
+                <Text style={styles.zipLockedText}>ZIP {zipCode}</Text>
+                <TouchableOpacity style={styles.textAction} onPress={() => setChangingPlace(true)} accessibilityRole="button"
                   accessibilityLabel="Change location" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                   <Text style={styles.zipChange}>Change</Text>
                 </TouchableOpacity>
@@ -331,6 +340,10 @@ export default function AuditScreen({ navigation }) {
 
         {plants.length > 0 && (
           <View style={styles.listSection}>
+            <View style={styles.listHeading}>
+              <Text accessibilityRole="header" style={styles.listTitle}>Your plants</Text>
+              <Text style={styles.listCount}>{plants.length}</Text>
+            </View>
             {plants.map((card, i) => (
               <PlantCard
                 key={card._id}
@@ -353,19 +366,20 @@ export default function AuditScreen({ navigation }) {
 
         {plants.length === 0 && (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🌿</Text>
-            <Text style={styles.emptyTitle}>No plants yet</Text>
+            <View style={styles.emptyIcon}><MaterialCommunityIcons name="sprout-outline" size={32} color={COLORS.softGreen} /></View>
+            <Text accessibilityRole="header" style={styles.emptyTitle}>Start with one plant</Text>
             <Text style={styles.emptySubtitle}>
               Find your school's location, then add a plant. Give each plant up to 5 photos of that one plant, then scan.
             </Text>
           </View>
         )}
 
-        {message && <Text style={styles.scanError}>{message}</Text>}
+        {message && <Text accessibilityLiveRegion="assertive" style={styles.scanError}>{message}</Text>}
 
         <View style={styles.actions}>
-          <TouchableOpacity style={[styles.addBtn, !zipValid && styles.btnDisabled]} onPress={addCard} disabled={!zipValid}>
-            <Text style={styles.addBtnText}>＋  Add plant</Text>
+          <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: !zipValid }} style={[styles.addBtn, !zipValid && styles.btnDisabled]} onPress={addCard} disabled={!zipValid}>
+            <MaterialCommunityIcons name="plus" size={20} color={COLORS.darkGreen} />
+            <Text style={styles.addBtnText}>Add plant</Text>
           </TouchableOpacity>
 
           {waiting.length > 0 && (
@@ -399,76 +413,81 @@ const styles = StyleSheet.create({
   scrollContent:{ alignItems: 'center' },
   inner:        { alignSelf: 'center' },
 
-  newAuditBtn:{ fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.onDark, textDecorationLine: 'underline' },
+  headerAction: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 2 },
+  newAuditBtn:{ fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, textDecorationLine: 'underline' },
 
-  titleSection: { paddingTop: 18, paddingBottom: 6, paddingHorizontal: 20 },
+  titleSection: { paddingTop: 2, paddingBottom: 6, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 8 },
   realOnly: {
-    alignSelf: 'flex-start', fontSize: TYPE.body, lineHeight: LINE.body, fontFamily: FONTS.bodyBold, color: COLORS.accentInk,
-    backgroundColor: COLORS.accentSoft, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, overflow: 'hidden',
+    flex: 1, fontSize: TYPE.caption, lineHeight: LINE.caption, fontFamily: FONTS.body, color: COLORS.textMuted,
   },
 
   zipSection: { paddingHorizontal: 20, marginTop: 12, marginBottom: 8 },
   zipLocked: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    borderTopWidth: 1, borderBottomWidth: 1, borderColor: COLORS.border, paddingVertical: 12,
+    flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: 16, rowGap: 0,
+    borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, backgroundColor: COLORS.cardBg, paddingVertical: 8, paddingHorizontal: 14,
   },
   zipLockedText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
   zipLockedSub:  { fontSize: TYPE.caption, fontFamily: FONTS.bodyMedium, color: COLORS.textMuted },
-  zipLockedLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  zipChange:     { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.softGreen, textDecorationLine: 'underline', textAlign: 'center' },
+  zipLockedLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  zipChange:     { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.softGreen, textDecorationLine: 'underline', textAlign: 'center' },
+  textAction: { minHeight: 44, paddingHorizontal: 6, justifyContent: 'center' },
   changePlace:   { gap: 10, paddingVertical: 8 },
 
-  listSection: { paddingHorizontal: 20, paddingTop: 16, gap: 14 },
+  listSection: { paddingHorizontal: 20, paddingTop: 18, gap: 16 },
+  listHeading: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingBottom: 2 },
+  listTitle: { fontSize: TYPE.h3, lineHeight: LINE.h3, fontFamily: FONTS.heading, color: COLORS.darkGreen },
+  listCount: { minWidth: 26, overflow: 'hidden', borderRadius: 13, paddingHorizontal: 8, paddingVertical: 4, textAlign: 'center', backgroundColor: COLORS.lightBg, color: COLORS.softGreen, fontSize: TYPE.small, fontFamily: FONTS.bodyBold },
 
   plantCard: {
     backgroundColor: COLORS.cardBg, borderRadius: 18,
-    borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden', padding: 16, gap: 12,
+    borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden', padding: 18, gap: 14,
   },
-  draftCard: { backgroundColor: 'transparent', borderStyle: 'dashed', borderWidth: 1.5, borderColor: COLORS.softGreen },
-  cardHead:  { flexDirection: 'row', alignItems: 'flex-start' },
+  draftCard: { backgroundColor: COLORS.cardBg },
+  cardHead:  { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  cardHeading: { flex: 1, minWidth: 0, gap: 4 },
+  cardEyebrow: { fontSize: TYPE.eyebrow, lineHeight: 16, fontFamily: FONTS.bodyBold, letterSpacing: 1.2, color: COLORS.softGreen },
   cardBody:  { gap: 10 },
-  plantName: { flex: 1, fontSize: TYPE.h3, fontFamily: FONTS.heading, color: COLORS.darkGreen, lineHeight: LINE.h3 },
-  deleteBtn:      { paddingLeft: 8 },
+  plantName: { fontSize: TYPE.h3, fontFamily: FONTS.heading, color: COLORS.darkGreen, lineHeight: LINE.h3 },
+  deleteBtn:      { minWidth: 44, minHeight: 44, alignItems: 'flex-end', justifyContent: 'center' },
   deleteBtnInner: {
-    width: 30, height: 30, borderRadius: 15,
-    backgroundColor: COLORS.lightBg, alignItems: 'center', justifyContent: 'center',
+    width: 34, height: 34, borderRadius: 17,
+    backgroundColor: COLORS.cream, alignItems: 'center', justifyContent: 'center',
   },
-  deleteBtnText: { fontSize: TYPE.body, color: COLORS.textBody, fontFamily: FONTS.bodyBold, lineHeight: LINE.body },
 
-  photoCount:  { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, lineHeight: LINE.body },
-  cardButtons: { flexDirection: 'row', gap: 10 },
+  photoCount:  { fontSize: TYPE.caption, fontFamily: FONTS.body, color: COLORS.textMuted, lineHeight: LINE.caption },
+  cardButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   smallBtn: {
-    flex: 1, borderRadius: 12, paddingVertical: 12, alignItems: 'center',
+    flex: 1, minWidth: 120, minHeight: 48, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 8, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center',
     backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.border,
   },
-  smallBtnText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, textAlign: 'center' },
-  scanOneBtn:   { borderRadius: 12, paddingVertical: 13, alignItems: 'center', backgroundColor: COLORS.darkGreen },
+  smallBtnText: { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, textAlign: 'center' },
+  scanOneBtn:   { borderRadius: 10, minHeight: 48, paddingVertical: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.darkGreen },
   scanOneText:  { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.onDark },
-  byName:       { alignSelf: 'center', paddingVertical: 4 },
-  byNameText:   { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.softGreen, textDecorationLine: 'underline' },
+  byName:       { alignSelf: 'stretch', minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 },
+  byNameText:   { fontSize: TYPE.caption, lineHeight: LINE.caption, fontFamily: FONTS.bodyBold, color: COLORS.softGreen, textAlign: 'center' },
   cardError:    { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.error },
 
   scanningRow:  { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  scanningText: { fontSize: TYPE.body, fontFamily: FONTS.bodyMedium, color: COLORS.textBody },
+  scanningText: { flex: 1, fontSize: TYPE.body, lineHeight: LINE.body, fontFamily: FONTS.bodyMedium, color: COLORS.textBody },
   matchText:    { fontSize: TYPE.caption, fontFamily: FONTS.body, color: COLORS.textMuted },
 
-  emptyState:   { alignItems: 'flex-start', paddingVertical: 36, paddingHorizontal: 20 },
-  emptyIcon:    { fontSize: TYPE.display, marginBottom: 8 },
-  emptyTitle:   { fontSize: TYPE.h3, fontFamily: FONTS.heading, color: COLORS.darkGreen, marginBottom: 6 },
-  emptySubtitle:{ fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, lineHeight: LINE.body },
+  emptyState:   { alignItems: 'center', marginTop: 20, marginHorizontal: 20, paddingVertical: 28, paddingHorizontal: 24, borderWidth: 1, borderColor: COLORS.border, borderRadius: 18, backgroundColor: COLORS.cardBg },
+  emptyIcon:    { width: 64, height: 64, borderRadius: 32, backgroundColor: COLORS.lightBg, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  emptyTitle:   { fontSize: TYPE.h3, lineHeight: LINE.h3, fontFamily: FONTS.heading, color: COLORS.darkGreen, marginBottom: 8, textAlign: 'center' },
+  emptySubtitle:{ maxWidth: 420, fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, lineHeight: LINE.body, textAlign: 'center' },
 
   actions: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 52, gap: 12 },
   addBtn: {
-    borderRadius: 14, paddingVertical: 15, alignItems: 'center',
-    borderWidth: 1.5, borderColor: COLORS.darkGreen,
+    borderRadius: 10, minHeight: 50, paddingVertical: 14, paddingHorizontal: 16, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: COLORS.darkGreen, backgroundColor: COLORS.cardBg,
   },
   addBtnText:  { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
-  scanAllBtn:  { backgroundColor: COLORS.darkGreen, borderRadius: 14, paddingVertical: 17, alignItems: 'center' },
+  scanAllBtn:  { backgroundColor: COLORS.darkGreen, borderRadius: 10, minHeight: 52, paddingVertical: 15, alignItems: 'center', justifyContent: 'center' },
   scanAllText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.onDark },
   waitingNote: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
   finishBtn: {
-    backgroundColor: COLORS.accent, borderRadius: 14,
-    paddingVertical: 17, alignItems: 'center', marginTop: 4,
+    backgroundColor: COLORS.darkGreen, borderRadius: 10, minHeight: 52,
+    paddingVertical: 15, alignItems: 'center', justifyContent: 'center', marginTop: 4,
   },
   finishBtnText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.white },
   btnDisabled: { opacity: 0.35 },

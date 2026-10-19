@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Location from 'expo-location';
 import { locate, userMessage } from '../services/geminiService';
-import { COLORS, FONTS, TYPE } from '../theme';
+import { COLORS, FONTS, TYPE, LINE } from '../theme';
 
 const round2 = n => Math.round(n * 100) / 100;
 
@@ -11,6 +12,7 @@ export default function LocationPicker({ place, onChange }) {
   const [busy,    setBusy]    = useState(false);
   const [error,   setError]   = useState(null);
   const [denied,  setDenied]  = useState(false);
+  const [focused, setFocused] = useState(false);
 
   async function find(body) {
     setBusy(true);
@@ -23,6 +25,11 @@ export default function LocationPicker({ place, onChange }) {
     } finally {
       setBusy(false);
     }
+  }
+
+  function findQuery() {
+    if (!query.trim() || busy) return;
+    find({ query: query.trim() });
   }
 
   async function useMyLocation() {
@@ -49,30 +56,57 @@ export default function LocationPicker({ place, onChange }) {
 
   return (
     <View style={styles.wrap}>
-      {place?.zip && <Text style={styles.found}>📍 ZIP {place.zip}</Text>}
-      {!denied && (
-        <TouchableOpacity style={[styles.btn, busy && styles.disabled]} onPress={useMyLocation} disabled={busy}>
-          <Text style={styles.btnText}>Use my location</Text>
-        </TouchableOpacity>
-      )}
+      <View style={styles.headingRow}>
+        <Text style={styles.label}>School address or ZIP code</Text>
+        {place?.zip && (
+          <View style={styles.found} accessibilityLiveRegion="polite">
+            <Ionicons name="checkmark-circle-outline" size={15} color={COLORS.softGreen} accessible={false} />
+            <Text style={styles.foundText}>{place.zip}</Text>
+          </View>
+        )}
+      </View>
       <View style={styles.row}>
-        <TextInput
-          style={styles.input}
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Or type your school's address or ZIP"
-          placeholderTextColor={COLORS.textMuted}
-          onSubmitEditing={() => query.trim() && find({ query: query.trim() })}
-        />
+        <View style={[styles.inputWrap, focused && styles.inputFocused]}>
+          <Ionicons name="location-outline" size={18} color={COLORS.textMuted} accessible={false} />
+          <TextInput
+            style={styles.input}
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Enter address or ZIP"
+            placeholderTextColor={COLORS.textMuted}
+            accessibilityLabel="School address or ZIP code"
+            accessibilityHint="Enter a school address or five-digit ZIP code, then choose Find"
+            editable={!busy}
+            returnKeyType="search"
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            onSubmitEditing={findQuery}
+          />
+        </View>
         <TouchableOpacity
           style={[styles.findBtn, (!query.trim() || busy) && styles.disabled]}
-          onPress={() => find({ query: query.trim() })}
+          onPress={findQuery}
           disabled={!query.trim() || busy}
+          accessibilityRole="button"
+          accessibilityLabel={busy ? 'Finding your location' : 'Find location'}
+          accessibilityState={{ disabled: !query.trim() || busy, busy }}
         >
-          {busy ? <ActivityIndicator color={COLORS.cream} size="small" /> : <Text style={styles.btnText}>Find</Text>}
+          {busy ? <ActivityIndicator color={COLORS.onDark} size="small" /> : <Text style={styles.findText}>Find</Text>}
         </TouchableOpacity>
       </View>
-      {error && <Text style={styles.error}>{error}</Text>}
+      {!denied && (
+        <TouchableOpacity
+          style={[styles.locationBtn, busy && styles.disabled]}
+          onPress={useMyLocation}
+          disabled={busy}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: busy }}
+        >
+          <Ionicons name="navigate-outline" size={16} color={COLORS.softGreen} accessible={false} />
+          <Text style={styles.locationText}>Use my location</Text>
+        </TouchableOpacity>
+      )}
+      {error && <Text style={styles.error} accessibilityRole="alert">{error}</Text>}
       <Text style={styles.note}>Your location is rounded to about 1 km and never saved.</Text>
     </View>
   );
@@ -80,16 +114,22 @@ export default function LocationPicker({ place, onChange }) {
 
 const styles = StyleSheet.create({
   wrap: { gap: 8 },
-  found: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, textAlign: 'center' },
-  btn: { backgroundColor: COLORS.darkGreen, borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
-  btnText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.cream },
+  headingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' },
+  label: { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
+  found: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  foundText: { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.softGreen },
   row: { flexDirection: 'row', gap: 8 },
+  inputWrap: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 13, backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 12 },
+  inputFocused: { borderColor: COLORS.softGreen },
   input: {
-    flex: 1, minWidth: 0, backgroundColor: COLORS.white, color: COLORS.textBody, borderRadius: 10, padding: 12,
-    fontSize: TYPE.body, fontFamily: FONTS.body, borderWidth: 1, borderColor: COLORS.border,
+    flex: 1, minWidth: 0, color: COLORS.textBody, paddingVertical: 13, paddingRight: 10,
+    fontSize: TYPE.body, fontFamily: FONTS.body, minHeight: 48,
   },
-  findBtn: { backgroundColor: COLORS.softGreen, borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center' },
+  findBtn: { backgroundColor: COLORS.darkGreen, borderRadius: 12, paddingHorizontal: 21, minWidth: 76, minHeight: 48, justifyContent: 'center', alignItems: 'center' },
+  findText: { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.onDark },
+  locationBtn: { minHeight: 44, paddingVertical: 10, paddingHorizontal: 3, flexDirection: 'row', alignItems: 'center', gap: 7, alignSelf: 'flex-start' },
+  locationText: { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.softGreen },
   disabled: { opacity: 0.45 },
-  error: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.error, textAlign: 'center' },
-  note: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
+  error: { fontSize: TYPE.link, fontFamily: FONTS.body, color: COLORS.error, lineHeight: LINE.link },
+  note: { fontSize: TYPE.caption, fontFamily: FONTS.body, color: COLORS.textMuted, lineHeight: LINE.caption },
 });

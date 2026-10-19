@@ -1,18 +1,15 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
-import PhotoSlot from './PhotoSlot';
-import { COLORS, FONTS, TYPE, LINE } from '../theme';
+import { View, Text, Image, StyleSheet, Platform } from 'react-native';
+import { COLORS, FONTS, TYPE } from '../theme';
 
 const LOGO = require('../../assets/EcoLoco_logo.png');
 
-export default function ScreenHeader({ photo, photoLabel, title, subtitle, right }) {
+export default function ScreenHeader({ title, subtitle, right }) {
   return (
     <View style={styles.wrap}>
-      <PhotoSlot source={photo} label={photoLabel} style={StyleSheet.absoluteFillObject} />
-      <View style={styles.scrim} />
       <View style={styles.top}>
         <View style={styles.brand}>
-          <Image source={LOGO} style={styles.logo} />
+          <Image source={LOGO} style={styles.logo} accessibilityLabel="EcoLoco" />
           <Text style={styles.wordmark}>EcoLoco</Text>
         </View>
         {right}
@@ -26,13 +23,12 @@ export default function ScreenHeader({ photo, photoLabel, title, subtitle, right
 }
 
 const styles = StyleSheet.create({
-  wrap: { minHeight: 230, justifyContent: 'space-between', overflow: 'hidden', backgroundColor: COLORS.darkGreen },
-  scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: COLORS.scrim },
-  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 48 },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logo: { width: 30, height: 30, resizeMode: 'contain', borderRadius: 6 },
-  wordmark: { fontSize: TYPE.lead, fontFamily: FONTS.heading, color: COLORS.onDark },
-  bottom: { paddingHorizontal: 20, paddingTop: 28, paddingBottom: 22, gap: 6 },
-  title: { fontSize: TYPE.h1, lineHeight: LINE.h1, fontFamily: FONTS.headingBlack, color: COLORS.onDark },
-  subtitle: { fontSize: TYPE.body, lineHeight: LINE.body, fontFamily: FONTS.body, color: COLORS.onDarkMuted, maxWidth: 520 },
+  wrap: { backgroundColor: COLORS.cream },
+  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16, paddingHorizontal: 24, paddingTop: Platform.OS === 'web' ? 24 : 48, paddingBottom: 18, borderBottomWidth: 1, borderColor: COLORS.border },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  logo: { width: 35, height: 35, resizeMode: 'contain' },
+  wordmark: { fontSize: TYPE.h3, fontFamily: FONTS.heading, color: COLORS.darkGreen },
+  bottom: { paddingHorizontal: 24, paddingTop: 28, paddingBottom: 8, gap: 10 },
+  title: { fontSize: TYPE.pageTitle, lineHeight: 40, fontFamily: FONTS.heading, color: COLORS.darkGreen },
+  subtitle: { fontSize: TYPE.link, lineHeight: 23, fontFamily: FONTS.body, color: COLORS.textMuted, maxWidth: 560 },
 });

@@ -78,42 +78,13 @@ function AnimatedResults({ children }) {
 function ImagePlaceholderIcon() {
   return (
     <View style={icon.wrap}>
-      <View style={icon.outer}>
-        <View style={icon.mountain1} />
-        <View style={icon.mountain2} />
-        <View style={icon.sun} />
-      </View>
+      <MaterialCommunityIcons name="leaf" size={30} color={COLORS.softGreen} />
     </View>
   );
 }
 
 const icon = StyleSheet.create({
-  wrap: { alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  outer: {
-    width: 52, height: 52, borderRadius: 14,
-    backgroundColor: COLORS.lightBg,
-    alignItems: 'center', justifyContent: 'flex-end',
-    overflow: 'hidden', paddingBottom: 6,
-  },
-  mountain1: {
-    position: 'absolute', bottom: 4, left: 6,
-    width: 0, height: 0,
-    borderLeftWidth: 14, borderRightWidth: 14, borderBottomWidth: 22,
-    borderLeftColor: 'transparent', borderRightColor: 'transparent',
-    borderBottomColor: COLORS.softGreen, opacity: 0.5,
-  },
-  mountain2: {
-    position: 'absolute', bottom: 4, left: 18,
-    width: 0, height: 0,
-    borderLeftWidth: 18, borderRightWidth: 18, borderBottomWidth: 28,
-    borderLeftColor: 'transparent', borderRightColor: 'transparent',
-    borderBottomColor: COLORS.softGreen, opacity: 0.7,
-  },
-  sun: {
-    position: 'absolute', top: 8, right: 10,
-    width: 10, height: 10, borderRadius: 5,
-    backgroundColor: COLORS.softGreen, opacity: 0.45,
-  },
+  wrap: { width: 62, height: 62, borderRadius: 31, backgroundColor: COLORS.lightBg, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
 });
 
 export default function IdentificationScreen({ navigation }) {
@@ -234,19 +205,22 @@ export default function IdentificationScreen({ navigation }) {
       style={styles.container}
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
     >
       <View style={[styles.inner, { width: maxWidth }]}>
 
         <ScreenHeader
           photo={PHOTOS.identify}
           photoLabel="A native plant garden"
-          title="Identification"
-          subtitle="upload or photograph a plant to learn more about it."
+          title="Identify a plant"
+          subtitle="Discover what's growing around you, and what it means for Florida wildlife."
         />
         <OfflineNotice />
-        <View style={styles.headerGap} />
+        <View style={[styles.workspace, width >= 760 && styles.workspaceWide]}>
 
         {/* ── Upload box ── */}
+        <View style={[styles.photoSection, width >= 760 && styles.workspaceColumn]}>
+        <Text style={styles.sectionLabel}>1. Add photos</Text>
         <View
           nativeID="plant-drop-zone"
           style={[styles.uploadBox, isDragging && styles.uploadBoxDragging]}
@@ -264,7 +238,7 @@ export default function IdentificationScreen({ navigation }) {
                 <Text style={styles.photoCount}>
                   Photos of this one plant: {photos.length} of {MAX_PHOTOS}. Add a leaf up close or a flower for a surer match.
                 </Text>
-                <TouchableOpacity onPress={() => { setPhotos([]); setResult(null); setPicked(null); }} style={styles.clearPhotos}>
+                <TouchableOpacity accessibilityRole="button" onPress={() => { setPhotos([]); setResult(null); setPicked(null); }} style={styles.clearPhotos}>
                   <Text style={styles.clearPhotosText}>Clear photos</Text>
                 </TouchableOpacity>
               </View>
@@ -273,23 +247,30 @@ export default function IdentificationScreen({ navigation }) {
               <View style={styles.uploadPlaceholder}>
                 <ImagePlaceholderIcon />
                 <Text style={styles.uploadPlaceholderText}>
-                  {isDragging ? 'Drop image here' : 'Insert image here'}
+                  {isDragging ? 'Drop your photos here' : 'A closer look at your plant'}
                 </Text>
-                <Text style={styles.uploadDragHint}>or drag and drop</Text>
+                <Text style={styles.uploadDragHint}>Add up to 5 photos of the same plant.</Text>
+                <Text style={styles.uploadTip}>A leaf close-up or flower helps us find a match.</Text>
+                {Platform.OS === 'web' && <Text style={styles.dropHint}>You can also drag and drop photos here</Text>}
               </View>
             )
           }
           <View style={styles.uploadBtns}>
-            <TouchableOpacity style={styles.btnOutlined} onPress={handleTakePhoto}>
-              <Text style={styles.btnOutlinedText}>Take Photo</Text>
+            <TouchableOpacity accessibilityRole="button" style={styles.btnOutlined} onPress={handleTakePhoto}>
+              <MaterialCommunityIcons name="camera-outline" size={19} color={COLORS.darkGreen} />
+              <Text style={styles.btnOutlinedText}>Take photo</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.btnFilled} onPress={handleUploadPhoto}>
-              <Text style={styles.btnFilledText}>Upload Photo</Text>
+            <TouchableOpacity accessibilityRole="button" style={styles.btnFilled} onPress={handleUploadPhoto}>
+              <MaterialCommunityIcons name="image-plus" size={19} color={COLORS.darkGreen} />
+              <Text style={styles.btnFilledText}>Upload photos</Text>
             </TouchableOpacity>
           </View>
         </View>
+        </View>
 
         {/* ── ZIP code ── */}
+        <View style={[styles.checkSection, width >= 760 && styles.workspaceColumn]}>
+        <Text style={styles.sectionLabel}>2. Choose your location</Text>
         <View style={styles.zipRow}>
           <LocationPicker place={place} onChange={found => { setPlace(found); rememberPlace(found); }} />
         </View>
@@ -299,15 +280,17 @@ export default function IdentificationScreen({ navigation }) {
           style={[styles.identifyBtn, !canIdentify && styles.identifyBtnDisabled]}
           onPress={handleIdentify}
           disabled={!canIdentify}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !canIdentify, busy: loading }}
         >
           {loading
             ? <ActivityIndicator color={COLORS.cream} size="small" />
-            : <Text style={styles.identifyBtnText}>Identify Plant</Text>
+            : <><MaterialCommunityIcons name="line-scan" size={20} color={COLORS.onDark} /><Text style={styles.identifyBtnText}>Identify plant</Text></>
           }
         </PressScale>
 
         {zipCode.length === 5 && !naming && (
-          <TouchableOpacity style={styles.byName} onPress={() => setNaming(true)}>
+          <TouchableOpacity accessibilityRole="button" style={styles.byName} onPress={() => setNaming(true)}>
             <Text style={styles.byNameText}>Know its name? Choose by name</Text>
           </TouchableOpacity>
         )}
@@ -317,9 +300,11 @@ export default function IdentificationScreen({ navigation }) {
           </View>
         )}
 
-        {error && <Text style={styles.errorText}>{error}</Text>}
+        {error && <Text accessibilityLiveRegion="assertive" style={styles.errorText}>{error}</Text>}
 
         {loading && <LoadingLeaf message={progress} />}
+        </View>
+        </View>
 
         {/* ── Results ── */}
         {result && (
@@ -409,6 +394,7 @@ export default function IdentificationScreen({ navigation }) {
             {/* Navigate to full recommendations */}
             {zipCode?.length === 5 && (
               <TouchableOpacity
+                accessibilityRole="button"
                 style={styles.recBtn}
                 onPress={() => navigation.navigate('Recommend', { prefillZip: zipCode, at: Date.now() })}
               >
@@ -438,100 +424,104 @@ const styles = StyleSheet.create({
   scrollContent: { alignItems: 'center' },
   inner: { alignSelf: 'center' },
 
-  headerGap: { height: 18 },
+  workspace: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24, gap: 24 },
+  workspaceWide: { flexDirection: 'row', alignItems: 'flex-start', gap: 28 },
+  workspaceColumn: { flex: 1, minWidth: 0 },
+  photoSection: { gap: 10 },
+  checkSection: { gap: 10 },
+  sectionLabel: { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
 
   // ── Upload box ──
   uploadBox: {
-    marginHorizontal: 20, borderWidth: 1.5, borderColor: COLORS.softGreen,
-    borderStyle: 'dashed', borderRadius: 22, overflow: 'hidden',
-    marginBottom: 16,
+    borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.cardBg,
+    borderRadius: 18, overflow: 'hidden',
   },
   uploadPlaceholder: {
-    paddingTop: 36, paddingBottom: 24, alignItems: 'center', justifyContent: 'center',
+    paddingTop: 28, paddingBottom: 14, paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center',
   },
   uploadBoxDragging: { borderColor: COLORS.darkGreen, backgroundColor: COLORS.lightBg },
-  uploadPlaceholderText: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted },
-  uploadDragHint: { fontSize: TYPE.caption, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 2 },
+  uploadPlaceholderText: { fontSize: TYPE.h3, lineHeight: 28, fontFamily: FONTS.heading, color: COLORS.darkGreen, textAlign: 'center' },
+  uploadDragHint: { fontSize: TYPE.caption, lineHeight: LINE.caption, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 8, textAlign: 'center' },
+  uploadTip: { fontSize: TYPE.caption, lineHeight: LINE.caption, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', maxWidth: 280 },
+  dropHint: { fontSize: TYPE.fine, lineHeight: 17, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', marginTop: 12 },
   uploadPreview: { width: '100%', height: 220 },
   uploadBtns: {
-    flexDirection: 'row', gap: 12,
+    flexDirection: 'row', flexWrap: 'wrap', gap: 10,
     paddingHorizontal: 16, paddingVertical: 16,
   },
   btnOutlined: {
-    flex: 1, borderRadius: 12, paddingVertical: 13,
-    alignItems: 'center', borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.cardBg,
+    flex: 1, minWidth: 115, minHeight: 48, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 8,
+    flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.cardBg,
   },
-  btnOutlinedText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
+  btnOutlinedText: { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
   btnFilled: {
-    flex: 1, borderRadius: 12, paddingVertical: 13,
-    alignItems: 'center', backgroundColor: COLORS.darkGreen,
+    flex: 1, minWidth: 130, minHeight: 48, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 8,
+    flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.lightBg,
   },
-  btnFilledText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.onDark },
+  btnFilledText: { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
 
   // ── ZIP ──
-  zipRow: { marginHorizontal: 20, marginBottom: 14 },
+  zipRow: { marginBottom: 6 },
 
   // ── Identify button ──
   identifyBtn: {
-    marginHorizontal: 20, marginBottom: 8,
-    backgroundColor: COLORS.accent, borderRadius: 14,
-    paddingVertical: 17, alignItems: 'center',
+    backgroundColor: COLORS.darkGreen, borderRadius: 10, minHeight: 52,
+    paddingVertical: 14, paddingHorizontal: 16, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center',
   },
   identifyBtnDisabled: { opacity: 0.4 },
-  identifyBtnText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.white },
+  identifyBtnText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.onDark },
 
-  facts: { marginTop: 18, gap: 16 },
+  facts: { marginTop: 8, gap: 20, backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 16, padding: 20 },
   fact: { flexDirection: 'row', gap: 12 },
   factIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.seaGrapeSoft, alignItems: 'center', justifyContent: 'center' },
   factBody: { flex: 1, minWidth: 0, gap: 2 },
   factLabel: { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
   factText: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: LINE.body },
   noData: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 6 },
-  errorText: { color: COLORS.error, fontSize: TYPE.body, fontFamily: FONTS.body, marginHorizontal: 20, marginTop: 8 },
+  errorText: { color: COLORS.error, fontSize: TYPE.body, lineHeight: LINE.body, fontFamily: FONTS.body, backgroundColor: COLORS.invasiveTint, borderRadius: 10, padding: 14 },
 
   // ── Results ──
-  resultsSection: { marginTop: 28, paddingHorizontal: 20, paddingBottom: 48 },
+  resultsSection: { marginTop: 8, paddingHorizontal: 20, paddingBottom: 48 },
   resultsHeader: {
     flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, justifyContent: 'space-between',
     alignItems: 'baseline', marginBottom: 14,
   },
   resultsTitle: { fontSize: TYPE.h2, fontFamily: FONTS.heading, color: COLORS.darkGreen },
-  byName: { alignSelf: 'center', paddingVertical: 8 },
-  byNameText: { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.softGreen, textDecorationLine: 'underline' },
+  byName: { alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', minHeight: 44, paddingVertical: 8 },
+  byNameText: { fontSize: TYPE.caption, lineHeight: LINE.caption, fontFamily: FONTS.bodyBold, color: COLORS.softGreen, textAlign: 'center' },
   namingBox: {
-    marginHorizontal: 20, marginTop: 8, padding: 18, borderRadius: 20,
-    backgroundColor: COLORS.cardBg,
+    padding: 18, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.cardBg,
   },
-  confidenceText: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted },
+  confidenceText: { fontSize: TYPE.caption, fontFamily: FONTS.body, color: COLORS.textMuted },
   confidenceValue: { fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
 
   resultCard: {
-    backgroundColor: COLORS.cardBg, borderRadius: 22,
+    backgroundColor: COLORS.cardBg, borderRadius: 18, borderWidth: 1, borderColor: COLORS.border,
     flexDirection: 'row', overflow: 'hidden', marginBottom: 16,
   },
   resultCardNarrow: { flexDirection: 'column' },
-  resultThumb: { width: 120, height: 120 },
+  resultThumb: { width: 180, height: 180 },
   resultThumbNarrow: { width: '100%', height: 180 },
   compare: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   compareText: { flex: 1, fontSize: TYPE.caption, fontFamily: FONTS.bodyMedium, color: COLORS.textMuted },
   thumbs: { paddingHorizontal: 16, paddingTop: 12 },
-  clearPhotos: { alignSelf: 'center', paddingVertical: 4 },
-  clearPhotosText: { fontSize: TYPE.link, fontFamily: FONTS.bodyBold, color: COLORS.accent, textDecorationLine: 'underline' },
-  photoCount: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', marginTop: 6 },
+  clearPhotos: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingVertical: 8 },
+  clearPhotosText: { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.textMuted, textDecorationLine: 'underline' },
+  photoCount: { fontSize: TYPE.caption, lineHeight: LINE.caption, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', marginTop: 10, paddingHorizontal: 16 },
   retakeTip: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textBody, marginTop: 8 },
-  resultInfo: { flex: 1, padding: 16, justifyContent: 'center', gap: 10 },
+  resultInfo: { flex: 1, minWidth: 0, padding: 20, justifyContent: 'center', gap: 10 },
   plantName: { fontSize: TYPE.h3, fontFamily: FONTS.heading, color: COLORS.darkGreen, lineHeight: LINE.h3 },
   recBtn: {
-    marginTop: 20, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.darkGreen,
-    paddingVertical: 15, paddingHorizontal: 12, alignItems: 'center',
+    marginTop: 20, borderRadius: 10, borderWidth: 1, borderColor: COLORS.darkGreen, minHeight: 48,
+    paddingVertical: 14, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center',
   },
   recBtnText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, textAlign: 'center' },
 
-  credit: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: 8, marginTop: 18, paddingVertical: 6 },
+  credit: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', alignSelf: 'center', gap: 8, marginTop: 18, paddingVertical: 10, minHeight: 44 },
   creditLogo: { width: 102, height: 24 },
-  creditText: { fontSize: TYPE.caption, fontFamily: FONTS.body, color: COLORS.textMuted },
+  creditText: { fontSize: TYPE.fine, lineHeight: 17, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
   agreedBox: {
-    backgroundColor: COLORS.cardBg, borderRadius: 20, padding: 18,
+    backgroundColor: COLORS.cardBg, borderRadius: 16, padding: 18, borderWidth: 1, borderColor: COLORS.border,
   },
   notice: {
     backgroundColor: STATUS_COLORS.invasive.bg, borderRadius: 12, padding: 14, marginTop: 10,

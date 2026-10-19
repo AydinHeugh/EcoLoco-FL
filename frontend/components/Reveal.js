@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions } from 'react-native';
+import { Animated, useWindowDimensions } from 'react-native';
 import { DURATION, EASE_OUT, useReduceMotion } from '../motion';
 
 const ScrollTick = createContext(null);
@@ -20,19 +20,20 @@ export function useRevealScroll() {
 
 export function useInView(ref, margin = 40) {
   const scroll = useContext(ScrollTick);
+  const { width, height } = useWindowDimensions();
   const [inView, setInView] = useState(!scroll);
 
   useEffect(() => {
     if (inView || !scroll) return undefined;
     const check = () => {
       ref.current?.measureInWindow?.((x, y) => {
-        if (y < Dimensions.get('window').height - margin) setInView(true);
+        if (y < height - margin) setInView(true);
       });
     };
     const off = scroll.subscribe(check);
     const first = setTimeout(check, 60);
     return () => { off(); clearTimeout(first); };
-  }, [inView, scroll]);
+  }, [inView, scroll, width, height, margin, ref]);
 
   return inView;
 }
@@ -41,7 +42,8 @@ export default function Reveal({ index = 0, children, style, scaleFrom = 1, dist
   const reduce = useReduceMotion();
   const ref = useRef(null);
   const shown = useInView(ref);
-  const opacity = useRef(new Animated.Value(0)).current;
+  const notifyLayout = useRevealScroll();
+  const opacity = useRef(new Animated.Value(1)).current;
   const translateY = useRef(new Animated.Value(distance)).current;
   const scale = useRef(new Animated.Value(scaleFrom)).current;
 
@@ -55,7 +57,7 @@ export default function Reveal({ index = 0, children, style, scaleFrom = 1, dist
   }, [shown, reduce]);
 
   return (
-    <Animated.View ref={ref} collapsable={false} style={[style, { opacity, transform: [{ translateY }, { scale }] }]}>
+    <Animated.View ref={ref} onLayout={notifyLayout} collapsable={false} style={[style, { opacity, transform: [{ translateY }, { scale }] }]}>
       {children}
     </Animated.View>
   );

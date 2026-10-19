@@ -1,4 +1,5 @@
 import { NavigationContainer } from '@react-navigation/native'
+import { useWindowDimensions } from 'react-native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import TabIcon, { tabPressed } from '../components/TabIcon'
@@ -15,6 +16,7 @@ const Stack = createNativeStackNavigator()
 
 
 function TabNavigator() {
+  const { width } = useWindowDimensions()
   return (
     <Tab.Navigator
       screenListeners={({ route }) => ({ tabPress: () => tabPressed(route.name) })}
@@ -23,19 +25,19 @@ function TabNavigator() {
         tabBarStyle: {
           backgroundColor: COLORS.darkGreen,
           borderTopWidth: 0,
-          height: 78,
-          paddingBottom: 14,
+          height: 72,
+          paddingBottom: 10,
           paddingTop: 8,
         },
-        tabBarLabelStyle: { fontFamily: FONTS.bodyBold, fontSize: TYPE.caption, lineHeight: LINE.caption, paddingBottom: 2 },
+        tabBarLabelStyle: { fontFamily: FONTS.bodyBold, fontSize: width < 360 ? TYPE.fine : TYPE.small, lineHeight: LINE.caption, paddingBottom: 2 },
         tabBarActiveTintColor:   COLORS.accentOnDark,
         tabBarInactiveTintColor: COLORS.tabInactive,
-        tabBarIcon: ({ color, size }) => {
+        tabBarIcon: ({ color, size, focused }) => {
           const icons = {
-            Home:     'home',
-            Camera:   'leaf',
+            Home:     focused ? 'home' : 'home-outline',
+            Camera:   focused ? 'leaf' : 'leaf-outline',
             EcoScan:  'scan-outline',
-            Recommend:'thumbs-up',
+            Recommend: focused ? 'flower' : 'flower-outline',
           }
           return <TabIcon routeName={route.name} name={icons[route.name]} size={size} color={color} />
         },
