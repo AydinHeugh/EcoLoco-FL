@@ -74,19 +74,6 @@ function AnimatedResults({ children }) {
   );
 }
 
-// ─── Placeholder icon inside upload box ──────────────────────────────────────
-function ImagePlaceholderIcon() {
-  return (
-    <View style={icon.wrap}>
-      <MaterialCommunityIcons name="leaf" size={30} color={COLORS.softGreen} />
-    </View>
-  );
-}
-
-const icon = StyleSheet.create({
-  wrap: { width: 62, height: 62, borderRadius: 31, backgroundColor: COLORS.lightBg, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
-});
-
 export default function IdentificationScreen({ navigation }) {
   const [loading, setLoading]   = useState(false);
   const [result, setResult]     = useState(null);
@@ -99,48 +86,70 @@ export default function IdentificationScreen({ navigation }) {
   const [place, setPlace]       = useState(null);
   const zipCode = place?.zip ?? '';
   const [isDragging, setIsDragging] = useState(false);
+  const [uploadFocused, setUploadFocused] = useState(false);
+  const [fontsLoaded] = useFonts(FONT_ASSETS);
+  const busy = loading || checkingName;
+  const full = photos.length >= MAX_PHOTOS;
 
   useEffect(() => {
-    if (Platform.OS !== 'web') return;
+    if (Platform.OS !== 'web' || !fontsLoaded) return;
     const el = document.getElementById('plant-drop-zone');
     if (!el) return;
+    let active = true;
 
-    const onDragOver = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); };
-    const onDragLeave = (e) => { e.stopPropagation(); setIsDragging(false); };
-    const onDrop = (e) => {
+    const onDragOver = (e) => {
+      e.preventDefault(); e.stopPropagation();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = busy || full ? 'none' : 'copy';
+      if (!busy && !full) setIsDragging(true);
+    };
+    const onDragLeave = (e) => {
+      if (e.relatedTarget && el.contains(e.relatedTarget)) return;
+      setIsDragging(false);
+    };
+    const onDrop = async (e) => {
       e.preventDefault();
       e.stopPropagation();
       setIsDragging(false);
-      const files = [...(e.dataTransfer?.files ?? [])].filter(f => f.type.startsWith('image/')).slice(0, MAX_PHOTOS);
-      if (files.length === 0) return;
-      Promise.all(files.map(file => new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onload = () => resolve({ uri: reader.result, base64: reader.result.split(',')[1] });
-        reader.readAsDataURL(file);
-      }))).then(read => {
-        setPhotos(read);
+      if (busy) return;
+      const room = MAX_PHOTOS - photos.length;
+      if (room <= 0) { setError('This plant has 5 photos. Remove one to add another.'); return; }
+      const files = [...(e.dataTransfer?.files ?? [])].filter(f => f.type.startsWith('image/'));
+      if (files.length === 0) { setError('Choose an image file to add a photo.'); return; }
+      try {
+        const read = await Promise.all(files.slice(0, room).map(file => new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve({ uri: reader.result, base64: reader.result.split(',')[1] });
+          reader.onerror = () => reject(new Error('Photo could not be read'));
+          reader.readAsDataURL(file);
+        })));
+        if (!active) return;
+        setPhotos(prev => [...prev, ...read].slice(0, MAX_PHOTOS));
+        setUploadFocused(false);
         setResult(null); setPicked(null);
-        setError(null);
-      });
+        setError(files.length > room ? 'You can use 5 photos per plant. Extra photos weren’t added.' : null);
+      } catch {
+        if (active) setError('Could not read that photo. Try choosing it again.');
+      }
     };
 
     el.addEventListener('dragover', onDragOver);
     el.addEventListener('dragleave', onDragLeave);
     el.addEventListener('drop', onDrop);
     return () => {
+      active = false;
       el.removeEventListener('dragover', onDragOver);
       el.removeEventListener('dragleave', onDragLeave);
       el.removeEventListener('drop', onDrop);
     };
-  }, []);
+  }, [fontsLoaded, photos.length, busy, full]);
 
   const { width } = useWindowDimensions();
   const maxWidth = Math.min(width, 960);
 
-  const [fontsLoaded] = useFonts(FONT_ASSETS);
   const progress = useProgressText(loading);
 
   async function handleTakePhoto() {
+    if (busy || full) return;
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') { setError('Camera permission is required.'); return; }
     const res = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.8 });
@@ -148,6 +157,7 @@ export default function IdentificationScreen({ navigation }) {
   }
 
   async function handleUploadPhoto() {
+    if (busy || full) return;
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') { setError('Photo library permission is required.'); return; }
     const room = MAX_PHOTOS - photos.length;
@@ -155,7 +165,12 @@ export default function IdentificationScreen({ navigation }) {
     const res = await ImagePicker.launchImageLibraryAsync({
       base64: true, quality: 0.8, allowsMultipleSelection: room > 1, selectionLimit: room,
     });
-    if (!res.canceled) { setPhotos(prev => [...prev, ...res.assets].slice(0, MAX_PHOTOS)); setResult(null); setPicked(null); setError(null); }
+    if (!res.canceled) {
+      setPhotos(prev => [...prev, ...res.assets].slice(0, MAX_PHOTOS));
+      setUploadFocused(false);
+      setResult(null); setPicked(null);
+      setError(res.assets.length > room ? 'You can use 5 photos per plant. Extra photos weren’t added.' : null);
+    }
   }
 
   async function handleIdentify() {
@@ -192,7 +207,7 @@ export default function IdentificationScreen({ navigation }) {
 
   const photo = photos[0];
   const narrow = width < 420;
-  const canIdentify = photos.length > 0 && zipCode.length === 5 && !loading;
+  const canIdentify = photos.length > 0 && zipCode.length === 5 && !busy;
   const noMatch  = result && (result.state === 'unidentified' || picked === -1);
   const agreed   = result && result.state === 'confirm' && picked === null && result.agreed_status && !pickingOne;
   const choosing = result && result.state === 'confirm' && picked === null && !agreed;
@@ -213,17 +228,15 @@ export default function IdentificationScreen({ navigation }) {
           photo={PHOTOS.identify}
           photoLabel="A native plant garden"
           title="Identify a plant"
-          subtitle="Discover what's growing around you, and what it means for Florida wildlife."
         />
         <OfflineNotice />
         <View style={[styles.workspace, width >= 760 && styles.workspaceWide]}>
 
         {/* ── Upload box ── */}
         <View style={[styles.photoSection, width >= 760 && styles.workspaceColumn]}>
-        <Text style={styles.sectionLabel}>1. Add photos</Text>
         <View
           nativeID="plant-drop-zone"
-          style={[styles.uploadBox, isDragging && styles.uploadBoxDragging]}
+          style={[styles.uploadBox, !photo && styles.emptyUploadBox, (isDragging || uploadFocused) && styles.uploadBoxDragging]}
         >
           {photo
             ? (
@@ -232,45 +245,53 @@ export default function IdentificationScreen({ navigation }) {
                 <View style={styles.thumbs}>
                   <PhotoStrip
                     photos={photos}
-                    onRemove={index => { setPhotos(prev => prev.filter((_, i) => i !== index)); setResult(null); setPicked(null); }}
+                    onRemove={busy ? null : index => { setPhotos(prev => prev.filter((_, i) => i !== index)); setResult(null); setPicked(null); setError(null); }}
                   />
                 </View>
                 <Text style={styles.photoCount}>
-                  Photos of this one plant: {photos.length} of {MAX_PHOTOS}. Add a leaf up close or a flower for a surer match.
+                  {photos.length} / {MAX_PHOTOS} photos
                 </Text>
-                <TouchableOpacity accessibilityRole="button" onPress={() => { setPhotos([]); setResult(null); setPicked(null); }} style={styles.clearPhotos}>
+                <TouchableOpacity accessibilityRole="button" disabled={busy} onPress={() => { setPhotos([]); setResult(null); setPicked(null); setError(null); }} style={styles.clearPhotos}>
                   <Text style={styles.clearPhotosText}>Clear photos</Text>
                 </TouchableOpacity>
               </View>
             )
             : (
-              <View style={styles.uploadPlaceholder}>
-                <ImagePlaceholderIcon />
+              <TouchableOpacity
+                style={styles.uploadPlaceholder}
+                onPress={handleUploadPhoto}
+                onFocus={() => setUploadFocused(true)}
+                onBlur={() => setUploadFocused(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Upload plant photos"
+                accessibilityHint="Choose photos of the same plant"
+                disabled={busy}
+                activeOpacity={0.75}
+              >
+                <MaterialCommunityIcons name="cloud-upload-outline" size={38} color={COLORS.softGreen} accessible={false} />
                 <Text style={styles.uploadPlaceholderText}>
-                  {isDragging ? 'Drop your photos here' : 'A closer look at your plant'}
+                  {isDragging ? 'Drop photos here' : 'Upload plant photos'}
                 </Text>
-                <Text style={styles.uploadDragHint}>Add up to 5 photos of the same plant.</Text>
-                <Text style={styles.uploadTip}>A leaf close-up or flower helps us find a match.</Text>
-                {Platform.OS === 'web' && <Text style={styles.dropHint}>You can also drag and drop photos here</Text>}
-              </View>
+                <Text style={styles.uploadDragHint}>{Platform.OS === 'web' && width >= 760 ? 'Drag & drop or click to browse' : 'Tap to choose photos'}</Text>
+                <Text style={styles.uploadTip}>One plant at a time</Text>
+              </TouchableOpacity>
             )
           }
-          <View style={styles.uploadBtns}>
-            <TouchableOpacity accessibilityRole="button" style={styles.btnOutlined} onPress={handleTakePhoto}>
+        </View>
+          {!full && <View style={styles.uploadBtns}>
+            <TouchableOpacity accessibilityRole="button" disabled={busy} style={[styles.btnOutlined, busy && styles.identifyBtnDisabled]} onPress={handleTakePhoto}>
               <MaterialCommunityIcons name="camera-outline" size={19} color={COLORS.darkGreen} />
               <Text style={styles.btnOutlinedText}>Take photo</Text>
             </TouchableOpacity>
-            <TouchableOpacity accessibilityRole="button" style={styles.btnFilled} onPress={handleUploadPhoto}>
+            {photo && <TouchableOpacity accessibilityRole="button" disabled={busy} style={[styles.btnFilled, busy && styles.identifyBtnDisabled]} onPress={handleUploadPhoto}>
               <MaterialCommunityIcons name="image-plus" size={19} color={COLORS.darkGreen} />
-              <Text style={styles.btnFilledText}>Upload photos</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+              <Text style={styles.btnFilledText}>Add photos</Text>
+            </TouchableOpacity>}
+          </View>}
         </View>
 
         {/* ── ZIP code ── */}
         <View style={[styles.checkSection, width >= 760 && styles.workspaceColumn]}>
-        <Text style={styles.sectionLabel}>2. Choose your location</Text>
         <View style={styles.zipRow}>
           <LocationPicker place={place} onChange={found => { setPlace(found); rememberPlace(found); }} />
         </View>
@@ -290,7 +311,7 @@ export default function IdentificationScreen({ navigation }) {
         </PressScale>
 
         {zipCode.length === 5 && !naming && (
-          <TouchableOpacity accessibilityRole="button" style={styles.byName} onPress={() => setNaming(true)}>
+          <TouchableOpacity accessibilityRole="button" style={styles.byName} disabled={busy} onPress={() => setNaming(true)}>
             <Text style={styles.byNameText}>Know its name? Choose by name</Text>
           </TouchableOpacity>
         )}
@@ -424,38 +445,36 @@ const styles = StyleSheet.create({
   scrollContent: { alignItems: 'center' },
   inner: { alignSelf: 'center' },
 
-  workspace: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24, gap: 24 },
+  workspace: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 24, gap: 24 },
   workspaceWide: { flexDirection: 'row', alignItems: 'flex-start', gap: 28 },
   workspaceColumn: { flex: 1, minWidth: 0 },
   photoSection: { gap: 10 },
   checkSection: { gap: 10 },
-  sectionLabel: { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
 
   // ── Upload box ──
   uploadBox: {
     borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.cardBg,
     borderRadius: 18, overflow: 'hidden',
   },
+  emptyUploadBox: { borderWidth: 2, borderStyle: 'dashed', borderColor: COLORS.softGreen, backgroundColor: COLORS.lightBg },
   uploadPlaceholder: {
-    paddingTop: 28, paddingBottom: 14, paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center',
+    minHeight: 220, paddingVertical: 28, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center',
   },
-  uploadBoxDragging: { borderColor: COLORS.darkGreen, backgroundColor: COLORS.lightBg },
-  uploadPlaceholderText: { fontSize: TYPE.h3, lineHeight: 28, fontFamily: FONTS.heading, color: COLORS.darkGreen, textAlign: 'center' },
-  uploadDragHint: { fontSize: TYPE.caption, lineHeight: LINE.caption, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 8, textAlign: 'center' },
-  uploadTip: { fontSize: TYPE.caption, lineHeight: LINE.caption, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', maxWidth: 280 },
-  dropHint: { fontSize: TYPE.fine, lineHeight: 17, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', marginTop: 12 },
+  uploadBoxDragging: { borderColor: COLORS.darkGreen, backgroundColor: COLORS.photoBg },
+  uploadPlaceholderText: { fontSize: TYPE.h3, lineHeight: LINE.h3, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, textAlign: 'center', marginTop: 12 },
+  uploadDragHint: { fontSize: TYPE.link, lineHeight: LINE.link, fontFamily: FONTS.body, color: COLORS.textBody, marginTop: 6, textAlign: 'center' },
+  uploadTip: { fontSize: TYPE.caption, lineHeight: LINE.caption, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', marginTop: 16 },
   uploadPreview: { width: '100%', height: 220 },
   uploadBtns: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: 10,
-    paddingHorizontal: 16, paddingVertical: 16,
+    flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10,
   },
   btnOutlined: {
-    flex: 1, minWidth: 115, minHeight: 48, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 8,
-    flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.cardBg,
+    minWidth: 130, minHeight: 44, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14,
+    flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center',
   },
   btnOutlinedText: { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
   btnFilled: {
-    flex: 1, minWidth: 130, minHeight: 48, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 8,
+    minWidth: 130, minHeight: 44, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14,
     flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.lightBg,
   },
   btnFilledText: { fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },

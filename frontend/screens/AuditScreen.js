@@ -85,8 +85,8 @@ function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan,
     <Animated.View style={[styles.plantCard, card.phase === 'draft' && styles.draftCard, { opacity, transform: [{ translateY }] }]}>
       <View style={styles.cardHead}>
         <View style={styles.cardHeading}>
-          <Text style={styles.cardEyebrow}>{done ? `PLANT ${number} · SCANNED` : `PLANT ${number}`}</Text>
-          <Text style={styles.plantName} numberOfLines={2}>{!done ? 'Add a plant' : title}</Text>
+          {done && <Text style={styles.cardEyebrow}>{`PLANT ${number} · SCANNED`}</Text>}
+          <Text style={styles.plantName} numberOfLines={2}>{title}</Text>
         </View>
         {!scanning && (
           <TouchableOpacity
@@ -114,9 +114,7 @@ function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan,
 
       {card.phase === 'draft' && !card.naming && (
         <View style={styles.cardBody}>
-          <Text style={styles.photoCount}>
-            Photos of this one plant: {card.photos.length} of {MAX_PHOTOS}. A leaf close-up or flower works best.
-          </Text>
+          {card.photos.length > 0 && <Text style={styles.photoCount}>Photos of this plant · {card.photos.length} / {MAX_PHOTOS}</Text>}
           {card.error && <Text style={styles.cardError}>{card.error}</Text>}
           <View style={styles.cardButtons}>
             <TouchableOpacity accessibilityRole="button" style={[styles.smallBtn, (full || disabled) && styles.btnDisabled]} disabled={full || disabled} onPress={() => onAddPhotos('camera')}>
@@ -128,16 +126,16 @@ function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan,
               <Text style={styles.smallBtnText}>Upload photos</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity
+          {card.photos.length > 0 && <TouchableOpacity
             style={[styles.scanOneBtn, (card.photos.length === 0 || disabled) && styles.btnDisabled]}
             disabled={card.photos.length === 0 || disabled}
             onPress={onScan}
             accessibilityRole="button"
           >
             <Text style={styles.scanOneText}>Scan this plant</Text>
-          </TouchableOpacity>
+          </TouchableOpacity>}
           <TouchableOpacity accessibilityRole="button" onPress={() => onNaming(true)} disabled={disabled} style={styles.byName}>
-            <Text style={styles.byNameText}>Know its name? Choose by name</Text>
+            <Text style={styles.byNameText}>Choose by name</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -298,7 +296,7 @@ export default function AuditScreen({ navigation }) {
           photo={PHOTOS.ecoscan}
           photoLabel="Plants and pollinators on a school campus"
           title="EcoScan"
-          subtitle="Scan your campus. See what supports wildlife and plan what to plant next."
+          subtitle="Scan outdoor plants. Plan your campus’s next native planting."
           right={plants.length > 0 ? (
             <TouchableOpacity accessibilityRole="button" style={styles.headerAction} onPress={handleNewAudit} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
               <Text style={styles.newAuditBtn}>New scan</Text>
@@ -306,11 +304,6 @@ export default function AuditScreen({ navigation }) {
           ) : null}
         />
         <OfflineNotice />
-
-        <View style={styles.titleSection}>
-          <MaterialCommunityIcons name="sprout-outline" size={18} color={COLORS.softGreen} />
-          <Text style={styles.realOnly}>Only scan real plants growing outdoors.</Text>
-        </View>
 
         <View style={styles.zipSection}>
           {plants.length === 0 ? (
@@ -364,23 +357,14 @@ export default function AuditScreen({ navigation }) {
           </View>
         )}
 
-        {plants.length === 0 && (
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIcon}><MaterialCommunityIcons name="sprout-outline" size={32} color={COLORS.softGreen} /></View>
-            <Text accessibilityRole="header" style={styles.emptyTitle}>Start with one plant</Text>
-            <Text style={styles.emptySubtitle}>
-              Find your school's location, then add a plant. Give each plant up to 5 photos of that one plant, then scan.
-            </Text>
-          </View>
-        )}
-
         {message && <Text accessibilityLiveRegion="assertive" style={styles.scanError}>{message}</Text>}
 
         <View style={styles.actions}>
-          <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: !zipValid }} style={[styles.addBtn, !zipValid && styles.btnDisabled]} onPress={addCard} disabled={!zipValid}>
-            <MaterialCommunityIcons name="plus" size={20} color={COLORS.darkGreen} />
-            <Text style={styles.addBtnText}>Add plant</Text>
+          <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: !zipValid }} style={[styles.addBtn, plants.length === 0 && styles.firstPlantBtn, !zipValid && styles.btnDisabled]} onPress={addCard} disabled={!zipValid}>
+            <MaterialCommunityIcons name="plus" size={20} color={plants.length === 0 ? COLORS.onDark : COLORS.darkGreen} />
+            <Text style={[styles.addBtnText, plants.length === 0 && styles.firstPlantText]}>Add plant</Text>
           </TouchableOpacity>
+          {plants.length === 0 && !zipValid && <Text style={styles.startHint}>Choose your location to start.</Text>}
 
           {waiting.length > 0 && (
             <PressScale style={[styles.scanAllBtn, scanning && styles.btnDisabled]} onPress={scanAll} disabled={scanning}>
@@ -415,11 +399,6 @@ const styles = StyleSheet.create({
 
   headerAction: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 2 },
   newAuditBtn:{ fontSize: TYPE.caption, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, textDecorationLine: 'underline' },
-
-  titleSection: { paddingTop: 2, paddingBottom: 6, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  realOnly: {
-    flex: 1, fontSize: TYPE.caption, lineHeight: LINE.caption, fontFamily: FONTS.body, color: COLORS.textMuted,
-  },
 
   zipSection: { paddingHorizontal: 20, marginTop: 12, marginBottom: 8 },
   zipLocked: {
@@ -471,17 +450,15 @@ const styles = StyleSheet.create({
   scanningText: { flex: 1, fontSize: TYPE.body, lineHeight: LINE.body, fontFamily: FONTS.bodyMedium, color: COLORS.textBody },
   matchText:    { fontSize: TYPE.caption, fontFamily: FONTS.body, color: COLORS.textMuted },
 
-  emptyState:   { alignItems: 'center', marginTop: 20, marginHorizontal: 20, paddingVertical: 28, paddingHorizontal: 24, borderWidth: 1, borderColor: COLORS.border, borderRadius: 18, backgroundColor: COLORS.cardBg },
-  emptyIcon:    { width: 64, height: 64, borderRadius: 32, backgroundColor: COLORS.lightBg, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  emptyTitle:   { fontSize: TYPE.h3, lineHeight: LINE.h3, fontFamily: FONTS.heading, color: COLORS.darkGreen, marginBottom: 8, textAlign: 'center' },
-  emptySubtitle:{ maxWidth: 420, fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, lineHeight: LINE.body, textAlign: 'center' },
-
   actions: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 52, gap: 12 },
   addBtn: {
     borderRadius: 10, minHeight: 50, paddingVertical: 14, paddingHorizontal: 16, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: COLORS.darkGreen, backgroundColor: COLORS.cardBg,
   },
   addBtnText:  { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
+  firstPlantBtn: { backgroundColor: COLORS.darkGreen },
+  firstPlantText: { color: COLORS.onDark },
+  startHint: { fontSize: TYPE.caption, lineHeight: LINE.caption, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
   scanAllBtn:  { backgroundColor: COLORS.darkGreen, borderRadius: 10, minHeight: 52, paddingVertical: 15, alignItems: 'center', justifyContent: 'center' },
   scanAllText: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.onDark },
   waitingNote: { fontSize: TYPE.body, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
