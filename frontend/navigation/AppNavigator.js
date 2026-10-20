@@ -1,6 +1,7 @@
 import { NavigationContainer } from '@react-navigation/native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import TabIcon, { tabPressed } from '../components/TabIcon'
 
 import HomeScreen from '../screens/HomeScreen'
@@ -15,6 +16,7 @@ const Stack = createNativeStackNavigator()
 
 
 function TabNavigator() {
+  const insets = useSafeAreaInsets()
   return (
     <Tab.Navigator
       screenListeners={({ route }) => ({ tabPress: () => tabPressed(route.name) })}
@@ -23,8 +25,8 @@ function TabNavigator() {
         tabBarStyle: {
           backgroundColor: COLORS.darkGreen,
           borderTopWidth: 0,
-          height: 72,
-          paddingBottom: 10,
+          height: 62 + Math.max(insets.bottom, 10),
+          paddingBottom: Math.max(insets.bottom, 10),
           paddingTop: 8,
         },
         tabBarLabelStyle: { fontFamily: FONTS.bodyBold, fontSize: TYPE.caption, lineHeight: LINE.caption, paddingBottom: 2 },

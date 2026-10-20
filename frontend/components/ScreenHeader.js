@@ -1,12 +1,14 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, Platform } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, TYPE } from '../theme';
 
 const LOGO = require('../../assets/EcoLoco_logo.png');
 
 export function BrandHeader({ right }) {
+  const { top } = useSafeAreaInsets();
   return (
-      <View style={styles.top}>
+      <View style={[styles.top, { paddingTop: Math.max(top + 12, 24) }]}>
         <View style={styles.brand}>
           <Image source={LOGO} style={styles.logo} accessibilityLabel="EcoLoco" />
           <Text style={styles.wordmark}>EcoLoco</Text>
@@ -36,7 +38,7 @@ export default function ScreenHeader({ title, subtitle, right }) {
 
 const styles = StyleSheet.create({
   wrap: { backgroundColor: COLORS.cream },
-  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16, paddingHorizontal: 24, paddingTop: Platform.OS === 'web' ? 24 : 48, paddingBottom: 18, borderBottomWidth: 1, borderColor: COLORS.border },
+  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16, paddingHorizontal: 24, paddingBottom: 18, borderBottomWidth: 1, borderColor: COLORS.border },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   logo: { width: 35, height: 35, resizeMode: 'contain' },
   wordmark: { fontSize: TYPE.h3, fontFamily: FONTS.heading, color: COLORS.darkGreen },

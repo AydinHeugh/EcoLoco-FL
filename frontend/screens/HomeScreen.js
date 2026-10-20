@@ -1,5 +1,6 @@
 import React, { useRef } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Platform, useWindowDimensions } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, useWindowDimensions } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useFonts } from 'expo-font'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { COLORS, FONTS, FONT_ASSETS, TYPE } from '../theme'
@@ -64,6 +65,7 @@ export default function HomeScreen(props) {
 
 function Home({ navigation }) {
   const { width } = useWindowDimensions()
+  const { top } = useSafeAreaInsets()
   const wide = width >= 640
   const reduceMotion = useReduceMotion()
   const onScroll = useRevealScroll()
@@ -74,7 +76,7 @@ function Home({ navigation }) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} onScroll={onScroll} scrollEventThrottle={64}>
       <View style={[styles.inner, { width: Math.min(width, 960) }]}>
-        <View style={styles.brand}>
+        <View style={[styles.brand, { paddingTop: Math.max(top + 12, 22) }]}>
           <Image source={LOGO} style={styles.logo} accessibilityLabel="EcoLoco" />
           <Text style={styles.wordmark}>EcoLoco</Text>
         </View>
@@ -167,7 +169,7 @@ const styles = StyleSheet.create({
   inner: { alignSelf: 'center' },
   fill: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
 
-  brand: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: GUTTER, paddingTop: Platform.OS === 'web' ? 22 : 52, paddingBottom: 8 },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: GUTTER, paddingBottom: 8 },
   logo: { width: 34, height: 34, resizeMode: 'contain' },
   wordmark: { fontSize: TYPE.h3, fontFamily: FONTS.heading, color: COLORS.darkGreen },
 
