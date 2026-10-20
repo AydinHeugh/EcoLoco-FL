@@ -82,22 +82,23 @@ export default function PercentRing({ now, withPlan, size = 180, title, caption 
           const isPlan = !isNow && i < filledPlan;
           const s = i === head ? leaf * 1.35 : leaf;
           return (
-            <View
+            <MaterialCommunityIcons
               key={i}
-              style={[styles.leaf, {
-                width: s, height: s,
+              name="leaf"
+              size={s}
+              color={isNow ? nowColor : isPlan ? planColor : COLORS.border}
+              style={{
+                position: 'absolute',
                 opacity: isPlan ? 0.4 : 1,
                 left: size / 2 + radius * Math.cos(angle) - s / 2,
                 top: size / 2 + radius * Math.sin(angle) - s / 2,
                 transform: [{ rotate: `${(angle * 180) / Math.PI + 45}deg` }],
-              }]}
-            >
-              <MaterialCommunityIcons name="leaf" size={s} color={isNow ? nowColor : isPlan ? planColor : COLORS.border} style={[styles.glyph, { lineHeight: s }]} />
-            </View>
+              }}
+            />
           );
         })}
         <View style={styles.center}>
-          <Text style={[styles.percent, { fontSize: size * 0.22, lineHeight: Math.round(size * 0.26), width: size * 0.6 }]}>{shownNow}%</Text>
+          <Text style={[styles.percent, { fontSize: size * 0.22 }]}>{shownNow}%</Text>
           <Text style={styles.caption}>{caption}</Text>
         </View>
         <Animated.View
@@ -116,10 +117,8 @@ export default function PercentRing({ now, withPlan, size = 180, title, caption 
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center', gap: 12 },
   title: { fontSize: TYPE.body, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
-  leaf: { position: 'absolute', alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
-  glyph: { includeFontPadding: false, textAlignVertical: 'center' },
-  center: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
-  percent: { fontFamily: FONTS.heading, color: COLORS.darkGreen, fontVariant: ['tabular-nums'], textAlign: 'center', includeFontPadding: false },
+  center: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
+  percent: { fontFamily: FONTS.heading, color: COLORS.darkGreen, fontVariant: ['tabular-nums'] },
   caption: { fontSize: TYPE.caption, fontFamily: FONTS.bodyMedium, color: COLORS.textMuted },
   badge: {
     position: 'absolute', right: -4, top: -4, backgroundColor: COLORS.cardBg, alignItems: 'center', justifyContent: 'center',

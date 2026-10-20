@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.cream },
   scrollContent: { alignItems: 'center' },
   inner: { alignSelf: 'center' },
-  fill: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
+  fill: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, width: '100%', height: '100%' },
 
   brand: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: GUTTER, paddingBottom: 8 },
   logo: { width: 34, height: 34, resizeMode: 'contain' },
