@@ -29,7 +29,9 @@ function TabNavigator() {
           paddingBottom: Math.max(insets.bottom, 10),
           paddingTop: 8,
         },
-        tabBarLabelStyle: { fontFamily: FONTS.bodyBold, fontSize: TYPE.caption, lineHeight: LINE.caption, paddingBottom: 2 },
+        tabBarLabelStyle: { fontFamily: FONTS.bodyMedium, fontSize: TYPE.caption, lineHeight: LINE.caption, paddingBottom: 2 },
+        tabBarItemStyle: { paddingHorizontal: 0 },
+        tabBarAllowFontScaling: false,
         tabBarActiveTintColor:   COLORS.accentOnDark,
         tabBarInactiveTintColor: COLORS.tabInactive,
         tabBarIcon: ({ color, size, focused }) => {
