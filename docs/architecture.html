@@ -793,8 +793,8 @@
       "row": -0.4,
       "what": "Shared pieces used by Identify and EcoScan: the \"Which one is it?\" list and the four status labels.",
       "how": [
-        "Lists every option with its name, match % labelled with its real source (PlantNet, or OpenAI when PlantNet was unavailable) and status badge; adds the scientific name only when two options share a common name.",
-        "A small bar chart above the list shows PlantNet's score for each option, colored by status, with OpenAI's pick outlined.",
+        "Lists every option with its name, match % labelled with its real source (PlantNet, or OpenAI when PlantNet was unavailable) and status badge; adds the scientific name only when two options share a common name, ignoring capitals (\"Peace Lily\" and \"Peace lily\" count as the same).",
+        "A small bar chart above the list shows PlantNet's score for each option, colored by status, with OpenAI's pick outlined; options that share a common name are labelled there by scientific name.",
         "Marks OpenAI's pick as \"OpenAI's pick\", only when OpenAI actually picked, with no number: only PlantNet's scores show percentages. Always offers \"None of these\".",
         "`AgreedStatus` shows the shared status and \"It's one of these: A or B\" so the app doesn't hide that the species is unsure.",
         "`StatusBadge` (frontend/components/StatusBadge.js) shows the backend's `status_label` with the color for its status, so the four labels look the same on every screen.",

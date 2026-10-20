@@ -21,7 +21,8 @@ export function agreedName(options) {
 }
 
 function sharesName(option, options) {
-  return options.filter(o => o.plant_name === option.plant_name).length > 1;
+  const name = option.plant_name.toLowerCase();
+  return options.filter(o => o.plant_name.toLowerCase() === name).length > 1;
 }
 
 function ScoreChart({ options, aiPick }) {
@@ -32,7 +33,7 @@ function ScoreChart({ options, aiPick }) {
         const color = (STATUS_COLORS[option.status] ?? STATUS_COLORS.unknown).color;
         return (
           <View key={option.scientific_name || i} style={styles.chartRow}>
-            <Text style={styles.chartName} numberOfLines={1}>{option.plant_name}</Text>
+            <Text style={styles.chartName} numberOfLines={1}>{sharesName(option, options) ? option.scientific_name : option.plant_name}</Text>
             <View style={styles.chartTrack}>
               <View style={[styles.chartBar, { width: `${(option.confidence / top) * 100}%`, backgroundColor: color },
                 i === aiPick && styles.chartBarPick]} />
