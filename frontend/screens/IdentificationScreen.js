@@ -13,6 +13,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
 import { askForCamera } from '../cameraAccess';
+import usePhotoDrop from '../components/usePhotoDrop';
 import { useFonts } from 'expo-font';
 import { choosePlant, identifyPlant, userMessage } from '../services/geminiService';
 import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS, TYPE, LINE } from '../theme';
@@ -83,63 +84,24 @@ export default function IdentificationScreen({ navigation }) {
   const [photos, setPhotos]     = useState([]);
   const [place, setPlace]       = useState(null);
   const zipCode = place?.zip ?? '';
-  const [isDragging, setIsDragging] = useState(false);
   const [uploadFocused, setUploadFocused] = useState(false);
   const [fontsLoaded] = useFonts(FONT_ASSETS);
   const busy = loading || checkingName;
   const full = photos.length >= MAX_PHOTOS;
 
-  useEffect(() => {
-    if (Platform.OS !== 'web' || !fontsLoaded) return;
-    const el = document.getElementById('plant-drop-zone');
-    if (!el) return;
-    let active = true;
-
-    const onDragOver = (e) => {
-      e.preventDefault(); e.stopPropagation();
-      if (e.dataTransfer) e.dataTransfer.dropEffect = busy || full ? 'none' : 'copy';
-      if (!busy && !full) setIsDragging(true);
-    };
-    const onDragLeave = (e) => {
-      if (e.relatedTarget && el.contains(e.relatedTarget)) return;
-      setIsDragging(false);
-    };
-    const onDrop = async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragging(false);
-      if (busy) return;
-      const room = MAX_PHOTOS - photos.length;
-      if (room <= 0) { setError('This plant has 5 photos. Remove one to add another.'); return; }
-      const files = [...(e.dataTransfer?.files ?? [])].filter(f => f.type.startsWith('image/'));
-      if (files.length === 0) { setError('Choose an image file to add a photo.'); return; }
-      try {
-        const read = await Promise.all(files.slice(0, room).map(file => new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve({ uri: reader.result, base64: reader.result.split(',')[1] });
-          reader.onerror = () => reject(new Error('Photo could not be read'));
-          reader.readAsDataURL(file);
-        })));
-        if (!active) return;
-        setPhotos(prev => [...prev, ...read].slice(0, MAX_PHOTOS));
-        setUploadFocused(false);
-        setResult(null); setPicked(null);
-        setError(files.length > room ? 'You can use 5 photos per plant. Extra photos weren’t added.' : null);
-      } catch {
-        if (active) setError('Could not read that photo. Try choosing it again.');
-      }
-    };
-
-    el.addEventListener('dragover', onDragOver);
-    el.addEventListener('dragleave', onDragLeave);
-    el.addEventListener('drop', onDrop);
-    return () => {
-      active = false;
-      el.removeEventListener('dragover', onDragOver);
-      el.removeEventListener('dragleave', onDragLeave);
-      el.removeEventListener('drop', onDrop);
-    };
-  }, [fontsLoaded, photos.length, busy, full]);
+  const isDragging = usePhotoDrop('plant-drop-zone', {
+    ready: fontsLoaded,
+    blocked: busy,
+    room: MAX_PHOTOS - photos.length,
+    max: MAX_PHOTOS,
+    onError: setError,
+    onPhotos: (read, extra) => {
+      setPhotos(prev => [...prev, ...read].slice(0, MAX_PHOTOS));
+      setUploadFocused(false);
+      setResult(null); setPicked(null);
+      setError(extra ? 'You can use 5 photos per plant. Extra photos weren’t added.' : null);
+    },
+  });
 
   const { width, height, fontScale } = useWindowDimensions();
   const columns = (width >= 900 || (width >= 760 && height < 600)) && fontScale <= 1.3;

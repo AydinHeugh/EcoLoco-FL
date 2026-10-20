@@ -17,6 +17,7 @@ import LocationPicker from '../components/LocationPicker';
 import PressScale from '../components/PressScale';
 import { rememberPlace } from '../lastPlace';
 import { askForCamera } from '../cameraAccess';
+import usePhotoDrop from '../components/usePhotoDrop';
 import NamePicker from '../components/NamePicker';
 import PhotoStrip from '../components/PhotoStrip';
 import PlantPhoto from '../components/PlantPhoto';
@@ -54,7 +55,7 @@ export function settledPlant(card) {
   return { ...base, plant_name: 'Unidentified plant', scientific_name: '', status: 'unknown' };
 }
 
-function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan, onDelete, onPick, onNone, onPickOne, onNaming, onChooseName }) {
+function PlantCard({ card, number, disabled, onAddPhotos, onDropPhotos, onDropError, onRemovePhoto, onScan, onDelete, onPick, onNone, onPickOne, onNaming, onChooseName }) {
   const reduce = useReduceMotion();
   const opacity    = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(14)).current;
@@ -76,6 +77,14 @@ function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan,
   const shown = done && !noMatch && card.picked != null && card.picked >= 0 ? r.options[card.picked] : null;
   const full = card.photos.length >= MAX_PHOTOS;
   const known = shown ?? (agreed ? r.options[0] : null);
+  const dropId = `plant-drop-${card._id}`;
+  const dragging = usePhotoDrop(dropId, {
+    blocked: card.phase !== 'draft' || card.naming || disabled,
+    room: MAX_PHOTOS - card.photos.length,
+    max: MAX_PHOTOS,
+    onPhotos: onDropPhotos,
+    onError: onDropError,
+  });
 
   const title = !done ? `Plant ${number}`
     : noMatch ? 'Not identified'
@@ -84,7 +93,7 @@ function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan,
     : 'Not sure yet';
 
   return (
-    <Animated.View style={[styles.plantCard, card.phase === 'draft' && styles.draftCard, { opacity, transform: [{ translateY }] }]}>
+    <Animated.View nativeID={dropId} style={[styles.plantCard, card.phase === 'draft' && styles.draftCard, dragging && styles.dropCard, { opacity, transform: [{ translateY }] }]}>
       <View style={styles.cardHead}>
         {known?.photo && <PlantPhoto photo={known.photo} size={60} radius={16} label={title} />}
         <View style={styles.cardHeading}>
@@ -126,7 +135,7 @@ function PlantCard({ card, number, disabled, onAddPhotos, onRemovePhoto, onScan,
             </TouchableOpacity>
             <TouchableOpacity accessibilityRole="button" style={[styles.smallBtn, (full || disabled) && styles.btnDisabled]} disabled={full || disabled} onPress={() => onAddPhotos('gallery')}>
               <MaterialCommunityIcons name="image-plus" size={18} color={COLORS.darkGreen} />
-              <Text style={styles.smallBtnText}>Upload photos</Text>
+              <Text style={styles.smallBtnText}>{dragging ? 'Drop photos here' : 'Upload photos'}</Text>
             </TouchableOpacity>
           </View>
           {card.photos.length > 0 && <TouchableOpacity
@@ -217,8 +226,11 @@ export default function AuditScreen({ navigation }) {
       });
     }
     if (res.canceled) return;
-    const picked = res.assets.slice(0, room).map(a => ({ uri: a.uri, base64: a.base64 }));
-    if (res.assets.length > room) setMessage(`Only ${MAX_PHOTOS} photos fit on one plant, so the extra ones were left out.`);
+    attachPhotos(card, res.assets.slice(0, room).map(a => ({ uri: a.uri, base64: a.base64 })), res.assets.length > room);
+  }
+
+  function attachPhotos(card, picked, extra) {
+    if (extra) setMessage(`Only ${MAX_PHOTOS} photos fit on one plant, so the extra ones were left out.`);
     update(card._id, p => ({ photos: [...p.photos, ...picked].slice(0, MAX_PHOTOS), error: null }));
   }
 
@@ -329,6 +341,8 @@ export default function AuditScreen({ navigation }) {
                 number={i + 1}
                 disabled={card.phase !== 'draft'}
                 onAddPhotos={source => addPhotos(card, source)}
+                onDropPhotos={(picked, extra) => { setMessage(null); attachPhotos(card, picked, extra); }}
+                onDropError={error => update(card._id, { error })}
                 onRemovePhoto={index => update(card._id, p => ({ photos: p.photos.filter((_, j) => j !== index) }))}
                 onScan={() => scanCard(card)}
                 onDelete={() => deleteCard(card._id)}
@@ -404,6 +418,7 @@ const styles = StyleSheet.create({
     shadowColor: COLORS.shadow, shadowOpacity: 0.07, shadowRadius: 16, shadowOffset: { width: 0, height: 5 }, elevation: 2,
   },
   draftCard: { backgroundColor: COLORS.cardBg },
+  dropCard:  { backgroundColor: COLORS.photoBg },
   cardHead:  { flexDirection: 'row', alignItems: 'center', gap: 12 },
   cardHeading: { flex: 1, minWidth: 0, gap: 6, alignItems: 'flex-start' },
   cardBody:  { gap: 10 },

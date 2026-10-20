@@ -88,6 +88,7 @@ flowchart LR
     ui_atlas["AtlasButton"]
     ui_namepicker["NamePicker"]
     ui_sitefilters["SiteFilters"]
+    ui_photodrop["usePhotoDrop()"]
     ui_photostrip["PhotoStrip"]
     ui_letterdemo["LetterDemo"]
     ui_identifydemo["IdentifyDemo"]
@@ -350,6 +351,8 @@ flowchart LR
   audit -->|"rememberPlace(place)"| ui_lastplace
   rec -->|"lastPlace()"| ui_lastplace
   ident -->|"askForCamera()"| ui_camera
+  ident -->|"usePhotoDrop(id) → photos [{uri, base64}]"| ui_photodrop
+  audit -->|"usePhotoDrop(id) → photos [{uri, base64}]"| ui_photodrop
   audit -->|"askForCamera()"| ui_camera
   ui_camera -->|"requestCameraPermissionsAsync()"| picker
   s_plan -->|"photo_for(name)"| s_photo
@@ -370,7 +373,7 @@ flowchart LR
   classDef ext fill:#fde4e1,stroke:#c0392b,color:#4a0f08
   classDef planned stroke-dasharray:6 4,stroke-width:2px
   classDef dead fill:#f3f3f3,stroke:#9e9e9e,color:#616161,stroke-dasharray:3 3
-  class app,home,ident,rec,audit,results,ui_why,ui_receipt,letter,ui_multiphoto,ui_ai_unknown,ui_picker,ui_ring,ui_plancard,ui_location,ui_charts,ui_atlas,ui_namepicker,ui_sitefilters,ui_photostrip,ui_letterdemo,ui_identifydemo,ui_theme,ui_motion,ui_photos,ui_photoslot,ui_header,ui_leaf,ui_reveal,ui_countup,ui_lastplace,ui_camera,ui_photo,ui_press,ui_tabicon,ui_rotating ui
+  class app,home,ident,rec,audit,results,ui_why,ui_receipt,letter,ui_multiphoto,ui_ai_unknown,ui_picker,ui_ring,ui_plancard,ui_location,ui_charts,ui_atlas,ui_namepicker,ui_sitefilters,ui_photodrop,ui_photostrip,ui_letterdemo,ui_identifydemo,ui_theme,ui_motion,ui_photos,ui_photoslot,ui_header,ui_leaf,ui_reveal,ui_countup,ui_lastplace,ui_camera,ui_photo,ui_press,ui_tabicon,ui_rotating ui
   class picker,clipboard device
   class c_identify,c_rec,c_letter,c_local,c_plan,c_user_message,c_locate,c_nearby,c_names,c_choose client
   class flask,r_identify,r_recommend,r_letter,r_plan,r_locate,r_nearby,r_names,r_choose route

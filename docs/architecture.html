@@ -685,7 +685,7 @@
       "row": -1.4,
       "what": "Lets the user send up to 5 photos of the same plant, and shows what the app is doing while it waits.",
       "how": [
-        "Uploading on Identify and on an EcoScan plant card allows picking several photos at once (`allowsMultipleSelection`), limited to the room left out of 5; the camera adds one at a time. On the web you can also drag in several images.",
+        "Uploading on Identify and on an EcoScan plant card allows picking several photos at once (`allowsMultipleSelection`), limited to the room left out of 5; the camera adds one at a time. On the web you can also drag several images onto the Identify upload box or onto an EcoScan plant card (`usePhotoDrop()`).",
         "All photos go to /identify as `images` in one request.",
         "While waiting, the text changes from \"Identifying…\" to \"Checking Florida lists…\" after 2 seconds (`useProgressText` in frontend/components/ProgressText.js).",
         "When the match is unsure, the screen suggests: \"For a surer match, add a photo of a leaf up close or a flower.\""
@@ -1623,6 +1623,23 @@
       "what": "Gives a plant's moisture or care only if a teammate has checked it.",
       "how": [
         "Returns the field's `value` when `verified` is true, otherwise `None` (unknown)."
+      ]
+    },
+    {
+      "id": "ui_photodrop",
+      "label": "usePhotoDrop()",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/components/usePhotoDrop.js",
+      "symbol": "export default function usePhotoDrop",
+      "col": 2,
+      "row": 2.2,
+      "what": "Lets you drag photos from your computer onto the Identify upload box or an EcoScan plant card, on the web only.",
+      "how": [
+        "Listens for drag and drop on the element with the given id and says when a drag is over it, so the screen can show \"Drop photos here\".",
+        "Reads each dropped image into `{uri, base64}`, the same shape the photo picker returns, up to the room left out of 5.",
+        "Says so when the plant already has 5 photos or when the file is not an image.",
+        "Stops the browser from opening a photo dropped just outside the box, which would leave the app."
       ]
     },
     {
@@ -2701,6 +2718,16 @@
       "from": "ident",
       "to": "ui_camera",
       "label": "askForCamera()"
+    },
+    {
+      "from": "ident",
+      "to": "ui_photodrop",
+      "label": "usePhotoDrop(id) → photos [{uri, base64}]"
+    },
+    {
+      "from": "audit",
+      "to": "ui_photodrop",
+      "label": "usePhotoDrop(id) → photos [{uri, base64}]"
     },
     {
       "from": "audit",
