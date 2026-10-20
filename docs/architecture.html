@@ -680,12 +680,12 @@
       "layer": "ui",
       "status": "live",
       "file": "frontend/screens/IdentificationScreen.js",
-      "symbol": "allowsMultipleSelection: room > 1",
+      "symbol": "pickPhotos(room)",
       "col": 2,
       "row": -1.4,
       "what": "Lets the user send up to 5 photos of the same plant, and shows what the app is doing while it waits.",
       "how": [
-        "Uploading on Identify and on an EcoScan plant card allows picking several photos at once (`allowsMultipleSelection`), limited to the room left out of 5; the camera adds one at a time. On the web you can also drag several images onto the Identify upload box or onto an EcoScan plant card (`usePhotoDrop()`).",
+        "Uploading on Identify and on an EcoScan plant card allows picking several photos at once through `pickPhotos(room)`, limited to the room left out of 5; the camera adds one at a time. On the web you can also drag several images onto the Identify upload box or onto an EcoScan plant card (`usePhotoDrop()`).",
         "All photos go to /identify as `images` in one request.",
         "While waiting, the text changes from \"Identifying…\" to \"Checking Florida lists…\" after 2 seconds (`useProgressText` in frontend/components/ProgressText.js).",
         "When the match is unsure, the screen suggests: \"For a surer match, add a photo of a leaf up close or a flower.\""
@@ -1637,9 +1637,26 @@
       "what": "Lets you drag photos from your computer onto the Identify upload box or an EcoScan plant card, on the web only.",
       "how": [
         "Listens for drag and drop on the element with the given id and says when a drag is over it, so the screen can show \"Drop photos here\".",
-        "Reads each dropped image into `{uri, base64}`, the same shape the photo picker returns, up to the room left out of 5.",
+        "Reads each dropped image into `{uri, base64}` with `photoFromFile()`, the same shape the photo picker returns, up to the room left out of 5.",
         "Says so when the plant already has 5 photos or when the file is not an image.",
         "Stops the browser from opening a photo dropped just outside the box, which would leave the app."
+      ]
+    },
+    {
+      "id": "ui_photofiles",
+      "label": "pickPhotos()",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/photoFiles.web.js",
+      "symbol": "export function pickPhotos",
+      "col": 2,
+      "row": 1.8,
+      "what": "Opens the photo library for \"Upload photos\" and turns each photo into `{uri, base64}`. On the website it also accepts iPhone HEIC photos.",
+      "how": [
+        "On the phone (frontend/photoFiles.js) it opens the Expo photo picker, which already hands back JPEGs.",
+        "On the website (frontend/photoFiles.web.js) it opens the browser's own file chooser instead, because the Expo picker rejects HEIC files that Windows gives no file type.",
+        "A HEIC or HEIF photo is turned into a JPEG in the browser with the heic-to library, which only loads the first time one is added. The backend and PlantNet only take JPEG or PNG.",
+        "Returns `{photos, extra}`, where `extra` says some photos were left out because the plant already had 5, or null when nothing was picked."
       ]
     },
     {
@@ -2728,6 +2745,26 @@
       "from": "audit",
       "to": "ui_photodrop",
       "label": "usePhotoDrop(id) → photos [{uri, base64}]"
+    },
+    {
+      "from": "ident",
+      "to": "ui_photofiles",
+      "label": "pickPhotos(room) → {photos, extra}"
+    },
+    {
+      "from": "audit",
+      "to": "ui_photofiles",
+      "label": "pickPhotos(room) → {photos, extra}"
+    },
+    {
+      "from": "ui_photodrop",
+      "to": "ui_photofiles",
+      "label": "photoFromFile(file)"
+    },
+    {
+      "from": "ui_photofiles",
+      "to": "picker",
+      "label": "launchImageLibraryAsync() (phone only)"
     },
     {
       "from": "audit",

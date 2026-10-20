@@ -18,6 +18,7 @@ import PressScale from '../components/PressScale';
 import { rememberPlace } from '../lastPlace';
 import { askForCamera } from '../cameraAccess';
 import usePhotoDrop from '../components/usePhotoDrop';
+import { pickPhotos } from '../photoFiles';
 import NamePicker from '../components/NamePicker';
 import PhotoStrip from '../components/PhotoStrip';
 import PlantPhoto from '../components/PlantPhoto';
@@ -220,13 +221,16 @@ export default function AuditScreen({ navigation }) {
     if (source === 'camera') {
       if (!(await askForCamera())) { setMessage('Camera access is needed to take a photo.'); return; }
       res = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.8 });
-    } else {
-      res = await ImagePicker.launchImageLibraryAsync({
-        base64: true, quality: 0.8, allowsMultipleSelection: room > 1, selectionLimit: room,
-      });
+      if (res.canceled) return;
+      attachPhotos(card, [{ uri: res.assets[0].uri, base64: res.assets[0].base64 }], false);
+      return;
     }
-    if (res.canceled) return;
-    attachPhotos(card, res.assets.slice(0, room).map(a => ({ uri: a.uri, base64: a.base64 })), res.assets.length > room);
+    try {
+      const picked = await pickPhotos(room);
+      if (picked) attachPhotos(card, picked.photos, picked.extra);
+    } catch {
+      update(card._id, { error: 'Could not read that photo. Try choosing it again.' });
+    }
   }
 
   function attachPhotos(card, picked, extra) {

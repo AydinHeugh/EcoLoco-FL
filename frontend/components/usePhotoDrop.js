@@ -1,19 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
+import { isPhotoFile, photoFromFile } from '../photoFiles';
 
 if (Platform.OS === 'web' && typeof window !== 'undefined') {
   const keepPage = (e) => { if (e.dataTransfer?.types?.includes('Files')) e.preventDefault(); };
   window.addEventListener('dragover', keepPage);
   window.addEventListener('drop', keepPage);
-}
-
-function readPhoto(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve({ uri: reader.result, base64: reader.result.split(',')[1] });
-    reader.onerror = () => reject(new Error('Photo could not be read'));
-    reader.readAsDataURL(file);
-  });
 }
 
 export default function usePhotoDrop(id, { ready = true, blocked, room, max, onPhotos, onError }) {
@@ -43,10 +35,10 @@ export default function usePhotoDrop(id, { ready = true, blocked, room, max, onP
       const { blocked, room, max, onPhotos, onError } = latest.current;
       if (blocked) return;
       if (room <= 0) { onError(`This plant has ${max} photos. Remove one to add another.`); return; }
-      const files = [...(e.dataTransfer?.files ?? [])].filter(f => f.type.startsWith('image/'));
+      const files = [...(e.dataTransfer?.files ?? [])].filter(isPhotoFile);
       if (files.length === 0) { onError('Choose an image file to add a photo.'); return; }
       try {
-        const photos = await Promise.all(files.slice(0, room).map(readPhoto));
+        const photos = await Promise.all(files.slice(0, room).map(photoFromFile));
         if (active) onPhotos(photos, files.length > room);
       } catch {
         if (active) onError('Could not read that photo. Try choosing it again.');

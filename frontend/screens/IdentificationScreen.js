@@ -14,6 +14,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
 import { askForCamera } from '../cameraAccess';
 import usePhotoDrop from '../components/usePhotoDrop';
+import { pickPhotos } from '../photoFiles';
 import { useFonts } from 'expo-font';
 import { choosePlant, identifyPlant, userMessage } from '../services/geminiService';
 import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS, TYPE, LINE } from '../theme';
@@ -119,14 +120,13 @@ export default function IdentificationScreen({ navigation }) {
     if (busy || full) return;
     const room = MAX_PHOTOS - photos.length;
     if (room <= 0) return;
-    const res = await ImagePicker.launchImageLibraryAsync({
-      base64: true, quality: 0.8, allowsMultipleSelection: room > 1, selectionLimit: room,
-    });
-    if (!res.canceled) {
-      setPhotos(prev => [...prev, ...res.assets].slice(0, MAX_PHOTOS));
+    let picked;
+    try { picked = await pickPhotos(room); } catch { setError('Could not read that photo. Try choosing it again.'); return; }
+    if (picked) {
+      setPhotos(prev => [...prev, ...picked.photos].slice(0, MAX_PHOTOS));
       setUploadFocused(false);
       setResult(null); setPicked(null);
-      setError(res.assets.length > room ? 'You can use 5 photos per plant. Extra photos weren’t added.' : null);
+      setError(picked.extra ? 'You can use 5 photos per plant. Extra photos weren’t added.' : null);
     }
   }
 
