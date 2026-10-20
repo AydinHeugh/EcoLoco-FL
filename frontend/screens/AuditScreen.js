@@ -16,6 +16,7 @@ import { DURATION, EASE_OUT, useReduceMotion } from '../motion';
 import LocationPicker from '../components/LocationPicker';
 import PressScale from '../components/PressScale';
 import { rememberPlace } from '../lastPlace';
+import { askForCamera } from '../cameraAccess';
 import NamePicker from '../components/NamePicker';
 import PhotoStrip from '../components/PhotoStrip';
 import PlantPhoto from '../components/PlantPhoto';
@@ -208,12 +209,9 @@ export default function AuditScreen({ navigation }) {
     if (room <= 0) return;
     let res;
     if (source === 'camera') {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') { setMessage('Camera access is needed to take a photo.'); return; }
+      if (!(await askForCamera())) { setMessage('Camera access is needed to take a photo.'); return; }
       res = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.8 });
     } else {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') { setMessage('Photo library access is needed to upload photos.'); return; }
       res = await ImagePicker.launchImageLibraryAsync({
         base64: true, quality: 0.8, allowsMultipleSelection: room > 1, selectionLimit: room,
       });

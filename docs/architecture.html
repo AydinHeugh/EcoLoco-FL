@@ -323,7 +323,7 @@
       "row": 3.3,
       "what": "Expo module that opens the phone camera or photo library and returns the image.",
       "how": [
-        "`requestCameraPermissionsAsync()` / `requestMediaLibraryPermissionsAsync()` ask the OS for permission.",
+        "Only the camera asks for permission, through `askForCamera()`. The photo library opens without asking, since the system picker only hands over the photos you choose.",
         "`launchCameraAsync` / `launchImageLibraryAsync({base64: true, quality: 0.8})` return `{canceled, assets: [{uri, base64}]}`.",
         "Screens keep `uri` to show the photo and send `base64` to the backend."
       ]
@@ -1813,6 +1813,22 @@
       ]
     },
     {
+      "id": "ui_camera",
+      "label": "askForCamera()",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/cameraAccess.js",
+      "symbol": "export async function askForCamera",
+      "col": 3,
+      "row": 8.5,
+      "what": "Asks for camera access before Identify or EcoScan takes a photo.",
+      "how": [
+        "Calls `requestCameraPermissionsAsync()` and returns true when access is given.",
+        "The phone only shows the question once. If access was turned down before, a popup offers \"Open Settings\" so it can be turned back on.",
+        "On the web the browser handles this itself, so no popup is shown."
+      ]
+    },
+    {
       "id": "s_photo",
       "label": "photo_for()",
       "layer": "svc",
@@ -2680,6 +2696,21 @@
       "from": "rec",
       "to": "ui_lastplace",
       "label": "lastPlace()"
+    },
+    {
+      "from": "ident",
+      "to": "ui_camera",
+      "label": "askForCamera()"
+    },
+    {
+      "from": "audit",
+      "to": "ui_camera",
+      "label": "askForCamera()"
+    },
+    {
+      "from": "ui_camera",
+      "to": "picker",
+      "label": "requestCameraPermissionsAsync()"
     },
     {
       "from": "s_plan",

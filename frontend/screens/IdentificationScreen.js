@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
+import { askForCamera } from '../cameraAccess';
 import { useFonts } from 'expo-font';
 import { choosePlant, identifyPlant, userMessage } from '../services/geminiService';
 import { COLORS, STATUS_COLORS, FONTS, FONT_ASSETS, TYPE, LINE } from '../theme';
@@ -147,16 +148,13 @@ export default function IdentificationScreen({ navigation }) {
 
   async function handleTakePhoto() {
     if (busy || full) return;
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') { setError('Camera permission is required.'); return; }
+    if (!(await askForCamera())) { setError('Camera access is needed to take a photo.'); return; }
     const res = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.8 });
     if (!res.canceled) { setPhotos(prev => [...prev, res.assets[0]].slice(0, MAX_PHOTOS)); setResult(null); setPicked(null); setError(null); }
   }
 
   async function handleUploadPhoto() {
     if (busy || full) return;
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') { setError('Photo library permission is required.'); return; }
     const room = MAX_PHOTOS - photos.length;
     if (room <= 0) return;
     const res = await ImagePicker.launchImageLibraryAsync({
