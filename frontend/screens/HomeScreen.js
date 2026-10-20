@@ -152,7 +152,6 @@ function Home({ navigation }) {
         </View>
 
         <View style={styles.footer}>
-          <Image source={LOGO} style={styles.footerLogo} accessible={false} />
           <Text style={styles.footerText}>{SLOGAN}</Text>
         </View>
       </View>
@@ -222,6 +221,5 @@ const styles = StyleSheet.create({
   sourceLabel: { fontFamily: FONTS.body, fontSize: TYPE.link, lineHeight: 21, color: COLORS.onDarkMuted, flexShrink: 1 },
 
   footer: { alignItems: 'center', paddingHorizontal: GUTTER, paddingVertical: 32, gap: 10 },
-  footerLogo: { width: 30, height: 30, resizeMode: 'contain' },
   footerText: { fontFamily: FONTS.bodyBold, fontSize: TYPE.body, color: COLORS.darkGreen, textAlign: 'center' },
 })
