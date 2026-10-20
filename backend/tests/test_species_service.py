@@ -45,3 +45,12 @@ def test_unknown_name_resolves_to_none(name):
 def test_common_name_for_scientific_name():
     assert common_name("Zamia integrifolia") == "Coontie"
     assert common_name("Welwitschia mirabilis") is None
+
+
+@pytest.mark.parametrize("name", ["Kalanchoe × houghtonii", "Kalanchoe ×houghtonii", "Kalanchoe x houghtonii", "KALANCHOE X HOUGHTONII"])
+def test_hybrid_sign_is_ignored(name):
+    assert resolve(name) == "Kalanchoe x houghtonii"
+
+
+def test_x_inside_a_word_is_kept():
+    assert species_service._normalize("Xanthosoma sagittifolium") == "xanthosoma sagittifolium"

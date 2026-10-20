@@ -7,7 +7,9 @@ DATA_FILES = ("fisc_list.json", "fl_natives.json", "fl_non_natives.json", "fl_re
 
 
 def _normalize(name):
-    return " ".join(str(name).split()).lower()
+    # Hybrids come as "Kalanchoe × houghtonii", "Kalanchoe ×houghtonii" or "Kalanchoe x houghtonii".
+    words = str(name).replace("×", " ").lower().split()
+    return " ".join(w for w in words if w != "x")
 
 
 def _binomial(key):

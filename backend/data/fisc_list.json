@@ -29,7 +29,9 @@
     {
       "scientific_name": "Albizia lebbeck",
       "common_name": "woman's tongue",
-      "synonyms": [],
+      "synonyms": [
+        "Mimosa lebbeck"
+      ],
       "fisc_category": "I",
       "zones": "C, S",
       "why": null
@@ -53,7 +55,10 @@
     {
       "scientific_name": "Asparagus aethiopicus",
       "common_name": "Sprenger's asparagus-fern",
-      "synonyms": [],
+      "synonyms": [
+        "Asparagus densiflorus",
+        "Asparagus sprengeri"
+      ],
       "fisc_category": "I",
       "zones": "N, C, S",
       "why": null
@@ -77,7 +82,10 @@
     {
       "scientific_name": "Calophyllum antillanum",
       "common_name": "santa maria",
-      "synonyms": [],
+      "synonyms": [
+        "Calophyllum brasiliense",
+        "Calophyllum calaba"
+      ],
       "fisc_category": "I",
       "zones": "S",
       "why": null
@@ -101,7 +109,9 @@
     {
       "scientific_name": "Cenchrus purpureus",
       "common_name": "elephantgrass",
-      "synonyms": [],
+      "synonyms": [
+        "Pennisetum purpureum"
+      ],
       "fisc_category": "I",
       "zones": "N, C, S",
       "why": null
@@ -109,7 +119,11 @@
     {
       "scientific_name": "Cinnamomum camphora",
       "common_name": "camphortree",
-      "synonyms": [],
+      "synonyms": [
+        "Camphora camphora",
+        "Camphora officinarum",
+        "Laurus camphora"
+      ],
       "fisc_category": "I",
       "zones": "N, C, S",
       "why": null
@@ -182,7 +196,9 @@
       "scientific_name": "Eichhornia crassipes",
       "common_name": "common water-hyacinth",
       "synonyms": [
-        "Pontederia crassipes"
+        "Pontederia crassipes",
+        "Eichhornia speciosa",
+        "Piaropus crassipes"
       ],
       "fisc_category": "I",
       "zones": "N, C, S",
@@ -191,7 +207,9 @@
     {
       "scientific_name": "Eugenia uniflora",
       "common_name": "Surinam cherry",
-      "synonyms": [],
+      "synonyms": [
+        "Eugenia michelii"
+      ],
       "fisc_category": "I",
       "zones": "C, S",
       "why": null
@@ -199,7 +217,9 @@
     {
       "scientific_name": "Ficus microcarpa",
       "common_name": "Indian laurel fig",
-      "synonyms": [],
+      "synonyms": [
+        "Ficus retusa"
+      ],
       "fisc_category": "I",
       "zones": "C, S",
       "why": null
@@ -208,7 +228,8 @@
       "scientific_name": "Heptapleurum actinophyllum",
       "common_name": "Australian umbrella tree",
       "synonyms": [
-        "Schefflera actinophyllum"
+        "Schefflera actinophyllum",
+        "Schefflera actinophylla"
       ],
       "fisc_category": "I",
       "zones": "C, S",
@@ -241,7 +262,10 @@
     {
       "scientific_name": "Imperata cylindrica",
       "common_name": "cogongrass",
-      "synonyms": [],
+      "synonyms": [
+        "Imperata arundinacea",
+        "Lagurus cylindricus"
+      ],
       "fisc_category": "I",
       "zones": "N, C, S",
       "why": "Forms dense mats that crowd out natives and burn extremely hot, spreading wildfire."
@@ -301,7 +325,9 @@
     {
       "scientific_name": "Lonicera japonica",
       "common_name": "Japanese honeysuckle",
-      "synonyms": [],
+      "synonyms": [
+        "Nintooa japonica"
+      ],
       "fisc_category": "I",
       "zones": "N, C, S",
       "why": null
@@ -309,7 +335,9 @@
     {
       "scientific_name": "Ludwigia peruviana",
       "common_name": "Peruvian primrosewillow",
-      "synonyms": [],
+      "synonyms": [
+        "Jussiaea peruviana"
+      ],
       "fisc_category": "I",
       "zones": "N, C, S",
       "why": null
@@ -349,7 +377,15 @@
     {
       "scientific_name": "Manilkara zapota",
       "common_name": "sapodilla",
-      "synonyms": [],
+      "synonyms": [
+        "Achras mammosa",
+        "Achras zapota",
+        "Calocarpum mammosum",
+        "Lucuma mammosa",
+        "Manilkara achras",
+        "Manilkara zapotilla",
+        "Sapota achras"
+      ],
       "fisc_category": "I",
       "zones": "S",
       "why": null
@@ -365,7 +401,10 @@
     {
       "scientific_name": "Melinis repens",
       "common_name": "rose natalgrass",
-      "synonyms": [],
+      "synonyms": [
+        "Saccharum repens",
+        "Tricholaena repens"
+      ],
       "fisc_category": "I",
       "zones": "N, C, S",
       "why": null
@@ -373,7 +412,9 @@
     {
       "scientific_name": "Microsorum grossum",
       "common_name": "serpent fern",
-      "synonyms": [],
+      "synonyms": [
+        "Phymatosorus grossus"
+      ],
       "fisc_category": "I",
       "zones": "S",
       "why": null
@@ -381,7 +422,9 @@
     {
       "scientific_name": "Microstegium vimineum",
       "common_name": "Nepalese browntop",
-      "synonyms": [],
+      "synonyms": [
+        "Eulalia viminea"
+      ],
       "fisc_category": "I",
       "zones": "N",
       "why": null
@@ -429,7 +472,10 @@
     {
       "scientific_name": "Nymphoides cristata",
       "common_name": "crested floatingheart",
-      "synonyms": [],
+      "synonyms": [
+        "Menyanthes cristata",
+        "Nymphoides hydrophyllum"
+      ],
       "fisc_category": "I",
       "zones": "C, S",
       "why": null
@@ -445,7 +491,9 @@
     {
       "scientific_name": "Paederia foetida",
       "common_name": "skunkvine",
-      "synonyms": [],
+      "synonyms": [
+        "Paederia scandens"
+      ],
       "fisc_category": "I",
       "zones": "N, C, S",
       "why": null
@@ -498,7 +546,12 @@
     {
       "scientific_name": "Pueraria montana var. lobata",
       "common_name": "kudzu",
-      "synonyms": [],
+      "synonyms": [
+        "Dolichos lobatus",
+        "Pueraria lobata",
+        "Pueraria montana",
+        "Pueraria thunbergiana"
+      ],
       "fisc_category": "I",
       "zones": "N, C, S",
       "why": null
@@ -569,7 +622,9 @@
     {
       "scientific_name": "Scleria eggersiana",
       "common_name": "Egger's nutrush",
-      "synonyms": [],
+      "synonyms": [
+        "Scleria grisebachii"
+      ],
       "fisc_category": "I",
       "zones": "S",
       "why": null
@@ -593,7 +648,10 @@
     {
       "scientific_name": "Senna pendula var. glabrata",
       "common_name": "Christmas cassia",
-      "synonyms": [],
+      "synonyms": [
+        "Cassia coluteoides",
+        "Senna pendula"
+      ],
       "fisc_category": "I",
       "zones": "C, S",
       "why": null
@@ -601,7 +659,9 @@
     {
       "scientific_name": "Solanum tampicense",
       "common_name": "wetland nightshade",
-      "synonyms": [],
+      "synonyms": [
+        "Solanum houstonii"
+      ],
       "fisc_category": "I",
       "zones": "C, S",
       "why": null
@@ -633,7 +693,11 @@
     {
       "scientific_name": "Syzygium cumini",
       "common_name": "Java plum",
-      "synonyms": [],
+      "synonyms": [
+        "Eugenia cumini",
+        "Eugenia jambolana",
+        "Syzygium jambolanum"
+      ],
       "fisc_category": "I",
       "zones": "C, S",
       "why": null
@@ -650,7 +714,9 @@
       "scientific_name": "Thelypteris opulenta",
       "common_name": "jeweled maiden fern",
       "synonyms": [
-        "Amblovenatum opulenta"
+        "Amblovenatum opulenta",
+        "Amphineuron opulentum",
+        "Cyclosorus opulentus"
       ],
       "fisc_category": "I",
       "zones": "S",
@@ -667,7 +733,9 @@
     {
       "scientific_name": "Tradescantia fluminensis",
       "common_name": "small-leaf spiderwort",
-      "synonyms": [],
+      "synonyms": [
+        "Tradescantia albiflora"
+      ],
       "fisc_category": "I",
       "zones": "N, C, S",
       "why": null
@@ -675,7 +743,11 @@
     {
       "scientific_name": "Tradescantia spathacea",
       "common_name": "Moses-in-the-cradle",
-      "synonyms": [],
+      "synonyms": [
+        "Rhoeo discolor",
+        "Rhoeo spathacea",
+        "Tradescantia discolor"
+      ],
       "fisc_category": "I",
       "zones": "C, S",
       "why": null
@@ -684,7 +756,8 @@
       "scientific_name": "Triadica sebifera",
       "common_name": "popcorntree",
       "synonyms": [
-        "Sapium sebiferum"
+        "Sapium sebiferum",
+        "Croton sebiferum"
       ],
       "fisc_category": "I",
       "zones": "N, C, S",
@@ -701,7 +774,13 @@
     {
       "scientific_name": "Urochloa mutica",
       "common_name": "paragrass",
-      "synonyms": [],
+      "synonyms": [
+        "Brachiaria mutica",
+        "Brachiaria purpurascens",
+        "Panicum barbinode",
+        "Panicum muticum",
+        "Panicum purpurascens"
+      ],
       "fisc_category": "I",
       "zones": "N, C, S",
       "why": null
@@ -709,7 +788,9 @@
     {
       "scientific_name": "Vitex rotundifolia",
       "common_name": "beach vitex",
-      "synonyms": [],
+      "synonyms": [
+        "Vitex ovata"
+      ],
       "fisc_category": "I",
       "zones": "N, C",
       "why": null
@@ -741,7 +822,9 @@
     {
       "scientific_name": "Alternanthera philoxeroides",
       "common_name": "alligatorweed",
-      "synonyms": [],
+      "synonyms": [
+        "Achyranthes philoxeroides"
+      ],
       "fisc_category": "II",
       "zones": "N, C, S",
       "why": null
@@ -765,7 +848,9 @@
     {
       "scientific_name": "Aristolochia elegans",
       "common_name": "elegant dutchman's-pipe",
-      "synonyms": [],
+      "synonyms": [
+        "Aristolochia littoralis"
+      ],
       "fisc_category": "II",
       "zones": "N, C, S",
       "why": null
@@ -781,7 +866,9 @@
     {
       "scientific_name": "Asystasia gangetica",
       "common_name": "Chinese violet",
-      "synonyms": [],
+      "synonyms": [
+        "Justicia gangetica"
+      ],
       "fisc_category": "II",
       "zones": "C, S",
       "why": null
@@ -797,7 +884,9 @@
     {
       "scientific_name": "Broussonetia papyrifera",
       "common_name": "paper mulberry",
-      "synonyms": [],
+      "synonyms": [
+        "Morus papyrifera"
+      ],
       "fisc_category": "II",
       "zones": "N, C, S",
       "why": null
@@ -813,7 +902,10 @@
     {
       "scientific_name": "Callisia fragrans",
       "common_name": "basket plant",
-      "synonyms": [],
+      "synonyms": [
+        "Rectanthera fragrans",
+        "Spironema fragrans"
+      ],
       "fisc_category": "II",
       "zones": "C, S",
       "why": null
@@ -837,7 +929,9 @@
     {
       "scientific_name": "Cenchrus polystachios",
       "common_name": "West Indian pennisetum",
-      "synonyms": [],
+      "synonyms": [
+        "Pennisetum polystachion"
+      ],
       "fisc_category": "II",
       "zones": "C, S",
       "why": null
@@ -845,7 +939,9 @@
     {
       "scientific_name": "Cenchrus setaceus",
       "common_name": "fountaingrass",
-      "synonyms": [],
+      "synonyms": [
+        "Pennisetum setaceum"
+      ],
       "fisc_category": "II",
       "zones": "N, C, S",
       "why": null
@@ -901,7 +997,10 @@
     {
       "scientific_name": "Cyperus involucratus",
       "common_name": "umbrella plant",
-      "synonyms": [],
+      "synonyms": [
+        "Cyperus alternifolius",
+        "Cyperus flabelliformis"
+      ],
       "fisc_category": "II",
       "zones": "N, C, S",
       "why": null
@@ -917,7 +1016,9 @@
     {
       "scientific_name": "Dactyloctenium aegyptium",
       "common_name": "Durban crowfootgrass",
-      "synonyms": [],
+      "synonyms": [
+        "Cynosurus aegyptius"
+      ],
       "fisc_category": "II",
       "zones": "N, C, S",
       "why": null
@@ -941,7 +1042,9 @@
     {
       "scientific_name": "Distimake tuberosus",
       "common_name": "Spanish arborvine",
-      "synonyms": [],
+      "synonyms": [
+        "Merremia tuberosa"
+      ],
       "fisc_category": "II",
       "zones": "C, S",
       "why": null
@@ -949,7 +1052,9 @@
     {
       "scientific_name": "Dracaena hyacinthoides",
       "common_name": "bowstring hemp",
-      "synonyms": [],
+      "synonyms": [
+        "Sansevieria hyacinthoides"
+      ],
       "fisc_category": "II",
       "zones": "C, S",
       "why": null
@@ -1005,7 +1110,10 @@
     {
       "scientific_name": "Hemarthria altissima",
       "common_name": "limpograss",
-      "synonyms": [],
+      "synonyms": [
+        "Manisuris altissima",
+        "Rottboellia altissima"
+      ],
       "fisc_category": "II",
       "zones": "C, S",
       "why": null
@@ -1013,7 +1121,9 @@
     {
       "scientific_name": "Heteropogon contortus",
       "common_name": "Tanglehead",
-      "synonyms": [],
+      "synonyms": [
+        "Andropogon contortus"
+      ],
       "fisc_category": "II",
       "zones": "N, C, S",
       "why": null
@@ -1021,7 +1131,9 @@
     {
       "scientific_name": "Heteropogon melanocarpus",
       "common_name": "Sweet tanglehead",
-      "synonyms": [],
+      "synonyms": [
+        "Andropogon melanocarpus"
+      ],
       "fisc_category": "II",
       "zones": "N, C, S",
       "why": null
@@ -1037,7 +1149,9 @@
     {
       "scientific_name": "Hyparrhenia rufa",
       "common_name": "jaragua",
-      "synonyms": [],
+      "synonyms": [
+        "Trachypogon rufus"
+      ],
       "fisc_category": "II",
       "zones": "N, C, S",
       "why": null
@@ -1045,7 +1159,11 @@
     {
       "scientific_name": "Ipomoea carnea ssp. fistulosa",
       "common_name": "bush morning-glory",
-      "synonyms": [],
+      "synonyms": [
+        "Ipomoea carnea",
+        "Ipomoea crassicaulis",
+        "Ipomoea fistulosa"
+      ],
       "fisc_category": "II",
       "zones": "C, S",
       "why": null
@@ -1053,7 +1171,10 @@
     {
       "scientific_name": "Kalanchoe pinnata",
       "common_name": "cathedral bells",
-      "synonyms": [],
+      "synonyms": [
+        "Bryophyllum pinnatum",
+        "Cotyledon pinnata"
+      ],
       "fisc_category": "II",
       "zones": "C, S",
       "why": null
@@ -1069,7 +1190,10 @@
     {
       "scientific_name": "Koelreuteria elegans ssp. formosana",
       "common_name": "flamegold rain tree",
-      "synonyms": [],
+      "synonyms": [
+        "Koelreuteria elegans",
+        "Koelreuteria formosana"
+      ],
       "fisc_category": "II",
       "zones": "N, C, S",
       "why": null
@@ -1077,7 +1201,10 @@
     {
       "scientific_name": "Landoltia punctata",
       "common_name": "dotted duckweed",
-      "synonyms": [],
+      "synonyms": [
+        "Spirodela oligorrhiza",
+        "Spirodela punctata"
+      ],
       "fisc_category": "II",
       "zones": "N, C, S",
       "why": null
@@ -1101,7 +1228,10 @@
     {
       "scientific_name": "Livistona chinensis",
       "common_name": "Chinese fan palm",
-      "synonyms": [],
+      "synonyms": [
+        "Livistona oliviformis",
+        "Saribus oliviformis"
+      ],
       "fisc_category": "II",
       "zones": "C, S",
       "why": null
@@ -1117,7 +1247,9 @@
     {
       "scientific_name": "Melaleuca viminalis",
       "common_name": "bottlebrush",
-      "synonyms": [],
+      "synonyms": [
+        "Callistemon viminalis"
+      ],
       "fisc_category": "II",
       "zones": "C, S",
       "why": null
@@ -1133,7 +1265,9 @@
     {
       "scientific_name": "Melinis minutiflora",
       "common_name": "molassesgrass",
-      "synonyms": [],
+      "synonyms": [
+        "Melinis tenuinervis"
+      ],
       "fisc_category": "II",
       "zones": "C, S",
       "why": null
@@ -1221,7 +1355,9 @@
     {
       "scientific_name": "Praxelis clematidea",
       "common_name": "praxelis",
-      "synonyms": [],
+      "synonyms": [
+        "Eupatorium clematideum"
+      ],
       "fisc_category": "II",
       "zones": "C",
       "why": null
@@ -1277,7 +1413,11 @@
     {
       "scientific_name": "Ruellia blechum",
       "common_name": "Browne's blechum",
-      "synonyms": [],
+      "synonyms": [
+        "Blechum blechum",
+        "Blechum brownei",
+        "Blechum pyramidatum"
+      ],
       "fisc_category": "II",
       "zones": "N, C, S",
       "why": null
@@ -1285,7 +1425,9 @@
     {
       "scientific_name": "Selenicereus pteranthus",
       "common_name": "princess-of-the-night",
-      "synonyms": [],
+      "synonyms": [
+        "Cereus pteranthus"
+      ],
       "fisc_category": "II",
       "zones": "C, S",
       "why": null
@@ -1293,7 +1435,10 @@
     {
       "scientific_name": "Sesbania punicea",
       "common_name": "rattlebox",
-      "synonyms": [],
+      "synonyms": [
+        "Daubentonia punicea",
+        "Sesbania tripetii"
+      ],
       "fisc_category": "II",
       "zones": "N, C, S",
       "why": null
@@ -1317,7 +1462,9 @@
     {
       "scientific_name": "Solanum torvum",
       "common_name": "turkeyberry",
-      "synonyms": [],
+      "synonyms": [
+        "Solanum ficifolium"
+      ],
       "fisc_category": "II",
       "zones": "N, C, S",
       "why": null
@@ -1325,7 +1472,9 @@
     {
       "scientific_name": "Spermacoce verticillata",
       "common_name": "shrubby false buttonweed",
-      "synonyms": [],
+      "synonyms": [
+        "Borreria verticillata"
+      ],
       "fisc_category": "II",
       "zones": "N, C, S",
       "why": null
@@ -1333,7 +1482,12 @@
     {
       "scientific_name": "Sphagneticola trilobata",
       "common_name": "creeping oxeye",
-      "synonyms": [],
+      "synonyms": [
+        "Complaya trilobata",
+        "Silphium trilobatum",
+        "Thelechitonia trilobata",
+        "Wedelia trilobata"
+      ],
       "fisc_category": "II",
       "zones": "N, C, S",
       "why": null
@@ -1341,7 +1495,10 @@
     {
       "scientific_name": "Stachytarpheta cayennensis",
       "common_name": "nettleleaf velvetberry",
-      "synonyms": [],
+      "synonyms": [
+        "Stachytarpheta dichotoma",
+        "Valerianoides cayennensis"
+      ],
       "fisc_category": "II",
       "zones": "S",
       "why": null
@@ -1357,7 +1514,10 @@
     {
       "scientific_name": "Syzygium jambos",
       "common_name": "Malabar plum",
-      "synonyms": [],
+      "synonyms": [
+        "Eugenia jambos",
+        "Jambosa jambos"
+      ],
       "fisc_category": "II",
       "zones": "N, C, S",
       "why": null
@@ -1365,7 +1525,12 @@
     {
       "scientific_name": "Tabebuia heterophylla",
       "common_name": "pink tabebuia",
-      "synonyms": [],
+      "synonyms": [
+        "Tabebuia lucida",
+        "Tabebuia pallida",
+        "Tabebuia pentaphylla",
+        "Tabebuia triphylla"
+      ],
       "fisc_category": "II",
       "zones": "S",
       "why": null
@@ -1398,7 +1563,10 @@
       "scientific_name": "Thelypteris dentata",
       "common_name": "downy maiden fern",
       "synonyms": [
-        "Christella dentata"
+        "Christella dentata",
+        "Cyclosorus dentatus",
+        "Dryopteris dentata",
+        "Thelypteris reducta"
       ],
       "fisc_category": "II",
       "zones": "N, C, S",
@@ -1423,7 +1591,10 @@
     {
       "scientific_name": "Urochloa maxima",
       "common_name": "Guineagrass",
-      "synonyms": [],
+      "synonyms": [
+        "Megathyrsus maximus",
+        "Panicum maximum"
+      ],
       "fisc_category": "II",
       "zones": "N, C, S",
       "why": null
@@ -1431,7 +1602,9 @@
     {
       "scientific_name": "Vernicia fordii",
       "common_name": "tung oil tree",
-      "synonyms": [],
+      "synonyms": [
+        "Aleurites fordii"
+      ],
       "fisc_category": "II",
       "zones": "N, C, S",
       "why": null
@@ -1447,7 +1620,9 @@
     {
       "scientific_name": "Washingtonia robusta",
       "common_name": "Washington fan palm",
-      "synonyms": [],
+      "synonyms": [
+        "Washingtonia gracilis"
+      ],
       "fisc_category": "II",
       "zones": "C, S",
       "why": null
@@ -1455,7 +1630,9 @@
     {
       "scientific_name": "Wisteria sinensis",
       "common_name": "Chinese wisteria",
-      "synonyms": [],
+      "synonyms": [
+        "Rehsonia sinensis"
+      ],
       "fisc_category": "II",
       "zones": "N, C",
       "why": null

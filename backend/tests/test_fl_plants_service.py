@@ -223,3 +223,65 @@ def test_non_natives_are_not_on_the_other_lists():
     assert not non_natives & (_all_names("fl_natives.json") | _all_names("fisc_list.json") | _all_names("fl_recommendations.json"))
     for entry in _species("fl_non_natives.json"):
         assert entry["why"] and entry["source"]["url"].startswith("https://florida.plantatlas.usf.edu/plant/species/")
+
+
+def test_asparagus_fern_as_plantnet_names_it_is_fisc_invasive(monkeypatch):
+    _usda_says(monkeypatch, AssertionError("USDA should not be asked"))
+    option = plant_option("Asparagus densiflorus", "Asparagus fern", 0.58, ZIP)
+    assert option["scientific_name"] == "Asparagus aethiopicus"
+    assert option["status"] == "invasive"
+    assert option["source"] == "FISC"
+
+
+@pytest.mark.parametrize("name, fisc", [
+    ("Asparagus densiflorus", "Asparagus aethiopicus"),
+    ("Asparagus sprengeri", "Asparagus aethiopicus"),
+    ("Camphora officinarum", "Cinnamomum camphora"),
+    ("Megathyrsus maximus", "Urochloa maxima"),
+    ("Panicum maximum", "Urochloa maxima"),
+    ("Brachiaria mutica", "Urochloa mutica"),
+    ("Aristolochia littoralis", "Aristolochia elegans"),
+    ("Nymphoides hydrophyllum", "Nymphoides cristata"),
+    ("Phymatosorus grossus", "Microsorum grossum"),
+    ("Spirodela punctata", "Landoltia punctata"),
+    ("Schefflera actinophylla", "Heptapleurum actinophyllum"),
+    ("Pennisetum purpureum", "Cenchrus purpureus"),
+    ("Pennisetum setaceum", "Cenchrus setaceus"),
+    ("Pennisetum polystachion", "Cenchrus polystachios"),
+    ("Merremia tuberosa", "Distimake tuberosus"),
+    ("Sansevieria hyacinthoides", "Dracaena hyacinthoides"),
+    ("Bryophyllum pinnatum", "Kalanchoe pinnata"),
+    ("Callistemon viminalis", "Melaleuca viminalis"),
+    ("Cyperus alternifolius", "Cyperus involucratus"),
+    ("Ficus retusa", "Ficus microcarpa"),
+    ("Blechum pyramidatum", "Ruellia blechum"),
+    ("Borreria verticillata", "Spermacoce verticillata"),
+    ("Wedelia trilobata", "Sphagneticola trilobata"),
+    ("Rhoeo spathacea", "Tradescantia spathacea"),
+    ("Eugenia jambos", "Syzygium jambos"),
+    ("Aleurites fordii", "Vernicia fordii"),
+    ("Pueraria montana", "Pueraria montana var. lobata"),
+    ("Pueraria lobata", "Pueraria montana var. lobata"),
+    ("Senna pendula", "Senna pendula var. glabrata"),
+    ("Ipomoea carnea", "Ipomoea carnea ssp. fistulosa"),
+    ("Ipomoea carnea subsp. fistulosa", "Ipomoea carnea ssp. fistulosa"),
+    ("Koelreuteria elegans", "Koelreuteria elegans ssp. formosana"),
+    ("Kalanchoe × houghtonii", "Kalanchoe x houghtonii"),
+    ("Kalanchoe ×houghtonii", "Kalanchoe x houghtonii"),
+    ("Lantana × strigocamara", "Lantana strigocamara"),
+])
+def test_fisc_plant_found_by_the_name_plantnet_or_usda_uses(monkeypatch, name, fisc):
+    _usda_says(monkeypatch, AssertionError("USDA should not be asked"))
+    assert plant_option(name, "", 0.5, ZIP)["scientific_name"] == fisc
+    assert get_status(name, ZIP)["source"] == "FISC"
+
+
+@pytest.mark.parametrize("name", [
+    "Setaria parviflora",
+    "Lygodium microphyllum",
+    "Vitex trifolia",
+    "Solanum mammosum",
+    "Hibiscus tiliaceus",
+])
+def test_lookalike_names_are_not_mapped_to_another_fisc_plant(name):
+    assert plant_option(name, "", 0.5, ZIP)["scientific_name"] == name

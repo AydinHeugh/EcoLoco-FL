@@ -271,3 +271,12 @@ def test_adjudicator_confidence_is_kept(plantnet, openai):
     openai["reply"] = {"scientific_name": B["scientific_name"], "confidence": 0.78}
     result = identify_species("img", ZIP)
     assert (result["suggested"], result["suggested_confidence"]) == (1, 0.78)
+
+
+def test_asparagus_fern_names_merge_into_one_option():
+    ranked = _merge_same_species([
+        {"scientific_name": "Asparagus densiflorus", "common_name": "Asparagus fern", "confidence": 0.58},
+        {"scientific_name": "Asparagus aethiopicus", "common_name": "Sprenger's asparagus fern", "confidence": 0.32},
+        {"scientific_name": "Asparagus scoparius", "common_name": "Canary Islands Asparagus", "confidence": 0.01},
+    ])
+    assert [(r["scientific_name"], r["confidence"]) for r in ranked] == [("Asparagus aethiopicus", 0.9)]
