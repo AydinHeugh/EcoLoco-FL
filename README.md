@@ -6,7 +6,7 @@ EcoLoco helps students find out which plants on their campus help local wildlife
 
 This is our entry for the 2026 Congressional App Challenge (FL-22). It started as EcoLoco and is being reworked around real Florida plant data.
 
-**See how it all fits together:** https://aydinheugh.github.io/EcoLoco-FL/ (interactive map of the code, opens in any browser)
+**See how it all fits together:** https://ecoloco.app/docs/architecture.html (interactive map of the code, opens in any browser)
 
 ## What goes in and what comes out
 
@@ -88,7 +88,7 @@ Files in the top folder:
 
 ### Opening the architecture map
 
-- **Online:** go to https://ecoloco.app/docs/architecture.html after the GitHub Pages migration, or open `docs/architecture.html` locally.
+- **Online:** go to https://ecoloco.app/docs/architecture.html, or open `docs/architecture.html` locally.
 - **From a copy of the repo:** double-click `docs/architecture.html` to open it in your browser. It needs an internet connection.
 
 Click any box to see what that part of the code does, step by step, and which parts it connects to; everything else fades until you click the background. The buttons along the top (Identify, Recommend/Plan, Audit, Location) show only the parts one feature uses. Small helper files like the colors and animation settings are hidden until you tick **Show UI helpers**, and a line's label appears when you point at it. The **Glossary** button explains the colors. Dashed boxes are things we've planned but haven't built yet.
@@ -130,7 +130,7 @@ You'll need Node.js, Python 3, an OpenAI API key, and a free PlantNet API key fr
 
 The `Deploy website` GitHub Actions workflow builds every push to `master` and deploys the frontend to GitHub Pages. Pull requests build a preview artifact without publishing it. The production domain is `https://ecoloco.app`, with `www.ecoloco.app` as an alternate address.
 
-A repository administrator must complete the one-time migration in **Settings → Pages**: choose **GitHub Actions** as the source and save `ecoloco.app` as the custom domain. Run the deployment workflow after saving the domain, then point the domain's Cloudflare DNS records at GitHub Pages and enable HTTPS in GitHub. Until those steps are complete, the existing Cloudflare Pages site remains the public website. The workflow reads the Pages settings to build the right asset paths for either the default GitHub project address or the custom domain.
+In **Settings → Pages**, the source is **GitHub Actions** and the custom domain is `ecoloco.app`. Cloudflare manages DNS: the apex has GitHub Pages' four A records (`185.199.108.153`, `185.199.109.153`, `185.199.110.153`, and `185.199.111.153`), and `www` is a CNAME for `aydinheugh.github.io`. All five records use **DNS only**. GitHub Pages serves the website; manual Cloudflare Pages uploads are no longer part of publishing. A repository administrator can enable **Enforce HTTPS** in the Pages settings once GitHub finishes issuing the certificate. The workflow reads the Pages settings to build the right asset paths for either the default GitHub project address or the custom domain.
 
 To prepare a frontend update, run from the repository root:
 
