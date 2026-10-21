@@ -88,7 +88,7 @@ Files in the top folder:
 
 ### Opening the architecture map
 
-- **Online:** go to https://aydinheugh.github.io/EcoLoco-FL/
+- **Online:** go to https://ecoloco.app/docs/architecture.html after the GitHub Pages migration, or open `docs/architecture.html` locally.
 - **From a copy of the repo:** double-click `docs/architecture.html` to open it in your browser. It needs an internet connection.
 
 Click any box to see what that part of the code does, step by step, and which parts it connects to; everything else fades until you click the background. The buttons along the top (Identify, Recommend/Plan, Audit, Location) show only the parts one feature uses. Small helper files like the colors and animation settings are hidden until you tick **Show UI helpers**, and a line's label appears when you point at it. The **Glossary** button explains the colors. Dashed boxes are things we've planned but haven't built yet.
@@ -128,16 +128,18 @@ You'll need Node.js, Python 3, an OpenAI API key, and a free PlantNet API key fr
 
 ## Publishing the website
 
-The website uses the `KianMainMerger` branch. Cloudflare Pages project `ecoloco` serves the static frontend at `https://ecoloco.app` and `https://www.ecoloco.app`; its preview address is `https://ecoloco-8ry.pages.dev`.
+The `Deploy website` GitHub Actions workflow builds every push to `master` and deploys the frontend to GitHub Pages. Pull requests build a preview artifact without publishing it. The production domain is `https://ecoloco.app`, with `www.ecoloco.app` as an alternate address.
+
+A repository administrator must complete the one-time migration in **Settings → Pages**: choose **GitHub Actions** as the source and save `ecoloco.app` as the custom domain. After a successful deployment, point the domain's Cloudflare DNS records at GitHub Pages and enable HTTPS in GitHub. Until those steps are complete, the existing Cloudflare Pages site remains the public website. The workflow can also be started manually from the Actions tab.
 
 To prepare a frontend update, run from the repository root:
 
 ```sh
 npm ci
-EXPO_PUBLIC_API_URL=https://api.ecoloco.app npx expo export --platform web
+EXPO_PUBLIC_API_URL=https://api.ecoloco.app npm run build:web
 ```
 
-Upload the contents of `dist` through the Cloudflare project's **Create deployment** action. If uploading a ZIP, put `index.html` at its root. This project uses direct uploads: pushing a Git commit does not update the website. The API address is embedded during the build, so changing it requires a new export and deployment. Never put backend keys in an `EXPO_PUBLIC_` variable or upload a `.env` file.
+The workflow uploads `dist` automatically. The build includes the architecture map at `/docs/architecture.html` and `/architecture.html`, an SPA fallback page, and `/deployment.json` showing the deployed commit. Set the public repository variable `EXPO_PUBLIC_API_URL` to override the default `https://api.ecoloco.app`; the address is embedded during the build, so changing it requires another workflow run. Backend keys belong only on the backend host and must never be put in an `EXPO_PUBLIC_` variable or the published artifact.
 
 The root `render.yaml` prepares a separate free Python service for the backend at `api.ecoloco.app`. Creating that service and supplying its server-only OpenAI and PlantNet keys are separate deployment steps; the configuration file alone does not create a running backend. After deployment, use the DNS target supplied by Render for the `api` CNAME and complete Render's custom-domain verification. Keep the default TCP health check: the existing backend has no GET health endpoint. Render's free server sleeps after 15 minutes without traffic, and its next request can take about a minute to start.
 
