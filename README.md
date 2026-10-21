@@ -6,17 +6,17 @@ EcoLoco helps students find out which plants on their campus help local wildlife
 
 This is our entry for the 2026 Congressional App Challenge (FL-22). It started as EcoLoco and is being reworked around real Florida plant data.
 
-**See how it all fits together:** https://ecoloco.app/docs/architecture.html (interactive map of the code, opens in any browser)
+**Click this to see how it all fits together:** https://ecoloco.app/docs/architecture.html (interactive diagram of the code)
 
 ## What goes in and what comes out
 
-**You give it:**
+**Inputs:**
 - One to five photos of the same plant (a leaf, a flower, the bark), taken with the camera or uploaded, up to 10 MB each. More photos give a surer match.
 - Your school's location: press "Use my location", or type an address or ZIP code. The app rounds your location to about 1 km before it leaves the phone and never saves it. Only Florida locations work; anywhere else gets a message saying so. Scanning and invasive checks work anywhere in Florida, but plants to add are only suggested in Palm Beach County, the one county our plant list was checked for. Elsewhere the app says "Planting recommendations are only checked for Palm Beach County so far."
 
 If you already know the plant, you can skip the photos: press "Know its name? Choose by name" and start typing a common or scientific name. The list covers every plant the USDA PLANTS Database records in Florida. It shows names only; the plant's status is checked after you pick it, the same way as a scan, and the result says "Chosen by name" instead of a match percentage.
 
-**You get back, for each plant:**
+**Outputs for each plant:**
 - Its name and how sure PlantNet is about the match
 - When the app isn't sure, a short list of close matches to pick from ("Which one is it?"), each with its Florida status, a small chart of how PlantNet scored each one, which one OpenAI picks (only PlantNet's scores show numbers), plus a "None of these" button. Guesses PlantNet scored under 5% are left out
 - When every close match has the same status (for example two native tickseeds), the app shows that status and "It's one of these:" with the names, instead of asking. You can still pick the exact one
@@ -47,7 +47,7 @@ If you already know the plant, you can skip the photos: press "Know its name? Ch
 - An editable letter to your principal listing the plants to remove and add, how to buy them, safety notes, the percent native now and with the plan (and the percent by kind of plant when it is different), and sources
 
 
-## What happens in between
+## What happens in the back(technical breakdown)
 
 1. **Identifying the plant.** The photos go to PlantNet, a plant identification service, which returns a ranked list of likely species with a score for each.
    - Different names for the same plant (for example "Zamia pumila" and "Zamia integrifolia", both coontie) are merged first, and their scores added together.
@@ -71,7 +71,7 @@ The invasive list is generated from the official FISC PDF by a script in `backen
 
 **Before a plant can be recommended,** a teammate checks it in the USF Atlas of Florida Plants (https://florida.plantatlas.usf.edu) to make sure it's native to Palm Beach County, checks its facts and its "replaces" pairing, then changes `"verified": false` to `true` for that plant in `backend/data/fl_recommendations.json`, adding who checked it and when. All 30 plants have been checked this way (see `docs/plant-checklist.md`). Tropical sage was taken off the list after its Atlas page showed it isn't native.
 
-## Finding your way around
+## Figuring out how to navigate this repository
 
 | Folder | What's in it |
 |---|---|
@@ -145,7 +145,7 @@ The root `render.yaml` prepares a separate free Python service for the backend a
 
 Before calling a release complete, verify location lookup, plant-name selection, recommendations, a campus plan, letter creation, and a real photo identification through the public website. The automated backend tests use mocked provider responses and cannot verify live API credentials.
 
-## Where things stand
+## What's been done + future
 
 - Done: Florida plant lists drive the native/invasive verdict, every verdict comes with its source and a "why it matters" line, plants are identified by PlantNet with OpenAI as a backup, the full FISC invasive list and a USDA check are in place, scans keep working when OpenAI is down, unsure matches are confirmed by the user instead of guessed, every fact in the app shows its source, all text is written in plain language and fits a phone screen, results credit Pl@ntNet, and the backend has automated tests.
 - Next: double-check the plant lists against official sources, and put the backend online so the app works away from our computers.
