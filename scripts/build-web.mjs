@@ -25,4 +25,7 @@ writeFileSync(resolve(output, '.nojekyll'), '');
 
 const commit = process.env.GITHUB_SHA
   || execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
-writeFileSync(resolve(output, 'deployment.json'), `${JSON.stringify({ commit }, null, 2)}\n`);
+writeFileSync(resolve(output, 'deployment.json'), `${JSON.stringify({
+  commit,
+  basePath: process.env.EXPO_BASE_PATH || '',
+}, null, 2)}\n`);

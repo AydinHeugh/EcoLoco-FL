@@ -18,6 +18,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: read
     env:
       CI: 'true'
       EXPO_NO_DOTENV: '1'
@@ -32,8 +35,13 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Read GitHub Pages address
+        id: pages
+        uses: actions/configure-pages@v5
       - name: Build website
         run: npm run build:web
+        env:
+          EXPO_BASE_PATH: ${{ steps.pages.outputs.base_path }}
       - name: Upload website
         uses: actions/upload-pages-artifact@v4
         with:

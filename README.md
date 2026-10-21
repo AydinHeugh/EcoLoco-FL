@@ -130,7 +130,7 @@ You'll need Node.js, Python 3, an OpenAI API key, and a free PlantNet API key fr
 
 The `Deploy website` GitHub Actions workflow builds every push to `master` and deploys the frontend to GitHub Pages. Pull requests build a preview artifact without publishing it. The production domain is `https://ecoloco.app`, with `www.ecoloco.app` as an alternate address.
 
-A repository administrator must complete the one-time migration in **Settings → Pages**: choose **GitHub Actions** as the source and save `ecoloco.app` as the custom domain. After a successful deployment, point the domain's Cloudflare DNS records at GitHub Pages and enable HTTPS in GitHub. Until those steps are complete, the existing Cloudflare Pages site remains the public website. The workflow can also be started manually from the Actions tab.
+A repository administrator must complete the one-time migration in **Settings → Pages**: choose **GitHub Actions** as the source and save `ecoloco.app` as the custom domain. Run the deployment workflow after saving the domain, then point the domain's Cloudflare DNS records at GitHub Pages and enable HTTPS in GitHub. Until those steps are complete, the existing Cloudflare Pages site remains the public website. The workflow reads the Pages settings to build the right asset paths for either the default GitHub project address or the custom domain.
 
 To prepare a frontend update, run from the repository root:
 
