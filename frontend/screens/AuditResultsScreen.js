@@ -236,13 +236,6 @@ function AuditResults({ route, navigation }) {
         />
         <OfflineNotice />
 
-        {plan && (
-          <AuditSaveCard name={name} onNameChange={setName} onSave={saveAudit} onNew={newAudit}
-            onViewSaved={() => navigation.navigate('SavedAudits')}
-            saved={saved} wasSaved={!!savedRecord} busy={saving}
-            disabled={!name.trim() || stale || letterLoading || request.plants.length === 0} error={saveError} />
-        )}
-
         {loading && (
           <View style={styles.centerSection}>
             <ScanningLeaf size={64} />
@@ -435,6 +428,11 @@ function AuditResults({ route, navigation }) {
 
             <LetterGenerator key={JSON.stringify(planFor)} plan={plan} zipCode={zipCode} letter={letter} onLetterChange={setLetter}
               loading={letterLoading} onLoadingChange={setLetterLoading} disabled={stale || saving} />
+
+            <AuditSaveCard name={name} onNameChange={setName} onSave={saveAudit} onNew={newAudit}
+              onViewSaved={() => navigation.navigate('SavedAudits')}
+              saved={saved} wasSaved={!!savedRecord} busy={saving}
+              disabled={!name.trim() || stale || letterLoading || request.plants.length === 0} error={saveError} />
 
             <View style={[styles.ctaSection, compact && styles.sectionCompact]}>
               <TouchableOpacity style={styles.btnOutline} onPress={() => navigation.goBack()}>

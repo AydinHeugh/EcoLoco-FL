@@ -35,7 +35,7 @@
     "react-native-web": "^0.21.2"
   },
   "scripts": {
-    "test": "node --experimental-default-type=module --test tests/*.test.mjs",
+    "test": "node --test tests/*.test.mjs",
     "start": "expo start",
     "build:web": "node scripts/build-web.mjs",
     "android": "expo start --android",

@@ -239,7 +239,7 @@
       "row": 4.5,
       "what": "The campus audit: one card per plant, each with up to 5 photos of that plant, then score the whole schoolyard.",
       "how": [
-        "Starts with a `ScreenHeader` photo banner, with \"New Scan\" in its corner.",
+        "Starts with a `ScreenHeader` photo banner, with \"Saved audits\" in its corner.",
         "Under the title it says \"Only scan real plants growing outdoors.\"",
         "Uses `LocationPicker` for the school's location before scanning. The place lives in module-level variables (memory only) so it survives switching tabs.",
         "Once plants are added, the location shows as \"📍 ZIP …\" with a \"Change\" link that opens `LocationPicker` again; scanned plants are kept, and the new ZIP is used for the plan.",
@@ -250,7 +250,7 @@
         "`forgetScannedPlant(id)` lets the results screen drop a plant from the saved list; when you come back to EcoScan the list matches.",
         "Problems (missing ZIP, permissions, network errors) appear as a message on the screen instead of a popup.",
         "\"See my results\" is enabled once every card with photos is scanned. `settledPlant()` sends picked or identified plants as they are, agreed cards as \"A or B\" with the shared status, and unconfirmed or unidentified ones as \"Unidentified plant\" with status `unknown`.",
-        "\"New Scan\" clears the list after a confirm (browser confirm dialog on the web)."
+        "\"Start a new audit\" under the results button clears the scan through `startAudit()`, after a confirm (browser confirm dialog on the web)."
       ]
     },
     {
@@ -278,7 +278,47 @@
         "`LetterGenerator` writes the letter from the plan; it starts fresh whenever the plants or ticks change. Errors show as text.",
         "Below the Add cards, \"Show all plants that fit (N more)\" asks for every fitting plant; the extra ones start unticked (\"The extra plants start outside your letter. Tick one to add it.\"), and ticking one adds it to `extras`. \"Show fewer plants\" goes back to 5.",
         "Every scanned plant and every \"Seen near you\" plant shows its photo and credit. \"Seen near you\" also draws a bar for how often each plant was seen, which grows as it counts up, and explains why the list is useful. \"Why this matters\" says what it is for, and each line has an icon.",
-        "The four group counts have status icons; the campus list, \"Why this matters\" lines and plan cards fade up as they scroll into view."
+        "The four group counts have status icons; the campus list, \"Why this matters\" lines and plan cards fade up as they scroll into view.",
+        "At the bottom, after the letter, `AuditSaveCard` (\"Keep this audit\") takes a campus or place name and saves the audit with `savedAudits.save()`; then it offers \"Start another audit\" and \"View saved audits\".",
+        "Opened from Saved audits, it shows the saved plan, \"Seen near you\" and letter without asking the backend, and its title is the audit's name."
+      ]
+    },
+    {
+      "id": "saved",
+      "label": "SavedAuditsScreen",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/screens/SavedAuditsScreen.js",
+      "symbol": "export default function SavedAuditsScreen",
+      "col": 1,
+      "row": 7.5,
+      "what": "Lists the audits saved on this device so each campus or place can be reopened, renamed, updated or deleted.",
+      "how": [
+        "Opened from \"Saved audits\" on EcoScan or \"View saved audits\" on the results screen.",
+        "Reloads the list with `savedAudits.list()` each time the screen comes into view, newest first.",
+        "Each audit shows its name, ZIP, plant count, percent native and the date it was saved.",
+        "\"Open audit\" opens `AuditResultsScreen` with the saved audit, so its plan, \"Seen near you\" and letter show without asking the backend.",
+        "\"Delete\" asks first (a browser confirm on the web), then calls `savedAudits.remove(id)`.",
+        "\"New audit\" clears the current scan through `startAudit()` and goes to EcoScan."
+      ]
+    },
+    {
+      "id": "ui_audit_store",
+      "label": "createAuditStore()",
+      "layer": "ui",
+      "status": "live",
+      "file": "frontend/services/savedAuditStore.js",
+      "symbol": "export function createAuditStore",
+      "col": 3,
+      "row": 12,
+      "what": "Saves, lists and deletes audits on the device.",
+      "how": [
+        "`frontend/services/savedAudits.js` builds the store on `@react-native-async-storage/async-storage` (browser storage on the web), under the key `ecoloco.savedAudits.v1`.",
+        "`save()` needs a name of 1 to 80 characters, a 5-digit ZIP, at least one plant and a plan. It keeps the name, ZIP, each plant's name and status, the plan request, the plan, \"Seen near you\" and the letter. Photos and coordinates are not saved.",
+        "Saving again with the same id updates that audit and keeps its first save date.",
+        "Writes run one at a time, so two quick saves can't overwrite each other, and a failed write leaves the saved audits as they were.",
+        "If the stored data can't be read, it throws instead of overwriting it.",
+        "Tested in `tests/savedAudits.test.mjs` (`npm test`)."
       ]
     },
     {
@@ -2000,6 +2040,31 @@
       "to": "results",
       "label": "navigate('AuditResults', {plants[], zipCode})",
       "detail": "Only identified plants (not still-loading cards) are passed."
+    },
+    {
+      "from": "audit",
+      "to": "saved",
+      "label": "navigate(SavedAudits)"
+    },
+    {
+      "from": "results",
+      "to": "saved",
+      "label": "navigate(SavedAudits)"
+    },
+    {
+      "from": "saved",
+      "to": "results",
+      "label": "push(AuditResults, {savedAudit})"
+    },
+    {
+      "from": "saved",
+      "to": "ui_audit_store",
+      "label": "list(), remove(id)"
+    },
+    {
+      "from": "results",
+      "to": "ui_audit_store",
+      "label": "save({name, zipCode, request, plan, nearby, letter})"
     },
     {
       "from": "results",

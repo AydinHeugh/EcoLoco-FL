@@ -48,7 +48,7 @@ If you already know the plant, you can skip the photos: press "Know its name? Ch
 
 **Saving separate audits:**
 
-- On the results screen, enter a campus or place name and press **Save audit**. Then press **Start another audit** to check another place.
+- At the bottom of the results screen, after the letter, enter a campus or place name and press **Save audit**. Then press **Start another audit** to check another place.
 - Open **Saved audits** from EcoScan to reopen, rename, update or delete an audit. Each one keeps its plants, ZIP code, plan choices, results and edited letter. Changing one audit does not change another.
 - Saved audits stay on this device after the app closes, and their results and letters open without a connection. Photos from the plant library may still need a connection. Changing the plan or writing a new letter needs the backend.
 - Coordinates and original scan photos are not saved. On the web, audits stay in the current browser; clearing its site data removes them. An unfinished scan is kept only while the app is open.
