@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   ActivityIndicator,
-  Animated, Alert, Platform,
+  Animated,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useFonts } from 'expo-font';
@@ -25,16 +25,11 @@ import PlantPhoto from '../components/PlantPhoto';
 import ScreenLayout from '../components/ScreenLayout';
 import ScanningLeaf from '../components/ScanningLeaf';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { currentAudit, rememberAudit } from '../auditDraft';
+import { startAudit } from '../startAudit';
 
 const MAX_PHOTOS = 5;
 const SCANS_AT_ONCE = 3;
-
-let _savedPlants = [];
-let _savedPlace  = null;
-
-export function forgetScannedPlant(id) {
-  _savedPlants = _savedPlants.filter(p => p._id !== id);
-}
 
 function newCard() {
   return { _id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, photos: [], phase: 'draft', result: null, picked: null, pickingOne: false, error: null, naming: false };
@@ -181,15 +176,19 @@ function PlantCard({ card, number, disabled, onAddPhotos, onDropPhotos, onDropEr
 }
 
 export default function AuditScreen({ navigation }) {
-  const [place,   setPlace]   = useState(_savedPlace);
-  const [plants,  setPlants]  = useState(_savedPlants);
+  const [place,   setPlace]   = useState(() => currentAudit().place);
+  const [plants,  setPlants]  = useState(() => currentAudit().plants);
   const [message, setMessage] = useState(null);
   const [changingPlace, setChangingPlace] = useState(false);
 
-  useEffect(() => { _savedPlants = plants; }, [plants]);
-  useEffect(() => { _savedPlace = place; rememberPlace(place); }, [place]);
+  useEffect(() => { rememberAudit(plants, place); }, [plants, place]);
+  useEffect(() => { rememberPlace(place); }, [place]);
   useEffect(() => navigation.addListener('focus', () => {
-    setPlants(prev => prev.filter(p => p.phase === 'scanning' || _savedPlants.some(s => s._id === p._id)));
+    const draft = currentAudit();
+    setPlants(draft.plants);
+    setPlace(draft.place);
+    setChangingPlace(false);
+    setMessage(null);
   }), [navigation]);
 
   const zipCode = place?.zip ?? '';
@@ -278,15 +277,7 @@ export default function AuditScreen({ navigation }) {
   }
 
   function handleNewAudit() {
-    const clear = () => { setPlants([]); setMessage(null); };
-    if (Platform.OS === 'web') {
-      if (window.confirm('Start a new scan? This will clear all plants.')) clear();
-      return;
-    }
-    Alert.alert('Start a new scan?', 'This will clear all plants.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Clear', style: 'destructive', onPress: clear },
-    ]);
+    startAudit(() => { setPlants([]); setPlace(null); setMessage(null); setChangingPlace(false); });
   }
 
   if (!fontsLoaded) return <View style={styles.container} />;
@@ -298,11 +289,11 @@ export default function AuditScreen({ navigation }) {
           centered={plants.length === 0}
           title="EcoScan"
           subtitle="Only scan real plants growing outdoors."
-          right={plants.length > 0 ? (
-            <TouchableOpacity accessibilityRole="button" style={styles.headerAction} onPress={handleNewAudit} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
-              <Text style={styles.newAuditBtn}>New scan</Text>
+          right={(
+            <TouchableOpacity accessibilityRole="button" style={styles.headerAction} onPress={() => navigation.navigate('SavedAudits')} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+              <Text style={styles.newAuditBtn}>Saved audits</Text>
             </TouchableOpacity>
-          ) : null}
+          )}
         >
         <OfflineNotice />
 
@@ -387,6 +378,11 @@ export default function AuditScreen({ navigation }) {
             <PressScale style={[styles.finishBtn, !canFinish && styles.btnDisabled]} onPress={handleFinish} disabled={!canFinish}>
               <Text style={styles.finishBtnText}>See my results  →</Text>
             </PressScale>
+          )}
+          {plants.length > 0 && (
+            <TouchableOpacity accessibilityRole="button" style={styles.headerAction} disabled={scanning} onPress={handleNewAudit}>
+              <Text style={[styles.newAuditBtn, { textAlign: 'center' }, scanning && styles.btnDisabled]}>Start a new audit</Text>
+            </TouchableOpacity>
           )}
         </View>
 

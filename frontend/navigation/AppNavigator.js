@@ -9,6 +9,7 @@ import IdentificationScreen from '../screens/IdentificationScreen'
 import RecommendationScreen from '../screens/RecommendationScreen'
 import AuditScreen from '../screens/AuditScreen'
 import AuditResultsScreen from '../screens/AuditResultsScreen'
+import SavedAuditsScreen from '../screens/SavedAuditsScreen'
 import { COLORS, FONTS, TYPE, LINE } from '../theme'
 
 const Tab   = createBottomTabNavigator()
@@ -59,6 +60,7 @@ export default function AppNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Main"         component={TabNavigator} />
         <Stack.Screen name="AuditResults" component={AuditResultsScreen} />
+        <Stack.Screen name="SavedAudits" component={SavedAuditsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   )

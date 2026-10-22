@@ -46,6 +46,13 @@ If you already know the plant, you can skip the photos: press "Know its name? Ch
 - An "In my letter" checkbox on each plant to add. Untick one to leave it out of the letter and the "with the plan" numbers
 - An editable letter to your principal listing the plants to remove and add, how to buy them, safety notes, the percent native now and with the plan (and the percent by kind of plant when it is different), and sources
 
+**Saving separate audits:**
+
+- On the results screen, enter a campus or place name and press **Save audit**. Then press **Start another audit** to check another place.
+- Open **Saved audits** from EcoScan to reopen, rename, update or delete an audit. Each one keeps its plants, ZIP code, plan choices, results and edited letter. Changing one audit does not change another.
+- Saved audits stay on this device after the app closes, and their results and letters open without a connection. Photos from the plant library may still need a connection. Changing the plan or writing a new letter needs the backend.
+- Coordinates and original scan photos are not saved. On the web, audits stay in the current browser; clearing its site data removes them. An unfinished scan is kept only while the app is open.
+
 
 ## What happens in between
 
