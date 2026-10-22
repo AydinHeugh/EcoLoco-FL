@@ -2,16 +2,15 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, AppState, Platform, Text, View, StyleSheet } from 'react-native';
 import { useReduceMotion } from '../motion';
 
-// Timings measured from the reference recording.
 const HOLD_MS = 2250;
-const TYPE_MS = 130;
-const DELETE_MS = 65;
-const BETWEEN_MS = 130;
+const TYPE_MS = 55;
+const DELETE_MS = 25;
+const BETWEEN_MS = 100;
 const BLINK_MS = 350;
 
 export default function RotatingLine({ lines, prefix, style, accentStyle, accessibilityLabel, enabled = true }) {
   const reduce = useReduceMotion();
-  const [frame, setFrame] = useState({ index: 0, count: 0, phase: 'typing' });
+  const [frame, setFrame] = useState(() => ({ index: 0, count: lines[0]?.length || 0, phase: 'hold' }));
   const [measurements, setMeasurements] = useState({});
   const [appActive, setAppActive] = useState(!AppState.currentState || AppState.currentState === 'active');
   const cursor = useRef(new Animated.Value(1)).current;

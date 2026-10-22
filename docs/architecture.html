@@ -170,10 +170,10 @@
       "row": 0,
       "what": "Landing page that explains what EcoLoco does and links into the tools.",
       "how": [
-        "Opens with a large heading that rotates through six short lines about what EcoLoco does (`RotatingLine`), a plain sentence saying what it is for, and Start a campus scan / Identify one plant buttons.",
-        "Each section looks like what it is rather than repeating one layout: a campus photo for Scan your campus, the letter itself as a paper page, a short scan demo beside Identify a plant, a full-width garden photo for Plant Florida natives, and the oak fact as a big number that counts up.",
-        "Where our answers come from shows the three data sources with their numbers (179 FISC invasives, 5,322 USDA Florida plants, 30 plants checked in the USF Atlas) on dark green.",
-        "The footer says \"Congressional App Challenge: Aydin, Andrew, Kian\".",
+        "Opens with \"Find out what's\" and a line that types itself out from seven short lines (`RotatingLine`), starting with \"Harming Your Campus\" already shown, then \"Scan your campus for native and invasive plants.\", Start a campus scan / Identify one plant buttons, a garden photo and a down arrow that scrolls to the features.",
+        "Four feature rows, each with a picture and a link: Scan your campus (photo), Draft a letter (the letter as a paper page), Identify a plant (a short scan demo), Plant Florida natives (photo).",
+        "Our sources starts with the oak fact: 395 kinds of caterpillars feed on oaks in South Florida, as a big number that counts up, with its National Wildlife Federation source. Then three links, each with a number that counts up: FISC (179 invasive plants), USDA (5,322 plants recorded in Florida) and USF Atlas (30 native plants we recommend).",
+        "The footer says \"Help Florida wildlife, one plant at a time\", with \"Congressional App Challenge: Aydin, Andrew, Kian\" below it.",
         "Sections fade up as they scroll into view; with reduce motion on, nothing moves and the heading shows one line.",
         "Colors and fonts come from `frontend/theme.js`."
       ]
@@ -1986,11 +1986,12 @@
       "symbol": "export default function RotatingLine",
       "col": 3,
       "row": 11,
-      "what": "A heading that changes between a few short lines every few seconds.",
+      "what": "A heading that types out one short line after another after a fixed start, like \"Find out what's\".",
       "how": [
-        "Fades each line out and the next one in; holding a finger on it pauses the change.",
-        "Keeps the height of the longest line so the page never jumps.",
-        "With reduce motion turned on it shows only the first line."
+        "Starts with the first line fully shown, holds each line for 2.25 seconds, deletes it, then types the next at 55 ms a letter.",
+        "Measures every line and keeps the tallest height, so the page never jumps.",
+        "Stops while the Home tab is hidden, scrolled past the hero, or the app is in the background.",
+        "With reduce motion turned on it shows only the first line, with no cursor."
       ]
     }
   ],

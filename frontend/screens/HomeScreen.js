@@ -11,12 +11,18 @@ import Reveal, { RevealProvider, useRevealScroll } from '../components/Reveal'
 import RotatingLine from '../components/RotatingLine'
 import PressScale from '../components/PressScale'
 import { LetterDemo, IdentifyDemo } from '../components/HomeDemos'
-import { FOCUS_MS, useReduceMotion } from '../motion'
+import SourceLine from '../components/SourceLine'
+import CountUp, { useCountUp } from '../components/CountUp'
+import { useInView } from '../components/Reveal'
+import { COUNT_STAGGER, FOCUS_MS, useReduceMotion } from '../motion'
 import { PHOTOS } from '../photos'
 
 const LOGO = require('../../assets/EcoLoco_logo.png')
 const IMG_SCANNING = require('../../assets/EcoLoco_Scanning_Plant.png')
-export const SLOGAN = 'Congressional App Challenge: Aydin, Andrew, Kian'
+export const SLOGAN = 'Help Florida wildlife, one plant at a time'
+const CREDIT = 'Congressional App Challenge: Aydin, Andrew, Kian'
+const OAK_KINDS = 395
+const NWF_SOURCE = 'https://www.nwf.org/-/media/Documents/PDFs/Garden-for-Wildlife/Keystone-Plants/NWF-GFW-keystone-plant-list-ecoregion-15-tropical-wet-forests.pdf'
 
 const CATCHPHRASES = [
   'Harming Your Campus',
@@ -64,9 +70,9 @@ const FEATURES = [
 ]
 
 const SOURCES = [
-  { name: 'FISC', label: 'Florida’s invasive plant list', url: 'https://www.floridainvasives.org/wp-content/uploads/2026/07/FISC-2026-Plant-List-Cat-I-II_April2026.pdf' },
-  { name: 'USDA', label: 'Florida plant records', url: 'https://plants.usda.gov/' },
-  { name: 'USF Atlas', label: 'Native range by county', url: 'https://florida.plantatlas.usf.edu/' },
+  { name: 'FISC', count: '179', label: 'invasive plants on Florida’s official 2026 list', url: 'https://www.floridainvasives.org/wp-content/uploads/2026/07/FISC-2026-Plant-List-Cat-I-II_April2026.pdf' },
+  { name: 'USDA', count: '5,322', label: 'plants recorded in Florida', url: 'https://plants.usda.gov/' },
+  { name: 'USF Atlas', count: '30', label: 'native plants we recommend, each checked in the Atlas', url: 'https://florida.plantatlas.usf.edu/' },
 ]
 
 function ExternalLink({ url, label, style, children }) {
@@ -103,17 +109,32 @@ function FeatureRow({ feature, wide, previewWidth, onPress, reduceMotion }) {
   )
 }
 
+function OakFact() {
+  const ref = useRef(null)
+  const kinds = useCountUp(OAK_KINDS, useInView(ref, 120))
+  return (
+    <View ref={ref} collapsable={false} style={styles.oak}
+      accessible accessibilityLabel={`Oaks feed ${OAK_KINDS} kinds of caterpillars in South Florida. Those caterpillars feed the birds that live here.`}>
+      <Text style={styles.oakNumber}>{kinds}</Text>
+      <Text style={styles.oakText}>kinds of caterpillars feed on oaks in South Florida. Those caterpillars feed the birds that live here.</Text>
+      <SourceLine source={{ name: 'National Wildlife Federation', url: NWF_SOURCE }} />
+    </View>
+  )
+}
+
 function Sources({ wide }) {
   return (
     <View style={styles.sourcesSection}>
       <Text style={styles.sourcesHeading} accessibilityRole="header">Our sources</Text>
+      <OakFact />
       <View style={[styles.sources, wide && styles.sourcesWide]}>
         {SOURCES.map((source, index) => (
-          <ExternalLink key={source.name} url={source.url} label={`${source.name}: ${source.label}`}
+          <ExternalLink key={source.name} url={source.url} label={`${source.name}: ${source.count} ${source.label}`}
             style={[styles.sourceItem, wide && styles.sourceItemWide,
               index > 0 && (wide ? styles.sourceDividerWide : styles.sourceDivider)]}>
             <View style={styles.sourceCopy}>
               <Text style={styles.sourceName}>{source.name}</Text>
+              <CountUp value={source.count} style={styles.sourceCount} delay={index * COUNT_STAGGER} />
               <Text style={styles.sourceLabel}>{source.label}</Text>
             </View>
             <MaterialCommunityIcons name="arrow-top-right" size={18} color={COLORS.softGreen} accessible={false} />
@@ -209,7 +230,8 @@ function Home({ navigation }) {
           <Sources wide={wide} />
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>{SLOGAN}</Text>
+            <Text style={styles.slogan}>{SLOGAN}</Text>
+            <Text style={styles.footerText}>{CREDIT}</Text>
           </View>
         </View>
       </View>
@@ -278,9 +300,14 @@ const styles = StyleSheet.create({
   sourceDividerWide: { borderLeftWidth: 1, borderLeftColor: COLORS.border },
   sourceCopy: { flexShrink: 1, gap: 4 },
   sourceName: { fontFamily: FONTS.bodyBold, fontSize: TYPE.body, lineHeight: 22, color: COLORS.darkGreen },
+  sourceCount: { fontFamily: FONTS.heading, fontSize: TYPE.h2, lineHeight: 34, color: COLORS.softGreen, fontVariant: ['tabular-nums'] },
   sourceLabel: { fontFamily: FONTS.body, fontSize: TYPE.caption, lineHeight: 19, color: COLORS.textMuted },
   sourceActive: { backgroundColor: COLORS.lightBg },
+  oak: { gap: 6, paddingTop: 8, paddingBottom: 16 },
+  oakNumber: { fontFamily: FONTS.heading, fontSize: TYPE.stat, lineHeight: 80, color: COLORS.softGreen, fontVariant: ['tabular-nums'] },
+  oakText: { fontFamily: FONTS.heading, fontSize: TYPE.h3, lineHeight: 30, color: COLORS.darkGreen, maxWidth: 560 },
 
-  footer: { alignItems: 'center', paddingHorizontal: GUTTER, paddingTop: 28, paddingBottom: 32 },
+  footer: { alignItems: 'center', paddingHorizontal: GUTTER, paddingTop: 28, paddingBottom: 32, gap: 6 },
+  slogan: { fontFamily: FONTS.bodyBold, fontSize: TYPE.body, lineHeight: 24, color: COLORS.darkGreen, textAlign: 'center' },
   footerText: { fontFamily: FONTS.body, fontSize: TYPE.caption, lineHeight: 19, color: COLORS.textMuted, textAlign: 'center' },
 })
