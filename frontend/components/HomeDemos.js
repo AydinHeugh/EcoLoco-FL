@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, Animated, Easing, StyleSheet } from 'react-native';
-import { COLORS, STATUS_COLORS, FONTS } from '../theme';
+import { COLORS, STATUS_COLORS, FONTS, TYPE } from '../theme';
 import { DURATION, useReduceMotion } from '../motion';
 
 const TYPE_MS = 80;
@@ -72,11 +72,11 @@ export function LetterDemo() {
 
   const filled = BLANKS.map(b => b.fill.length);
   return (
-    <View style={styles.paper} accessible accessibilityLabel="A letter to your principal. The blanks in brackets get filled in with your principal's and school's names, and you can edit any part.">
-      <View style={styles.ghost} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+    <View style={styles.paper} accessible accessibilityLabel="Example letter to your principal: your school’s plan to remove Brazilian pepper and plant Dahoon holly.">
+      <View style={styles.ghost} aria-hidden importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
         <LetterBody typed={filled} active={-1} cursorOn={false} />
       </View>
-      <View style={styles.live}>
+      <View style={styles.live} aria-hidden importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
         <LetterBody typed={typed} active={active} cursorOn={cursorOn} />
       </View>
     </View>
@@ -86,16 +86,13 @@ export function LetterDemo() {
 function LetterBody({ typed, active, cursorOn }) {
   return (
     <>
-      <Text style={styles.editTag}>Tap to edit</Text>
+      <Text style={styles.editTag}>Letter preview</Text>
       <Text style={styles.line}>Dear <Blank index={0} typed={typed[0]} active={active === 0} cursorOn={cursorOn} />,</Text>
       <Text style={styles.line}>
-        The <Blank index={1} typed={typed[1]} active={active === 1} cursorOn={cursorOn} /> eco-club checked the plants on our campus. 50% are native to Florida. With these changes, it would be 100%.
+        Our <Blank index={1} typed={typed[1]} active={active === 1} cursorOn={cursorOn} /> eco-club has a plan for a healthier campus.
       </Text>
-      <Text style={styles.heading}>What we'd like to remove:</Text>
-      <Text style={styles.line}>Brazilian pepper. Safety: wear gloves, and let an adult do the cutting.</Text>
-      <Text style={styles.heading}>What we'd like to plant:</Text>
-      <Text style={styles.line}>Dahoon holly. Songbirds eat its red berries. Ask for Ilex cassine.</Text>
-      <Text style={styles.sources}>Sources: FISC 2026 Plant List, Natives for Your Neighborhood</Text>
+      <Text style={styles.line}><Text style={styles.heading}>Remove:</Text> Brazilian pepper</Text>
+      <Text style={styles.line}><Text style={styles.heading}>Plant:</Text> Dahoon holly</Text>
     </>
   );
 }
@@ -143,12 +140,11 @@ export function IdentifyDemo({ image }) {
 
 const styles = StyleSheet.create({
   paper: { backgroundColor: COLORS.cardBg },
-  ghost: { padding: 12, gap: 5, opacity: 0 },
-  live: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, padding: 12, gap: 5 },
-  editTag: { alignSelf: 'flex-start', fontSize: 9, fontFamily: FONTS.bodyBold, color: COLORS.softGreen, marginBottom: 2 },
-  line: { fontSize: 10, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: 14 },
-  heading: { fontSize: 10, fontFamily: FONTS.bodyBold, color: COLORS.darkGreen, lineHeight: 14, marginTop: 3 },
-  sources: { fontSize: 9, fontFamily: FONTS.body, color: COLORS.textMuted, lineHeight: 13, marginTop: 4 },
+  ghost: { padding: 14, gap: 6, opacity: 0 },
+  live: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, padding: 14, gap: 6 },
+  editTag: { alignSelf: 'flex-start', fontSize: TYPE.caption, lineHeight: 18, fontFamily: FONTS.bodyBold, color: COLORS.softGreen, marginBottom: 2 },
+  line: { fontSize: TYPE.caption, fontFamily: FONTS.body, color: COLORS.textBody, lineHeight: 18 },
+  heading: { fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
   blank: { fontFamily: FONTS.bodyBold, color: COLORS.amber },
   filled: { fontFamily: FONTS.bodyBold, color: COLORS.darkGreen },
   cursor: { color: COLORS.softGreen },

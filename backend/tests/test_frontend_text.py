@@ -145,15 +145,14 @@ def test_openai_pick_shows_no_number():
 
 def test_home_page_says_what_the_app_does():
     text = (FRONTEND / "screens" / "HomeScreen.js").read_text(encoding="utf-8")
-    for phrase in ("Find out which plants on your campus help Florida wildlife, and which ones hurt it.",
-                   "Start a campus scan", "A letter draft for your principal", "Where our answers come from",
-                   "Every answer comes from Florida's official invasive list, USDA, and the USF Atlas. Our team checked every plant we recommend.",
-                   "checked for Palm Beach County", "Help Florida wildlife, one plant at a time", "<RotatingLine"):
+    for phrase in ("Scan your campus for native and invasive plants.",
+                   "Start a campus scan", "Draft a letter", "editable letter for your principal", "Our sources",
+                   "checked for Palm Beach County", "Congressional App Challenge: Aydin, Andrew, Kian", "<RotatingLine"):
         assert phrase in text
     for gone in ("Welcome to", "picked for South Florida", "ROOTED IN", "Good decisions start", "Growing communities"):
         assert gone not in text
     for piece in ("EcoLoco_Scanning_Plant.png", "<LetterDemo />", "<IdentifyDemo image={IMG_SCANNING} />",
-                  "PHOTOS.home", "count: '179'", "count: '5,322'", "count: '30'"):
+                  "PHOTOS.home", "name: 'FISC'", "name: 'USDA'", "name: 'USF Atlas'"):
         assert piece in text
 
 

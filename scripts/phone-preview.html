@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EcoLoco · Phone preview</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body { margin: 0; width: 100%; height: 100%; }
+      body { background: #e9ebe6; color: #1f2a22; font: 13px/1.5 system-ui, sans-serif; }
+      main { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; }
+      header { display: flex; align-items: center; justify-content: space-between; gap: 24px; width: min(100%, 406px); }
+      header p { margin: 0; }
+      header span { color: #4d574c; }
+      a { color: #1e3a1e; text-underline-offset: 3px; }
+      .device { position: relative; flex: none; }
+      .phone { position: absolute; top: 0; left: 0; width: 406px; height: 860px; padding: 8px; border-radius: 36px; background: #1f2a22; box-shadow: 0 14px 44px #14261c24; transform-origin: top left; }
+      iframe { display: block; width: 390px; height: 844px; border: 0; border-radius: 28px; background: #f5f0e8; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p>Phone preview <span>· 390 × 844</span></p>
+        <a href="http://localhost:8081/" target="_blank" rel="noopener noreferrer">Desktop ↗</a>
+      </header>
+      <div class="device">
+        <div class="phone">
+          <iframe src="http://localhost:8081/" title="EcoLoco phone preview" width="390" height="844" allow="camera; geolocation; clipboard-write"></iframe>
+        </div>
+      </div>
+    </main>
+    <script>
+      const device = document.querySelector('.device');
+      const phone = document.querySelector('.phone');
+      function fitPreview() {
+        const scale = Math.max(0.1, Math.min(1, (window.innerWidth - 32) / 406, (window.innerHeight - 80) / 860));
+        device.style.width = `${406 * scale}px`;
+        device.style.height = `${860 * scale}px`;
+        phone.style.transform = `scale(${scale})`;
+      }
+      window.addEventListener('resize', fitPreview);
+      fitPreview();
+    </script>
+  </body>
+</html>
