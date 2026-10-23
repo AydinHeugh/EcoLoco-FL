@@ -137,18 +137,20 @@ You'll need Node.js, Python 3, an OpenAI API key, and a free PlantNet API key fr
 
 ## Publishing the website
 
-The `Deploy website` GitHub Actions workflow builds every push to `master` and deploys the frontend to GitHub Pages. Pull requests build a preview artifact without publishing it. The production domain is `https://ecoloco.app`, with `www.ecoloco.app` as an alternate address.
+The `Deploy website to Cloudflare Pages` GitHub Actions workflow tests and builds every push to `master`, then publishes the frontend to the existing Cloudflare Pages project **ecoloco**. Pull requests run the tests and build without publishing. The production domain is `https://ecoloco.app`, with `www.ecoloco.app` as an alternate address. Cloudflare manages the website, DNS, and HTTPS; GitHub stores the source and runs the publishing workflow.
 
-In **Settings → Pages**, the source is **GitHub Actions** and the custom domain is `ecoloco.app`. Cloudflare manages DNS: the apex has GitHub Pages' four A records (`185.199.108.153`, `185.199.109.153`, `185.199.110.153`, and `185.199.111.153`), and `www` is a CNAME for `aydinheugh.github.io`. All five records use **DNS only**. GitHub Pages serves the website; manual Cloudflare Pages uploads are no longer part of publishing. A repository administrator can enable **Enforce HTTPS** in the Pages settings once GitHub finishes issuing the certificate. The workflow reads the Pages settings to build the right asset paths for either the default GitHub project address or the custom domain.
+The Pages project's original production branch is named `main`. The workflow deliberately deploys to that Cloudflare branch when GitHub's `master` changes. Its fallback address is `https://ecoloco-8ry.pages.dev`. Add or verify custom domains through **Cloudflare → Workers & Pages → ecoloco → Custom domains** so Cloudflare provisions the matching DNS records and certificates. Keep the separate API DNS record intact.
+
+The repository needs the encrypted Actions secret `CLOUDFLARE_API_TOKEN`, with **Account → Cloudflare Pages → Edit** permission limited to the hosting account, and the public Actions variable `CLOUDFLARE_ACCOUNT_ID`. The public variable `EXPO_PUBLIC_API_URL` selects the backend; its default is `https://ecoloco-api.onrender.com`. No GitHub Pages configuration or manual asset upload is needed for subsequent releases.
 
 To prepare a frontend update, run from the repository root:
 
 ```sh
 npm ci
-EXPO_PUBLIC_API_URL=https://api.ecoloco.app npm run build:web
+CF_PAGES=1 EXPO_NO_DOTENV=1 EXPO_PUBLIC_API_URL=https://ecoloco-api.onrender.com npm run build:web
 ```
 
-The workflow uploads `dist` automatically. The build includes the architecture map at `/docs/architecture.html` and `/architecture.html`, an SPA fallback page, and `/deployment.json` showing the deployed commit. Set the public repository variable `EXPO_PUBLIC_API_URL` to override the default `https://api.ecoloco.app`; the address is embedded during the build, so changing it requires another workflow run. Backend keys belong only on the backend host and must never be put in an `EXPO_PUBLIC_` variable or the published artifact.
+The workflow uploads `dist` automatically and checks the deployed commit, application bundle, favicon, architecture documents, and client-side route fallback. The build clears Metro's cache so each release uses its configured API address, includes the architecture map at `/docs/architecture.html` and `/architecture.html`, and writes `/deployment.json` with the deployed commit. On Cloudflare, a missing application route serves `index.html`; no root `404.html` is generated. The API address is embedded during the build, so changing it requires another workflow run. Backend keys belong only on the backend host and must never be put in an `EXPO_PUBLIC_` variable or the published artifact.
 
 The root `render.yaml` prepares a separate free Python service for the backend at `api.ecoloco.app`, built from the `master` branch. Creating that service and supplying its server-only OpenAI and PlantNet keys are separate deployment steps; the configuration file alone does not create a running backend. After deployment, use the DNS target supplied by Render for the `api` CNAME and complete Render's custom-domain verification. Keep the default TCP health check: the existing backend has no GET health endpoint. Render's free server sleeps after 15 minutes without traffic, and its next request can take about a minute to start.
 

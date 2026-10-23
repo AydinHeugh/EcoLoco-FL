@@ -1,4 +1,4 @@
-name: Deploy website
+name: Deploy website to Cloudflare Pages
 
 on:
   push:
@@ -11,20 +11,18 @@ permissions:
   contents: read
 
 concurrency:
-  group: github-pages-${{ github.event_name == 'pull_request' && github.ref || 'production' }}
+  group: cloudflare-pages-${{ github.event_name == 'pull_request' && github.ref || 'production' }}
   cancel-in-progress: false
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    permissions:
-      contents: read
-      pages: read
     env:
       CI: 'true'
+      CF_PAGES: '1'
       EXPO_NO_DOTENV: '1'
-      EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL || 'https://api.ecoloco.app' }}
+      EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL || 'https://ecoloco-api.onrender.com' }}
     steps:
       - name: Check out source
         uses: actions/checkout@v6
@@ -37,33 +35,20 @@ jobs:
         run: npm ci
       - name: Test saved audits
         run: npm test
-      - name: Read GitHub Pages address
-        id: pages
-        uses: actions/configure-pages@v5
       - name: Build website
         run: npm run build:web
-        env:
-          EXPO_BASE_PATH: ${{ steps.pages.outputs.base_path }}
-      - name: Upload website
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: dist
-
-  deploy:
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-      - name: Deploy website
+      - name: Deploy website to Cloudflare Pages
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4'
+          # The existing direct-upload project's production branch is named main.
+          command: pages deploy dist --project-name=ecoloco --branch=main
+      - name: Check published website
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+        env:
+          DEPLOYMENT_URL: ${{ steps.deployment.outputs.deployment-url }}
+        run: node scripts/check-deployment.mjs "$DEPLOYMENT_URL" "$GITHUB_SHA"

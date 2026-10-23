@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Text, StyleSheet } from 'react-native';
 import { STATUS_COLORS, FONTS, TYPE } from '../theme';
-import { DURATION, feelResult, useReduceMotion } from '../motion';
+import { DURATION, USE_NATIVE_DRIVER, feelResult, useReduceMotion } from '../motion';
 
 export default function StatusBadge({ status, label, pop = false }) {
   const c = STATUS_COLORS[status] ?? STATUS_COLORS.unknown;
@@ -14,8 +14,8 @@ export default function StatusBadge({ status, label, pop = false }) {
     feelResult(status);
     if (reduce) { scale.setValue(1); opacity.setValue(1); return; }
     Animated.parallel([
-      Animated.spring(scale, { toValue: 1, speed: 22, bounciness: 9, useNativeDriver: true }),
-      Animated.timing(opacity, { toValue: 1, duration: DURATION / 2, useNativeDriver: true }),
+      Animated.spring(scale, { toValue: 1, speed: 22, bounciness: 9, useNativeDriver: USE_NATIVE_DRIVER }),
+      Animated.timing(opacity, { toValue: 1, duration: DURATION / 2, useNativeDriver: USE_NATIVE_DRIVER }),
     ]).start();
   }, [pop, reduce]);
 

@@ -7,7 +7,7 @@ import SourceLine from './SourceLine';
 import AtlasButton from './AtlasButton';
 import PlantPhoto, { PhotoCredit } from './PlantPhoto';
 import { COLORS, FONTS, TYPE, LINE } from '../theme';
-import { DURATION, EASE_OUT, useReduceMotion } from '../motion';
+import { DURATION, EASE_OUT, USE_NATIVE_DRIVER, useReduceMotion } from '../motion';
 
 const SHOWN = 2;
 const ROW_ICONS = {
@@ -47,7 +47,7 @@ function LetterCheck({ checked, onToggle }) {
     Haptics.selectionAsync().catch(() => {});
     if (!reduce) {
       scale.setValue(0.7);
-      Animated.spring(scale, { toValue: 1, friction: 4, tension: 220, useNativeDriver: true }).start();
+      Animated.spring(scale, { toValue: 1, friction: 4, tension: 220, useNativeDriver: USE_NATIVE_DRIVER }).start();
     }
     onToggle();
   };
@@ -75,7 +75,7 @@ function OpenedRow({ order, children }) {
   const enter = useRef(new Animated.Value(reduce ? 1 : 0)).current;
   useEffect(() => {
     if (reduce) { enter.setValue(1); return; }
-    Animated.timing(enter, { toValue: 1, duration: DURATION, delay: order * 50, easing: EASE_OUT, useNativeDriver: true }).start();
+    Animated.timing(enter, { toValue: 1, duration: DURATION, delay: order * 50, easing: EASE_OUT, useNativeDriver: USE_NATIVE_DRIVER }).start();
   }, []);
   const translateY = enter.interpolate({ inputRange: [0, 1], outputRange: [8, 0] });
   return <Animated.View style={{ opacity: enter, transform: [{ translateY }] }}>{children}</Animated.View>;
@@ -101,7 +101,7 @@ function MoreToggle({ open, onPress }) {
   const turn = useRef(new Animated.Value(open ? 1 : 0)).current;
   useEffect(() => {
     if (reduce) { turn.setValue(open ? 1 : 0); return; }
-    Animated.timing(turn, { toValue: open ? 1 : 0, duration: DURATION, easing: EASE_OUT, useNativeDriver: true }).start();
+    Animated.timing(turn, { toValue: open ? 1 : 0, duration: DURATION, easing: EASE_OUT, useNativeDriver: USE_NATIVE_DRIVER }).start();
   }, [open, reduce]);
   const rotate = turn.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
   return (

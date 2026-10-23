@@ -3009,10 +3009,10 @@ async function runLayout(ids, sizes) {
   };
 }
 
-// GitHub Pages serves only docs/, so source files must link to github.com instead.
-const SOURCE_BASE = location.hostname.endsWith('.github.io')
-  ? `https://github.com/${location.hostname.split('.')[0]}/${location.pathname.split('/')[1]}/blob/master/`
-  : '../';
+// Hosted copies link to repository source; local copies keep relative links.
+const SOURCE_BASE = location.protocol === 'file:' || ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)
+  ? '../'
+  : 'https://github.com/AydinHeugh/EcoLoco-FL/blob/master/';
 
 // Centre a node in the part of the canvas the side panel doesn't cover.
 const PANEL_W = 420;

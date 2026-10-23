@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Animated, useWindowDimensions } from 'react-native';
-import { DURATION, EASE_OUT, useReduceMotion } from '../motion';
+import { DURATION, EASE_OUT, USE_NATIVE_DRIVER, useReduceMotion } from '../motion';
 
 const ScrollTick = createContext(null);
 const STAGGER = 70;
@@ -52,7 +52,7 @@ export default function Reveal({ index = 0, children, style, scaleFrom = 1, dist
     if (reduce) { opacity.setValue(1); translateY.setValue(0); scale.setValue(1); return; }
     const delay = Math.min(index, 4) * STAGGER;
     Animated.parallel([opacity, translateY, scale].map((value, i) =>
-      Animated.timing(value, { toValue: i === 1 ? 0 : 1, duration, delay, easing: EASE_OUT, useNativeDriver: true }),
+      Animated.timing(value, { toValue: i === 1 ? 0 : 1, duration, delay, easing: EASE_OUT, useNativeDriver: USE_NATIVE_DRIVER }),
     )).start();
   }, [shown, reduce]);
 

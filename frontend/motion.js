@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AccessibilityInfo, Easing } from 'react-native';
+import { AccessibilityInfo, Easing, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
 export const DURATION = 300;
@@ -8,6 +8,7 @@ export const BAR_MS = 1400;
 export const COUNT_STAGGER = 220;
 export const FOCUS_MS = 550;
 export const EASE_OUT = Easing.bezier(0.22, 1, 0.36, 1);
+export const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
 export function useReduceMotion() {
   const [reduce, setReduce] = useState(false);

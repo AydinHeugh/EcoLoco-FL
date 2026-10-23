@@ -12,7 +12,7 @@ import StatusBadge from '../components/StatusBadge';
 import CandidatePicker, { AgreedStatus, NO_MATCH_TEXT, agreedName, matchText } from '../components/CandidatePicker';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
 import { useProgressText } from '../components/ProgressText';
-import { DURATION, EASE_OUT, useReduceMotion } from '../motion';
+import { DURATION, EASE_OUT, USE_NATIVE_DRIVER, useReduceMotion } from '../motion';
 import LocationPicker from '../components/LocationPicker';
 import PressScale from '../components/PressScale';
 import { rememberPlace } from '../lastPlace';
@@ -58,8 +58,8 @@ function PlantCard({ card, number, disabled, onAddPhotos, onDropPhotos, onDropEr
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(opacity,    { toValue: 1, duration: reduce ? 0 : DURATION, easing: EASE_OUT, useNativeDriver: true }),
-      Animated.timing(translateY, { toValue: 0, duration: reduce ? 0 : DURATION, easing: EASE_OUT, useNativeDriver: true }),
+      Animated.timing(opacity,    { toValue: 1, duration: reduce ? 0 : DURATION, easing: EASE_OUT, useNativeDriver: USE_NATIVE_DRIVER }),
+      Animated.timing(translateY, { toValue: 0, duration: reduce ? 0 : DURATION, easing: EASE_OUT, useNativeDriver: USE_NATIVE_DRIVER }),
     ]).start();
   }, []);
 
