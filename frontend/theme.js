@@ -1,12 +1,6 @@
 import {
-  Fraunces_400Regular,
-  Fraunces_400Regular_Italic,
-  Fraunces_700Bold,
-  Fraunces_700Bold_Italic,
-  Fraunces_900Black,
-} from '@expo-google-fonts/fraunces';
-import {
   DMSans_400Regular,
+  DMSans_400Regular_Italic,
   DMSans_500Medium,
   DMSans_600SemiBold,
   DMSans_700Bold,
@@ -63,11 +57,10 @@ export const FONTS = {
   bodyMedium:    'DMSans_500Medium',
   bodyBold:      'DMSans_600SemiBold',
   bodyHeavy:     'DMSans_700Bold',
-  heading:       'Fraunces_700Bold',
-  headingBlack:  'Fraunces_700Bold',
-  headingLight:  'Fraunces_400Regular',
-  headingItalic: 'Fraunces_700Bold_Italic',
-  accentItalic:  'Fraunces_400Regular_Italic',
+  heading:       'DMSans_700Bold',
+  headingBlack:  'DMSans_700Bold',
+  headingLight:  'DMSans_400Regular',
+  accentItalic:  'DMSans_400Regular_Italic',
 };
 
 export const TYPE = {
@@ -101,12 +94,8 @@ export const LINE = {
 
 export const FONT_ASSETS = {
   DMSans_400Regular,
+  DMSans_400Regular_Italic,
   DMSans_500Medium,
   DMSans_600SemiBold,
   DMSans_700Bold,
-  Fraunces_400Regular,
-  Fraunces_400Regular_Italic,
-  Fraunces_700Bold,
-  Fraunces_700Bold_Italic,
-  Fraunces_900Black,
 };

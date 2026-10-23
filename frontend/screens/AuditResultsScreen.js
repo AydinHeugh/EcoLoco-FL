@@ -23,7 +23,10 @@ import Reveal, { RevealProvider, useRevealScroll, useInView } from '../component
 import { PHOTOS } from '../photos';
 import CaterpillarBars from '../components/CaterpillarBars';
 import OfflineNotice, { reportAi } from '../components/OfflineNotice';
-import { forgetScannedPlant } from './AuditScreen';
+import { forgetScannedPlant } from '../auditDraft';
+import { startAudit } from '../startAudit';
+import { savedAudits } from '../services/savedAudits';
+import AuditSaveCard from '../components/AuditSaveCard';
 
 const NURSERY_URL = 'https://plantrealflorida.org';
 const NO_DATA = "We don't have wildlife info for this plant yet";
@@ -64,24 +67,22 @@ function NearbyRow({ plant, max, order }) {
   );
 }
 
-function LetterGenerator({ plan, zipCode }) {
+function LetterGenerator({ plan, zipCode, letter, onLetterChange, disabled, loading, onLoadingChange }) {
   const compact = useWindowDimensions().width < 360;
-  const [loading, setLoading] = useState(false);
-  const [letter,  setLetter]  = useState('');
   const [copied,  setCopied]  = useState(false);
   const [error,   setError]   = useState(null);
 
   async function handleGenerate() {
-    setLoading(true);
+    onLoadingChange(true);
     setError(null);
     try {
       const data = await generateLetter(plan, zipCode);
-      setLetter(data.result);
+      onLetterChange(data.result);
       reportAi(data.ai_unavailable);
     } catch (err) {
       setError(userMessage(err, 'Could not write the letter. Check your connection and try again.'));
     } finally {
-      setLoading(false);
+      onLoadingChange(false);
     }
   }
 
@@ -89,14 +90,14 @@ function LetterGenerator({ plan, zipCode }) {
     <View style={[styles.section, compact && styles.sectionCompact]}>
       <Text accessibilityRole="header" style={styles.sectionTitle}>Letter to your principal</Text>
       <Text style={styles.sectionNote}>A draft from your plan. Change anything, or don't use it at all.</Text>
-      <TouchableOpacity accessibilityRole="button" style={[styles.btn, loading && styles.btnDisabled]} onPress={handleGenerate} disabled={loading}>
+      <TouchableOpacity accessibilityRole="button" style={[styles.btn, (loading || disabled) && styles.btnDisabled]} onPress={handleGenerate} disabled={loading || disabled}>
         {loading ? <ActivityIndicator color={COLORS.cream} size="small" /> : <Text style={styles.btnText}>Write the letter</Text>}
       </TouchableOpacity>
       {error && <Text style={styles.errorText}>{error}</Text>}
       {letter ? (
         <View style={[styles.letterCard, compact && styles.letterCardCompact]}>
           <Text style={styles.sectionNote}>Tap to edit. Fill in the parts in [brackets].</Text>
-          <TextInput accessibilityLabel="Edit your letter to the principal" multiline scrollEnabled={false} value={letter} onChangeText={setLetter}
+          <TextInput accessibilityLabel="Edit your letter to the principal" multiline scrollEnabled={false} value={letter} onChangeText={onLetterChange} editable={!disabled}
             style={[styles.letterInput, compact && styles.letterInputCompact]} textAlignVertical="top" />
           <TouchableOpacity
             accessibilityRole="button"
@@ -122,14 +123,25 @@ export default function AuditResultsScreen(props) {
 
 function AuditResults({ route, navigation }) {
   const onScroll = useRevealScroll();
-  const { plants = [], zipCode, lat, lon } = route.params ?? {};
-  const [request,  setRequest]  = useState({ plants, skip: [], site: ANY_SITE, showAll: false, extras: [] });
-  const [plan,     setPlan]     = useState(null);
-  const [planFor,  setPlanFor]  = useState(null);
-  const [loading,  setLoading]  = useState(true);
+  const { plants = [], lat, lon, savedAudit } = route.params ?? {};
+  const zipCode = savedAudit?.zipCode ?? route.params?.zipCode;
+  const [request,  setRequest]  = useState(() => savedAudit?.request ?? { plants, skip: [], site: ANY_SITE, showAll: false, extras: [] });
+  const [plan,     setPlan]     = useState(savedAudit?.plan ?? null);
+  const [planFor,  setPlanFor]  = useState(savedAudit?.request ?? null);
+  const [loading,  setLoading]  = useState(!savedAudit);
   const [error,    setError]    = useState(null);
-  const [nearby,   setNearby]   = useState([]);
+  const [nearby,   setNearby]   = useState(savedAudit?.nearby ?? []);
   const [attempt,  setAttempt]  = useState(0);
+  const [name, setName] = useState(savedAudit?.name ?? '');
+  const [letter, setLetter] = useState(savedAudit?.letter ?? '');
+  const [letterLoading, setLetterLoading] = useState(false);
+  const [savedRecord, setSavedRecord] = useState(savedAudit ?? null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+  const signature = JSON.stringify({ name: name.trim(), request, letter });
+  const [savedSignature, setSavedSignature] = useState(savedAudit ? signature : null);
+  const saved = savedSignature === signature && !letterLoading;
+  const savingRef = useRef(false);
 
   const { width } = useWindowDimensions();
   const maxWidth = Math.min(width, 760);
@@ -143,6 +155,7 @@ function AuditResults({ route, navigation }) {
   const slow = useDelayedFlag(stale);
 
   useEffect(() => {
+    if (savedAudit && request === savedAudit.request) return;
     let current = true;
     setError(null);
     getPlan(request.plants.map(p => ({ scientific_name: p.scientific_name, plant_name: p.plant_name })), zipCode, request.skip, request.site, request.showAll, request.extras)
@@ -153,24 +166,52 @@ function AuditResults({ route, navigation }) {
   }, [request, attempt]);
 
   useEffect(() => {
-    if (lat != null && lon != null) {
-      getNearby(lat, lon).then(data => setNearby(data.result)).catch(() => setNearby([]));
+    let current = true;
+    if (!savedAudit && lat != null && lon != null) {
+      getNearby(lat, lon).then(data => { if (current) setNearby(data.result); }).catch(() => {});
     }
+    return () => { current = false; };
   }, []);
 
+  function updateRequest(next) {
+    setRequest(next);
+    setLetter('');
+  }
+
   function removePlant(index) {
-    forgetScannedPlant(planFor.plants[index]._id);
-    setRequest({ ...planFor, plants: planFor.plants.filter((_, i) => i !== index) });
+    if (!savedAudit) forgetScannedPlant(planFor.plants[index]._id);
+    updateRequest({ ...planFor, plants: planFor.plants.filter((_, i) => i !== index) });
   }
 
   function toggleLetter(name, extra) {
     if (extra) {
       const extras = planFor.extras.includes(name) ? planFor.extras.filter(n => n !== name) : [...planFor.extras, name];
-      setRequest({ ...planFor, extras });
+      updateRequest({ ...planFor, extras });
       return;
     }
     const skip = planFor.skip.includes(name) ? planFor.skip.filter(n => n !== name) : [...planFor.skip, name];
-    setRequest({ ...planFor, skip });
+    updateRequest({ ...planFor, skip });
+  }
+
+  async function saveAudit() {
+    if (savingRef.current || letterLoading || stale || !plan || !name.trim() || !request.plants.length) return;
+    savingRef.current = true;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const audit = await savedAudits.save({ id: savedRecord?.id, name, zipCode, request, plan, nearby, letter });
+      setSavedRecord(audit);
+      setSavedSignature(signature);
+    } catch {
+      setSaveError('Could not save this audit on your device. Check available storage and try again. Your current results are still open.');
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
+  }
+
+  function newAudit() {
+    startAudit(() => navigation.popTo('Main', { screen: 'EcoScan' }), !savedAudit && saved);
   }
 
   if (!fontsLoaded) return <View style={styles.container} />;
@@ -186,10 +227,10 @@ function AuditResults({ route, navigation }) {
         <ScreenHeader
           photo={PHOTOS.results}
           photoLabel="A school garden full of native plants"
-          title="Your plan"
+          title={savedAudit ? savedRecord?.name ?? savedAudit.name : 'Your plan'}
           right={(
             <TouchableOpacity accessibilityRole="button" onPress={() => navigation.goBack()} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
-              <Text style={styles.backBtn}>← Back to EcoScan</Text>
+              <Text style={styles.backBtn}>{savedAudit ? '← Saved audits' : '← Back to EcoScan'}</Text>
             </TouchableOpacity>
           )}
         />
@@ -205,6 +246,9 @@ function AuditResults({ route, navigation }) {
         {!loading && error && !plan && (
           <View style={styles.centerSection}>
             <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity accessibilityRole="button" style={styles.btnOutline} onPress={() => setAttempt(a => a + 1)}>
+              <Text style={styles.btnOutlineText}>Try again</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.btn} onPress={() => navigation.goBack()}>
               <Text style={styles.btnText}>Go Back</Text>
             </TouchableOpacity>
@@ -241,8 +285,8 @@ function AuditResults({ route, navigation }) {
                     <View style={styles.sectionIntro}>
                       <Text accessibilityRole="header" style={styles.sectionTitle}>Choose native additions</Text>
                     </View>
-                    <SiteFilters site={request.site} hidden={plan.hidden_by_site ?? 0} disabled={slow}
-                      onChange={site => setRequest({ ...planFor, site })} />
+                    <SiteFilters site={request.site} hidden={plan.hidden_by_site ?? 0} disabled={stale || saving || letterLoading}
+                      onChange={site => updateRequest({ ...planFor, site })} />
                     {plan.add.length === 0
                       ? <Text style={styles.mutedText}>{plan.hidden_by_site > 0 ? 'No checked plants fit all of those choices. Try setting one back to Not sure.' : 'No plants are ready to recommend yet. Our team is still checking each one.'}</Text>
                       : (
@@ -251,14 +295,14 @@ function AuditResults({ route, navigation }) {
                           {plan.add.map((card, i) => (
                             <Reveal key={card.scientific_name} index={i}>
                               <PlanCard card={card} kind="add"
-                                inLetter={card.in_letter !== false} onToggleLetter={stale ? null : () => toggleLetter(card.scientific_name, card.extra)} />
+                                inLetter={card.in_letter !== false} onToggleLetter={stale || saving || letterLoading ? null : () => toggleLetter(card.scientific_name, card.extra)} />
                             </Reveal>
                           ))}
                           {(plan.more_available > 0 || request.showAll) && (
                             <>
                               {request.showAll && <Text style={styles.sectionNote}>The extra plants start outside your letter. Tick one to add it.</Text>}
-                              <TouchableOpacity style={styles.btnOutline} disabled={stale}
-                                onPress={() => setRequest({ ...planFor, showAll: !planFor.showAll, extras: [] })}>
+                              <TouchableOpacity style={styles.btnOutline} disabled={stale || saving || letterLoading}
+                                onPress={() => updateRequest({ ...planFor, showAll: !planFor.showAll, extras: [] })}>
                                 <Text style={styles.btnOutlineText}>
                                   {request.showAll ? 'Show fewer plants' : `Show all plants that fit (${plan.more_available} more)`}
                                 </Text>
@@ -290,7 +334,7 @@ function AuditResults({ route, navigation }) {
                           <StatusBadge status={p.status} label={p.status_label} />
                           <TouchableOpacity
                             onPress={() => removePlant(i)}
-                            disabled={stale}
+                            disabled={stale || saving || letterLoading}
                             accessibilityRole="button"
                             accessibilityLabel={`Remove ${p.plant_name}`}
                             hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
@@ -382,11 +426,17 @@ function AuditResults({ route, navigation }) {
             </View>
 
 
-            <LetterGenerator key={planFor.plants.map(p => p._id).join(',') + '|' + planFor.skip.join(',')} plan={plan} zipCode={zipCode} />
+            <LetterGenerator key={JSON.stringify(planFor)} plan={plan} zipCode={zipCode} letter={letter} onLetterChange={setLetter}
+              loading={letterLoading} onLoadingChange={setLetterLoading} disabled={stale || saving} />
+
+            <AuditSaveCard name={name} onNameChange={setName} onSave={saveAudit} onNew={newAudit}
+              onViewSaved={() => navigation.navigate('SavedAudits')}
+              saved={saved} wasSaved={!!savedRecord} busy={saving}
+              disabled={!name.trim() || stale || letterLoading || request.plants.length === 0} error={saveError} />
 
             <View style={[styles.ctaSection, compact && styles.sectionCompact]}>
               <TouchableOpacity style={styles.btnOutline} onPress={() => navigation.goBack()}>
-                <Text style={styles.btnOutlineText}>Scan More Plants</Text>
+                <Text style={styles.btnOutlineText}>{savedAudit ? 'Back to saved audits' : 'Scan More Plants'}</Text>
               </TouchableOpacity>
             </View>
           </>

@@ -1,4 +1,5 @@
 import { NavigationContainer } from '@react-navigation/native'
+import { useWindowDimensions } from 'react-native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -9,6 +10,7 @@ import IdentificationScreen from '../screens/IdentificationScreen'
 import RecommendationScreen from '../screens/RecommendationScreen'
 import AuditScreen from '../screens/AuditScreen'
 import AuditResultsScreen from '../screens/AuditResultsScreen'
+import SavedAuditsScreen from '../screens/SavedAuditsScreen'
 import { COLORS, FONTS, TYPE, LINE } from '../theme'
 
 const Tab   = createBottomTabNavigator()
@@ -17,6 +19,7 @@ const Stack = createNativeStackNavigator()
 
 function TabNavigator() {
   const insets = useSafeAreaInsets()
+  const { width } = useWindowDimensions()
   return (
     <Tab.Navigator
       screenListeners={({ route }) => ({ tabPress: () => tabPressed(route.name) })}
@@ -29,7 +32,7 @@ function TabNavigator() {
           paddingBottom: Math.max(insets.bottom, 10),
           paddingTop: 8,
         },
-        tabBarLabelStyle: { fontFamily: FONTS.bodyMedium, fontSize: TYPE.caption, lineHeight: LINE.caption, paddingBottom: 2 },
+        tabBarLabelStyle: { fontFamily: FONTS.bodyMedium, fontSize: width < 360 ? TYPE.caption - 1 : TYPE.caption, letterSpacing: width < 360 ? -0.2 : 0, lineHeight: LINE.caption, paddingBottom: 2 },
         tabBarItemStyle: { paddingHorizontal: 0 },
         tabBarAllowFontScaling: false,
         tabBarActiveTintColor:   COLORS.accentOnDark,
@@ -59,6 +62,7 @@ export default function AppNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Main"         component={TabNavigator} />
         <Stack.Screen name="AuditResults" component={AuditResultsScreen} />
+        <Stack.Screen name="SavedAudits" component={SavedAuditsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   )

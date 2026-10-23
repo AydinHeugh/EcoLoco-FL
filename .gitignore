@@ -52,3 +52,5 @@ backend/test_api.py
 
 # browser test tool
 .playwright-mcp/
+
+docs/superpowers/
