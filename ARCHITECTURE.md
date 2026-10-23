@@ -138,7 +138,7 @@ All are in `backend/data/` and ship with the backend.
 
 ## Full code map
 
-The interactive version is at https://aydinheugh.github.io/EcoLoco-FL/, or open [`docs/architecture.html`](docs/architecture.html) locally. It needs internet to load its layout library. Click any box to see what that file or function does, what it calls, and what calls it.
+The interactive version is at https://ecoloco.app/docs/architecture.html, or open [`docs/architecture.html`](docs/architecture.html) locally. It needs internet to load its layout library. Click any box to see what that file or function does, what it calls, and what calls it.
 
 ### Keeping this in sync
 
@@ -175,7 +175,6 @@ The `graph-data` JSON block in `docs/architecture.html` is the single source of 
 | `getPlantRecommendations()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js, since it calls our Flask API, not Gemini. |
 | `generateLetter()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js, since it calls our Flask API, not Gemini. |
 | `getLocalPlants()` (frontend/services/plantService.js) | DEAD | Delete plantService.js: the backend route it called has been removed. |
-| `Flask app (app.py)` (backend/app.py) | change planned | Deploy to a public host before the demo (today: localhost with debug=True). |
 | `get_status()` (backend/services/fl_plants_service.py) | change planned | Add ZIP-specific regional lists behind the same get_status(). |
 | `fisc_list.json` (backend/data/fisc_list.json) | change planned | Verify the 22 curated "why" lines against FISC / UF-IFAS before the demo. |
 | `fl_natives.json` (backend/data/fl_natives.json) | change planned | Verify every entry against UF/IFAS and the Atlas of Florida Plants before the demo. |

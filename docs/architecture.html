@@ -198,7 +198,7 @@
         "`confirm`: if every close match shares a status, shows `AgreedStatus` (\"It's one of these: …\") with \"I know which one it is\"; otherwise `CandidatePicker` with the score chart, OpenAI's pick and \"None of these\".",
         "`unidentified` or \"None of these\": shows \"Couldn't identify this. Try a close-up of one leaf, or a flower\" and no name.",
         "Errors show as text; a 400 from the server (like the Florida-only message) shows the server's message.",
-        "Plants with no wildlife facts in our data say \"We don't have wildlife info for this plant yet\".",
+        "Plants with no wildlife facts in our data say \"We don't have wildlife info for this plant yet\", except invasive plants, where the \"Invasive\" badge stands alone.",
         "'Get native plant recommendations for ZIP' → `navigate('Recommend', {prefillZip})`. A \"Plant identification powered by Pl@ntNet\" credit links to plantnet.org.",
         "Plants we recommend and have checked show a \"See where it grows\" button (`AtlasButton`) that opens that plant's USF Atlas page in an in-app browser.",
         "Colors and fonts come from `frontend/theme.js`.",
@@ -270,7 +270,7 @@
         "Each plant under What your campus supports now has a Remove button (for a fake or potted plant scanned by mistake). Removing one calls `getPlan()` again, so the counts, percent, charts, plan and letter all update; it shows \"Updating your plan…\" only if the update takes longer than 0.4 seconds, and if that fails, the error with Try again.",
         "Your plan: a Remove `PlanCard` for each invasive (why, safety, replacement), then Add cards, then a link to plantrealflorida.org. Cards fade up one after another as they scroll into view (`Reveal`). Outside Palm Beach County the Remove cards stay, without a replacement, and the Add cards are replaced by \"Planting recommendations are only checked for Palm Beach County so far.\"",
         "Each Add card has an \"In my letter\" checkbox. Unticking one asks for the plan again with it skipped: the card stays, dimmed, and leaves the letter and the \"with the plan\" numbers.",
-        "What your campus supports now: every plant with its status and one sourced line, or \"We don't have wildlife info for this plant yet\".",
+        "What your campus supports now: every plant with its status and one sourced line. With no line in our data, invasive plants say \"On Florida's official invasive list.\" with the FISC source, and others say \"We don't have wildlife info for this plant yet\".",
         "How native is your campus: two `PercentRing`s side by side, Kinds of plants (`percent_native_kinds`) and Every plant (`percent_native`), each now and with the plan, a line explaining the difference (or \"Not enough identified plants yet\"), and counts for the four groups. The group counts count up when they scroll into view (`CountUp`).",
         "Charts: `StatusBars` (now vs with the plan) and `CaterpillarBars` (NWF group counts per card).",
         "Seen near you: if the scan has a location, the top 5 plants people photographed within about 5 km (iNaturalist), each with its status.",
@@ -334,7 +334,7 @@
       "how": [
         "\"Why it matters\": the plant's `why` line with its `source_label` (FISC list, our natives list or USDA).",
         "\"Helps\" and \"Watch out\" from `fl_recommendations.json`, and \"Removing it safely\" for invasives, each with its source link.",
-        "If we have none of these, the card says \"We don't have wildlife info for this plant yet\"."
+        "If we have none of these, the card says \"We don't have wildlife info for this plant yet\", unless the plant is invasive, which shows only its badge."
       ]
     },
     {
@@ -474,12 +474,12 @@
       "symbol": "app = Flask(__name__)",
       "col": 4,
       "row": 0,
-      "goal": "Deploy to a public host before the demo (today: localhost with debug=True).",
       "what": "The Python web server that exposes the API the app talks to.",
       "how": [
-        "`load_dotenv()` reads `OPENAI_API_KEY` and `PLANTNET_API_KEY` from `backend/.env`.",
+        "`load_dotenv()` reads `OPENAI_API_KEY` and `PLANTNET_API_KEY` from `backend/.env` when running locally. On Render they come from the service's environment settings.",
         "Creates the Flask app and turns on CORS so the Expo web build can call it.",
-        "Registers the four routes: /identify, /recommend, /score, /letter.",
+        "Registers eight POST routes: /identify, /names, /choose, /recommend, /plan, /locate, /nearby, /letter.",
+        "Live on Render (`render.yaml`, service `ecoloco-api`) at https://api.ecoloco.app, started with gunicorn; each push to master redeploys it.",
         "`app.run(host='0.0.0.0')` with debug mode only when `ECOLOCO_DEV=1` (`debug_enabled()`); debug is off by default, so crashes never show the code-revealing debug page."
       ]
     },

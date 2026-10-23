@@ -322,7 +322,7 @@ export default function IdentificationScreen({ navigation }) {
                 <View style={styles.resultInfo}>
                   <Text style={styles.plantName}>{shown.plant_name}</Text>
                   <StatusBadge key={shown.scientific_name} pop status={shown.status} label={shown.status_label} />
-                  {!shown.why && !shown.helps && <Text style={styles.noData}>We don't have wildlife info for this plant yet</Text>}
+                  {!shown.why && !shown.helps && shown.status !== 'invasive' && <Text style={styles.noData}>We don't have wildlife info for this plant yet</Text>}
                   {photo && shown.photo && (
                     <View style={styles.compare}>
                       <PlantPhoto photo={shown.photo} size={56} radius={12} label={shown.plant_name} />

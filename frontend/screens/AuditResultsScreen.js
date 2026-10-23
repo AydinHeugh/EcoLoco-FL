@@ -30,6 +30,7 @@ import AuditSaveCard from '../components/AuditSaveCard';
 
 const NURSERY_URL = 'https://plantrealflorida.org';
 const NO_DATA = "We don't have wildlife info for this plant yet";
+const INVASIVE_NO_DATA = "On Florida's official invasive list.";
 
 const BUCKETS = [
   { key: 'native',     status: 'native',     label: 'Native' },
@@ -343,8 +344,8 @@ function AuditResults({ route, navigation }) {
                           </TouchableOpacity>
                         </View>
                       </View>
-                      <Text style={styles.plantWhy}>{p.why || NO_DATA}</Text>
-                      {p.why ? <SourceLine source={{ name: p.source_label }} /> : null}
+                      <Text style={styles.plantWhy}>{p.why || (p.status === 'invasive' ? INVASIVE_NO_DATA : NO_DATA)}</Text>
+                      {p.why || p.status === 'invasive' ? <SourceLine source={{ name: p.source_label }} /> : null}
                       <PhotoCredit photo={p.photo} />
                     </View>
                   </View>
