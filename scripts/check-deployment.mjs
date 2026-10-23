@@ -1,4 +1,6 @@
 import { setTimeout as sleep } from 'node:timers/promises';
+import { createHash } from 'node:crypto';
+import { extname } from 'node:path';
 
 const [siteArgument, expectedCommit, ...extraArguments] = process.argv.slice(2);
 const MB = 1024 * 1024;
@@ -102,6 +104,76 @@ function localAsset(reference, site, label) {
   return url;
 }
 
+async function checkDependencyAssets(site, javascript) {
+  if (javascript.includes('/assets/node_modules/')) {
+    fail('JavaScript still references /assets/node_modules/, which Pages excludes. Rebuild with CF_PAGES=1.');
+  }
+  const manifestUrl = new URL('/asset-manifest.json', site);
+  const result = await get(manifestUrl, { limit: 256 * 1024 });
+  requireStatus(result, manifestUrl.pathname);
+  if (contentType(result.response) !== 'application/json') fail('asset-manifest.json must return application/json.');
+  let manifest;
+  try {
+    manifest = JSON.parse(result.body.toString('utf8'));
+  } catch {
+    fail('asset-manifest.json is not valid JSON. Rebuild the Pages asset manifest.');
+  }
+  if (manifest.version !== 1 || !Array.isArray(manifest.assets) || !manifest.assets.length || manifest.assets.length > 256) {
+    fail('The dependency asset manifest must contain between 1 and 256 assets with version 1.');
+  }
+  const mimeTypes = {
+    '.ttf': ['font/ttf', 'application/x-font-ttf', 'application/font-sfnt'],
+    '.otf': ['font/otf', 'application/x-font-opentype', 'application/font-sfnt'],
+    '.woff': ['font/woff', 'application/font-woff'],
+    '.woff2': ['font/woff2'],
+    '.png': ['image/png'], '.jpg': ['image/jpeg'], '.jpeg': ['image/jpeg'],
+    '.gif': ['image/gif'], '.webp': ['image/webp'], '.svg': ['image/svg+xml'],
+  };
+  const paths = new Set();
+  let totalBytes = 0;
+  for (const asset of manifest.assets) {
+    if (typeof asset.path !== 'string' || !asset.path.startsWith('/assets/vendor/') || paths.has(asset.path)
+      || !Number.isSafeInteger(asset.bytes) || asset.bytes <= 0 || asset.bytes > 8 * MB
+      || !/^[a-f0-9]{64}$/.test(asset.sha256 || '')) {
+      fail('The dependency asset manifest contains an invalid path, duplicate, size, or SHA256.');
+    }
+    const url = localAsset(asset.path, site, 'Dependency asset');
+    if (url.pathname !== asset.path || url.search || url.hash || !mimeTypes[extname(asset.path)]) {
+      fail(`Unsupported dependency asset path: ${asset.path}. Check the generated manifest and MIME mapping.`);
+    }
+    paths.add(asset.path);
+    totalBytes += asset.bytes;
+  }
+  if (totalBytes > 20 * MB) fail('Dependency assets exceed the smoke check download limit of 20 MB.');
+  const fonts = [...javascript.replaceAll('\\/', '/').matchAll(/["'](\/assets\/[^"'\s]+\.(?:ttf|otf|woff2?))["']/g)]
+    .map((match) => match[1]);
+  if (!fonts.length) fail('No exported font URLs were found in the main JavaScript bundle.');
+  for (const font of fonts) {
+    if (!paths.has(font)) fail(`Font referenced by JavaScript is absent from the dependency asset manifest: ${font}`);
+  }
+
+  const deadline = Date.now() + 60_000;
+  let index = 0;
+  await Promise.all(Array.from({ length: Math.min(4, manifest.assets.length) }, async () => {
+    while (index < manifest.assets.length) {
+      const asset = manifest.assets[index++];
+      if (Date.now() >= deadline) fail('Dependency asset checks exceeded 60 seconds; check Pages asset delivery.');
+      const fetched = await get(new URL(asset.path, site), {
+        timeout: Math.min(15_000, deadline - Date.now()), limit: asset.bytes + 1,
+      });
+      requireStatus(fetched, asset.path);
+      if (!mimeTypes[extname(asset.path)].includes(contentType(fetched.response))) {
+        fail(`${asset.path} returned ${contentType(fetched.response) || 'no content type'}; expected ${mimeTypes[extname(asset.path)][0]}. The asset may have fallen back to index.html.`);
+      }
+      const digest = createHash('sha256').update(fetched.body).digest('hex');
+      if (fetched.body.length !== asset.bytes || digest !== asset.sha256) {
+        fail(`${asset.path} does not match its exported size and SHA256. Check the asset upload and CDN cache.`);
+      }
+    }
+  }));
+  console.log(`PASS ${manifest.assets.length} dependency assets (${new Set(fonts).size} referenced fonts): MIME, size, SHA256`);
+}
+
 async function waitForDeployment(site) {
   const deadline = Date.now() + 60_000;
   let lastProblem = 'deployment.json is unavailable';
@@ -167,13 +239,14 @@ async function main() {
   if (!/^(?:text|application)\/(?:javascript|ecmascript|x-javascript)$/.test(contentType(bundle.response))) {
     fail(`JavaScript bundle returned ${contentType(bundle.response) || 'no content type'}; check asset paths and SPA fallback rules.`);
   }
+  const javascript = bundle.body.toString('utf8');
   if (apiUrl) {
-    const javascript = bundle.body.toString('utf8');
     if (!javascript.includes(apiUrl) && !javascript.includes(apiUrl.replaceAll('/', '\\/'))) {
       fail('JavaScript bundle does not contain EXPO_PUBLIC_API_URL. Set it in the Pages build environment and rebuild.');
     }
   }
   console.log(`PASS JavaScript bundle${apiUrl ? ' and backend URL configuration' : ''}`);
+  await checkDependencyAssets(site, javascript);
 
   const links = homepage.match(/<link\b[^>]*>/gi) || [];
   const faviconReference = links.find((tag) => attribute(tag, 'rel').toLowerCase().split(/\s+/).includes('icon'));
