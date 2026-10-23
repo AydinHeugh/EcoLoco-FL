@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, Animated, Easing, StyleSheet } from 'react-native';
 import { COLORS, STATUS_COLORS, FONTS, TYPE } from '../theme';
-import { DURATION, useReduceMotion } from '../motion';
+import { DURATION, USE_NATIVE_DRIVER, useReduceMotion } from '../motion';
 
 const TYPE_MS = 80;
 const HOLD_MS = 2600;
@@ -109,12 +109,12 @@ export function IdentifyDemo({ image }) {
       return undefined;
     }
     const loop = Animated.loop(Animated.sequence([
-      Animated.timing(badge, { toValue: 0, duration: DURATION / 2, useNativeDriver: true }),
+      Animated.timing(badge, { toValue: 0, duration: DURATION / 2, useNativeDriver: USE_NATIVE_DRIVER }),
       Animated.delay(500),
-      Animated.timing(sweep, { toValue: 1, duration: DURATION + 100, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-      Animated.spring(badge, { toValue: 1, speed: 14, bounciness: 8, useNativeDriver: true }),
+      Animated.timing(sweep, { toValue: 1, duration: DURATION + 100, easing: Easing.inOut(Easing.quad), useNativeDriver: USE_NATIVE_DRIVER }),
+      Animated.spring(badge, { toValue: 1, speed: 14, bounciness: 8, useNativeDriver: USE_NATIVE_DRIVER }),
       Animated.delay(2200),
-      Animated.timing(sweep, { toValue: 0, duration: 0, useNativeDriver: true }),
+      Animated.timing(sweep, { toValue: 0, duration: 0, useNativeDriver: USE_NATIVE_DRIVER }),
     ]));
     loop.start();
     return () => loop.stop();

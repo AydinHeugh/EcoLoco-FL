@@ -3,7 +3,7 @@ import { Animated, Easing, View, Text, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { COLORS, FONTS, TYPE } from '../theme';
-import { EASE_OUT, useReduceMotion } from '../motion';
+import { EASE_OUT, USE_NATIVE_DRIVER, useReduceMotion } from '../motion';
 import { useInView } from './Reveal';
 
 const LEAVES = 50;
@@ -46,7 +46,7 @@ function useRingProgress(play, delay) {
     ]).start(({ finished }) => {
       if (!finished) return;
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-      Animated.spring(pop, { toValue: 1, friction: 6, tension: 180, useNativeDriver: true }).start();
+      Animated.spring(pop, { toValue: 1, friction: 6, tension: 180, useNativeDriver: USE_NATIVE_DRIVER }).start();
     });
     return () => { fill.removeListener(ids[0]); plan.removeListener(ids[1]); };
   }, [play, reduce]);

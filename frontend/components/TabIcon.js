@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useReduceMotion } from '../motion';
+import { USE_NATIVE_DRIVER, useReduceMotion } from '../motion';
 
 const listeners = new Set();
 
@@ -19,7 +19,7 @@ export default function TabIcon({ routeName, name, color, size }) {
     const pop = pressed => {
       if (pressed !== routeName || reduce) return;
       scale.setValue(0.75);
-      Animated.spring(scale, { toValue: 1, friction: 4, tension: 200, useNativeDriver: true }).start();
+      Animated.spring(scale, { toValue: 1, friction: 4, tension: 200, useNativeDriver: USE_NATIVE_DRIVER }).start();
     };
     listeners.add(pop);
     return () => listeners.delete(pop);
