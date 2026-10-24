@@ -174,7 +174,6 @@ The `graph-data` JSON block in `docs/architecture.html` is the single source of 
 | `identifyPlant()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js, since it calls our Flask API, not Gemini. |
 | `getPlantRecommendations()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js, since it calls our Flask API, not Gemini. |
 | `generateLetter()` (frontend/services/geminiService.js) | change planned | File becomes apiClient.js, since it calls our Flask API, not Gemini. |
-| `getLocalPlants()` (frontend/services/plantService.js) | DEAD | Delete plantService.js: the backend route it called has been removed. |
 | `get_status()` (backend/services/fl_plants_service.py) | change planned | Add ZIP-specific regional lists behind the same get_status(). |
 | `fisc_list.json` (backend/data/fisc_list.json) | change planned | Verify the 22 curated "why" lines against FISC / UF-IFAS before the demo. |
 | `fl_natives.json` (backend/data/fl_natives.json) | change planned | Verify every entry against UF/IFAS and the Atlas of Florida Plants before the demo. |
@@ -241,7 +240,6 @@ flowchart LR
     c_identify["identifyPlant()"]
     c_rec["getPlantRecommendations()"]
     c_letter["generateLetter()"]
-    c_local["getLocalPlants()<br/>DEAD: Delete plantService.js: the backend route it called has been removed."]
     c_plan["getPlan()"]
     c_user_message["userMessage()"]
     c_locate["locate()"]
@@ -508,11 +506,10 @@ flowchart LR
   classDef dead fill:#f3f3f3,stroke:#9e9e9e,color:#616161,stroke-dasharray:3 3
   class app,home,ident,rec,audit,results,saved,ui_audit_store,ui_why,ui_receipt,letter,ui_multiphoto,ui_ai_unknown,ui_picker,ui_ring,ui_plancard,ui_location,ui_charts,ui_atlas,ui_namepicker,ui_sitefilters,ui_photodrop,ui_photofiles,ui_photostrip,ui_letterdemo,ui_identifydemo,ui_theme,ui_motion,ui_photos,ui_photoslot,ui_header,ui_leaf,ui_reveal,ui_countup,ui_lastplace,ui_camera,ui_photo,ui_press,ui_tabicon,ui_rotating ui
   class picker,clipboard device
-  class c_identify,c_rec,c_letter,c_local,c_plan,c_user_message,c_locate,c_nearby,c_names,c_choose client
+  class c_identify,c_rec,c_letter,c_plan,c_user_message,c_locate,c_nearby,c_names,c_choose client
   class flask,r_identify,r_recommend,r_letter,r_plan,r_locate,r_nearby,r_names,r_choose route
   class s_identify,s_letter,s_fl,s_species,s_plantnet,s_usda,s_resolve,s_option,s_common_name,s_summary,s_plan,s_guard,s_letter_facts,s_round,s_geocode,s_reverse,s_seen,s_with_plan,s_zip_center,s_region,s_county,s_choose,s_namesearch,s_isknown,s_commonfor,s_fits,s_cleansite,s_lightof,s_spaceof,s_checked,s_photo svc
   class d_fisc,d_natives,fisc_builder,d_recs,d_nwf,d_terms,d_why,d_zip_counties,zip_builder,d_non_natives,d_plantnames,names_builder,d_photos data
   class openai,usda,plantnet,nominatim,inaturalist,usf_atlas ext
-  class c_local dead
 ```
 <!-- /GENERATED:mermaid -->
