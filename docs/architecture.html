@@ -449,23 +449,6 @@
       ]
     },
     {
-      "id": "c_local",
-      "label": "getLocalPlants()",
-      "layer": "client",
-      "status": "dead",
-      "file": "frontend/services/plantService.js",
-      "symbol": "export async function getLocalPlants",
-      "col": 3,
-      "row": 8,
-      "goal": "Delete plantService.js: the backend route it called has been removed.",
-      "what": "Leftover call to an endpoint that no longer exists.",
-      "how": [
-        "POSTs `{location}` to `/get_local_plants_endpoints`.",
-        "That route no longer exists in app.py, so this would 404.",
-        "Nothing imports this function."
-      ]
-    },
-    {
       "id": "flask",
       "label": "Flask app (app.py)",
       "layer": "route",
