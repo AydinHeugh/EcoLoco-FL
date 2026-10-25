@@ -68,7 +68,7 @@ export const HOME_PLANTS = {
     scientificName: 'Sphagneticola trilobata',
     image: require('../assets/photos/creeping-oxeye.jpg'),
     status: 'invasive',
-    statusSource: 'FISC 2026 · Category II',
+    statusSource: 'FISC 2026 invasive list',
     statusSourceUrl: 'https://www.floridainvasives.org/wp-content/uploads/2026/07/FISC-2026-Plant-List-Cat-I-II_April2026.pdf',
     creator: '葉子 (leaf0605)',
     sourceName: 'iNaturalist',

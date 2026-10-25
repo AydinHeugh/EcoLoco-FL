@@ -151,8 +151,8 @@ def test_home_page_says_what_the_app_does():
         assert phrase in text
     for gone in ("Welcome to", "picked for South Florida", "ROOTED IN", "Good decisions start", "Growing communities"):
         assert gone not in text
-    for piece in ("EcoLoco_Scanning_Plant.png", "<LetterDemo />", "<IdentifyDemo image={IMG_SCANNING} />",
-                  "PHOTOS.home", "name: 'FISC'", "name: 'USDA'", "name: 'USF Atlas'"):
+    for piece in ("HOME_HERO.image", "<EcoScanDemo />", "<LetterDemo />", "<RealIdentifyDemo />",
+                  "<NativePlantsDemo />", "name: 'FISC'", "name: 'USDA'", "name: 'USF Atlas'"):
         assert piece in text
 
 
