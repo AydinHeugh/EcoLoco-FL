@@ -137,7 +137,7 @@ You'll need Node.js, Python 3, an OpenAI API key, and a free PlantNet API key fr
 
 ## Publishing the website
 
-The `Deploy website to Cloudflare Pages` GitHub Actions workflow tests and builds every push to `master`, then publishes the frontend to the existing Cloudflare Pages project **ecoloco**. Pull requests run the tests and build without publishing. The production domain is `https://ecoloco.app`, with `www.ecoloco.app` as an alternate address. Cloudflare manages the website, DNS, and HTTPS; GitHub stores the source and runs the publishing workflow.
+The `Deploy website to Cloudflare Pages` GitHub Actions workflow runs the backend tests (pytest) and the saved-audits tests, then builds every push to `master` and publishes the frontend to the existing Cloudflare Pages project **ecoloco**. Pull requests run the same tests and build without publishing, and a pull request into `master` can only be merged when both the `backend-tests` and `build-and-deploy` checks pass. The production domain is `https://ecoloco.app`, with `www.ecoloco.app` as an alternate address. Cloudflare manages the website, DNS, and HTTPS; GitHub stores the source and runs the publishing workflow.
 
 The Pages project's original production branch is named `main`. The workflow deliberately deploys to that Cloudflare branch when GitHub's `master` changes. Its fallback address is `https://ecoloco-8ry.pages.dev`. Add or verify custom domains through **Cloudflare → Workers & Pages → ecoloco → Custom domains** so Cloudflare provisions the matching DNS records and certificates. Keep the separate API DNS record intact.
 
