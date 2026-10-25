@@ -2,15 +2,16 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, AppState, Platform, Text, View, StyleSheet } from 'react-native';
 import { useReduceMotion } from '../motion';
 
+const INITIAL_HOLD_MS = 3000;
 const HOLD_MS = 2250;
-const TYPE_MS = 55;
-const DELETE_MS = 25;
-const BETWEEN_MS = 100;
+const TYPE_MS = 130;
+const DELETE_MS = 65;
+const BETWEEN_MS = 130;
 const BLINK_MS = 350;
 
 export default function RotatingLine({ lines, prefix, style, accentStyle, accessibilityLabel, enabled = true }) {
   const reduce = useReduceMotion();
-  const [frame, setFrame] = useState(() => ({ index: 0, count: lines[0]?.length || 0, phase: 'hold' }));
+  const [frame, setFrame] = useState(() => ({ index: 0, count: lines[0]?.length || 0, phase: 'initial' }));
   const [measurements, setMeasurements] = useState({});
   const [appActive, setAppActive] = useState(!AppState.currentState || AppState.currentState === 'active');
   const cursor = useRef(new Animated.Value(1)).current;
@@ -34,12 +35,12 @@ export default function RotatingLine({ lines, prefix, style, accentStyle, access
 
   useEffect(() => {
     if (!running) return undefined;
-    const delay = { hold: HOLD_MS, deleting: DELETE_MS, waiting: BETWEEN_MS, typing: TYPE_MS }[frame.phase];
+    const delay = { initial: INITIAL_HOLD_MS, hold: HOLD_MS, deleting: DELETE_MS, waiting: BETWEEN_MS, typing: TYPE_MS }[frame.phase];
     const timer = setTimeout(() => {
       setFrame(previous => {
         const index = previous.index % lines.length;
         const length = lines[index].length;
-        if (previous.phase === 'hold') return { index, count: Math.max(0, length - 1), phase: 'deleting' };
+        if (previous.phase === 'initial' || previous.phase === 'hold') return { index, count: Math.max(0, length - 1), phase: 'deleting' };
         if (previous.phase === 'deleting') {
           if (previous.count > 1) return { ...previous, count: previous.count - 1 };
           return { index: (index + 1) % lines.length, count: 0, phase: 'waiting' };
@@ -53,7 +54,7 @@ export default function RotatingLine({ lines, prefix, style, accentStyle, access
 
   useEffect(() => {
     cursor.setValue(1);
-    if (!running || frame.phase !== 'hold') return undefined;
+    if (!running || (frame.phase !== 'initial' && frame.phase !== 'hold')) return undefined;
     const blink = Animated.loop(Animated.sequence([
       Animated.delay(BLINK_MS),
       Animated.timing(cursor, { toValue: 0, duration: 0, useNativeDriver: Platform.OS !== 'web' }),

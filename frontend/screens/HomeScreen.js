@@ -10,16 +10,13 @@ import { COLORS, FONTS, FONT_ASSETS, TYPE } from '../theme'
 import Reveal, { RevealProvider, useRevealScroll } from '../components/Reveal'
 import RotatingLine from '../components/RotatingLine'
 import PressScale from '../components/PressScale'
-import { LetterDemo, IdentifyDemo } from '../components/HomeDemos'
-import SourceLine from '../components/SourceLine'
-import CountUp, { useCountUp } from '../components/CountUp'
-import { useInView } from '../components/Reveal'
-import { COUNT_STAGGER, FOCUS_MS, useReduceMotion } from '../motion'
-import { PHOTOS } from '../photos'
+import { LetterDemo } from '../components/HomeDemos'
+import { EcoScanDemo, RealIdentifyDemo, NativePlantsDemo } from '../components/HomePlantDemos'
+import HomePhotoCredits from '../components/HomePhotoCredits'
+import { FOCUS_MS, useReduceMotion } from '../motion'
+import { HOME_HERO } from '../homeMedia'
 
 const LOGO = require('../../assets/EcoLoco_logo.png')
-const IMG_SCANNING = require('../../assets/EcoLoco_Scanning_Plant.png')
-export const SLOGAN = 'Help Florida wildlife, one plant at a time'
 const CREDIT = 'Congressional App Challenge: Aydin, Andrew, Kian'
 const OAK_KINDS = 395
 const NWF_SOURCE = 'https://www.nwf.org/-/media/Documents/PDFs/Garden-for-Wildlife/Keystone-Plants/NWF-GFW-keystone-plant-list-ecoregion-15-tropical-wet-forests.pdf'
@@ -41,8 +38,6 @@ const FEATURES = [
     description: 'Spot native and invasive plants, then see what to plant instead.',
     action: 'Start a campus scan',
     screen: 'EcoScan',
-    image: PHOTOS.homeScan,
-    imageLabel: 'A flowering garden that supports local pollinators',
   },
   {
     id: 'letter',
@@ -64,15 +59,13 @@ const FEATURES = [
     description: 'Find plants checked for Palm Beach County that fit your space.',
     action: 'Find native plants',
     screen: 'Recommend',
-    image: PHOTOS.homeNatives,
-    imageLabel: 'A garden path lined with native plants',
   },
 ]
 
 const SOURCES = [
-  { name: 'FISC', count: '179', label: 'invasive plants on Florida’s official 2026 list', url: 'https://www.floridainvasives.org/wp-content/uploads/2026/07/FISC-2026-Plant-List-Cat-I-II_April2026.pdf' },
-  { name: 'USDA', count: '5,322', label: 'plants recorded in Florida', url: 'https://plants.usda.gov/' },
-  { name: 'USF Atlas', count: '30', label: 'native plants we recommend, each checked in the Atlas', url: 'https://florida.plantatlas.usf.edu/' },
+  { name: 'FISC', count: '179', metric: 'invasive plants', detail: 'Florida’s official 2026 list', url: 'https://www.floridainvasives.org/wp-content/uploads/2026/07/FISC-2026-Plant-List-Cat-I-II_April2026.pdf' },
+  { name: 'USDA', count: '5,322', metric: 'plant records', detail: 'Plants recorded in Florida', url: 'https://plants.usda.gov/' },
+  { name: 'USF Atlas', count: '30', metric: 'native plants', detail: 'Our recommendations, each checked in the Atlas', url: 'https://florida.plantatlas.usf.edu/' },
 ]
 
 function ExternalLink({ url, label, style, children }) {
@@ -91,11 +84,9 @@ function FeatureRow({ feature, wide, previewWidth, onPress, reduceMotion }) {
   return (
     <Reveal duration={reduceMotion ? 0 : FOCUS_MS} distance={12} style={[styles.featureRow, wide && styles.featureRowWide]}>
       <View style={[styles.featurePreview, { width: previewWidth }]}>
-        {feature.id === 'letter'
-          ? <View style={styles.letterPreview}><View style={styles.letterPaper}><LetterDemo /></View></View>
-          : feature.id === 'identify'
-            ? <IdentifyDemo image={IMG_SCANNING} />
-            : <Image source={feature.image} style={styles.fill} resizeMode="cover" accessibilityLabel={feature.imageLabel} />}
+        {feature.id === 'scan' ? <EcoScanDemo />
+          : feature.id === 'letter' ? <View style={styles.letterPreview}><View style={styles.letterPaper}><LetterDemo /></View></View>
+            : feature.id === 'identify' ? <RealIdentifyDemo /> : <NativePlantsDemo />}
       </View>
       <View style={[styles.featureContent, wide && styles.featureContentWide]}>
         <Text style={styles.featureHeading} accessibilityRole="header">{feature.title}</Text>
@@ -110,14 +101,21 @@ function FeatureRow({ feature, wide, previewWidth, onPress, reduceMotion }) {
 }
 
 function OakFact() {
-  const ref = useRef(null)
-  const kinds = useCountUp(OAK_KINDS, useInView(ref, 120))
   return (
-    <View ref={ref} collapsable={false} style={styles.oak}
-      accessible accessibilityLabel={`Oaks feed ${OAK_KINDS} kinds of caterpillars in South Florida. Those caterpillars feed the birds that live here.`}>
-      <Text style={styles.oakNumber}>{kinds}</Text>
-      <Text style={styles.oakText}>kinds of caterpillars feed on oaks in South Florida. Those caterpillars feed the birds that live here.</Text>
-      <SourceLine source={{ name: 'National Wildlife Federation', url: NWF_SOURCE }} />
+    <View style={styles.oak}>
+      <View style={styles.oakIcon} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <Ionicons name="leaf-outline" size={22} color={COLORS.softGreen} accessible={false} />
+      </View>
+      <View style={styles.oakCopy}>
+        <Text style={styles.oakText}>
+          <Text style={styles.oakEmphasis}>{OAK_KINDS} kinds of caterpillars</Text> feed on oaks in South Florida.
+        </Text>
+        <Text style={styles.oakDetail}>Those caterpillars feed the birds that live here.</Text>
+        <ExternalLink url={NWF_SOURCE} label="Source: National Wildlife Federation" style={styles.oakSource}>
+          <Text style={styles.oakSourceText}>National Wildlife Federation</Text>
+          <MaterialCommunityIcons name="arrow-top-right" size={14} color={COLORS.textMuted} accessible={false} />
+        </ExternalLink>
+      </View>
     </View>
   )
 }
@@ -126,21 +124,27 @@ function Sources({ wide }) {
   return (
     <View style={styles.sourcesSection}>
       <Text style={styles.sourcesHeading} accessibilityRole="header">Our sources</Text>
-      <OakFact />
       <View style={[styles.sources, wide && styles.sourcesWide]}>
         {SOURCES.map((source, index) => (
-          <ExternalLink key={source.name} url={source.url} label={`${source.name}: ${source.count} ${source.label}`}
+          <ExternalLink key={source.name} url={source.url} label={`${source.name}: ${source.count} ${source.metric}. ${source.detail}.`}
             style={[styles.sourceItem, wide && styles.sourceItemWide,
-              index > 0 && (wide ? styles.sourceDividerWide : styles.sourceDivider)]}>
+              index > 0 && (wide ? styles.sourceDividerWide : styles.sourceDivider),
+              wide && index === 0 && styles.sourceFirst,
+              wide && index === SOURCES.length - 1 && styles.sourceLast]}>
             <View style={styles.sourceCopy}>
-              <Text style={styles.sourceName}>{source.name}</Text>
-              <CountUp value={source.count} style={styles.sourceCount} delay={index * COUNT_STAGGER} />
-              <Text style={styles.sourceLabel}>{source.label}</Text>
+              <View style={styles.sourceHeader}>
+                <Text style={styles.sourceName}>{source.name}</Text>
+                <MaterialCommunityIcons name="arrow-top-right" size={18} color={COLORS.softGreen} accessible={false} />
+              </View>
+              <Text style={styles.sourceMetric}>
+                <Text style={styles.sourceCount}>{source.count}</Text> {source.metric}
+              </Text>
+              <Text style={styles.sourceDetail}>{source.detail}</Text>
             </View>
-            <MaterialCommunityIcons name="arrow-top-right" size={18} color={COLORS.softGreen} accessible={false} />
           </ExternalLink>
         ))}
       </View>
+      <OakFact />
     </View>
   )
 }
@@ -206,7 +210,7 @@ function Home({ navigation }) {
             </View>
             <View style={[styles.heroVisual, desktop && styles.heroVisualDesktop]}>
               <View style={[styles.heroPhoto, desktop ? styles.heroPhotoDesktop : { height: heroPhotoHeight }]}>
-                <Image source={PHOTOS.home} style={styles.fill} resizeMode="cover" accessibilityLabel="Butterflies and flowering plants in a sunlit school garden" />
+                <Image source={HOME_HERO.image} style={styles.fill} resizeMode="cover" accessibilityLabel={HOME_HERO.alt} />
               </View>
             </View>
           </View>
@@ -230,8 +234,8 @@ function Home({ navigation }) {
           <Sources wide={wide} />
 
           <View style={styles.footer}>
-            <Text style={styles.slogan}>{SLOGAN}</Text>
             <Text style={styles.footerText}>{CREDIT}</Text>
+            <HomePhotoCredits />
           </View>
         </View>
       </View>
@@ -290,24 +294,32 @@ const styles = StyleSheet.create({
   letterPreview: { flex: 1, padding: 12, alignItems: 'center', justifyContent: 'center' },
   letterPaper: { width: '100%', maxWidth: 340, borderRadius: 10, overflow: 'hidden', backgroundColor: COLORS.cardBg, shadowColor: COLORS.shadow, shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
 
-  sourcesSection: { marginHorizontal: GUTTER, borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 24, gap: 12 },
+  sourcesSection: { marginHorizontal: GUTTER, borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 28, gap: 20 },
   sourcesHeading: { fontFamily: FONTS.bodyBold, fontSize: TYPE.body, lineHeight: 24, color: COLORS.textMuted },
   sources: { gap: 0 },
   sourcesWide: { flexDirection: 'row' },
-  sourceItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16, gap: 14, minHeight: 76 },
-  sourceItemWide: { flex: 1, minWidth: 0, paddingHorizontal: 16 },
+  sourceItem: { paddingVertical: 16, minHeight: 104 },
+  sourceItemWide: { flex: 1, minWidth: 0, paddingHorizontal: 24, paddingVertical: 4 },
+  sourceFirst: { paddingLeft: 0 },
+  sourceLast: { paddingRight: 0 },
   sourceDivider: { borderTopWidth: 1, borderTopColor: COLORS.border },
   sourceDividerWide: { borderLeftWidth: 1, borderLeftColor: COLORS.border },
-  sourceCopy: { flexShrink: 1, gap: 4 },
+  sourceCopy: { gap: 6 },
+  sourceHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 4 },
   sourceName: { fontFamily: FONTS.bodyBold, fontSize: TYPE.body, lineHeight: 22, color: COLORS.darkGreen },
-  sourceCount: { fontFamily: FONTS.heading, fontSize: TYPE.h2, lineHeight: 34, color: COLORS.softGreen, fontVariant: ['tabular-nums'] },
-  sourceLabel: { fontFamily: FONTS.body, fontSize: TYPE.caption, lineHeight: 19, color: COLORS.textMuted },
+  sourceMetric: { fontFamily: FONTS.body, fontSize: TYPE.body, lineHeight: 28, color: COLORS.darkGreen },
+  sourceCount: { fontFamily: FONTS.bodyBold, fontSize: TYPE.h3, color: COLORS.darkGreen, fontVariant: ['tabular-nums'] },
+  sourceDetail: { fontFamily: FONTS.body, fontSize: TYPE.caption, lineHeight: 20, color: COLORS.textMuted },
   sourceActive: { backgroundColor: COLORS.lightBg },
-  oak: { gap: 6, paddingTop: 8, paddingBottom: 16 },
-  oakNumber: { fontFamily: FONTS.heading, fontSize: TYPE.stat, lineHeight: 80, color: COLORS.softGreen, fontVariant: ['tabular-nums'] },
-  oakText: { fontFamily: FONTS.heading, fontSize: TYPE.h3, lineHeight: 30, color: COLORS.darkGreen, maxWidth: 560 },
+  oak: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, backgroundColor: COLORS.lightBg, borderRadius: 12, padding: 20, marginTop: 4 },
+  oakIcon: { paddingTop: 2 },
+  oakCopy: { flex: 1, minWidth: 0, gap: 4 },
+  oakText: { fontFamily: FONTS.body, fontSize: TYPE.body, lineHeight: 24, color: COLORS.darkGreen },
+  oakEmphasis: { fontFamily: FONTS.bodyBold },
+  oakDetail: { fontFamily: FONTS.body, fontSize: TYPE.note, lineHeight: 22, color: COLORS.textMuted },
+  oakSource: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 44, paddingVertical: 10, marginTop: 2, marginBottom: -10 },
+  oakSourceText: { flexShrink: 1, fontFamily: FONTS.body, fontSize: TYPE.caption, lineHeight: 18, color: COLORS.textMuted, textDecorationLine: 'underline' },
 
-  footer: { alignItems: 'center', paddingHorizontal: GUTTER, paddingTop: 28, paddingBottom: 32, gap: 6 },
-  slogan: { fontFamily: FONTS.bodyBold, fontSize: TYPE.body, lineHeight: 24, color: COLORS.darkGreen, textAlign: 'center' },
+  footer: { alignItems: 'center', paddingHorizontal: GUTTER, paddingTop: 28, paddingBottom: 32 },
   footerText: { fontFamily: FONTS.body, fontSize: TYPE.caption, lineHeight: 19, color: COLORS.textMuted, textAlign: 'center' },
 })
