@@ -12,7 +12,6 @@ import RotatingLine from '../components/RotatingLine'
 import PressScale from '../components/PressScale'
 import { LetterDemo } from '../components/HomeDemos'
 import { EcoScanDemo, RealIdentifyDemo, NativePlantsDemo } from '../components/HomePlantDemos'
-import HomePhotoCredits from '../components/HomePhotoCredits'
 import { FOCUS_MS, useReduceMotion } from '../motion'
 import { HOME_HERO } from '../homeMedia'
 
@@ -235,7 +234,6 @@ function Home({ navigation }) {
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>{CREDIT}</Text>
-            <HomePhotoCredits />
           </View>
         </View>
       </View>
